@@ -6,129 +6,140 @@
 <title>سجل المخاطر الذكي</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--border2:#484f58;
-    --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#f0a500;--accent2:#d4920a;
-    --red:#f85149;--yellow:#e3b341;--green:#3fb950;--blue:#58a6ff;--purple:#bc8cff;
-    --font:'IBM Plex Sans Arabic',sans-serif;--mono:'IBM Plex Mono',monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
-  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
-  .logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;}
-  .logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-  .api-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:12px;font-size:13px;}
-  .api-bar label{color:var(--text2);white-space:nowrap;}
-  .api-input{flex:1;max-width:380px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;}
-  .api-input:focus{border-color:var(--accent);}
-  .api-status{font-size:12px;padding:3px 10px;border-radius:20px;background:rgba(63,185,80,.12);color:var(--green);display:none;}
-  .api-status.show{display:block;}
-  .layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 88px);}
-  .sidebar{background:var(--surface);border-left:1px solid var(--border);padding:16px;overflow-y:auto;}
-  .sidebar-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px;padding:0 4px;}
-  .project-item{padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:4px;}
-  .project-item:hover{background:var(--surface2);}
-  .project-item.active{background:var(--surface2);border-color:var(--border);}
-  .project-name{font-size:13px;font-weight:500;margin-bottom:3px;}
-  .project-meta{font-size:11px;color:var(--text3);display:flex;justify-content:space-between;}
-  .risk-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:500;}
-  .risk-high{background:rgba(248,81,73,.15);color:var(--red);}
-  .risk-med{background:rgba(210,153,34,.15);color:var(--yellow);}
-  .risk-low{background:rgba(63,185,80,.15);color:var(--green);}
-  .main{overflow-y:auto;padding:24px;}
-  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:24px;}
-  .tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;}
-  .tab:hover{color:var(--text);}
-  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-  .tab-pane{display:none;}
-  .tab-pane.active{display:block;}
-  .upload-zone{border:1.5px dashed var(--border2);border-radius:12px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);position:relative;}
-  .upload-zone:hover{border-color:var(--accent);background:rgba(240,165,0,.04);}
-  .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-  .files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:20px;}
-  .file-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;}
-  .file-type{font-size:10px;font-weight:600;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-bottom:8px;display:inline-block;}
-  .type-pdf{background:rgba(248,81,73,.15);color:var(--red);}
-  .type-xlsx{background:rgba(63,185,80,.15);color:var(--green);}
-  .type-img{background:rgba(88,166,255,.15);color:var(--blue);}
-  .type-doc{background:rgba(188,140,255,.15);color:var(--purple);}
-  .type-txt{background:rgba(139,148,158,.15);color:var(--text2);}
-  .file-name{font-size:12px;font-weight:500;word-break:break-all;margin-bottom:4px;}
-  .file-size{font-size:11px;color:var(--text3);}
-  .file-remove{position:absolute;top:8px;left:8px;width:20px;height:20px;background:var(--surface2);border:none;border-radius:4px;color:var(--text3);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
-  .file-remove:hover{background:rgba(248,81,73,.2);color:var(--red);}
-  .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border);font-family:var(--font);}
-  .btn-primary{background:var(--accent);border-color:var(--accent);color:#000;}
-  .btn-primary:hover{background:var(--accent2);}
-  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-  .btn-ghost{background:transparent;color:var(--text2);}
-  .btn-ghost:hover{background:var(--surface2);color:var(--text);}
-  .btn-danger{background:transparent;border-color:rgba(248,81,73,.3);color:var(--red);}
-  .btn-danger:hover{background:rgba(248,81,73,.1);}
-  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
-  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
-  .stat-label{font-size:11px;color:var(--text3);margin-bottom:8px;}
-  .stat-value{font-size:26px;font-weight:600;line-height:1;}
-  .stat-sub{font-size:11px;color:var(--text2);margin-top:4px;}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-  .form-group{display:flex;flex-direction:column;gap:6px;}
-  .form-group.full{grid-column:1/-1;}
-  .form-label{font-size:12px;font-weight:500;color:var(--text2);}
-  .form-input,.form-select,.form-textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;}
-  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
-  .form-textarea{resize:vertical;min-height:80px;}
-  .form-select option{background:var(--surface2);}
-  .table-wrapper{border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto;}
-  .risk-table{width:100%;border-collapse:collapse;font-size:13px;}
-  .risk-table th{background:var(--surface);padding:10px 14px;text-align:right;font-weight:500;color:var(--text2);font-size:12px;border-bottom:1px solid var(--border);white-space:nowrap;}
-  .risk-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
-  .risk-table tr:last-child td{border-bottom:none;}
-  .risk-table tr:hover td{background:rgba(255,255,255,.02);}
-  .risk-row-high td:first-child{border-right:3px solid var(--red);}
-  .risk-row-med td:first-child{border-right:3px solid var(--yellow);}
-  .risk-row-low td:first-child{border-right:3px solid var(--green);}
-  .risk-id{font-family:var(--mono);font-size:11px;color:var(--text3);}
-  .risk-category{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:var(--surface2);color:var(--text2);}
-  .mitigation-text{font-size:12px;color:var(--text2);line-height:1.5;max-width:260px;}
-  .pi-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:3px;}
-  .pi-fill-high{background:var(--red);height:100%;}
-  .pi-fill-med{background:var(--yellow);height:100%;}
-  .pi-fill-low{background:var(--green);height:100%;}
-  .update-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
-  .update-type-pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
-  .pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:transparent;font-family:var(--font);transition:all .15s;}
-  .pill:hover{border-color:var(--accent);color:var(--accent);}
-  .pill.active{background:var(--accent);border-color:var(--accent);color:#000;}
-  .timeline{position:relative;}
-  .timeline::before{content:'';position:absolute;right:16px;top:0;bottom:0;width:1px;background:var(--border);}
-  .timeline-item{display:flex;gap:16px;margin-bottom:20px;padding-right:40px;position:relative;}
-  .timeline-dot{position:absolute;right:9px;top:6px;width:15px;height:15px;border-radius:50%;border:2px solid var(--bg);}
-  .dot-change{background:var(--blue);}
-  .dot-risk{background:var(--red);}
-  .dot-update{background:var(--green);}
-  .dot-note{background:var(--text3);}
-  .timeline-content{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
-  .timeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .timeline-type{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--blue);}
-  .timeline-date{font-size:11px;color:var(--text3);font-family:var(--mono);}
-  .timeline-text{font-size:13px;color:var(--text2);line-height:1.5;}
-  .new-risks-alert{margin-top:10px;padding:10px 12px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:6px;font-size:12px;color:var(--red);}
-  .project-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-  .project-title-area h2{font-size:18px;font-weight:600;margin-bottom:4px;}
-  .project-title-area p{font-size:13px;color:var(--text2);}
-  .alert-info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--blue);margin-bottom:16px;display:flex;gap:8px;}
-  .export-bar{display:flex;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:24px;}
-  .empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
-  .empty-icon{font-size:40px;margin-bottom:12px;}
-  .empty-title{font-size:15px;font-weight:500;color:var(--text2);margin-bottom:6px;}
-  .loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,17,23,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
-  .loading-overlay.show{display:flex;}
-  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .loading-text{color:var(--text2);font-size:14px;}
-  ::-webkit-scrollbar{width:6px;}
-  ::-webkit-scrollbar-track{background:transparent;}
-  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--border2:#484f58;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;--accent:#f0a500;--accent2:#d4920a;--red:#f85149;--yellow:#e3b341;--green:#3fb950;--blue:#58a6ff;--purple:#bc8cff;--font:'IBM Plex Sans Arabic',sans-serif;--mono:'IBM Plex Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.api-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:12px;font-size:13px;}
+.api-bar label{color:var(--text2);white-space:nowrap;}
+.api-input{flex:1;max-width:380px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;}
+.api-input:focus{border-color:var(--accent);}
+.api-status{font-size:12px;padding:3px 10px;border-radius:20px;background:rgba(63,185,80,.12);color:var(--green);display:none;}
+.api-status.show{display:block;}
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 88px);}
+.sidebar{background:var(--surface);border-left:1px solid var(--border);padding:16px;overflow-y:auto;}
+.sidebar-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px;padding:0 4px;}
+.project-item{padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:4px;}
+.project-item:hover{background:var(--surface2);}
+.project-item.active{background:var(--surface2);border-color:var(--border);}
+.project-name{font-size:13px;font-weight:500;margin-bottom:3px;}
+.project-meta{font-size:11px;color:var(--text3);display:flex;justify-content:space-between;}
+.risk-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:500;}
+.risk-high{background:rgba(248,81,73,.15);color:var(--red);}
+.risk-med{background:rgba(210,153,34,.15);color:var(--yellow);}
+.risk-low{background:rgba(63,185,80,.15);color:var(--green);}
+.main{overflow-y:auto;padding:24px;}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:12px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);position:relative;}
+.upload-zone:hover{border-color:var(--accent);background:rgba(240,165,0,.04);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:20px;}
+.file-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;}
+.file-type{font-size:10px;font-weight:600;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-bottom:8px;display:inline-block;}
+.type-pdf{background:rgba(248,81,73,.15);color:var(--red);}
+.type-xlsx{background:rgba(63,185,80,.15);color:var(--green);}
+.type-img{background:rgba(88,166,255,.15);color:var(--blue);}
+.type-doc{background:rgba(188,140,255,.15);color:var(--purple);}
+.type-txt{background:rgba(139,148,158,.15);color:var(--text2);}
+.file-name{font-size:12px;font-weight:500;word-break:break-all;margin-bottom:4px;}
+.file-size{font-size:11px;color:var(--text3);}
+.file-remove{position:absolute;top:8px;left:8px;width:20px;height:20px;background:var(--surface2);border:none;border-radius:4px;color:var(--text3);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.file-remove:hover{background:rgba(248,81,73,.2);color:var(--red);}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border);font-family:var(--font);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#000;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--text2);}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);}
+.btn-success{background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.3);color:var(--green);}
+.btn-success:hover{background:rgba(63,185,80,.25);}
+.btn-danger{background:transparent;border-color:rgba(248,81,73,.3);color:var(--red);}
+.btn-danger:hover{background:rgba(248,81,73,.1);}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.stat-value{font-size:26px;font-weight:600;line-height:1;}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:4px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);}
+.form-input,.form-select,.form-textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
+.form-textarea{resize:vertical;min-height:80px;}
+.form-select option{background:var(--surface2);}
+.table-wrapper{border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto;}
+.risk-table{width:100%;border-collapse:collapse;font-size:13px;}
+.risk-table th{background:var(--surface);padding:10px 14px;text-align:right;font-weight:500;color:var(--text2);font-size:12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.risk-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+.risk-table tr:last-child td{border-bottom:none;}
+.risk-table tr:hover td{background:rgba(255,255,255,.02);}
+.risk-row-high td:first-child{border-right:3px solid var(--red);}
+.risk-row-med td:first-child{border-right:3px solid var(--yellow);}
+.risk-row-low td:first-child{border-right:3px solid var(--green);}
+.risk-id{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.risk-category{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:var(--surface2);color:var(--text2);}
+.mitigation-text{font-size:12px;color:var(--text2);line-height:1.5;max-width:220px;}
+.update-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;}
+.update-type-pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:transparent;font-family:var(--font);transition:all .15s;}
+.pill:hover{border-color:var(--accent);color:var(--accent);}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#000;}
+.update-file-zone{border:1px dashed var(--border2);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;transition:all .15s;margin-bottom:12px;background:var(--surface2);}
+.update-file-zone:hover{border-color:var(--accent);}
+.update-file-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.timeline{position:relative;}
+.timeline::before{content:'';position:absolute;right:16px;top:0;bottom:0;width:1px;background:var(--border);}
+.timeline-item{display:flex;gap:16px;margin-bottom:20px;padding-right:40px;position:relative;}
+.timeline-dot{position:absolute;right:9px;top:6px;width:15px;height:15px;border-radius:50%;border:2px solid var(--bg);}
+.dot-change{background:var(--blue);}
+.dot-risk{background:var(--red);}
+.dot-update{background:var(--green);}
+.dot-note{background:var(--text3);}
+.timeline-content{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.timeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.timeline-type{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--blue);}
+.timeline-date{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.timeline-text{font-size:13px;color:var(--text2);line-height:1.5;}
+.new-risks-alert{margin-top:10px;padding:10px 12px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:6px;font-size:12px;color:var(--red);}
+.project-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.project-title-area h2{font-size:18px;font-weight:600;margin-bottom:4px;}
+.project-title-area p{font-size:13px;color:var(--text2);}
+.alert-info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--blue);margin-bottom:16px;display:flex;gap:8px;}
+.export-bar{display:flex;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:24px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-title{font-size:15px;font-weight:500;color:var(--text2);margin-bottom:6px;}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,17,23,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{color:var(--text2);font-size:14px;}
+.tolerance-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+.tolerance-title{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text);}
+.tolerance-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tolerance-level-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);margin-bottom:6px;}
+.tolerance-level-row input[type=text]{background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:12px;flex:1;outline:none;}
+.validation-overlay{display:none;position:fixed;inset:0;background:rgba(13,17,23,.92);z-index:500;overflow-y:auto;padding:24px;}
+.validation-overlay.show{display:block;}
+.validation-box{max-width:900px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.validation-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);gap:12px;}
+.risk-validation-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;transition:all .2s;}
+.risk-validation-card.approved{border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.04);}
+.risk-validation-card.rejected{opacity:.35;border-style:dashed;}
+.risk-val-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;}
+.risk-val-actions{display:flex;gap:6px;flex-shrink:0;}
+.impact-chip{padding:3px 10px;border-radius:20px;font-size:11px;background:var(--surface2);color:var(--text2);}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 </style>
 </head>
 <body>
@@ -138,13 +149,31 @@
   <div class="loading-text" id="loadingText">جاري التحليل...</div>
 </div>
 
+<!-- Validation Overlay -->
+<div class="validation-overlay" id="validationOverlay">
+  <div class="validation-box">
+    <div class="validation-header">
+      <div>
+        <div style="font-size:18px;font-weight:600;">🔍 مراجعة واعتماد المخاطر</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px;">راجع كل مخاطرة واعتمدها أو احذفها قبل حفظ السجل النهائي</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+        <span style="font-size:13px;color:var(--text2);" id="valCounter">0 / 0</span>
+        <button class="btn btn-success" onclick="approveAll()">✓ اعتماد الكل</button>
+        <button class="btn btn-primary" onclick="confirmValidation()">حفظ السجل ←</button>
+      </div>
+    </div>
+    <div id="validationList"></div>
+  </div>
+</div>
+
 <div class="header">
   <div class="logo"><div class="logo-icon">⚠</div>سجل المخاطر الذكي</div>
   <button class="btn btn-ghost" onclick="newProject()">+ مشروع جديد</button>
 </div>
 
 <div class="api-bar">
-  <label>🔑 مفتاح Anthropic API:</label>
+  <label>🔑 مفتاح API:</label>
   <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-..." oninput="checkApiKey()"/>
   <span class="api-status" id="apiStatus">✓ جاهز</span>
   <span style="color:var(--text3);font-size:12px;">يُحفظ في المتصفح فقط</span>
@@ -155,6 +184,7 @@
     <div class="sidebar-label">المشاريع</div>
     <div id="projectsList"></div>
   </div>
+
   <div class="main">
     <div id="welcomeScreen">
       <div style="max-width:560px;margin:60px auto;text-align:center;">
@@ -164,6 +194,7 @@
         <button class="btn btn-primary" style="font-size:14px;padding:10px 24px;" onclick="newProject()">إنشاء أول مشروع ←</button>
       </div>
     </div>
+
     <div id="projectView" style="display:none;">
       <div class="project-header">
         <div class="project-title-area">
@@ -175,17 +206,22 @@
           <button class="btn btn-danger" onclick="deleteProject()">حذف</button>
         </div>
       </div>
+
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label">إجمالي المخاطر</div><div class="stat-value" id="statTotal">0</div><div class="stat-sub">مخاطرة مسجلة</div></div>
         <div class="stat-card"><div class="stat-label">مخاطر عالية</div><div class="stat-value" style="color:var(--red)" id="statHigh">0</div><div class="stat-sub">تحتاج إجراء فوري</div></div>
         <div class="stat-card"><div class="stat-label">مخاطر متوسطة</div><div class="stat-value" style="color:var(--yellow)" id="statMed">0</div><div class="stat-sub">تحت المراقبة</div></div>
         <div class="stat-card"><div class="stat-label">آخر تحليل</div><div class="stat-value" style="font-size:14px;padding-top:6px;" id="statDate">—</div></div>
       </div>
+
       <div class="tabs">
         <div class="tab active" onclick="switchTab('files')">📁 الملفات</div>
         <div class="tab" onclick="switchTab('risks')">⚠️ سجل المخاطر</div>
         <div class="tab" onclick="switchTab('updates')">🔄 التحديثات</div>
+        <div class="tab" onclick="switchTab('tolerance')">🎯 مدى السماحية</div>
       </div>
+
+      <!-- Files Tab -->
       <div class="tab-pane active" id="tab-files">
         <div class="upload-zone">
           <input type="file" id="fileInput" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleFiles(event)"/>
@@ -199,9 +235,15 @@
           <span style="font-size:12px;color:var(--text3)" id="fileCount">لا توجد ملفات</span>
         </div>
       </div>
+
+      <!-- Risks Tab -->
       <div class="tab-pane" id="tab-risks">
-        <div id="risksContent"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">لا يوجد سجل مخاطر بعد</div><p style="font-size:13px;">ارفع الملفات واضغط تحليل</p></div></div>
+        <div id="risksContent">
+          <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">لا يوجد سجل مخاطر بعد</div><p style="font-size:13px;">ارفع الملفات واضغط تحليل</p></div>
+        </div>
       </div>
+
+      <!-- Updates Tab -->
       <div class="tab-pane" id="tab-updates">
         <div class="update-form">
           <div style="font-size:14px;font-weight:500;margin-bottom:12px;">إضافة تحديث جديد</div>
@@ -213,6 +255,19 @@
             <button class="pill" onclick="selectUpdateType(this,'contract')">تعديل عقدي</button>
             <button class="pill" onclick="selectUpdateType(this,'note')">ملاحظة</button>
           </div>
+          <div class="update-file-zone">
+            <input type="file" id="updateFileInput" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUpdateFile(event)"/>
+            <div style="font-size:22px;">📎</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text);">رفع ملف مع التحديث (اختياري)</div>
+              <div style="font-size:12px;color:var(--text2);">محضر اجتماع · أمر تغيير · عقد باطن · مراسلة · أي وثيقة</div>
+            </div>
+          </div>
+          <div id="updateFilesPreview" style="margin-bottom:10px;"></div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">وصف الملف (اختياري)</label>
+            <input type="text" class="form-input" id="updateFileDesc" placeholder="مثال: محضر اجتماع التنسيق رقم 12"/>
+          </div>
           <textarea class="form-textarea" id="updateText" style="width:100%;margin-bottom:12px;" placeholder="اكتب تفاصيل التحديث... مثال: صدر أمر تغيير رقم 5 بإضافة طابق إضافي بقيمة 850,000 ريال"></textarea>
           <button class="btn btn-primary" onclick="addUpdate()">تحليل وإضافة للسجل ←</button>
         </div>
@@ -220,9 +275,67 @@
           <div class="empty-state" style="padding:30px"><div class="empty-icon">🕐</div><div class="empty-title">لا توجد تحديثات</div></div>
         </div>
       </div>
+
+      <!-- Tolerance Tab -->
+      <div class="tab-pane" id="tab-tolerance">
+        <div style="max-width:800px;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px;">🎯 مدى السماحية في المخاطر</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">حدد الحدود المقبولة — يستخدمها Claude لتصنيف المخاطر بدقة أعلى</div>
+
+          <div class="tolerance-section">
+            <div class="tolerance-title">💰 التكلفة والجدول الزمني</div>
+            <div class="tolerance-grid">
+              <div>
+                <label class="form-label" style="margin-bottom:8px;display:block;">الحد الأقصى المقبول للتكلفة الإضافية</label>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                  <input type="number" class="form-input" id="tol_cost_pct" placeholder="5" style="width:80px;" oninput="saveTolerance()"/>
+                  <span style="color:var(--text2);font-size:13px;">% من قيمة العقد</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="number" class="form-input" id="tol_cost_val" placeholder="500000" style="width:140px;" oninput="saveTolerance()"/>
+                  <span style="color:var(--text2);font-size:13px;">ريال كحد أقصى</span>
+                </div>
+              </div>
+              <div>
+                <label class="form-label" style="margin-bottom:8px;display:block;">الحد الأقصى المقبول للتأخير</label>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                  <input type="number" class="form-input" id="tol_schedule_days" placeholder="30" style="width:80px;" oninput="saveTolerance()"/>
+                  <span style="color:var(--text2);font-size:13px;">يوم تأخير مقبول</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="number" class="form-input" id="tol_schedule_pct" placeholder="10" style="width:80px;" oninput="saveTolerance()"/>
+                  <span style="color:var(--text2);font-size:13px;">% من المدة الكلية</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tolerance-section">
+            <div class="tolerance-title">🦺 مستويات QHSE</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">عدّل الأوصاف حسب سياسة شركتك</div>
+            <div id="qhse_levels"></div>
+          </div>
+
+          <div class="tolerance-section">
+            <div class="tolerance-title">🏆 مستويات السمعة</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">عدّل الأوصاف حسب أهمية المشروع</div>
+            <div id="rep_levels"></div>
+          </div>
+
+          <div class="tolerance-section">
+            <div class="tolerance-title">📊 مستويات الاحتمالية والتأثير</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div><div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;">الاحتمالية (1-5)</div><div id="prob_levels"></div></div>
+              <div><div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;">التأثير (1-5)</div><div id="impact_levels"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- New Project Modal -->
     <div id="newProjectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:540px;max-width:95vw;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;">
         <div style="font-size:16px;font-weight:600;margin-bottom:20px;">مشروع جديد</div>
         <div class="form-grid">
           <div class="form-group"><label class="form-label">اسم المشروع *</label><input type="text" class="form-input" id="np_name" placeholder="مثال: مجمع الرياض السكني"/></div>
@@ -243,8 +356,16 @@
 </div>
 
 <script>
+const DEFAULT_QHSE=[{l:'1 — صفر تسامح',d:'أي حادثة أو وفاة غير مقبولة إطلاقاً'},{l:'2 — حرج',d:'إصابة خطيرة أو عجز دائم'},{l:'3 — عالي',d:'إصابة متوسطة تستلزم علاجاً طبياً'},{l:'4 — متوسط',d:'إصابة بسيطة قابلة للسيطرة'},{l:'5 — منخفض',d:'إسعافات أولية فقط مع التوثيق'}];
+const DEFAULT_REP=[{l:'1 — صفر تسامح',d:'أي تأثير على صورة الشركة غير مقبول'},{l:'2 — وطني',d:'تأثير إعلامي على مستوى المملكة'},{l:'3 — إقليمي',d:'تأثير في نطاق المنطقة الجغرافية'},{l:'4 — محلي',d:'تأثير في نطاق المدينة فقط'},{l:'5 — داخلي',d:'تأثير داخل المشروع فقط مقبول'}];
+const DEFAULT_PROB=[{l:'1 — نادر',d:'< 10%'},{l:'2 — محتمل نادراً',d:'10-30%'},{l:'3 — محتمل',d:'30-50%'},{l:'4 — مرجح',d:'50-70%'},{l:'5 — شبه مؤكد',d:'> 70%'}];
+const DEFAULT_IMPACT=[{l:'1 — ضئيل',d:'تأثير لا يُذكر على الأهداف'},{l:'2 — منخفض',d:'تأثير بسيط قابل للمعالجة'},{l:'3 — متوسط',d:'تأثير ملحوظ يحتاج إجراء'},{l:'4 — عالي',d:'تأثير كبير على أهداف المشروع'},{l:'5 — حرج',d:'تأثير جسيم قد يوقف المشروع'}];
+const LEVEL_COLORS=['#f85149','#d29922','#e3b341','#3fb950','#58a6ff'];
+const PROB_LABELS=['','نادر','محتمل نادراً','محتمل','مرجح','شبه مؤكد'];
+const IMP_LABELS=['','ضئيل','منخفض','متوسط','عالي','حرج'];
+
 let projects=JSON.parse(localStorage.getItem('riskProjects')||'[]');
-let currentProjectId=null,currentUpdateType='change_order',projectFiles={};
+let currentProjectId=null,currentUpdateType='change_order',projectFiles={},updateFiles=[],pendingRisks=[];
 
 window.onload=()=>{
   const s=localStorage.getItem('anthropicKey');
@@ -263,15 +384,16 @@ function checkApiKey(){
 function getKey(){return document.getElementById('apiKey').value.trim();}
 
 async function callAPI(payload){
-  const key=getKey();
-  
-  
-  const res=await fetch('/api/claude',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key},
-    body:JSON.stringify(payload)
-  });
+  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey()},body:JSON.stringify(payload)});
   return await res.json();
+}
+
+function getDefaultTolerance(){
+  return{cost_pct:5,cost_val:'',schedule_days:30,schedule_pct:10,
+    qhse:DEFAULT_QHSE.map(x=>({l:x.l,d:x.d})),
+    rep:DEFAULT_REP.map(x=>({l:x.l,d:x.d})),
+    prob:DEFAULT_PROB.map(x=>({l:x.l,d:x.d})),
+    impact:DEFAULT_IMPACT.map(x=>({l:x.l,d:x.d}))};
 }
 
 function saveProjects(){localStorage.setItem('riskProjects',JSON.stringify(projects));}
@@ -281,13 +403,13 @@ function closeModal(){document.getElementById('newProjectModal').style.display='
 function createProject(){
   const name=document.getElementById('np_name').value.trim();
   if(!name){alert('يرجى إدخال اسم المشروع');return;}
-  const p={id:Date.now().toString(),name,contract:document.getElementById('np_contract').value,value:document.getElementById('np_value').value,type:document.getElementById('np_type').value,start:document.getElementById('np_start').value,end:document.getElementById('np_end').value,desc:document.getElementById('np_desc').value,risks:[],updates:[],createdAt:new Date().toLocaleDateString('ar-SA'),analyzed:false};
+  const p={id:Date.now().toString(),name,contract:document.getElementById('np_contract').value,value:document.getElementById('np_value').value,type:document.getElementById('np_type').value,start:document.getElementById('np_start').value,end:document.getElementById('np_end').value,desc:document.getElementById('np_desc').value,risks:[],updates:[],tolerance:getDefaultTolerance(),createdAt:new Date().toLocaleDateString('ar-SA')};
   projects.unshift(p);saveProjects();closeModal();renderProjects();selectProject(p.id);
   ['np_name','np_contract','np_value','np_desc','np_start','np_end'].forEach(id=>document.getElementById(id).value='');
 }
 
 function deleteProject(){
-  if(!confirm('هل أنت متأكد من حذف هذا المشروع؟'))return;
+  if(!confirm('هل أنت متأكد؟'))return;
   projects=projects.filter(p=>p.id!==currentProjectId);delete projectFiles[currentProjectId];
   saveProjects();currentProjectId=null;renderProjects();
   document.getElementById('projectView').style.display='none';
@@ -306,15 +428,16 @@ function renderProjects(){
 
 function selectProject(id){
   currentProjectId=id;const p=projects.find(x=>x.id===id);if(!p)return;
+  if(!p.tolerance)p.tolerance=getDefaultTolerance();
   document.getElementById('welcomeScreen').style.display='none';
   document.getElementById('projectView').style.display='block';
   document.getElementById('viewProjectName').textContent=p.name;
   document.getElementById('viewProjectMeta').textContent=[p.type,p.value?p.value+' ريال':'',p.contract].filter(Boolean).join(' · ');
-  renderProjects();renderFiles();renderRisks();renderUpdates();updateStats();switchTab('files');
+  renderProjects();renderFiles();renderRisks();renderUpdates();renderTolerance();updateStats();switchTab('files');
 }
 
 function switchTab(name){
-  const names=['files','risks','updates'];
+  const names=['files','risks','updates','tolerance'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
@@ -347,59 +470,224 @@ function refreshBtn(){
 }
 function removeFile(i){projectFiles[currentProjectId].splice(i,1);renderFiles();}
 
+function handleUpdateFile(e){
+  Array.from(e.target.files).forEach(file=>{
+    const r=new FileReader();
+    r.onload=ev=>{updateFiles.push({name:file.name,size:file.size,type:file.type,dataUrl:ev.target.result});renderUpdatePreview();};
+    r.readAsDataURL(file);
+  });
+}
+
+function renderUpdatePreview(){
+  const el=document.getElementById('updateFilesPreview');
+  if(!updateFiles.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+updateFiles.map((f,i)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;display:flex;align-items:center;gap:6px;">📎 ${f.name}<button onclick="removeUpdateFile(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;">✕</button></div>`).join('')+'</div>';
+}
+function removeUpdateFile(i){updateFiles.splice(i,1);renderUpdatePreview();}
+
+// Tolerance
+function renderTolerance(){
+  const p=projects.find(x=>x.id===currentProjectId);if(!p)return;
+  const t=p.tolerance;
+  document.getElementById('tol_cost_pct').value=t.cost_pct||'';
+  document.getElementById('tol_cost_val').value=t.cost_val||'';
+  document.getElementById('tol_schedule_days').value=t.schedule_days||'';
+  document.getElementById('tol_schedule_pct').value=t.schedule_pct||'';
+  renderLevels('qhse_levels',t.qhse,'qhse');
+  renderLevels('rep_levels',t.rep,'rep');
+  renderLevels('prob_levels',t.prob,'prob');
+  renderLevels('impact_levels',t.impact,'impact');
+}
+
+function renderLevels(cid,levels,key){
+  document.getElementById(cid).innerHTML=levels.map((lv,i)=>`
+    <div class="tolerance-level-row" style="border-right:3px solid ${LEVEL_COLORS[i]}">
+      <span style="font-size:11px;font-weight:600;color:${LEVEL_COLORS[i]};min-width:130px;white-space:nowrap;">${lv.l}</span>
+      <input type="text" value="${lv.d}" oninput="updateLevel('${key}',${i},this.value)" placeholder="وصف المستوى..."/>
+    </div>`).join('');
+}
+
+function updateLevel(key,index,value){
+  const p=projects.find(x=>x.id===currentProjectId);if(!p)return;
+  p.tolerance[key][index].d=value;saveProjects();
+}
+
+function saveTolerance(){
+  const p=projects.find(x=>x.id===currentProjectId);if(!p)return;
+  p.tolerance.cost_pct=document.getElementById('tol_cost_pct').value;
+  p.tolerance.cost_val=document.getElementById('tol_cost_val').value;
+  p.tolerance.schedule_days=document.getElementById('tol_schedule_days').value;
+  p.tolerance.schedule_pct=document.getElementById('tol_schedule_pct').value;
+  saveProjects();
+}
+
+// Analyze
 async function analyzeProject(){
-  const files=projectFiles[currentProjectId]||[],p=projects.find(x=>x.id===currentProjectId);
+  const files=projectFiles[currentProjectId]||[];
+  const p=projects.find(x=>x.id===currentProjectId);
+  const t=p.tolerance||getDefaultTolerance();
   showLoading('جاري تحليل ملفات المشروع...');
-  const parts=[{type:'text',text:`أنت خبير إدارة مخاطر متخصص في مشاريع الإنشاء والمقاولات في المملكة العربية السعودية.
-معلومات المشروع: الاسم: ${p.name}، النوع: ${p.type}، القيمة: ${p.value||'غير محددة'} ريال، العقد: ${p.contract||'غير محدد'}، البداية: ${p.start||'غير محدد'}، الإنجاز: ${p.end||'غير محدد'}، الوصف: ${p.desc||'غير محدد'}
-حلل الملفات وأنشئ سجل مخاطر. أعد JSON فقط بدون نص إضافي:
-{"summary":"ملخص التحليل","risks":[{"id":"R001","category":"الجدول الزمني","description":"وصف","cause":"السبب","probability":"عالي","impact":"عالي","level":"high","mitigation":"خطة التخفيف","owner":"المسؤول"}]}
-الفئات: الجدول الزمني، التكلفة، النطاق، العقد، التصميم، التنفيذ، الموردين، السلامة، الجودة، بيئي وتنظيمي. حدد 10-15 مخاطرة.`}];
+
+  const tolCtx=`مدى السماحية:
+- التكلفة: الحد الأقصى ${t.cost_pct||5}% أو ${t.cost_val||'غير محدد'} ريال
+- الجدول: الحد الأقصى ${t.schedule_days||30} يوم أو ${t.schedule_pct||10}%
+- QHSE: ${t.qhse.map(x=>x.l+': '+x.d).join(' | ')}
+- السمعة: ${t.rep.map(x=>x.l+': '+x.d).join(' | ')}
+- الاحتمالية: ${t.prob.map(x=>x.l+': '+x.d).join(' | ')}
+- التأثير: ${t.impact.map(x=>x.l+': '+x.d).join(' | ')}`;
+
+  const parts=[{type:'text',text:`أنت خبير إدارة مخاطر للمشاريع الإنشائية في السعودية.
+المشروع: ${p.name} | النوع: ${p.type} | القيمة: ${p.value||'غير محددة'} ريال | العقد: ${p.contract||'—'} | البداية: ${p.start||'—'} | الإنجاز: ${p.end||'—'}
+الوصف: ${p.desc||'—'}
+${tolCtx}
+
+حلل الملفات وأنشئ سجل مخاطر شامل. قيّم التأثير على الأبعاد الأربعة بأرقام 1-5.
+أعد JSON فقط:
+{"summary":"ملخص التحليل","risks":[{"id":"R001","category":"فئة","description":"وصف المخاطرة","cause":"السبب","probability":3,"impact_cost":2,"impact_schedule":3,"impact_qhse":1,"impact_reputation":1,"level":"high","mitigation":"خطة التخفيف","owner":"المسؤول"}]}
+الفئات: الجدول الزمني، التكلفة، النطاق، العقد، التصميم، التنفيذ، الموردين، السلامة، الجودة، بيئي وتنظيمي
+حدد 10-15 مخاطرة. level: high إذا تجاوز السماحية، med إذا اقترب، low إذا كان مقبولاً.`}];
+
   for(const f of files){
     const ext=f.name.split('.').pop().toLowerCase();
     if(['png','jpg','jpeg'].includes(ext)){parts.push({type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:f.dataUrl.split(',')[1]}});parts.push({type:'text',text:`[مخطط: ${f.name}]`});}
     else if(ext==='pdf')parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.dataUrl.split(',')[1]}});
     else parts.push({type:'text',text:`[ملف: ${f.name}]`});
   }
+
   try{
     const data=await callAPI({model:'claude-opus-4-5',max_tokens:4000,messages:[{role:'user',content:parts}]});
     hideLoading();
-    if(data.error){alert('خطأ API: '+data.error.message);return;}
+    if(data.error){alert('خطأ: '+data.error.message);return;}
     let parsed;
     try{parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());}catch(e){alert('خطأ في معالجة الرد');return;}
-    p.risks=parsed.risks||[];p.summary=parsed.summary||'';p.analyzed=true;p.analyzedAt=new Date().toLocaleDateString('ar-SA');
-    saveProjects();renderProjects();updateStats();renderRisks();switchTab('risks');
+    p.summary=parsed.summary||'';
+    pendingRisks=parsed.risks||[];
+    showValidation(pendingRisks);
   }catch(e){hideLoading();alert('خطأ: '+e.message);}
 }
 
+// Validation
+function showValidation(risks){
+  document.getElementById('validationOverlay').classList.add('show');
+  renderValidationList(risks);
+}
+
+function renderValidationList(risks){
+  const approved=risks.filter(r=>r._approved!==false).length;
+  document.getElementById('valCounter').textContent=`${approved} / ${risks.length} معتمد`;
+  const levelColors={high:'var(--red)',med:'var(--yellow)',low:'var(--green)'};
+  const levelLabels={high:'عالي',med:'متوسط',low:'منخفض'};
+  document.getElementById('validationList').innerHTML=risks.map((r,i)=>`
+    <div class="risk-validation-card ${r._approved===false?'rejected':r._approved?'approved':''}" id="vc_${i}">
+      <div class="risk-val-header">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${r.id}</span>
+            <span class="risk-category">${r.category}</span>
+            <span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;color:${levelColors[r.level]||'var(--text2)'};">● ${levelLabels[r.level]||r.level}</span>
+          </div>
+          <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;">${r.description}</div>
+          <div style="font-size:12px;color:var(--text3);">${r.cause||''}</div>
+        </div>
+        <div class="risk-val-actions">
+          <button class="btn btn-success" style="padding:5px 10px;font-size:12px;" onclick="approveRisk(${i})">✓</button>
+          <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;" onclick="rejectRisk(${i})">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <span class="impact-chip">احتمالية: ${r.probability} — ${PROB_LABELS[r.probability]||''}</span>
+        <span class="impact-chip">💰 ${r.impact_cost} — ${IMP_LABELS[r.impact_cost]||''}</span>
+        <span class="impact-chip">📅 ${r.impact_schedule} — ${IMP_LABELS[r.impact_schedule]||''}</span>
+        <span class="impact-chip">🦺 ${r.impact_qhse} — ${IMP_LABELS[r.impact_qhse]||''}</span>
+        <span class="impact-chip">🏆 ${r.impact_reputation} — ${IMP_LABELS[r.impact_reputation]||''}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);background:var(--surface2);padding:8px 12px;border-radius:6px;">💡 ${r.mitigation}</div>
+    </div>`).join('');
+}
+
+function approveRisk(i){pendingRisks[i]._approved=true;renderValidationList(pendingRisks);}
+function rejectRisk(i){pendingRisks[i]._approved=false;renderValidationList(pendingRisks);}
+function approveAll(){pendingRisks.forEach(r=>r._approved=true);renderValidationList(pendingRisks);}
+
+function confirmValidation(){
+  const approved=pendingRisks.filter(r=>r._approved!==false);
+  if(!approved.length){alert('يرجى اعتماد مخاطرة واحدة على الأقل');return;}
+  const p=projects.find(x=>x.id===currentProjectId);
+  p.risks=approved.map(r=>{const{_approved,...rest}=r;return rest;});
+  p.analyzed=true;p.analyzedAt=new Date().toLocaleDateString('ar-SA');
+  saveProjects();
+  document.getElementById('validationOverlay').classList.remove('show');
+  renderProjects();updateStats();renderRisks();switchTab('risks');
+}
+
+// Render Risks
 function renderRisks(){
   const p=projects.find(x=>x.id===currentProjectId);
   if(!p?.risks?.length){document.getElementById('risksContent').innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">لا يوجد سجل مخاطر بعد</div><p style="font-size:13px;">ارفع الملفات واضغط تحليل</p></div>`;return;}
-  const pw={عالي:'85%',متوسط:'50%',منخفض:'25%'},fc={عالي:'pi-fill-high',متوسط:'pi-fill-med',منخفض:'pi-fill-low'};
-  const ll={high:'عالي',med:'متوسط',low:'منخفض'},lc={high:'risk-high',med:'risk-med',low:'risk-low'};
-  const rows=p.risks.map(r=>`<tr class="risk-row-${r.level}"><td><div class="risk-id">${r.id}</div></td><td><span class="risk-category">${r.category}</span></td><td><div style="color:var(--text)">${r.description}</div><div style="font-size:11px;color:var(--text3);margin-top:3px">${r.cause||''}</div></td><td><div style="font-size:11px;color:var(--text3)">احتمالية</div><div class="pi-bar"><div style="width:${pw[r.probability]||'50%'}" class="${fc[r.probability]||'pi-fill-med'}"></div></div><div style="font-size:11px;color:var(--text3);margin-top:4px">تأثير</div><div class="pi-bar"><div style="width:${pw[r.impact]||'50%'}" class="${fc[r.impact]||'pi-fill-med'}"></div></div></td><td><span class="risk-badge ${lc[r.level]}">${ll[r.level]}</span></td><td><div class="mitigation-text">${r.mitigation}</div></td><td style="font-size:12px;color:var(--text2)">${r.owner||'—'}</td></tr>`).join('');
-  document.getElementById('risksContent').innerHTML=`${p.summary?`<div class="alert-info"><span>ℹ️</span><span>${p.summary}</span></div>`:''}<div class="table-wrapper"><table class="risk-table"><thead><tr><th>الرقم</th><th>الفئة</th><th>المخاطرة</th><th>الاحتمالية/التأثير</th><th>المستوى</th><th>خطة التخفيف</th><th>المسؤول</th></tr></thead><tbody>${rows}</tbody></table></div><div class="export-bar"><button class="btn btn-ghost" onclick="exportRisks()">📊 تصدير CSV</button><span style="font-size:12px;color:var(--text3)">${p.risks.length} مخاطرة · ${p.analyzedAt||''}</span></div>`;
+  const lc={high:'risk-high',med:'risk-med',low:'risk-low'},ll={high:'عالي',med:'متوسط',low:'منخفض'};
+  const rows=p.risks.map(r=>`
+    <tr class="risk-row-${r.level}">
+      <td><div class="risk-id">${r.id}</div></td>
+      <td><span class="risk-category">${r.category}</span></td>
+      <td><div style="color:var(--text);font-size:13px;">${r.description}</div><div style="font-size:11px;color:var(--text3);margin-top:3px">${r.cause||''}</div></td>
+      <td style="text-align:center;"><span style="font-size:14px;font-weight:600;">${r.probability}</span><div style="font-size:10px;color:var(--text3);">${PROB_LABELS[r.probability]||''}</div></td>
+      <td><div style="font-size:11px;display:flex;flex-direction:column;gap:3px;min-width:110px;">
+        <div>💰 ${r.impact_cost||'—'} ${IMP_LABELS[r.impact_cost]?'— '+IMP_LABELS[r.impact_cost]:''}</div>
+        <div>📅 ${r.impact_schedule||'—'} ${IMP_LABELS[r.impact_schedule]?'— '+IMP_LABELS[r.impact_schedule]:''}</div>
+        <div>🦺 ${r.impact_qhse||'—'} ${IMP_LABELS[r.impact_qhse]?'— '+IMP_LABELS[r.impact_qhse]:''}</div>
+        <div>🏆 ${r.impact_reputation||'—'} ${IMP_LABELS[r.impact_reputation]?'— '+IMP_LABELS[r.impact_reputation]:''}</div>
+      </div></td>
+      <td><span class="risk-badge ${lc[r.level]}">${ll[r.level]||r.level}</span></td>
+      <td><div class="mitigation-text">${r.mitigation}</div></td>
+      <td style="font-size:12px;color:var(--text2)">${r.owner||'—'}</td>
+    </tr>`).join('');
+  document.getElementById('risksContent').innerHTML=`
+    ${p.summary?`<div class="alert-info"><span>ℹ️</span><span>${p.summary}</span></div>`:''}
+    <div class="table-wrapper"><table class="risk-table"><thead><tr><th>الرقم</th><th>الفئة</th><th>المخاطرة</th><th>الاحتمالية</th><th>التأثير</th><th>المستوى</th><th>خطة التخفيف</th><th>المسؤول</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="export-bar"><button class="btn btn-ghost" onclick="exportRisks()">📊 تصدير CSV</button><span style="font-size:12px;color:var(--text3)">${p.risks.length} مخاطرة · ${p.analyzedAt||''}</span></div>`;
 }
 
-function selectUpdateType(btn,type){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');currentUpdateType=type;}
+// Updates
+function selectUpdateType(btn,type){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');currentUpdateType=type;
+}
 
 async function addUpdate(){
   const text=document.getElementById('updateText').value.trim();
-  if(!text){alert('يرجى كتابة تفاصيل التحديث');return;}
+  const fileDesc=document.getElementById('updateFileDesc').value.trim();
+  if(!text&&!updateFiles.length){alert('يرجى كتابة تفاصيل التحديث أو رفع ملف');return;}
   const p=projects.find(x=>x.id===currentProjectId);
   const tl={change_order:'أمر تغيير',delay:'تأخير',scope:'تغيير نطاق',site:'مستجد ميداني',contract:'تعديل عقدي',note:'ملاحظة'};
   const existing=(p.risks||[]).map(r=>`${r.id}: ${r.description}`).join('\n');
   showLoading('جاري تحليل التحديث...');
+
+  const parts=[{type:'text',text:`خبير مخاطر إنشاء. المشروع: ${p.name}
+المخاطر الحالية:\n${existing||'لا يوجد'}
+التحديث (${tl[currentUpdateType]}): ${text}
+${fileDesc?'الملف المرفق: '+fileDesc:''}
+أعد JSON فقط:
+{"analysis":"تحليل موجز للتأثير على المشروع","new_risks":[{"id":"R${String((p.risks||[]).length+1).padStart(3,'0')}","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","mitigation":"","owner":""}]}`}];
+
+  for(const f of updateFiles){
+    const ext=f.name.split('.').pop().toLowerCase();
+    if(['png','jpg','jpeg'].includes(ext))parts.push({type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:f.dataUrl.split(',')[1]}});
+    else if(ext==='pdf')parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.dataUrl.split(',')[1]}});
+  }
+
   try{
-    const data=await callAPI({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`خبير مخاطر إنشاء. المشروع: ${p.name}\nالمخاطر الحالية:\n${existing||'لا يوجد'}\nالتحديث (${tl[currentUpdateType]}): ${text}\nأعد JSON فقط:\n{"analysis":"تحليل موجز","new_risks":[{"id":"R${String((p.risks||[]).length+1).padStart(3,'0')}","category":"","description":"","cause":"","probability":"عالي","impact":"عالي","level":"high","mitigation":"","owner":""}]}`}]});
+    const data=await callAPI({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:parts}]});
     hideLoading();
     if(data.error){alert('خطأ: '+data.error.message);return;}
-    let parsed;try{parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());}catch(e){parsed={analysis:data.content[0].text,new_risks:[]};}
+    let parsed;
+    try{parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());}catch(e){parsed={analysis:data.content[0].text,new_risks:[]};}
     if(parsed.new_risks?.length)p.risks=[...(p.risks||[]),...parsed.new_risks];
     p.updates=p.updates||[];
-    p.updates.unshift({id:Date.now(),type:currentUpdateType,typeLabel:tl[currentUpdateType],text,analysis:parsed.analysis||'',newRisksCount:(parsed.new_risks||[]).length,date:new Date().toLocaleString('ar-SA')});
+    p.updates.unshift({id:Date.now(),type:currentUpdateType,typeLabel:tl[currentUpdateType],text,fileDesc,filesCount:updateFiles.length,analysis:parsed.analysis||'',newRisksCount:(parsed.new_risks||[]).length,date:new Date().toLocaleString('ar-SA')});
     saveProjects();renderProjects();updateStats();renderRisks();renderUpdates();
     document.getElementById('updateText').value='';
+    document.getElementById('updateFileDesc').value='';
+    updateFiles=[];renderUpdatePreview();
   }catch(e){hideLoading();alert('خطأ: '+e.message);}
 }
 
@@ -408,7 +696,17 @@ function renderUpdates(){
   const updates=p?.updates||[],tl=document.getElementById('updatesTimeline');
   if(!updates.length){tl.innerHTML=`<div class="empty-state" style="padding:30px"><div class="empty-icon">🕐</div><div class="empty-title">لا توجد تحديثات</div></div>`;return;}
   const dc={change_order:'dot-change',delay:'dot-risk',scope:'dot-risk',site:'dot-update',contract:'dot-change',note:'dot-note'};
-  tl.innerHTML=updates.map(u=>`<div class="timeline-item"><div class="timeline-dot ${dc[u.type]||'dot-note'}"></div><div class="timeline-content"><div class="timeline-header"><span class="timeline-type">${u.typeLabel}</span><span class="timeline-date">${u.date}</span></div><div class="timeline-text">${u.text}</div>${u.analysis?`<div style="margin-top:8px;font-size:12px;color:var(--text2);border-top:1px solid var(--border);padding-top:8px">📊 ${u.analysis}</div>`:''} ${u.newRisksCount>0?`<div class="new-risks-alert">⚠️ تم إضافة ${u.newRisksCount} مخاطرة للسجل</div>`:''}</div></div>`).join('');
+  tl.innerHTML=updates.map(u=>`
+    <div class="timeline-item">
+      <div class="timeline-dot ${dc[u.type]||'dot-note'}"></div>
+      <div class="timeline-content">
+        <div class="timeline-header"><span class="timeline-type">${u.typeLabel}</span><span class="timeline-date">${u.date}</span></div>
+        ${u.text?`<div class="timeline-text">${u.text}</div>`:''}
+        ${u.filesCount?`<div style="font-size:11px;color:var(--text3);margin-top:4px;">📎 ${u.filesCount} ملف مرفق${u.fileDesc?' — '+u.fileDesc:''}</div>`:''}
+        ${u.analysis?`<div style="margin-top:8px;font-size:12px;color:var(--text2);border-top:1px solid var(--border);padding-top:8px">📊 ${u.analysis}</div>`:''}
+        ${u.newRisksCount>0?`<div class="new-risks-alert">⚠️ تم إضافة ${u.newRisksCount} مخاطرة للسجل</div>`:''}
+      </div>
+    </div>`).join('');
 }
 
 function updateStats(){
@@ -422,8 +720,8 @@ function updateStats(){
 function exportRisks(){
   const p=projects.find(x=>x.id===currentProjectId);
   if(!p?.risks?.length){alert('لا توجد مخاطر للتصدير');return;}
-  const h=['الرقم','الفئة','الوصف','السبب','الاحتمالية','التأثير','المستوى','خطة التخفيف','المسؤول'];
-  const rows=p.risks.map(r=>[r.id,r.category,r.description,r.cause||'',r.probability,r.impact,r.level==='high'?'عالي':r.level==='med'?'متوسط':'منخفض',r.mitigation,r.owner||''].map(v=>`"${v}"`).join(','));
+  const h=['الرقم','الفئة','الوصف','السبب','الاحتمالية','تأثير التكلفة','تأثير الجدول','تأثير QHSE','تأثير السمعة','المستوى','خطة التخفيف','المسؤول'];
+  const rows=p.risks.map(r=>[r.id,r.category,r.description,r.cause||'',PROB_LABELS[r.probability]||r.probability,IMP_LABELS[r.impact_cost]||r.impact_cost,IMP_LABELS[r.impact_schedule]||r.impact_schedule,IMP_LABELS[r.impact_qhse]||r.impact_qhse,IMP_LABELS[r.impact_reputation]||r.impact_reputation,r.level==='high'?'عالي':r.level==='med'?'متوسط':'منخفض',r.mitigation,r.owner||''].map(v=>`"${v}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`مخاطر_${p.name}.csv`;a.click();
 }
