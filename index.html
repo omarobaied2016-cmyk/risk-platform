@@ -1,292 +1,272 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" id="htmlRoot">
+<html lang="en" dir="ltr" id="htmlRoot">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Risk Intelligence Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
-  --bg:#0a0e13;--surface:#111720;--surface2:#1a2130;--surface3:#212d3d;
-  --border:#1e2d42;--border2:#2a3f58;
-  --text:#d4dce8;--text2:#7a91a8;--text3:#4a5f75;
-  --accent:#1a6ee8;--accent2:#1558c0;
-  --red:#e05252;--yellow:#d4a017;--green:#2e9e5b;--blue:#1a6ee8;--teal:#0e8f8f;
-  --threat:#e05252;--opportunity:#2e9e5b;
+  --bg:#090d12;--s1:#0f1823;--s2:#172030;--s3:#1f2c3e;
+  --b1:#1c2d42;--b2:#243650;--b3:#2e4460;
+  --t1:#cdd8e8;--t2:#7a92ab;--t3:#4a6070;
+  --acc:#1e73e8;--acc2:#1558c0;
+  --red:#e05252;--org:#d4780a;--yel:#c9a020;--grn:#2a9e5b;--teal:#0a8f8f;--pur:#8855dd;
   --font-ar:'IBM Plex Sans Arabic',sans-serif;
   --font-en:'IBM Plex Sans',sans-serif;
   --mono:'IBM Plex Mono',monospace;
-  --font:var(--font-ar);
-  --radius:6px;
+  --r:6px;
 }
-[data-lang="en"]{--font:var(--font-en);}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13.5px;line-height:1.65;}
+body{font-family:var(--font-en);background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;line-height:1.6;}
+[lang="ar"] body,[lang="ar"] .lang-apply{font-family:var(--font-ar);}
 
-/* Header */
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
-.brand{display:flex;align-items:center;gap:10px;}
-.brand-name{font-size:14px;font-weight:600;color:var(--text);letter-spacing:.02em;}
-.brand-tag{font-size:10px;font-weight:500;color:var(--accent);background:rgba(26,110,232,.1);padding:2px 8px;border-radius:20px;border:1px solid rgba(26,110,232,.2);}
-.header-actions{display:flex;align-items:center;gap:8px;}
-.lang-toggle{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:5px 12px;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s;}
-.lang-toggle:hover{border-color:var(--accent);color:var(--accent);}
+/* ── Layout ── */
+.header{background:var(--s1);border-bottom:1px solid var(--b1);height:50px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-size:13.5px;font-weight:600;letter-spacing:.02em;color:var(--t1);}
+.brand-pill{font-size:9.5px;font-weight:600;background:rgba(30,115,232,.12);color:var(--acc);border:1px solid rgba(30,115,232,.2);padding:2px 8px;border-radius:20px;margin-inline-start:8px;letter-spacing:.06em;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.api-bar{background:var(--s1);border-bottom:1px solid var(--b1);padding:6px 24px;display:flex;align-items:center;gap:10px;}
+.api-label{font-size:11px;font-weight:500;color:var(--t3);white-space:nowrap;}
+.api-inp{width:280px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:5px 10px;color:var(--t1);font-family:var(--mono);font-size:11px;outline:none;}
+.api-inp:focus{border-color:var(--acc);}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--b3);flex-shrink:0;}
+.conn-dot.on{background:var(--grn);}
+.conn-lbl{font-size:11px;color:var(--t3);}
+.conn-lbl.on{color:var(--grn);}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 78px);}
+.sidebar{background:var(--s1);border-inline-end:1px solid var(--b1);padding:12px;overflow-y:auto;}
+.sb-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);padding:0 8px;margin-bottom:8px;}
+.proj-item{padding:8px 10px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:3px;transition:background .12s;}
+.proj-item:hover{background:var(--s2);}
+.proj-item.active{background:var(--s2);border-color:var(--b2);}
+.proj-name{font-size:12.5px;font-weight:500;color:var(--t1);margin-bottom:2px;}
+.proj-sub{font-size:10.5px;color:var(--t3);}
+.main{overflow-y:auto;padding:22px 26px;}
 
-/* API Bar */
-.api-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 28px;display:flex;align-items:center;gap:10px;font-size:12px;}
-.api-bar label{color:var(--text3);white-space:nowrap;font-weight:500;}
-.api-input{width:300px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;}
-.api-input:focus{border-color:var(--accent);}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);}
-.status-dot.active{background:var(--green);}
-.status-label{font-size:11px;color:var(--text3);}
-.status-label.active{color:var(--green);}
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid var(--b2);font-family:inherit;transition:all .12s;white-space:nowrap;}
+.btn-primary{background:var(--acc);border-color:var(--acc);color:#fff;}
+.btn-primary:hover{background:var(--acc2);}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--t2);}
+.btn-ghost:hover{background:var(--s2);color:var(--t1);}
+.btn-ok{background:rgba(42,158,91,.1);border-color:rgba(42,158,91,.25);color:var(--grn);}
+.btn-ok:hover{background:rgba(42,158,91,.18);}
+.btn-del{background:transparent;border-color:rgba(224,82,82,.25);color:var(--red);}
+.btn-del:hover{background:rgba(224,82,82,.08);}
+.btn-warn{background:rgba(201,160,32,.1);border-color:rgba(201,160,32,.25);color:var(--yel);}
+.lang-btn{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 12px;color:var(--t2);font-size:11.5px;cursor:pointer;font-family:inherit;}
+.lang-btn:hover{border-color:var(--acc);color:var(--acc);}
 
-/* Layout */
-.layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 86px);}
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--b1);margin-bottom:20px;gap:2px;}
+.tab{padding:7px 14px;font-size:12.5px;font-weight:500;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;white-space:nowrap;}
+.tab:hover{color:var(--t2);}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);}
+.pane{display:none;}
+.pane.on{display:block;}
 
-/* Sidebar */
-.sidebar{background:var(--surface);border-inline-start:1px solid var(--border);padding:12px;overflow-y:auto;}
-.sidebar-section{margin-bottom:20px;}
-.sidebar-heading{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:0 8px;margin-bottom:6px;}
-.project-item{padding:9px 10px;border-radius:var(--radius);cursor:pointer;transition:background .12s;border:1px solid transparent;margin-bottom:3px;}
-.project-item:hover{background:var(--surface2);}
-.project-item.active{background:var(--surface2);border-color:var(--border2);}
-.project-item-name{font-size:12.5px;font-weight:500;margin-bottom:2px;color:var(--text);}
-.project-item-meta{font-size:11px;color:var(--text3);}
-.risk-pill{display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:500;}
-.pill-high{background:rgba(224,82,82,.12);color:var(--red);}
-.pill-med{background:rgba(212,160,23,.12);color:var(--yellow);}
-.pill-low{background:rgba(46,158,91,.12);color:var(--green);}
-.pill-opp{background:rgba(14,143,143,.12);color:var(--teal);}
+/* ── Forms ── */
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fl{font-size:11px;font-weight:500;color:var(--t3);}
+.fi,.fs,.fta{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:7px 10px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--acc);}
+.fta{resize:vertical;min-height:72px;}
+.fs option{background:var(--s2);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.fgrid .full{grid-column:1/-1;}
 
-/* Main */
-.main{overflow-y:auto;padding:24px 28px;}
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
+.stat{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 15px;}
+.stat-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:7px;}
+.stat-val{font-size:22px;font-weight:700;line-height:1;}
 
-/* Tabs */
-.tabs{display:flex;gap:1px;border-bottom:1px solid var(--border);margin-bottom:22px;}
-.tab{padding:8px 16px;font-size:12.5px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;margin-bottom:-1px;white-space:nowrap;}
-.tab:hover{color:var(--text2);}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.tab-pane{display:none;}
-.tab-pane.active{display:block;}
-
-/* Cards & Surfaces */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
-.card-body{padding:16px;}
-.section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
-
-/* Stats */
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
-.stat-label{font-size:10.5px;color:var(--text3);font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
-.stat-value{font-size:22px;font-weight:600;line-height:1.1;}
-.stat-sub{font-size:10.5px;color:var(--text3);margin-top:3px;}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .12s;border:1px solid var(--border);font-family:var(--font);}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-.btn-primary:hover{background:var(--accent2);}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
-.btn-ghost{background:transparent;color:var(--text2);}
-.btn-ghost:hover{background:var(--surface2);color:var(--text);}
-.btn-success{background:rgba(46,158,91,.12);border-color:rgba(46,158,91,.25);color:var(--green);}
-.btn-success:hover{background:rgba(46,158,91,.2);}
-.btn-danger{background:transparent;border-color:rgba(224,82,82,.25);color:var(--red);}
-.btn-danger:hover{background:rgba(224,82,82,.08);}
-.btn-warning{background:rgba(212,160,23,.1);border-color:rgba(212,160,23,.25);color:var(--yellow);}
-.btn-warning:hover{background:rgba(212,160,23,.18);}
-
-/* Forms */
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
-.form-group{display:flex;flex-direction:column;gap:5px;}
-.form-group.full{grid-column:1/-1;}
-.form-label{font-size:11px;font-weight:500;color:var(--text3);}
-.form-input,.form-select,.form-textarea{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12.5px;outline:none;transition:border-color .12s;}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
-.form-textarea{resize:vertical;min-height:76px;}
-.form-select option{background:var(--surface2);}
-
-/* Table */
-.table-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto;}
-.rt{width:100%;border-collapse:collapse;font-size:12.5px;}
-.rt th{background:var(--surface2);padding:9px 12px;text-align:start;font-weight:500;color:var(--text3);font-size:11.5px;border-bottom:1px solid var(--border);white-space:nowrap;}
-.rt td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+/* ── Table ── */
+.tw{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;overflow-x:auto;}
+.rt{width:100%;border-collapse:collapse;font-size:12px;}
+.rt th{background:var(--s2);padding:8px 11px;text-align:start;font-weight:500;color:var(--t3);font-size:11px;border-bottom:1px solid var(--b1);white-space:nowrap;}
+.rt td{padding:10px 11px;border-bottom:1px solid var(--b1);vertical-align:top;}
 .rt tr:last-child td{border-bottom:none;}
-.rt tr:hover td{background:rgba(255,255,255,.015);}
-.rt .threat-row td:first-child{border-inline-start:2px solid var(--red);}
-.rt .opportunity-row td:first-child{border-inline-start:2px solid var(--teal);}
-.risk-type-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;letter-spacing:.03em;}
-.type-threat{background:rgba(224,82,82,.1);color:var(--red);}
-.type-opportunity{background:rgba(14,143,143,.1);color:var(--teal);}
-.cat-badge{padding:2px 7px;border-radius:3px;font-size:11px;background:var(--surface3);color:var(--text2);}
-.response-badge{padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:500;}
-.resp-avoid{background:rgba(224,82,82,.1);color:var(--red);}
-.resp-mitigate{background:rgba(212,160,23,.1);color:var(--yellow);}
-.resp-transfer{background:rgba(26,110,232,.1);color:var(--blue);}
-.resp-accept{background:rgba(122,145,168,.1);color:var(--text2);}
-.resp-escalate{background:rgba(188,100,255,.1);color:#bc64ff;}
-.resp-exploit{background:rgba(14,143,143,.1);color:var(--teal);}
-.resp-enhance{background:rgba(46,158,91,.1);color:var(--green);}
-.resp-share{background:rgba(26,110,232,.1);color:var(--blue);}
-.impact-col{font-size:11px;display:flex;flex-direction:column;gap:2px;min-width:100px;}
-.impact-row{display:flex;align-items:center;gap:5px;}
-.impact-bar{width:40px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
-.impact-fill{height:100%;border-radius:2px;}
+.rt tr:hover td{background:rgba(255,255,255,.012);}
+.rt .thr td:first-child{border-inline-start:2px solid var(--red);}
+.rt .opp td:first-child{border-inline-start:2px solid var(--teal);}
 
-/* Upload */
-.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:32px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface);position:relative;}
-.upload-zone:hover{border-color:var(--accent);background:rgba(26,110,232,.03);}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.upload-title{font-size:13.5px;font-weight:500;margin-bottom:4px;}
-.upload-sub{font-size:11.5px;color:var(--text3);}
-.files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:16px;}
-.file-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;position:relative;}
-.file-ext{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-bottom:6px;display:inline-block;letter-spacing:.05em;}
-.ext-pdf{background:rgba(224,82,82,.12);color:var(--red);}
-.ext-xlsx{background:rgba(46,158,91,.12);color:var(--green);}
-.ext-img{background:rgba(26,110,232,.12);color:var(--blue);}
-.ext-doc{background:rgba(14,143,143,.12);color:var(--teal);}
-.ext-txt{background:rgba(122,145,168,.12);color:var(--text2);}
-.file-name{font-size:11.5px;font-weight:500;word-break:break-all;margin-bottom:3px;}
-.file-size{font-size:10.5px;color:var(--text3);}
-.file-remove{position:absolute;top:7px;inset-inline-end:7px;width:18px;height:18px;background:var(--surface2);border:none;border-radius:3px;color:var(--text3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;}
-.file-remove:hover{background:rgba(224,82,82,.15);color:var(--red);}
+/* ── Badges ── */
+.bdg{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:600;letter-spacing:.03em;}
+.bdg-threat{background:rgba(224,82,82,.1);color:var(--red);}
+.bdg-opp{background:rgba(10,143,143,.1);color:var(--teal);}
+.bdg-high{background:rgba(224,82,82,.1);color:var(--red);}
+.bdg-medium{background:rgba(201,160,32,.1);color:var(--yel);}
+.bdg-low{background:rgba(42,158,91,.1);color:var(--grn);}
+.cat-bdg{padding:2px 7px;border-radius:3px;font-size:11px;background:var(--s3);color:var(--t2);}
+.resp{padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:500;}
+.r-avoid{background:rgba(224,82,82,.1);color:var(--red);}
+.r-mitigate{background:rgba(201,160,32,.1);color:var(--yel);}
+.r-transfer{background:rgba(30,115,232,.1);color:var(--acc);}
+.r-accept{background:rgba(122,145,168,.1);color:var(--t2);}
+.r-escalate{background:rgba(136,85,221,.1);color:var(--pur);}
+.r-exploit{background:rgba(10,143,143,.1);color:var(--teal);}
+.r-enhance{background:rgba(42,158,91,.1);color:var(--grn);}
+.r-share{background:rgba(30,115,232,.1);color:var(--acc);}
+.imp-col{font-size:11px;display:flex;flex-direction:column;gap:3px;min-width:90px;}
+.imp-row{display:flex;align-items:center;gap:5px;}
+.bar{width:36px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;}
 
-/* Update form */
-.update-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:20px;}
-.pills-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-.pill-btn{padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--text3);background:transparent;font-family:var(--font);transition:all .12s;}
-.pill-btn:hover{border-color:var(--accent);color:var(--accent);}
-.pill-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.file-drop{border:1px dashed var(--border2);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;transition:border-color .12s;margin-bottom:10px;background:var(--surface2);}
-.file-drop:hover{border-color:var(--accent);}
-.file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+/* ── Upload ── */
+.drop{border:1.5px dashed var(--b3);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;position:relative;transition:all .15s;background:var(--s1);}
+.drop:hover{border-color:var(--acc);background:rgba(30,115,232,.03);}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-title{font-size:13px;font-weight:500;margin-bottom:4px;}
+.drop-sub{font-size:11.5px;color:var(--t3);}
+.fgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-top:14px;}
+.fc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:11px;position:relative;}
+.fext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:3px;margin-bottom:5px;display:inline-block;}
+.fe-pdf{background:rgba(224,82,82,.1);color:var(--red);}
+.fe-xl{background:rgba(42,158,91,.1);color:var(--grn);}
+.fe-img{background:rgba(30,115,232,.1);color:var(--acc);}
+.fe-doc{background:rgba(10,143,143,.1);color:var(--teal);}
+.fe-txt{background:rgba(122,145,168,.1);color:var(--t2);}
+.fn{font-size:11.5px;font-weight:500;word-break:break-all;margin-bottom:3px;}
+.fs2{font-size:10.5px;color:var(--t3);}
+.frem{position:absolute;top:6px;inset-inline-end:6px;width:18px;height:18px;background:var(--s2);border:none;border-radius:3px;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;}
+.frem:hover{background:rgba(224,82,82,.15);color:var(--red);}
 
-/* Timeline */
-.timeline{position:relative;}
-.timeline::before{content:'';position:absolute;inset-inline-end:14px;top:0;bottom:0;width:1px;background:var(--border);}
-.tl-item{display:flex;gap:14px;margin-bottom:16px;padding-inline-end:36px;position:relative;}
-.tl-dot{position:absolute;inset-inline-end:7px;top:5px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);}
-.dot-co{background:var(--blue);}
-.dot-delay{background:var(--red);}
-.dot-scope{background:var(--yellow);}
-.dot-site{background:var(--green);}
-.dot-contract{background:var(--teal);}
-.dot-note{background:var(--text3);}
-.tl-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
-.tl-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
-.tl-type{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);}
-.tl-date{font-size:10.5px;color:var(--text3);font-family:var(--mono);}
-.tl-text{font-size:12.5px;color:var(--text2);line-height:1.55;}
-.new-risk-alert{margin-top:8px;padding:8px 10px;background:rgba(224,82,82,.06);border:1px solid rgba(224,82,82,.15);border-radius:4px;font-size:11.5px;color:var(--red);}
+/* ── Update form ── */
+.uform{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;margin-bottom:18px;}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.pill{padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:transparent;font-family:inherit;transition:all .12s;}
+.pill:hover{border-color:var(--acc);color:var(--acc);}
+.pill.on{background:var(--acc);border-color:var(--acc);color:#fff;}
+.fdrop{border:1px dashed var(--b3);border-radius:var(--r);padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2);}
+.fdrop:hover{border-color:var(--acc);}
+.fdrop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 
-/* Tolerance */
-.tol-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
-.tol-title{font-size:12.5px;font-weight:600;margin-bottom:10px;color:var(--text);}
+/* ── Timeline ── */
+.tl{position:relative;}
+.tl::before{content:'';position:absolute;inset-inline-end:13px;top:0;bottom:0;width:1px;background:var(--b1);}
+.tli{display:flex;gap:12px;margin-bottom:14px;padding-inline-end:34px;position:relative;}
+.tld{position:absolute;inset-inline-end:6px;top:5px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);}
+.dc{background:var(--acc);}
+.dd{background:var(--red);}
+.ds{background:var(--yel);}
+.dsi{background:var(--grn);}
+.dco{background:var(--teal);}
+.dn{background:var(--t3);}
+.tlc{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:11px 13px;}
+.tlh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.tlt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);}
+.tld2{font-size:10.5px;color:var(--t3);font-family:var(--mono);}
+.tlb{font-size:12.5px;color:var(--t2);line-height:1.55;}
+.nra{margin-top:8px;padding:7px 10px;background:rgba(224,82,82,.06);border:1px solid rgba(224,82,82,.14);border-radius:4px;font-size:11.5px;color:var(--red);}
+
+/* ── Dashboard ── */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
+.dash-wide{grid-column:1/-1;}
+.dash-2{grid-column:span 2;}
+.chart-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;}
+.chart-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:12px;}
+.mini-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.mini-stat{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;}
+.ms-label{font-size:10.5px;color:var(--t3);}
+.ms-val{font-size:16px;font-weight:700;}
+
+/* ── Matrix ── */
+.matrix-wrap{display:flex;align-items:flex-start;gap:6px;}
+.matrix-y-label{writing-mode:vertical-lr;transform:rotate(180deg);font-size:10px;color:var(--t3);align-self:center;}
+.matrix-inner{flex:1;}
+.matrix-x-label{font-size:10px;color:var(--t3);text-align:center;margin-top:4px;}
+.mg{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;}
+.mc{height:28px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.8);}
+
+/* ── Tolerance ── */
+.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:10px;}
+.tol-title{font-size:12.5px;font-weight:600;margin-bottom:10px;color:var(--t1);}
 .tol-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.tol-level{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:4px;border:1px solid var(--border);margin-bottom:5px;}
-.tol-level input[type=text]{background:transparent;border:none;color:var(--text2);font-family:var(--font);font-size:12px;flex:1;outline:none;}
-.tol-level-label{font-size:10.5px;font-weight:600;min-width:110px;white-space:nowrap;}
+.tol-lv{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s2);border-radius:4px;border:1px solid var(--b1);margin-bottom:5px;}
+.tol-lv input{background:transparent;border:none;color:var(--t2);font-family:inherit;font-size:12px;flex:1;outline:none;}
+.tol-lbl{font-size:10.5px;font-weight:600;min-width:100px;white-space:nowrap;}
 
-/* Validation overlay */
-.val-overlay{display:none;position:fixed;inset:0;background:rgba(8,12,18,.92);z-index:500;overflow-y:auto;padding:20px;}
-.val-overlay.show{display:block;}
-.val-box{max-width:880px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px;}
-.val-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);gap:10px;}
-.val-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:all .15s;}
-.val-card.approved{border-color:rgba(46,158,91,.35);background:rgba(46,158,91,.03);}
-.val-card.rejected{opacity:.3;border-style:dashed;}
-.val-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px;}
-.val-actions{display:flex;gap:5px;flex-shrink:0;}
-.chip{padding:2px 8px;border-radius:3px;font-size:11px;background:var(--surface2);color:var(--text2);}
+/* ── Validation ── */
+.val-ov{display:none;position:fixed;inset:0;background:rgba(8,12,18,.92);z-index:500;overflow-y:auto;padding:18px;}
+.val-ov.on{display:block;}
+.val-box{max-width:860px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:20px;}
+.val-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b1);gap:10px;}
+.vc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:9px;transition:all .15s;}
+.vc.app2{border-color:rgba(42,158,91,.3);background:rgba(42,158,91,.03);}
+.vc.rej{opacity:.28;border-style:dashed;}
+.vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px;}
+.vca{display:flex;gap:5px;flex-shrink:0;}
+.chip{padding:2px 7px;border-radius:3px;font-size:11px;background:var(--s2);color:var(--t2);}
 
-/* Dashboard */
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-.dash-full{grid-column:1/-1;}
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
-.chart-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;}
-.matrix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;}
-.matrix-cell{height:32px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;cursor:default;}
-.matrix-label{font-size:10px;color:var(--text3);text-align:center;padding:2px;}
+/* ── EW ── */
+.ew-card{border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:9px;}
+.ew-h{border-color:rgba(224,82,82,.28);background:rgba(224,82,82,.04);}
+.ew-m{border-color:rgba(201,160,32,.28);background:rgba(201,160,32,.04);}
+.ew-l{border-color:rgba(42,158,91,.28);background:rgba(42,158,91,.04);}
+.ew-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
+.ew-title{font-size:12.5px;font-weight:500;}
+.wbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;}
+.wb1{background:rgba(224,82,82,.12);color:var(--red);}
+.wb2{background:rgba(201,160,32,.12);color:var(--yel);}
+.wb3{background:rgba(122,145,168,.12);color:var(--t2);}
+.no-sched{text-align:center;padding:40px 20px;}
+.no-sched h3{font-size:13.5px;font-weight:500;color:var(--t2);margin-bottom:8px;}
+.no-sched p{font-size:12px;color:var(--t3);line-height:1.7;max-width:420px;margin:0 auto 16px;}
 
-/* Early Warning */
-.ew-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
-.ew-high{border-color:rgba(224,82,82,.3);background:rgba(224,82,82,.04);}
-.ew-med{border-color:rgba(212,160,23,.3);background:rgba(212,160,23,.04);}
-.ew-low{border-color:rgba(46,158,91,.3);background:rgba(46,158,91,.04);}
-.ew-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-.ew-title{font-size:13px;font-weight:500;color:var(--text);}
-.ew-body{font-size:12px;color:var(--text2);line-height:1.55;}
-.ew-action{margin-top:8px;font-size:11.5px;color:var(--text3);font-style:italic;}
-.week-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;}
-.week-1{background:rgba(224,82,82,.1);color:var(--red);}
-.week-2{background:rgba(212,160,23,.1);color:var(--yellow);}
-.no-schedule-msg{text-align:center;padding:40px 20px;color:var(--text3);}
-.no-schedule-msg h3{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:6px;}
-
-/* Project header */
-.project-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-.ph-name{font-size:17px;font-weight:600;margin-bottom:3px;}
-.ph-meta{font-size:12px;color:var(--text3);}
-
-/* Alerts */
-.alert{padding:10px 14px;border-radius:var(--radius);font-size:12.5px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;}
-.alert-info{background:rgba(26,110,232,.06);border:1px solid rgba(26,110,232,.15);color:#6aabff;}
-.alert-success{background:rgba(46,158,91,.06);border:1px solid rgba(46,158,91,.15);color:#5ec98a;}
-
-/* Loading */
-.loading-overlay{display:none;position:fixed;inset:0;background:rgba(8,12,18,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
-.loading-overlay.show{display:flex;}
-.spinner{width:36px;height:36px;border:2.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+/* ── Misc ── */
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--b1);}
+.ph-name{font-size:16px;font-weight:700;margin-bottom:3px;}
+.ph-sub{font-size:11.5px;color:var(--t3);}
+.alert-i{padding:9px 13px;border-radius:var(--r);font-size:12.5px;margin-bottom:13px;display:flex;gap:8px;}
+.ai-info{background:rgba(30,115,232,.06);border:1px solid rgba(30,115,232,.14);color:#6aabff;}
+.ai-ok{background:rgba(42,158,91,.06);border:1px solid rgba(42,158,91,.14);color:#5ec98a;}
+.ebar{display:flex;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--b1);margin-top:18px;}
+.empty{text-align:center;padding:45px 20px;color:var(--t3);}
+.empty-t{font-size:13.5px;font-weight:500;color:var(--t2);margin-bottom:5px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.load-ov{display:none;position:fixed;inset:0;background:rgba(8,12,18,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+.load-ov.on{display:flex;}
+.spin{width:34px;height:34px;border:2.5px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.loading-text{color:var(--text3);font-size:13px;}
-
-/* Misc */
-.empty-state{text-align:center;padding:50px 20px;color:var(--text3);}
-.empty-title{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:5px;}
-.export-bar{display:flex;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--border);margin-top:20px;}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.load-t{color:var(--t3);font-size:12.5px;}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(8,12,18,.75);z-index:200;align-items:center;justify-content:center;}
+.modal-ov.on{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:22px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal-t{font-size:14.5px;font-weight:600;margin-bottom:16px;}
+.welcome{max-width:500px;margin:65px auto;text-align:center;}
+.welcome h1{font-size:19px;font-weight:700;margin-bottom:9px;}
+.welcome p{color:var(--t3);font-size:12.5px;line-height:1.75;margin-bottom:26px;}
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
-
-/* Welcome */
-.welcome{max-width:520px;margin:70px auto;text-align:center;}
-.welcome h1{font-size:20px;font-weight:600;margin-bottom:10px;}
-.welcome p{color:var(--text3);line-height:1.7;margin-bottom:28px;font-size:13px;}
-
-/* Modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,12,18,.75);z-index:200;align-items:center;justify-content:center;}
-.modal-overlay.show{display:flex;}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;width:560px;max-width:95vw;max-height:92vh;overflow-y:auto;}
-.modal-title{font-size:15px;font-weight:600;margin-bottom:18px;}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:3px;}
+.section-sep{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;display:flex;align-items:center;gap:8px;}
+.section-sep::after{content:'';flex:1;height:1px;background:var(--b1);}
 </style>
 </head>
 <body>
 
 <!-- Loading -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">Processing...</div>
-</div>
+<div class="load-ov" id="loadOv"><div class="spin"></div><div class="load-t" id="loadT">Processing...</div></div>
 
-<!-- Validation Overlay -->
-<div class="val-overlay" id="valOverlay">
+<!-- Validation -->
+<div class="val-ov" id="valOv">
   <div class="val-box">
-    <div class="val-header">
+    <div class="val-hdr">
       <div>
-        <div style="font-size:16px;font-weight:600;" id="valTitle">Review & Approve Risks</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:3px;" id="valSub">Review each risk before saving to register</div>
+        <div style="font-size:15px;font-weight:700;" id="valTitle">Review & Approve Risks</div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:3px;" id="valSub">Review each identified risk before saving to the register</div>
       </div>
       <div style="display:flex;gap:7px;align-items:center;flex-shrink:0;">
-        <span style="font-size:12px;color:var(--text3);" id="valCounter">0/0</span>
-        <button class="btn btn-success" onclick="approveAll()" id="btnApproveAll">Approve All</button>
-        <button class="btn btn-primary" onclick="confirmValidation()" id="btnSaveReg">Save Register</button>
+        <span style="font-size:12px;color:var(--t3);" id="valCtr">0/0</span>
+        <button class="btn btn-ok" onclick="approveAll()" id="btnApAll">Approve All</button>
+        <button class="btn btn-primary" onclick="confirmVal()" id="btnSaveReg">Save Register</button>
       </div>
     </div>
     <div id="valList"></div>
@@ -295,203 +275,217 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <!-- Header -->
 <div class="header">
-  <div class="brand">
-    <div class="brand-name" id="brandName">Risk Intelligence</div>
-    <div class="brand-tag" id="brandTag">AI-Powered</div>
+  <div style="display:flex;align-items:center;">
+    <span class="brand" id="brandName">Risk Intelligence</span>
+    <span class="brand-pill" id="brandPill">AI-POWERED</span>
   </div>
-  <div class="header-actions">
-    <div style="display:flex;align-items:center;gap:6px;" id="syncIndicator" style="display:none;">
+  <div class="hdr-right">
+    <div style="display:flex;align-items:center;gap:6px;" id="syncInd" style="display:none;">
       <div class="sync-dot"></div>
-      <span style="font-size:11px;color:var(--green);" id="syncLabel">Synced</span>
+      <span style="font-size:11px;color:var(--grn);" id="syncLbl">Synced</span>
     </div>
-    <button class="lang-toggle" onclick="toggleLang()" id="langBtn">English</button>
-    <button class="btn btn-ghost" onclick="openNewProjectModal()" id="btnNewProject">+ New Project</button>
+    <button class="lang-btn" onclick="toggleLang()" id="langBtn">العربية</button>
+    <button class="btn btn-primary" onclick="openModal()" id="btnNew">+ New Project</button>
   </div>
 </div>
 
 <!-- API Bar -->
 <div class="api-bar">
-  <label id="apiLabel">Claude API Key</label>
-  <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-..." oninput="checkApiKey()"/>
-  <div class="status-dot" id="statusDot"></div>
-  <span class="status-label" id="statusLabel" id="statusLabelEl">Not connected</span>
+  <span class="api-label" id="apiLbl">Claude API Key</span>
+  <input type="password" class="api-inp" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()"/>
+  <div class="conn-dot" id="connDot"></div>
+  <span class="conn-lbl" id="connLbl" id="connLblEl">Not connected</span>
 </div>
 
-<!-- Layout -->
-<div class="layout">
+<!-- App -->
+<div class="app">
   <div class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-heading" id="sidebarHeading">Projects</div>
-      <div id="projectsList"><div style="padding:8px;font-size:11px;color:var(--text3);">Loading...</div></div>
-    </div>
+    <div class="sb-head" id="sbHead">Projects</div>
+    <div id="projList"><div style="padding:8px;font-size:11px;color:var(--t3)">Loading...</div></div>
   </div>
 
   <div class="main">
     <!-- Welcome -->
-    <div id="welcomeScreen" class="welcome">
-      <h1 id="welcomeTitle">Risk Intelligence Platform</h1>
-      <p id="welcomeText">Upload your project files — contracts, schedules, drawings, BOQ — and Claude will analyze them to generate a professional, updatable risk register.</p>
-      <button class="btn btn-primary" onclick="openNewProjectModal()" id="welcomeBtn">Create First Project</button>
+    <div id="welcome" class="welcome">
+      <h1 id="wTitle">Risk Intelligence Platform</h1>
+      <p id="wText">Upload your project documents — contracts, schedules, drawings, BOQ — and Claude will analyze them to generate a professional, updatable risk register shared with your team.</p>
+      <button class="btn btn-primary" onclick="openModal()" id="wBtn">Create First Project</button>
     </div>
 
     <!-- Project View -->
-    <div id="projectView" style="display:none;">
-      <div class="project-header">
+    <div id="projView" style="display:none;">
+      <div class="ph">
         <div>
           <div class="ph-name" id="phName">—</div>
-          <div class="ph-meta" id="phMeta">—</div>
+          <div class="ph-sub" id="phSub">—</div>
         </div>
         <div style="display:flex;gap:7px;">
-          <button class="btn btn-ghost" onclick="exportRisks()" id="btnExport">Export CSV</button>
-          <button class="btn btn-danger" onclick="deleteProject()" id="btnDelete">Delete</button>
+          <button class="btn btn-ghost" onclick="exportCSV()" id="btnExport">Export CSV</button>
+          <button class="btn btn-del" onclick="delProject()" id="btnDel">Delete</button>
         </div>
       </div>
 
       <!-- Stats -->
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-label" id="slTotal">Total Risks</div><div class="stat-value" id="statTotal">0</div></div>
-        <div class="stat-card"><div class="stat-label" id="slThreats">Threats</div><div class="stat-value" style="color:var(--red)" id="statThreats">0</div></div>
-        <div class="stat-card"><div class="stat-label" id="slOpps">Opportunities</div><div class="stat-value" style="color:var(--teal)" id="statOpps">0</div></div>
-        <div class="stat-card"><div class="stat-label" id="slHigh">High</div><div class="stat-value" style="color:var(--red)" id="statHigh">0</div></div>
-        <div class="stat-card"><div class="stat-label" id="slAnalyzed">Last Analysis</div><div class="stat-value" style="font-size:13px;padding-top:4px;" id="statDate">—</div></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-lbl" id="slTotal">Total Risks</div><div class="stat-val" id="stTotal">0</div></div>
+        <div class="stat"><div class="stat-lbl" id="slThr">Threats</div><div class="stat-val" style="color:var(--red)" id="stThr">0</div></div>
+        <div class="stat"><div class="stat-lbl" id="slOpp">Opportunities</div><div class="stat-val" style="color:var(--teal)" id="stOpp">0</div></div>
+        <div class="stat"><div class="stat-lbl" id="slHigh">High</div><div class="stat-val" style="color:var(--red)" id="stHigh">0</div></div>
+        <div class="stat"><div class="stat-lbl" id="slDate">Last Analysis</div><div class="stat-val" style="font-size:12px;padding-top:5px;" id="stDate">—</div></div>
       </div>
 
       <!-- Tabs -->
       <div class="tabs">
-        <div class="tab active" onclick="switchTab('upload')" id="tabUpload">Files</div>
-        <div class="tab" onclick="switchTab('dashboard')" id="tabDash">Dashboard</div>
-        <div class="tab" onclick="switchTab('register')" id="tabRegister">Risk Register</div>
-        <div class="tab" onclick="switchTab('warning')" id="tabWarning">Early Warning</div>
-        <div class="tab" onclick="switchTab('updates')" id="tabUpdates">Updates</div>
-        <div class="tab" onclick="switchTab('tolerance')" id="tabTolerance">Risk Appetite</div>
+        <div class="tab on" onclick="switchTab('files')" id="tabFiles">Files</div>
+        <div class="tab" onclick="switchTab('dash')" id="tabDash">Dashboard</div>
+        <div class="tab" onclick="switchTab('reg')" id="tabReg">Risk Register</div>
+        <div class="tab" onclick="switchTab('warn')" id="tabWarn">Early Warning</div>
+        <div class="tab" onclick="switchTab('upd')" id="tabUpd">Updates</div>
+        <div class="tab" onclick="switchTab('tol')" id="tabTol">Risk Appetite</div>
       </div>
 
-      <!-- Upload Tab -->
-      <div class="tab-pane active" id="tab-upload">
-        <div class="upload-zone">
-          <input type="file" id="fileInput" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
-          <div class="upload-title" id="uploadTitle">Drag files here or click to browse</div>
-          <div class="upload-sub" id="uploadSub">PDF · Excel · Word · Drawings · CSV · Primavera export</div>
+      <!-- Files -->
+      <div class="pane on" id="pane-files">
+        <div class="drop">
+          <input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
+          <div class="drop-title" id="dropTitle">Drag files here or click to browse</div>
+          <div class="drop-sub" id="dropSub">PDF · Excel · Word · Drawings · CSV · Primavera export</div>
         </div>
-        <div class="files-grid" id="filesGrid"></div>
-        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
-          <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeProject()" disabled id="btnAnalyze">Analyze & Generate Risk Register</button>
-          <span style="font-size:11.5px;color:var(--text3);" id="fileCountLabel">No files</span>
-        </div>
-      </div>
-
-      <!-- Dashboard Tab -->
-      <div class="tab-pane" id="tab-dashboard">
-        <div id="dashContent">
-          <div class="empty-state"><div class="empty-title" id="dashEmpty">Run analysis first to see dashboard</div></div>
+        <div class="fgrid2" id="fgrid"></div>
+        <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-primary" id="anaBtn" onclick="analyze()" disabled>Analyze & Generate Risk Register</button>
+          <span style="font-size:11.5px;color:var(--t3);" id="fcLbl">No files</span>
         </div>
       </div>
 
-      <!-- Register Tab -->
-      <div class="tab-pane" id="tab-register">
-        <div id="registerContent">
-          <div class="empty-state"><div class="empty-title" id="regEmpty">No risk register yet — upload files and run analysis</div></div>
-        </div>
+      <!-- Dashboard -->
+      <div class="pane" id="pane-dash">
+        <div id="dashContent"><div class="empty"><div class="empty-t" id="dashEmpty">Run analysis to see dashboard</div></div></div>
       </div>
 
-      <!-- Early Warning Tab -->
-      <div class="tab-pane" id="tab-warning">
-        <div id="warningContent">
-          <div class="empty-state"><div class="empty-title" id="ewEmpty">Run analysis first to generate early warnings</div></div>
-        </div>
+      <!-- Register -->
+      <div class="pane" id="pane-reg">
+        <div id="regContent"><div class="empty"><div class="empty-t" id="regEmpty">No risk register yet</div></div></div>
       </div>
 
-      <!-- Updates Tab -->
-      <div class="tab-pane" id="tab-updates">
-        <div class="update-form">
-          <div style="font-size:13px;font-weight:600;margin-bottom:12px;" id="updateFormTitle">Add New Update</div>
-          <div class="pills-row" id="updatePills">
-            <button class="pill-btn active" onclick="selectUpdateType(this,'change_order')" data-label-ar="أمر تغيير" data-label-en="Change Order">Change Order</button>
-            <button class="pill-btn" onclick="selectUpdateType(this,'delay')" data-label-ar="تأخير" data-label-en="Delay">Delay</button>
-            <button class="pill-btn" onclick="selectUpdateType(this,'scope')" data-label-ar="تغيير نطاق" data-label-en="Scope Change">Scope Change</button>
-            <button class="pill-btn" onclick="selectUpdateType(this,'site')" data-label-ar="مستجد ميداني" data-label-en="Site Update">Site Update</button>
-            <button class="pill-btn" onclick="selectUpdateType(this,'contract')" data-label-ar="تعديل عقدي" data-label-en="Contract Amendment">Contract Amendment</button>
-            <button class="pill-btn" onclick="selectUpdateType(this,'note')" data-label-ar="ملاحظة" data-label-en="Note">Note</button>
+      <!-- Early Warning -->
+      <div class="pane" id="pane-warn">
+        <div id="warnContent"><div class="empty"><div class="empty-t" id="warnEmpty">Run analysis to generate early warnings</div></div></div>
+      </div>
+
+      <!-- Updates -->
+      <div class="pane" id="pane-upd">
+        <div class="uform">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:11px;" id="uTitle">Add New Update</div>
+          <div class="pills" id="updPills">
+            <button class="pill on" onclick="setUT(this,'change_order')" data-ar="أمر تغيير" data-en="Change Order">Change Order</button>
+            <button class="pill" onclick="setUT(this,'delay')" data-ar="تأخير" data-en="Delay">Delay</button>
+            <button class="pill" onclick="setUT(this,'scope')" data-ar="تغيير نطاق" data-en="Scope Change">Scope Change</button>
+            <button class="pill" onclick="setUT(this,'site')" data-ar="مستجد ميداني" data-en="Site Update">Site Update</button>
+            <button class="pill" onclick="setUT(this,'contract')" data-ar="تعديل عقدي" data-en="Contract Amendment">Contract Amendment</button>
+            <button class="pill" onclick="setUT(this,'meeting')" data-ar="محضر اجتماع" data-en="Meeting Minutes">Meeting Minutes</button>
+            <button class="pill" onclick="setUT(this,'note')" data-ar="ملاحظة" data-en="Note">Note</button>
           </div>
-          <div class="file-drop">
-            <input type="file" id="updateFileInput" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUpdateFile(event)"/>
-            <div style="font-size:18px;color:var(--text3);">↑</div>
+          <div class="fdrop">
+            <input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)"/>
+            <div style="font-size:18px;color:var(--t3);">↑</div>
             <div>
-              <div style="font-size:12.5px;font-weight:500;" id="fileDropTitle">Attach file (optional)</div>
-              <div style="font-size:11.5px;color:var(--text3);" id="fileDropSub">Meeting minutes · Change order · Subcontract · Correspondence</div>
+              <div style="font-size:12.5px;font-weight:500;" id="fdTitle">Attach file (optional)</div>
+              <div style="font-size:11.5px;color:var(--t3);" id="fdSub">Meeting minutes · Change order · Subcontract · Correspondence</div>
             </div>
           </div>
-          <div id="updateFilesPreview" style="margin-bottom:10px;"></div>
-          <div class="form-group" style="margin-bottom:10px;">
-            <label class="form-label" id="fileDescLabel">File description (optional)</label>
-            <input type="text" class="form-input" id="updateFileDesc" placeholder="e.g. Coordination meeting minutes #12"/>
+          <div id="ufPrev" style="margin-bottom:9px;"></div>
+          <div class="fg" style="margin-bottom:10px;">
+            <label class="fl" id="fdescLbl">File description (optional)</label>
+            <input type="text" class="fi" id="ufdesc" placeholder="e.g. Coordination meeting minutes #12"/>
           </div>
-          <textarea class="form-textarea" id="updateText" style="width:100%;margin-bottom:12px;" id="updateTextArea"></textarea>
-          <button class="btn btn-primary" onclick="addUpdate()" id="btnAddUpdate">Analyze & Add to Register</button>
+          <textarea class="fta" id="utext" style="width:100%;margin-bottom:11px;" placeholder="Describe the update in detail..."></textarea>
+          <button class="btn btn-primary" onclick="addUpdate()" id="btnAddUpd">Analyze & Add to Register</button>
         </div>
-        <div class="timeline" id="updatesTimeline">
-          <div class="empty-state" style="padding:24px"><div class="empty-title" id="noUpdates">No updates yet</div></div>
-        </div>
+        <div class="tl" id="tlEl"><div class="empty" style="padding:24px"><div class="empty-t" id="noUpd">No updates yet</div></div></div>
       </div>
 
-      <!-- Tolerance Tab -->
-      <div class="tab-pane" id="tab-tolerance">
-        <div style="max-width:780px;">
-          <div style="font-size:14px;font-weight:600;margin-bottom:4px;" id="tolTitle">Risk Appetite & Tolerance</div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:18px;" id="tolSub">Define acceptable thresholds — Claude uses these to classify risks accurately</div>
-          <div class="tol-section">
-            <div class="tol-title" id="tolCostTitle">Cost & Schedule Thresholds</div>
+      <!-- Tolerance -->
+      <div class="pane" id="pane-tol">
+        <div style="max-width:760px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;" id="tolTitle">Risk Appetite & Tolerance</div>
+          <div style="font-size:12px;color:var(--t3);margin-bottom:18px;" id="tolSub">Define acceptable thresholds — Claude uses these to classify risks accurately</div>
+
+          <div class="tol-sec">
+            <div class="tol-title" id="tolCS">Cost & Schedule Thresholds</div>
             <div class="tol-grid">
               <div>
-                <label class="form-label" style="margin-bottom:7px;display:block;" id="tolCostLabel">Max acceptable cost overrun</label>
-                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px;"><input type="number" class="form-input" id="tol_cost_pct" placeholder="5" style="width:70px;" oninput="debounceSaveTolerance()"/><span style="font-size:12px;color:var(--text3);" id="tolPctLabel">% of contract value</span></div>
-                <div style="display:flex;gap:7px;align-items:center;"><input type="number" class="form-input" id="tol_cost_val" placeholder="500000" style="width:130px;" oninput="debounceSaveTolerance()"/><span style="font-size:12px;color:var(--text3);" id="tolSarLabel">SAR max</span></div>
+                <label class="fl" style="margin-bottom:6px;display:block;" id="tolCL">Max acceptable cost overrun</label>
+                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px;">
+                  <input type="number" class="fi" id="tc_pct" placeholder="5" style="width:65px;" oninput="dbTol()"/>
+                  <span style="font-size:12px;color:var(--t3);" id="tolPct">% of contract value</span>
+                </div>
+                <div style="display:flex;gap:7px;align-items:center;">
+                  <input type="number" class="fi" id="tc_val" placeholder="500000" style="width:120px;" oninput="dbTol()"/>
+                  <span style="font-size:12px;color:var(--t3);" id="tolSAR">SAR max</span>
+                </div>
               </div>
               <div>
-                <label class="form-label" style="margin-bottom:7px;display:block;" id="tolSchedLabel">Max acceptable delay</label>
-                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px;"><input type="number" class="form-input" id="tol_schedule_days" placeholder="30" style="width:70px;" oninput="debounceSaveTolerance()"/><span style="font-size:12px;color:var(--text3);" id="tolDaysLabel">days</span></div>
-                <div style="display:flex;gap:7px;align-items:center;"><input type="number" class="form-input" id="tol_schedule_pct" placeholder="10" style="width:70px;" oninput="debounceSaveTolerance()"/><span style="font-size:12px;color:var(--text3);" id="tolSchedPctLabel">% of total duration</span></div>
+                <label class="fl" style="margin-bottom:6px;display:block;" id="tolSL">Max acceptable delay</label>
+                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px;">
+                  <input type="number" class="fi" id="ts_days" placeholder="30" style="width:65px;" oninput="dbTol()"/>
+                  <span style="font-size:12px;color:var(--t3);" id="tolDays">days</span>
+                </div>
+                <div style="display:flex;gap:7px;align-items:center;">
+                  <input type="number" class="fi" id="ts_pct" placeholder="10" style="width:65px;" oninput="dbTol()"/>
+                  <span style="font-size:12px;color:var(--t3);" id="tolSpct">% of total duration</span>
+                </div>
               </div>
             </div>
           </div>
-          <div class="tol-section"><div class="tol-title" id="tolQHSETitle">QHSE Levels</div><div id="qhse_levels"></div></div>
-          <div class="tol-section"><div class="tol-title" id="tolRepTitle">Reputation Levels</div><div id="rep_levels"></div></div>
-          <div class="tol-section">
-            <div class="tol-title" id="tolMatrixTitle">Probability & Impact Scale</div>
+
+          <div class="tol-sec"><div class="tol-title" id="tolQT">QHSE Levels</div><div id="qhse_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-title" id="tolRT">Reputation Levels</div><div id="rep_lvl"></div></div>
+          <div class="tol-sec">
+            <div class="tol-title" id="tolMT">Probability & Impact Scale</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-              <div><div style="font-size:11px;font-weight:500;color:var(--text3);margin-bottom:7px;" id="tolProbTitle">Probability (1-5)</div><div id="prob_levels"></div></div>
-              <div><div style="font-size:11px;font-weight:500;color:var(--text3);margin-bottom:7px;" id="tolImpTitle">Impact (1-5)</div><div id="impact_levels"></div></div>
+              <div><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px;" id="tolPT">Probability (1–5)</div><div id="prob_lvl"></div></div>
+              <div><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px;" id="tolIT">Impact (1–5)</div><div id="imp_lvl"></div></div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- New Project Modal -->
-    <div class="modal-overlay" id="newProjectModal">
-      <div class="modal-box">
-        <div class="modal-title" id="modalTitle">New Project</div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label" id="labelName">Project Name *</label><input type="text" class="form-input" id="np_name"/></div>
-          <div class="form-group"><label class="form-label" id="labelContract">Contract No.</label><input type="text" class="form-input" id="np_contract" placeholder="C-2024-001"/></div>
-          <div class="form-group"><label class="form-label" id="labelValue">Contract Value (SAR)</label><input type="text" class="form-input" id="np_value" placeholder="15,000,000"/></div>
-          <div class="form-group"><label class="form-label" id="labelType">Project Type</label>
-            <select class="form-select" id="np_type">
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Industrial">Industrial</option>
-              <option value="Infrastructure">Infrastructure</option>
-              <option value="Renovation">Renovation</option>
-              <option value="Other">Other</option>
+    <!-- Modal -->
+    <div class="modal-ov" id="modalOv">
+      <div class="modal">
+        <div class="modal-t" id="modalT">New Project</div>
+        <div class="fgrid">
+          <div class="fg"><label class="fl" id="lName">Project Name *</label><input type="text" class="fi" id="np_n" placeholder="e.g. Al-Riyadh Residential Complex"/></div>
+          <div class="fg"><label class="fl" id="lCon">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
+          <div class="fg"><label class="fl" id="lVal">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
+          <div class="fg"><label class="fl" id="lType">Project Type</label>
+            <select class="fs" id="np_t">
+              <option value="Residential">Residential — سكني</option>
+              <option value="Commercial">Commercial — تجاري</option>
+              <option value="Mixed-Use">Mixed-Use — متعدد الاستخدامات</option>
+              <option value="Infrastructure">Infrastructure — بنية تحتية</option>
+              <option value="Roads & Highways">Roads & Highways — طرق وجسور</option>
+              <option value="Industrial">Industrial — صناعي</option>
+              <option value="Healthcare">Healthcare — صحي</option>
+              <option value="Educational">Educational — تعليمي</option>
+              <option value="Hospitality">Hospitality — فندقي وضيافة</option>
+              <option value="Landscaping">Landscaping — تشجير وتنسيق</option>
+              <option value="Marine">Marine — بحري وموانئ</option>
+              <option value="MEP">MEP — ميكانيكا وكهرباء وسباكة</option>
+              <option value="Renovation">Renovation — ترميم وصيانة</option>
+              <option value="Government">Government — حكومي ومجمعات</option>
+              <option value="Other">Other — أخرى</option>
             </select>
           </div>
-          <div class="form-group"><label class="form-label" id="labelStart">Start Date</label><input type="date" class="form-input" id="np_start"/></div>
-          <div class="form-group"><label class="form-label" id="labelEnd">Completion Date</label><input type="date" class="form-input" id="np_end"/></div>
-          <div class="form-group full"><label class="form-label" id="labelDesc">Description</label><textarea class="form-textarea" id="np_desc"></textarea></div>
+          <div class="fg"><label class="fl" id="lSt">Start Date</label><input type="date" class="fi" id="np_s"/></div>
+          <div class="fg"><label class="fl" id="lEn">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
+          <div class="fg full"><label class="fl" id="lDesc">Description</label><textarea class="fta" id="np_d" placeholder="Brief project description..."></textarea></div>
         </div>
         <div style="display:flex;gap:7px;justify-content:flex-end;">
-          <button class="btn btn-ghost" onclick="closeModal()" id="btnCancel">Cancel</button>
-          <button class="btn btn-primary" onclick="createProject()" id="btnCreate">Create Project</button>
+          <button class="btn btn-ghost" onclick="closeModal()" id="btnCan">Cancel</button>
+          <button class="btn btn-primary" onclick="createProject()" id="btnCre">Create Project</button>
         </div>
       </div>
     </div>
@@ -499,563 +493,536 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════════
-const SUPABASE_URL='https://ssogxdqwcoehcoqaajxy.supabase.co';
-const SUPABASE_KEY='sb_publishable_a2Zyo0zJMuBqMxGEk4WKGQ_JNHO5KBQ';
-
-async function sbFetch(path,method='GET',body=null){
-  const opts={method,headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':method==='POST'?'return=representation':''}};
-  if(body)opts.body=JSON.stringify(body);
-  const res=await fetch(SUPABASE_URL+'/rest/v1/'+path,opts);
-  if(!res.ok){const e=await res.text();throw new Error(e);}
-  const txt=await res.text();return txt?JSON.parse(txt):null;
+// ═══ SUPABASE ═══════════════════════════════════════════
+const SB_URL='https://ssogxdqwcoehcoqaajxy.supabase.co';
+const SB_KEY='sb_publishable_a2Zyo0zJMuBqMxGEk4WKGQ_JNHO5KBQ';
+async function sb(path,method='GET',body=null){
+  const h={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+  if(method==='POST')h['Prefer']='return=representation';
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{method,headers:h,body:body?JSON.stringify(body):null});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):null;
 }
 
-// ═══════════════════════════════════════════════════════
-// LANGUAGE
-// ═══════════════════════════════════════════════════════
+// ═══ LANGUAGE ════════════════════════════════════════════
 let lang='en';
-const T={
+const TR={
   brandName:{ar:'منصة المخاطر',en:'Risk Intelligence'},
-  apiLabel:{ar:'مفتاح Claude API',en:'Claude API Key'},
-  statusConnected:{ar:'متصل',en:'Connected'},
-  statusDisconnected:{ar:'غير متصل',en:'Not connected'},
-  sidebarHeading:{ar:'المشاريع',en:'Projects'},
-  welcomeTitle:{ar:'منصة إدارة المخاطر الذكية',en:'Risk Intelligence Platform'},
-  welcomeText:{ar:'ارفع ملفات مشروعك وسيحلل Claude البيانات ويولّد سجل مخاطر احترافي مشترك.',en:'Upload your project files and Claude will analyze them to generate a professional shared risk register.'},
-  welcomeBtn:{ar:'إنشاء مشروع جديد',en:'Create First Project'},
-  btnNewProject:{ar:'+ مشروع جديد',en:'+ New Project'},
-  langBtn:{ar:'العربية',en:'English'},
-  tabUpload:{ar:'الملفات',en:'Files'},
+  brandPill:{ar:'بالذكاء الاصطناعي',en:'AI-POWERED'},
+  apiLbl:{ar:'مفتاح Claude API',en:'Claude API Key'},
+  connConn:{ar:'متصل',en:'Connected'},
+  connDis:{ar:'غير متصل',en:'Not connected'},
+  sbHead:{ar:'المشاريع',en:'Projects'},
+  wTitle:{ar:'منصة إدارة المخاطر الذكية',en:'Risk Intelligence Platform'},
+  wText:{ar:'ارفع ملفات مشروعك وسيحلل Claude البيانات ويولّد سجل مخاطر احترافي مشترك مع فريقك.',en:'Upload your project documents and Claude will analyze them to generate a professional shared risk register.'},
+  wBtn:{ar:'إنشاء أول مشروع',en:'Create First Project'},
+  btnNew:{ar:'+ مشروع جديد',en:'+ New Project'},
+  langBtn:{ar:'English',en:'العربية'},
+  tabFiles:{ar:'الملفات',en:'Files'},
   tabDash:{ar:'لوحة التحكم',en:'Dashboard'},
-  tabRegister:{ar:'سجل المخاطر',en:'Risk Register'},
-  tabWarning:{ar:'الإنذار المبكر',en:'Early Warning'},
-  tabUpdates:{ar:'التحديثات',en:'Updates'},
-  tabTolerance:{ar:'مدى السماحية',en:'Risk Appetite'},
+  tabReg:{ar:'سجل المخاطر',en:'Risk Register'},
+  tabWarn:{ar:'الإنذار المبكر',en:'Early Warning'},
+  tabUpd:{ar:'التحديثات',en:'Updates'},
+  tabTol:{ar:'مدى السماحية',en:'Risk Appetite'},
   slTotal:{ar:'إجمالي المخاطر',en:'Total Risks'},
-  slThreats:{ar:'التهديدات',en:'Threats'},
-  slOpps:{ar:'الفرص',en:'Opportunities'},
+  slThr:{ar:'التهديدات',en:'Threats'},
+  slOpp:{ar:'الفرص',en:'Opportunities'},
   slHigh:{ar:'عالية',en:'High'},
-  slAnalyzed:{ar:'آخر تحليل',en:'Last Analysis'},
-  uploadTitle:{ar:'اسحب الملفات هنا أو اضغط للاختيار',en:'Drag files here or click to browse'},
-  uploadSub:{ar:'PDF · Excel · Word · المخططات · CSV · تصدير برامفيرا',en:'PDF · Excel · Word · Drawings · CSV · Primavera export'},
-  btnAnalyze:{ar:'تحليل وتوليد سجل المخاطر',en:'Analyze & Generate Risk Register'},
+  slDate:{ar:'آخر تحليل',en:'Last Analysis'},
+  dropTitle:{ar:'اسحب الملفات هنا أو اضغط للاختيار',en:'Drag files here or click to browse'},
+  dropSub:{ar:'PDF · Excel · Word · المخططات · CSV · برامفيرا',en:'PDF · Excel · Word · Drawings · CSV · Primavera export'},
   btnExport:{ar:'تصدير CSV',en:'Export CSV'},
-  btnDelete:{ar:'حذف',en:'Delete'},
-  modalTitle:{ar:'مشروع جديد',en:'New Project'},
-  labelName:{ar:'اسم المشروع *',en:'Project Name *'},
-  labelContract:{ar:'رقم العقد',en:'Contract No.'},
-  labelValue:{ar:'قيمة العقد (ريال)',en:'Contract Value (SAR)'},
-  labelType:{ar:'نوع المشروع',en:'Project Type'},
-  labelStart:{ar:'تاريخ البداية',en:'Start Date'},
-  labelEnd:{ar:'تاريخ الإنجاز',en:'Completion Date'},
-  labelDesc:{ar:'الوصف',en:'Description'},
-  btnCancel:{ar:'إلغاء',en:'Cancel'},
-  btnCreate:{ar:'إنشاء المشروع',en:'Create Project'},
-  updateFormTitle:{ar:'إضافة تحديث جديد',en:'Add New Update'},
-  fileDropTitle:{ar:'رفع ملف (اختياري)',en:'Attach file (optional)'},
-  fileDropSub:{ar:'محضر اجتماع · أمر تغيير · عقد باطن · مراسلة',en:'Meeting minutes · Change order · Subcontract · Correspondence'},
-  fileDescLabel:{ar:'وصف الملف (اختياري)',en:'File description (optional)'},
-  btnAddUpdate:{ar:'تحليل وإضافة للسجل',en:'Analyze & Add to Register'},
-  noUpdates:{ar:'لا توجد تحديثات',en:'No updates yet'},
-  tolTitle:{ar:'مدى السماحية في المخاطر',en:'Risk Appetite & Tolerance'},
-  tolSub:{ar:'حدد الحدود المقبولة — يستخدمها Claude لتصنيف المخاطر',en:'Define acceptable thresholds — Claude uses these to classify risks accurately'},
-  tolCostTitle:{ar:'التكلفة والجدول الزمني',en:'Cost & Schedule Thresholds'},
-  tolCostLabel:{ar:'الحد الأقصى للتكلفة الإضافية',en:'Max acceptable cost overrun'},
-  tolPctLabel:{ar:'% من قيمة العقد',en:'% of contract value'},
-  tolSarLabel:{ar:'ريال كحد أقصى',en:'SAR max'},
-  tolSchedLabel:{ar:'الحد الأقصى للتأخير',en:'Max acceptable delay'},
-  tolDaysLabel:{ar:'يوم',en:'days'},
-  tolSchedPctLabel:{ar:'% من المدة الكلية',en:'% of total duration'},
-  tolQHSETitle:{ar:'مستويات QHSE',en:'QHSE Levels'},
-  tolRepTitle:{ar:'مستويات السمعة',en:'Reputation Levels'},
-  tolMatrixTitle:{ar:'مستويات الاحتمالية والتأثير',en:'Probability & Impact Scale'},
-  tolProbTitle:{ar:'الاحتمالية (1-5)',en:'Probability (1-5)'},
-  tolImpTitle:{ar:'التأثير (1-5)',en:'Impact (1-5)'},
+  btnDel:{ar:'حذف',en:'Delete'},
+  modalT:{ar:'مشروع جديد',en:'New Project'},
+  lName:{ar:'اسم المشروع *',en:'Project Name *'},
+  lCon:{ar:'رقم العقد',en:'Contract No.'},
+  lVal:{ar:'قيمة العقد (ريال)',en:'Contract Value (SAR)'},
+  lType:{ar:'نوع المشروع',en:'Project Type'},
+  lSt:{ar:'تاريخ البداية',en:'Start Date'},
+  lEn:{ar:'تاريخ الإنجاز',en:'Completion Date'},
+  lDesc:{ar:'الوصف',en:'Description'},
+  btnCan:{ar:'إلغاء',en:'Cancel'},
+  btnCre:{ar:'إنشاء المشروع',en:'Create Project'},
+  uTitle:{ar:'إضافة تحديث جديد',en:'Add New Update'},
+  fdTitle:{ar:'رفع ملف (اختياري)',en:'Attach file (optional)'},
+  fdSub:{ar:'محضر اجتماع · أمر تغيير · عقد باطن · مراسلة',en:'Meeting minutes · Change order · Subcontract · Correspondence'},
+  fdescLbl:{ar:'وصف الملف (اختياري)',en:'File description (optional)'},
+  btnAddUpd:{ar:'تحليل وإضافة للسجل',en:'Analyze & Add to Register'},
+  noUpd:{ar:'لا توجد تحديثات',en:'No updates yet'},
   valTitle:{ar:'مراجعة واعتماد المخاطر',en:'Review & Approve Risks'},
-  valSub:{ar:'راجع كل مخاطرة واعتمدها أو احذفها قبل حفظ السجل',en:'Review each risk before saving to register'},
-  btnApproveAll:{ar:'اعتماد الكل',en:'Approve All'},
+  valSub:{ar:'راجع كل مخاطرة قبل حفظ السجل',en:'Review each identified risk before saving to the register'},
+  btnApAll:{ar:'اعتماد الكل',en:'Approve All'},
   btnSaveReg:{ar:'حفظ السجل',en:'Save Register'},
-  dashEmpty:{ar:'قم بالتحليل أولاً لعرض لوحة التحكم',en:'Run analysis first to see dashboard'},
-  regEmpty:{ar:'لا يوجد سجل مخاطر بعد',en:'No risk register yet — upload files and run analysis'},
-  ewEmpty:{ar:'قم بالتحليل أولاً لعرض الإنذارات',en:'Run analysis first to generate early warnings'},
-  syncLabel:{ar:'متزامن',en:'Synced'},
+  dashEmpty:{ar:'قم بالتحليل أولاً',en:'Run analysis to see dashboard'},
+  regEmpty:{ar:'لا يوجد سجل مخاطر بعد',en:'No risk register yet'},
+  warnEmpty:{ar:'قم بالتحليل أولاً',en:'Run analysis to generate early warnings'},
+  syncLbl:{ar:'متزامن',en:'Synced'},
+  tolTitle:{ar:'مدى السماحية في المخاطر',en:'Risk Appetite & Tolerance'},
+  tolSub:{ar:'حدد الحدود المقبولة لكل بعد',en:'Define acceptable thresholds — Claude uses these to classify risks accurately'},
+  tolCS:{ar:'التكلفة والجدول الزمني',en:'Cost & Schedule Thresholds'},
+  tolCL:{ar:'الحد الأقصى للتكلفة الإضافية',en:'Max acceptable cost overrun'},
+  tolPct:{ar:'% من قيمة العقد',en:'% of contract value'},
+  tolSAR:{ar:'ريال كحد أقصى',en:'SAR max'},
+  tolSL:{ar:'الحد الأقصى للتأخير',en:'Max acceptable delay'},
+  tolDays:{ar:'يوم',en:'days'},
+  tolSpct:{ar:'% من المدة الكلية',en:'% of total duration'},
+  tolQT:{ar:'مستويات QHSE',en:'QHSE Levels'},
+  tolRT:{ar:'مستويات السمعة',en:'Reputation Levels'},
+  tolMT:{ar:'مستويات الاحتمالية والتأثير',en:'Probability & Impact Scale'},
+  tolPT:{ar:'الاحتمالية (1-5)',en:'Probability (1–5)'},
+  tolIT:{ar:'التأثير (1-5)',en:'Impact (1–5)'},
+  btnAnalyze:{ar:'تحليل وتوليد سجل المخاطر',en:'Analyze & Generate Risk Register'},
 };
-
-function t(key){return (T[key]&&T[key][lang])||key;}
-
+function t(k){return (TR[k]&&TR[k][lang])||k;}
 function applyLang(){
-  const isAr=lang==='ar';
+  const ar=lang==='ar';
   document.getElementById('htmlRoot').setAttribute('lang',lang);
-  document.getElementById('htmlRoot').setAttribute('dir',isAr?'rtl':'ltr');
-  document.body.style.fontFamily=isAr?'var(--font-ar)':'var(--font-en)';
-  Object.keys(T).forEach(key=>{
-    const el=document.getElementById(key);
-    if(el)el.textContent=t(key);
-  });
-  // Update pills
-  document.querySelectorAll('.pill-btn').forEach(btn=>{
-    const label=isAr?btn.dataset.labelAr:btn.dataset.labelEn;
-    if(label)btn.textContent=label;
-  });
-  document.getElementById('langBtn').textContent=isAr?'English':'العربية';
+  document.getElementById('htmlRoot').setAttribute('dir',ar?'rtl':'ltr');
+  document.body.style.fontFamily=ar?'var(--font-ar)':'var(--font-en)';
+  Object.keys(TR).forEach(k=>{const el=document.getElementById(k);if(el)el.textContent=t(k);});
+  document.querySelectorAll('.pill').forEach(p=>{const lbl=ar?p.dataset.ar:p.dataset.en;if(lbl)p.textContent=lbl;});
+  document.getElementById('langBtn').textContent=ar?'English':'العربية';
+  const ab=document.getElementById('anaBtn');if(ab)ab.textContent=t('btnAnalyze');
 }
+function toggleLang(){lang=lang==='ar'?'en':'ar';localStorage.setItem('lang',lang);applyLang();}
 
-function toggleLang(){
-  lang=lang==='ar'?'en':'ar';
-  localStorage.setItem('lang',lang);
-  applyLang();
-}
-
-// ═══════════════════════════════════════════════════════
-// DEFAULTS
-// ═══════════════════════════════════════════════════════
+// ═══ DEFAULTS ════════════════════════════════════════════
 const DEF_QHSE=[
-  {l:'1 — Zero Tolerance',d:'Any fatality or permanent disability'},
-  {l:'2 — Critical',d:'Serious injury requiring hospitalization'},
+  {l:'1 — Zero Tolerance',d:'Any fatality or permanent disability — not acceptable'},
+  {l:'2 — Critical',d:'Serious injury requiring extended hospitalization'},
   {l:'3 — High',d:'Moderate injury requiring medical treatment'},
-  {l:'4 — Medium',d:'Minor injury, first aid only'},
-  {l:'5 — Low',d:'Near miss or unsafe condition only'}
+  {l:'4 — Medium',d:'Minor injury — first aid only required'},
+  {l:'5 — Low',d:'Near miss or unsafe condition with no injury'}
 ];
 const DEF_REP=[
-  {l:'1 — Zero Tolerance',d:'Any impact on company image unacceptable'},
-  {l:'2 — National',d:'National media coverage'},
-  {l:'3 — Regional',d:'Regional impact within the area'},
-  {l:'4 — Local',d:'Local impact within the city'},
-  {l:'5 — Internal',d:'Internal project impact only'}
+  {l:'1 — Zero Tolerance',d:'Any reputational impact on company is unacceptable'},
+  {l:'2 — National',d:'National media coverage or client escalation'},
+  {l:'3 — Regional',d:'Regional impact within the area or sector'},
+  {l:'4 — Local',d:'Local impact within the project or city'},
+  {l:'5 — Internal',d:'Impact contained within project team only'}
 ];
 const DEF_PROB=[
-  {l:'1 — Rare',d:'< 10%'},
-  {l:'2 — Unlikely',d:'10–30%'},
-  {l:'3 — Possible',d:'30–50%'},
-  {l:'4 — Likely',d:'50–70%'},
-  {l:'5 — Almost Certain',d:'> 70%'}
+  {l:'1 — Rare',d:'Less than 10% probability'},
+  {l:'2 — Unlikely',d:'10–30% probability'},
+  {l:'3 — Possible',d:'30–50% probability'},
+  {l:'4 — Likely',d:'50–70% probability'},
+  {l:'5 — Almost Certain',d:'Greater than 70% probability'}
 ];
-const DEF_IMPACT=[
-  {l:'1 — Negligible',d:'Insignificant effect on objectives'},
-  {l:'2 — Minor',d:'Minor effect, easily managed'},
-  {l:'3 — Moderate',d:'Noticeable effect requiring action'},
-  {l:'4 — Major',d:'Significant effect on project goals'},
-  {l:'5 — Critical',d:'Severe effect, may halt project'}
+const DEF_IMP=[
+  {l:'1 — Negligible',d:'No meaningful effect on project objectives'},
+  {l:'2 — Minor',d:'Minor effect manageable within existing resources'},
+  {l:'3 — Moderate',d:'Noticeable effect requiring corrective action'},
+  {l:'4 — Major',d:'Significant effect on cost, schedule, or quality'},
+  {l:'5 — Critical',d:'Severe effect — may halt project or cause major loss'}
 ];
-const LEVEL_COLORS=['#e05252','#d4a017','#c0a020','#2e9e5b','#1a6ee8'];
-const PROB_LABELS=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
-const IMP_LABELS=['','Negligible','Minor','Moderate','Major','Critical'];
+const LC=['#e05252','#d4780a','#c9a020','#2a9e5b','#1e73e8'];
+const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
+const IL=['','Negligible','Minor','Moderate','Major','Critical'];
 
-const RESPONSE_THREAT=['Avoid','Mitigate','Transfer','Accept','Escalate'];
-const RESPONSE_OPP=['Exploit','Enhance','Share','Accept','Escalate'];
+// ═══ STATE ════════════════════════════════════════════════
+let projects=[],cProjId=null,cProj=null;
+let cUT='change_order',projFiles={},uFiles=[],pendingRisks=[];
 
-// ═══════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════
-let projects=[],currentProjectId=null,currentProjectData=null;
-let currentUpdateType='change_order',projectFiles={},updateFiles=[],pendingRisks=[];
-let trendChart=null,matrixChart=null;
-
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
+// ═══ INIT ═════════════════════════════════════════════════
 window.onload=async()=>{
   lang=localStorage.getItem('lang')||'en';
   applyLang();
-  const k=localStorage.getItem('anthropicKey');
-  if(k){document.getElementById('apiKey').value=k;checkApiKey();}
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const k=localStorage.getItem('aKey');
+  if(k){document.getElementById('apiKey').value=k;checkKey();}
   await loadProjects();
 };
 
-function checkApiKey(){
+function checkKey(){
   const k=document.getElementById('apiKey').value.trim();
-  const dot=document.getElementById('statusDot');
-  const lbl=document.getElementById('statusLabel');
+  const dot=document.getElementById('connDot');
+  const lbl=document.getElementById('connLbl');
   if(k.startsWith('sk-ant-')&&k.length>20){
-    dot.classList.add('active');
-    lbl.classList.add('active');
-    lbl.textContent=t('statusConnected');
-    localStorage.setItem('anthropicKey',k);
+    dot.classList.add('on');lbl.classList.add('on');
+    lbl.textContent=t('connConn');
+    localStorage.setItem('aKey',k);
   }else{
-    dot.classList.remove('active');
-    lbl.classList.remove('active');
-    lbl.textContent=t('statusDisconnected');
+    dot.classList.remove('on');lbl.classList.remove('on');
+    lbl.textContent=t('connDis');
   }
   refreshBtn();
 }
-function getKey(){return document.getElementById('apiKey').value.trim();}
+const getKey=()=>document.getElementById('apiKey').value.trim();
 
 async function callAPI(payload){
-  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey()},body:JSON.stringify(payload)});
-  return await res.json();
+  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey()},body:JSON.stringify(payload)});
+  return await r.json();
 }
 
-// ═══════════════════════════════════════════════════════
-// PROJECTS
-// ═══════════════════════════════════════════════════════
+function parseJSON(text){
+  text=text.trim();
+  const m=text.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+  if(m)return JSON.parse(m[1].trim());
+  const j=text.search(/[{[]/);
+  if(j>0)text=text.slice(j);
+  const e=Math.max(text.lastIndexOf('}'),text.lastIndexOf(']'));
+  if(e>0&&e<text.length-1)text=text.slice(0,e+1);
+  return JSON.parse(text);
+}
+
+// ═══ SYNC ═════════════════════════════════════════════════
+function showSync(){
+  const el=document.getElementById('syncInd');
+  el.style.display='flex';
+  setTimeout(()=>el.style.display='none',2500);
+}
+
+// ═══ PROJECTS ═════════════════════════════════════════════
 async function loadProjects(){
   try{
-    projects=await sbFetch('projects?order=created_at.desc&select=*')||[];
-    renderProjects();
-    if(projects.length>0&&!currentProjectId)selectProject(projects[0].id);
-    else if(projects.length===0){document.getElementById('welcomeScreen').style.display='block';document.getElementById('projectView').style.display='none';}
+    projects=await sb('projects?order=created_at.desc&select=*')||[];
+    renderProjs();
+    if(projects.length>0&&!cProjId)selectProj(projects[0].id);
+    else if(!projects.length){document.getElementById('welcome').style.display='block';document.getElementById('projView').style.display='none';}
     showSync();
-  }catch(e){console.error(e);}
+  }catch(e){console.error('load',e);}
 }
 
-function showSync(){
-  const el=document.getElementById('syncIndicator');
-  el.style.display='flex';
-  setTimeout(()=>{el.style.display='none';},2500);
-}
-
-function openNewProjectModal(){document.getElementById('newProjectModal').classList.add('show');setTimeout(()=>document.getElementById('np_name').focus(),100);}
-function closeModal(){document.getElementById('newProjectModal').classList.remove('show');}
+function openModal(){document.getElementById('modalOv').classList.add('on');setTimeout(()=>document.getElementById('np_n').focus(),80);}
+function closeModal(){document.getElementById('modalOv').classList.remove('on');}
 
 async function createProject(){
-  const name=document.getElementById('np_name').value.trim();
+  const name=document.getElementById('np_n').value.trim();
   if(!name){alert(lang==='ar'?'يرجى إدخال اسم المشروع':'Please enter project name');return;}
-  showLoading(lang==='ar'?'جاري الإنشاء...':'Creating project...');
+  showLoad(lang==='ar'?'جاري الإنشاء...':'Creating project...');
   try{
-    const tol={cost_pct:5,cost_val:'',schedule_days:30,schedule_pct:10,qhse:DEF_QHSE,rep:DEF_REP,prob:DEF_PROB,impact:DEF_IMPACT};
-    const d={name,contract:document.getElementById('np_contract').value,value:document.getElementById('np_value').value,type:document.getElementById('np_type').value,start_date:document.getElementById('np_start').value,end_date:document.getElementById('np_end').value,description:document.getElementById('np_desc').value,tolerance:tol};
-    const res=await sbFetch('projects','POST',d);
-    hideLoading();closeModal();
-    ['np_name','np_contract','np_value','np_desc','np_start','np_end'].forEach(id=>document.getElementById(id).value='');
+    const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DEF_QHSE,rep:DEF_REP,prob:DEF_PROB,imp:DEF_IMP};
+    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,
+      type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,
+      end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol};
+    const res=await sb('projects','POST',d);
+    hideLoad();closeModal();
+    ['np_n','np_c','np_v','np_d','np_s','np_e'].forEach(id=>document.getElementById(id).value='');
     await loadProjects();
-    if(res&&res[0])selectProject(res[0].id);
-  }catch(e){hideLoading();alert('Error: '+e.message);}
+    if(res&&res[0])selectProj(res[0].id);
+  }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
-async function deleteProject(){
-  const msg=lang==='ar'?'هل أنت متأكد؟':'Are you sure?';
-  if(!confirm(msg))return;
-  showLoading(lang==='ar'?'جاري الحذف...':'Deleting...');
+async function delProject(){
+  if(!confirm(lang==='ar'?'هل أنت متأكد؟':'Are you sure?'))return;
+  showLoad(lang==='ar'?'جاري الحذف...':'Deleting...');
   try{
-    await sbFetch('projects?id=eq.'+currentProjectId,'DELETE');
-    hideLoading();currentProjectId=null;currentProjectData=null;
-    document.getElementById('projectView').style.display='none';
-    document.getElementById('welcomeScreen').style.display='block';
+    await sb('projects?id=eq.'+cProjId,'DELETE');
+    hideLoad();cProjId=null;cProj=null;
+    document.getElementById('projView').style.display='none';
+    document.getElementById('welcome').style.display='block';
     await loadProjects();
-  }catch(e){hideLoading();alert('Error: '+e.message);}
+  }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
-function renderProjects(){
-  const list=document.getElementById('projectsList');
-  if(!projects.length){list.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--text3);">${lang==='ar'?'لا توجد مشاريع':'No projects'}</div>`;return;}
-  list.innerHTML=projects.map(p=>`
-    <div class="project-item ${p.id===currentProjectId?'active':''}" onclick="selectProject('${p.id}')">
-      <div class="project-item-name">${p.name}</div>
-      <div class="project-item-meta">${p.type||'—'}</div>
+function renderProjs(){
+  const el=document.getElementById('projList');
+  if(!projects.length){el.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--t3)">${lang==='ar'?'لا توجد مشاريع':'No projects'}</div>`;return;}
+  el.innerHTML=projects.map(p=>`
+    <div class="proj-item ${p.id===cProjId?'active':''}" onclick="selectProj('${p.id}')">
+      <div class="proj-name">${p.name}</div>
+      <div class="proj-sub">${p.type||'—'}</div>
     </div>`).join('');
 }
 
-async function selectProject(id){
-  currentProjectId=id;
-  showLoading(lang==='ar'?'جاري التحميل...':'Loading...');
+async function selectProj(id){
+  cProjId=id;
+  showLoad(lang==='ar'?'جاري التحميل...':'Loading...');
   try{
-    const p=await sbFetch('projects?id=eq.'+id+'&select=*');
-    currentProjectData=p&&p[0]?p[0]:null;
-    if(!currentProjectData){hideLoading();return;}
-    if(!currentProjectData.tolerance)currentProjectData.tolerance={cost_pct:5,cost_val:'',schedule_days:30,schedule_pct:10,qhse:DEF_QHSE,rep:DEF_REP,prob:DEF_PROB,impact:DEF_IMPACT};
-    const risks=await sbFetch('risks?project_id=eq.'+id+'&order=created_at.asc&select=*')||[];
-    const updates=await sbFetch('updates?project_id=eq.'+id+'&order=created_at.desc&select=*')||[];
-    currentProjectData.risks=risks;currentProjectData.updates=updates;
-    hideLoading();
-    document.getElementById('welcomeScreen').style.display='none';
-    document.getElementById('projectView').style.display='block';
-    document.getElementById('phName').textContent=currentProjectData.name;
-    document.getElementById('phMeta').textContent=[currentProjectData.type,currentProjectData.value?currentProjectData.value+' SAR':'',currentProjectData.contract].filter(Boolean).join(' · ');
-    renderProjects();renderFiles();renderRegister();renderUpdates();renderTolerance();renderWarning();updateStats();
-    if(risks.length>0)renderDashboard();
-    switchTab('upload');
-  }catch(e){hideLoading();console.error(e);}
+    const p=await sb('projects?id=eq.'+id+'&select=*');
+    cProj=p&&p[0]?p[0]:null;
+    if(!cProj){hideLoad();return;}
+    if(!cProj.tolerance)cProj.tolerance={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DEF_QHSE,rep:DEF_REP,prob:DEF_PROB,imp:DEF_IMP};
+    const risks=await sb('risks?project_id=eq.'+id+'&order=created_at.asc&select=*')||[];
+    const upds=await sb('updates?project_id=eq.'+id+'&order=created_at.desc&select=*')||[];
+    cProj.risks=risks;cProj.upds=upds;
+    hideLoad();
+    document.getElementById('welcome').style.display='none';
+    document.getElementById('projView').style.display='block';
+    document.getElementById('phName').textContent=cProj.name;
+    document.getElementById('phSub').textContent=[cProj.type,cProj.value?cProj.value+' SAR':'',cProj.contract].filter(Boolean).join(' · ');
+    renderProjs();renderFiles();renderReg();renderUpds();renderTol();renderWarn();updateStats();
+    if(risks.length)renderDash();
+    switchTab('files');
+  }catch(e){hideLoad();console.error(e);}
 }
 
-// ═══════════════════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════════════════
+// ═══ TABS ═════════════════════════════════════════════════
 function switchTab(name){
-  const names=['upload','dashboard','register','warning','updates','tolerance'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
-  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
+  ['files','dash','reg','warn','upd','tol'].forEach(n=>{
+    document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1))?.classList.toggle('on',n===name);
+    document.getElementById('pane-'+n)?.classList.toggle('on',n===name);
+  });
+  // Fix tab IDs
+  const tabMap={files:'tabFiles',dash:'tabDash',reg:'tabReg',warn:'tabWarn',upd:'tabUpd',tol:'tabTol'};
+  Object.entries(tabMap).forEach(([n,tid])=>{
+    document.getElementById(tid)?.classList.toggle('on',n===name);
+  });
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  const tp=document.getElementById('pane-'+name);
+  if(tp)tp.classList.add('on');
 }
 
-// ═══════════════════════════════════════════════════════
-// FILES
-// ═══════════════════════════════════════════════════════
+// ═══ FILE EXTRACTION ══════════════════════════════════════
 async function extractText(file){
   const ext=file.name.split('.').pop().toLowerCase();
-  // Images - keep as base64
   if(['png','jpg','jpeg','gif','webp'].includes(ext)){
-    return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({type:'image',data:ev.target.result,name:file.name});r.readAsDataURL(file);});
+    return new Promise(res=>{
+      const r=new FileReader();
+      r.onload=ev=>res({extype:'image',data:ev.target.result,fileType:file.type||'image/jpeg',name:file.name});
+      r.readAsDataURL(file);
+    });
   }
-  // PDF - extract text
   if(ext==='pdf'){
     try{
       const ab=await file.arrayBuffer();
-      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       const pdf=await pdfjsLib.getDocument({data:ab}).promise;
-      let text='';
-      for(let i=1;i<=Math.min(pdf.numPages,50);i++){
-        const page=await pdf.getPage(i);
-        const content=await page.getTextContent();
-        text+=content.items.map(s=>s.str).join(' ')+'\n';
+      let text=`[PDF: ${file.name} — ${pdf.numPages} pages]\n`;
+      for(let i=1;i<=Math.min(pdf.numPages,60);i++){
+        const pg=await pdf.getPage(i);
+        const ct=await pg.getTextContent();
+        text+=ct.items.map(s=>s.str).join(' ')+'\n';
       }
-      return {type:'text',text:text.slice(0,50000),name:file.name};
+      return {extype:'text',text:text.slice(0,60000),name:file.name};
     }catch(e){
-      return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({type:'pdf_raw',data:ev.target.result,name:file.name});r.readAsDataURL(file);});
+      return new Promise(res=>{
+        const r=new FileReader();
+        r.onload=ev=>res({extype:'pdf_raw',data:ev.target.result,name:file.name});
+        r.readAsDataURL(file);
+      });
     }
   }
-  // Word docs - extract text
   if(['doc','docx'].includes(ext)){
     try{
       const ab=await file.arrayBuffer();
       const result=await mammoth.extractRawText({arrayBuffer:ab});
-      return {type:'text',text:result.value.slice(0,50000),name:file.name};
-    }catch(e){return {type:'text',text:'[Could not extract: '+file.name+']',name:file.name};}
+      return {extype:'text',text:`[DOCX: ${file.name}]\n`+result.value.slice(0,60000),name:file.name};
+    }catch(e){return {extype:'text',text:`[Could not extract: ${file.name}]`,name:file.name};}
   }
-  // Excel/CSV - read as text
-  if(['xlsx','xls','csv','txt'].includes(ext)){
+  if(['xlsx','xls'].includes(ext)){
     return new Promise(res=>{
       const r=new FileReader();
-      r.onload=ev=>res({type:'text',text:ev.target.result.slice(0,50000),name:file.name});
+      r.onload=ev=>res({extype:'text',text:`[Excel: ${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});
       r.readAsText(file);
     });
   }
-  // Default - read as text
   return new Promise(res=>{
     const r=new FileReader();
-    r.onload=ev=>res({type:'text',text:ev.target.result.slice(0,30000),name:file.name});
+    r.onload=ev=>res({extype:'text',text:`[${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});
     r.readAsText(file);
   });
 }
 
 function handleFiles(e){
-  if(!projectFiles[currentProjectId])projectFiles[currentProjectId]=[];
+  if(!projFiles[cProjId])projFiles[cProjId]=[];
   Array.from(e.target.files).forEach(async file=>{
-    const extracted=await extractText(file);
-    projectFiles[currentProjectId].push({name:file.name,size:file.size,type:file.type,...extracted});
+    const ex=await extractText(file);
+    projFiles[cProjId].push({name:file.name,size:file.size,...ex});
     renderFiles();
   });
 }
-
 function renderFiles(){
-  const files=projectFiles[currentProjectId]||[];
-  document.getElementById('fileCountLabel').textContent=files.length?`${files.length} file${files.length>1?'s':''} ready`:'No files';
+  const files=projFiles[cProjId]||[];
+  document.getElementById('fcLbl').textContent=files.length?`${files.length} file${files.length>1?'s':''} ready`:'No files';
   refreshBtn();
-  document.getElementById('filesGrid').innerHTML=files.map((f,i)=>{
+  document.getElementById('fgrid').innerHTML=files.map((f,i)=>{
     const ext=f.name.split('.').pop().toLowerCase();
-    const tc=ext==='pdf'?'ext-pdf':['xlsx','xls','csv','mpp'].includes(ext)?'ext-xlsx':['png','jpg','jpeg'].includes(ext)?'ext-img':['doc','docx'].includes(ext)?'ext-doc':'ext-txt';
+    const tc=ext==='pdf'?'fe-pdf':['xlsx','xls','csv'].includes(ext)?'fe-xl':['png','jpg','jpeg'].includes(ext)?'fe-img':['doc','docx'].includes(ext)?'fe-doc':'fe-txt';
     const sz=f.size>1048576?(f.size/1048576).toFixed(1)+' MB':Math.round(f.size/1024)+' KB';
-    return`<div class="file-card"><button class="file-remove" onclick="removeFile(${i})">×</button><div class="file-ext ${tc}">${ext.toUpperCase()}</div><div class="file-name">${f.name}</div><div class="file-size">${sz}</div></div>`;
+    return`<div class="fc"><button class="frem" onclick="remFile(${i})">×</button><div class="fext ${tc}">${ext.toUpperCase()}</div><div class="fn">${f.name}</div><div class="fs2">${sz}${f.extype==='text'?' · text extracted':''}</div></div>`;
   }).join('');
 }
 function refreshBtn(){
-  const files=projectFiles[currentProjectId]||[];
-  document.getElementById('analyzeBtn').disabled=files.length===0||!getKey().startsWith('sk-ant-');
+  const files=projFiles[cProjId]||[];
+  document.getElementById('anaBtn').disabled=files.length===0||!getKey().startsWith('sk-ant-');
 }
-function removeFile(i){projectFiles[currentProjectId].splice(i,1);renderFiles();}
+function remFile(i){projFiles[cProjId].splice(i,1);renderFiles();}
 
-function handleUpdateFile(e){
-  Array.from(e.target.files).forEach(file=>{
-    const r=new FileReader();
-    r.onload=ev=>{updateFiles.push({name:file.name,size:file.size,type:file.type,dataUrl:ev.target.result});renderUpdatePreview();};
-    r.readAsDataURL(file);
+function handleUF(e){
+  Array.from(e.target.files).forEach(async file=>{
+    const ex=await extractText(file);
+    uFiles.push({name:file.name,size:file.size,...ex});
+    renderUFPrev();
   });
 }
-function renderUpdatePreview(){
-  const el=document.getElementById('updateFilesPreview');
-  if(!updateFiles.length){el.innerHTML='';return;}
-  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">'+updateFiles.map((f,i)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 9px;font-size:11.5px;display:flex;align-items:center;gap:6px;">↑ ${f.name}<button onclick="removeUpdateFile(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;">×</button></div>`).join('')+'</div>';
+function renderUFPrev(){
+  const el=document.getElementById('ufPrev');
+  if(!uFiles.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">'+
+    uFiles.map((f,i)=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:4px 9px;font-size:11.5px;display:flex;align-items:center;gap:6px;">↑ ${f.name}<button onclick="remUF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;">×</button></div>`).join('')+'</div>';
 }
-function removeUpdateFile(i){updateFiles.splice(i,1);renderUpdatePreview();}
+function remUF(i){uFiles.splice(i,1);renderUFPrev();}
 
-// ═══════════════════════════════════════════════════════
-// TOLERANCE
-// ═══════════════════════════════════════════════════════
-function renderTolerance(){
-  if(!currentProjectData)return;
-  const t=currentProjectData.tolerance;
-  document.getElementById('tol_cost_pct').value=t.cost_pct||'';
-  document.getElementById('tol_cost_val').value=t.cost_val||'';
-  document.getElementById('tol_schedule_days').value=t.schedule_days||'';
-  document.getElementById('tol_schedule_pct').value=t.schedule_pct||'';
-  renderLevels('qhse_levels',t.qhse||DEF_QHSE,'qhse');
-  renderLevels('rep_levels',t.rep||DEF_REP,'rep');
-  renderLevels('prob_levels',t.prob||DEF_PROB,'prob');
-  renderLevels('impact_levels',t.impact||DEF_IMPACT,'impact');
+// ═══ TOLERANCE ════════════════════════════════════════════
+function renderTol(){
+  if(!cProj)return;
+  const tl=cProj.tolerance;
+  document.getElementById('tc_pct').value=tl.cost_pct||'';
+  document.getElementById('tc_val').value=tl.cost_val||'';
+  document.getElementById('ts_days').value=tl.sched_days||'';
+  document.getElementById('ts_pct').value=tl.sched_pct||'';
+  renderLvls('qhse_lvl',tl.qhse||DEF_QHSE,'qhse');
+  renderLvls('rep_lvl',tl.rep||DEF_REP,'rep');
+  renderLvls('prob_lvl',tl.prob||DEF_PROB,'prob');
+  renderLvls('imp_lvl',tl.imp||DEF_IMP,'imp');
 }
-
-function renderLevels(cid,levels,key){
-  document.getElementById(cid).innerHTML=levels.map((lv,i)=>`
-    <div class="tol-level" style="border-inline-start:3px solid ${LEVEL_COLORS[i]}">
-      <span class="tol-level-label" style="color:${LEVEL_COLORS[i]}">${lv.l}</span>
-      <input type="text" value="${lv.d}" oninput="updateLevel('${key}',${i},this.value)"/>
+function renderLvls(cid,lvs,key){
+  document.getElementById(cid).innerHTML=lvs.map((lv,i)=>`
+    <div class="tol-lv" style="border-inline-start:3px solid ${LC[i]}">
+      <span class="tol-lbl" style="color:${LC[i]}">${lv.l}</span>
+      <input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/>
     </div>`).join('');
 }
-
-function updateLevel(key,index,value){
-  if(!currentProjectData)return;
-  if(!currentProjectData.tolerance[key])currentProjectData.tolerance[key]=DEF_QHSE.map(x=>({...x}));
-  currentProjectData.tolerance[key][index].d=value;
-  debounceSaveTolerance();
+function updLvl(key,idx,val){
+  if(!cProj)return;
+  if(!cProj.tolerance[key])cProj.tolerance[key]=DEF_QHSE.map(x=>({...x}));
+  cProj.tolerance[key][idx].d=val;
+  dbTol();
 }
-
-let tolTimer=null;
-function debounceSaveTolerance(){clearTimeout(tolTimer);tolTimer=setTimeout(saveTolerance,1200);}
-
-async function saveTolerance(){
-  if(!currentProjectData)return;
-  currentProjectData.tolerance.cost_pct=document.getElementById('tol_cost_pct').value;
-  currentProjectData.tolerance.cost_val=document.getElementById('tol_cost_val').value;
-  currentProjectData.tolerance.schedule_days=document.getElementById('tol_schedule_days').value;
-  currentProjectData.tolerance.schedule_pct=document.getElementById('tol_schedule_pct').value;
-  try{await sbFetch('projects?id=eq.'+currentProjectId,'PATCH',{tolerance:currentProjectData.tolerance});showSync();}
+let tolT=null;
+function dbTol(){clearTimeout(tolT);tolT=setTimeout(saveTol,1200);}
+async function saveTol(){
+  if(!cProj)return;
+  cProj.tolerance.cost_pct=document.getElementById('tc_pct').value;
+  cProj.tolerance.cost_val=document.getElementById('tc_val').value;
+  cProj.tolerance.sched_days=document.getElementById('ts_days').value;
+  cProj.tolerance.sched_pct=document.getElementById('ts_pct').value;
+  try{await sb('projects?id=eq.'+cProjId,'PATCH',{tolerance:cProj.tolerance});showSync();}
   catch(e){console.error(e);}
 }
 
-// ═══════════════════════════════════════════════════════
-// ANALYZE
-// ═══════════════════════════════════════════════════════
-async function analyzeProject(){
-  const files=projectFiles[currentProjectId]||[];
-  const p=currentProjectData;
-  const t=p.tolerance||{};
-  const hasSchedule=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
-  showLoading(lang==='ar'?'جاري تحليل ملفات المشروع...':'Analyzing project files...');
+// ═══ ANALYZE ══════════════════════════════════════════════
+async function analyze(){
+  const files=projFiles[cProjId]||[];
+  const tl=cProj.tolerance||{};
+  const hasSched=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
+  showLoad(lang==='ar'?'جاري تحليل ملفات المشروع...':'Analyzing project files...');
 
-  const tolCtx=`Risk Appetite:
-- Cost: max ${t.cost_pct||5}% or ${t.cost_val||'unspecified'} SAR
-- Schedule: max ${t.schedule_days||30} days or ${t.schedule_pct||10}%
-- QHSE: ${(t.qhse||DEF_QHSE).map(x=>x.l+': '+x.d).join(' | ')}
-- Reputation: ${(t.rep||DEF_REP).map(x=>x.l+': '+x.d).join(' | ')}
-- Probability scale: ${(t.prob||DEF_PROB).map(x=>x.l+': '+x.d).join(' | ')}
-- Impact scale: ${(t.impact||DEF_IMPACT).map(x=>x.l+': '+x.d).join(' | ')}`;
+  const tolCtx=`RISK APPETITE:
+Cost: max ${tl.cost_pct||5}% or ${tl.cost_val||'unspecified'} SAR
+Schedule: max ${tl.sched_days||30} days or ${tl.sched_pct||10}%
+QHSE: ${(tl.qhse||DEF_QHSE).map(x=>x.l+': '+x.d).join(' | ')}
+Reputation: ${(tl.rep||DEF_REP).map(x=>x.l+': '+x.d).join(' | ')}
+Probability: ${(tl.prob||DEF_PROB).map(x=>x.l+': '+x.d).join(' | ')}
+Impact: ${(tl.imp||DEF_IMP).map(x=>x.l+': '+x.d).join(' | ')}`;
 
-  const scheduleNote=hasSchedule?'A schedule file has been uploaded — extract activity names, durations, and dates for timeline-based risk assessment.':'NOTE: No schedule file detected — generate risks based on project info only. Set has_schedule=false in response.';
+  const parts=[{type:'text',text:`You are a senior risk manager for construction projects in Saudi Arabia.
 
-  const parts=[{type:'text',text:`You are a senior risk manager specializing in construction projects in Saudi Arabia.
-
-Project: ${p.name} | Type: ${p.type} | Value: ${p.value||'—'} SAR | Contract: ${p.contract||'—'}
-Start: ${p.start_date||'—'} | Completion: ${p.end_date||'—'} | Description: ${p.description||'—'}
+PROJECT: ${cProj.name}
+Type: ${cProj.type} | Value: ${cProj.value||'—'} SAR | Contract: ${cProj.contract||'—'}
+Start: ${cProj.start_date||'—'} | Completion: ${cProj.end_date||'—'}
+Description: ${cProj.description||'—'}
 
 ${tolCtx}
-${scheduleNote}
+${hasSched?'Schedule file uploaded — use activity names and dates for timeline-based assessment.':'No schedule file — set has_schedule:false. Still assess expected_weeks based on project timeline if dates provided.'}
 
-Analyze all attached files and generate a comprehensive risk register including BOTH threats (negative risks) and opportunities (positive risks).
+Analyze all files. Generate risks including THREATS (negative) and OPPORTUNITIES (positive).
 
-Response format — JSON only, no extra text:
+CRITICAL: Respond with ONLY valid JSON, no markdown, no explanation. Keep ALL text fields under 25 words each.
+
 {
-  "summary": "2-sentence analysis summary",
+  "summary": "2-sentence analysis",
   "has_schedule": true,
-  "risks": [
-    {
-      "id": "R001",
-      "type": "threat",
-      "category": "Schedule",
-      "description": "Risk description",
-      "cause": "Root cause",
-      "probability": 3,
-      "impact_cost": 3,
-      "impact_schedule": 4,
-      "impact_qhse": 1,
-      "impact_reputation": 1,
-      "level": "high",
-      "response_strategy": "Mitigate",
-      "mitigation": "Response action plan",
-      "owner": "Suggested owner",
-      "activity_ref": "Activity name or ID from schedule if applicable",
-      "expected_weeks": 2
-    }
-  ]
+  "risks": [{
+    "id": "R001",
+    "type": "threat",
+    "category": "Schedule",
+    "description": "brief risk description under 20 words",
+    "cause": "root cause under 15 words",
+    "probability": 3,
+    "impact_cost": 3,
+    "impact_schedule": 4,
+    "impact_qhse": 1,
+    "impact_reputation": 2,
+    "level": "high",
+    "response_strategy": "Mitigate",
+    "mitigation": "action plan under 25 words",
+    "owner": "Role title",
+    "activity_ref": "Activity name if applicable",
+    "expected_weeks": 2
+  }]
 }
 
-Risk types: "threat" (negative) or "opportunity" (positive)
-Response strategies for threats: Avoid, Mitigate, Transfer, Accept, Escalate
-Response strategies for opportunities: Exploit, Enhance, Share, Accept, Escalate
-Categories: Schedule, Cost, Scope, Contract, Design, Execution, Suppliers, QHSE, Quality, Regulatory
-Levels: high (exceeds appetite), medium (approaches limit), low (within tolerance)
-expected_weeks: 1-4 (when is this risk likely to materialize based on schedule), null if unknown
-Generate 12-18 risks minimum including at least 3 opportunities.`}];
+Types: threat or opportunity
+Threat strategies: Avoid, Mitigate, Transfer, Accept, Escalate
+Opportunity strategies: Exploit, Enhance, Share, Accept, Escalate
+Categories: Schedule, Cost, Scope, Contract, Design, Execution, Suppliers, QHSE, Quality, Regulatory, Financial
+Levels: high, medium, low
+expected_weeks: 1-4 or null
+Generate 12-15 risks including 3 opportunities minimum.`}];
 
   for(const f of files){
-    if(f.type==='image'&&f.data){
+    if(f.extype==='image'&&f.data){
       parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
       parts.push({type:'text',text:`[Drawing: ${f.name}]`});
-    } else if(f.type==='pdf_raw'&&f.data){
+    }else if(f.extype==='pdf_raw'&&f.data){
       parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});
-    } else if(f.text){
-      parts.push({type:'text',text:`=== File: ${f.name} ===
-${f.text}
-`});
+    }else if(f.text){
+      parts.push({type:'text',text:f.text});
     }
   }
 
   try{
-    const data=await callAPI({model:'claude-opus-4-5',max_tokens:4000,messages:[{role:'user',content:parts}]});
-    hideLoading();
+    const data=await callAPI({model:'claude-opus-4-5',max_tokens:8000,messages:[{role:'user',content:parts}]});
+    hideLoad();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
-    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){alert('Parse error — try again');return;}
-    currentProjectData.summary=parsed.summary||'';
-    currentProjectData.has_schedule=parsed.has_schedule!==false;
+    try{parsed=parseJSON(data.content[0].text);}
+    catch(e){alert('Parse error: '+data.content[0].text.slice(0,300));return;}
+    cProj.summary=parsed.summary||'';
+    cProj.has_schedule=parsed.has_schedule!==false;
     pendingRisks=parsed.risks||[];
-    showValidation(pendingRisks);
-  }catch(e){hideLoading();alert('Error: '+e.message);}
+    showVal(pendingRisks);
+  }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
-// ═══════════════════════════════════════════════════════
-// VALIDATION
-// ═══════════════════════════════════════════════════════
-function showValidation(risks){document.getElementById('valOverlay').classList.add('show');renderValList(risks);}
-
+// ═══ VALIDATION ═══════════════════════════════════════════
+function showVal(risks){document.getElementById('valOv').classList.add('on');renderValList(risks);}
 function renderValList(risks){
-  const approved=risks.filter(r=>r._approved!==false).length;
-  document.getElementById('valCounter').textContent=`${approved}/${risks.length}`;
-  const lc={high:'var(--red)',medium:'var(--yellow)',low:'var(--green)'};
+  const app=risks.filter(r=>r._app!==false).length;
+  document.getElementById('valCtr').textContent=`${app}/${risks.length}`;
+  const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
   document.getElementById('valList').innerHTML=risks.map((r,i)=>`
-    <div class="val-card ${r._approved===false?'rejected':r._approved?'approved':''}" id="vc_${i}">
-      <div class="val-card-header">
+    <div class="vc ${r._app===false?'rej':r._app?'app2':''}" id="vc${i}">
+      <div class="vch">
         <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap;">
-            <span style="font-family:var(--mono);font-size:10.5px;color:var(--text3)">${r.id}</span>
-            <span class="risk-type-badge ${r.type==='opportunity'?'type-opportunity':'type-threat'}">${r.type==='opportunity'?'OPPORTUNITY':'THREAT'}</span>
-            <span class="cat-badge">${r.category}</span>
-            <span style="font-size:11px;color:${lc[r.level]||'var(--text2)'}">● ${r.level?.toUpperCase()}</span>
-            <span class="response-badge resp-${r.response_strategy?.toLowerCase()}">${r.response_strategy||'—'}</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
+            <span style="font-family:var(--mono);font-size:10.5px;color:var(--t3)">${r.id}</span>
+            <span class="bdg ${r.type==='opportunity'?'bdg-opp':'bdg-threat'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
+            <span class="cat-bdg">${r.category}</span>
+            <span style="font-size:11px;color:${lc[r.level]||'var(--t2)'}">● ${(r.level||'').toUpperCase()}</span>
+            <span class="resp r-${(r.response_strategy||'').toLowerCase()}">${r.response_strategy||'—'}</span>
+            ${r.expected_weeks?`<span class="chip" style="background:rgba(201,160,32,.1);color:var(--yel)">Wk ${r.expected_weeks}</span>`:''}
           </div>
-          <div style="font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:3px;">${r.description}</div>
-          <div style="font-size:11.5px;color:var(--text3);">${r.cause||''}</div>
+          <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:3px;">${r.description}</div>
+          <div style="font-size:11.5px;color:var(--t3);">${r.cause||''}</div>
         </div>
-        <div class="val-actions">
-          <button class="btn btn-success" style="padding:4px 10px;font-size:11.5px;" onclick="approveRisk(${i})">✓</button>
-          <button class="btn btn-danger" style="padding:4px 10px;font-size:11.5px;" onclick="rejectRisk(${i})">✕</button>
+        <div class="vca">
+          <button class="btn btn-ok" style="padding:4px 10px;font-size:11.5px;" onclick="appR(${i})">✓</button>
+          <button class="btn btn-del" style="padding:4px 10px;font-size:11.5px;" onclick="rejR(${i})">✕</button>
         </div>
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">
-        <span class="chip">P: ${r.probability} — ${PROB_LABELS[r.probability]||''}</span>
-        <span class="chip">Cost: ${IMP_LABELS[r.impact_cost]||r.impact_cost}</span>
-        <span class="chip">Schedule: ${IMP_LABELS[r.impact_schedule]||r.impact_schedule}</span>
-        <span class="chip">QHSE: ${IMP_LABELS[r.impact_qhse]||r.impact_qhse}</span>
-        <span class="chip">Rep: ${IMP_LABELS[r.impact_reputation]||r.impact_reputation}</span>
-        ${r.expected_weeks?`<span class="chip" style="background:rgba(212,160,23,.1);color:var(--yellow)">Week ${r.expected_weeks}</span>`:''}
+        <span class="chip">P: ${r.probability} — ${PL[r.probability]||''}</span>
+        <span class="chip">Cost: ${IL[r.impact_cost]||r.impact_cost}</span>
+        <span class="chip">Sched: ${IL[r.impact_schedule]||r.impact_schedule}</span>
+        <span class="chip">QHSE: ${IL[r.impact_qhse]||r.impact_qhse}</span>
+        <span class="chip">Rep: ${IL[r.impact_reputation]||r.impact_reputation}</span>
       </div>
-      <div style="font-size:11.5px;color:var(--text2);background:var(--surface2);padding:7px 10px;border-radius:4px;">${r.mitigation}</div>
+      <div style="font-size:11.5px;color:var(--t2);background:var(--s2);padding:7px 10px;border-radius:4px;">${r.mitigation}</div>
     </div>`).join('');
 }
-
-function approveRisk(i){pendingRisks[i]._approved=true;renderValList(pendingRisks);}
-function rejectRisk(i){pendingRisks[i]._approved=false;renderValList(pendingRisks);}
-function approveAll(){pendingRisks.forEach(r=>r._approved=true);renderValList(pendingRisks);}
-
-async function confirmValidation(){
-  const approved=pendingRisks.filter(r=>r._approved!==false);
-  if(!approved.length){alert('Approve at least one risk');return;}
-  showLoading(lang==='ar'?'جاري الحفظ...':'Saving register...');
+function appR(i){pendingRisks[i]._app=true;renderValList(pendingRisks);}
+function rejR(i){pendingRisks[i]._app=false;renderValList(pendingRisks);}
+function approveAll(){pendingRisks.forEach(r=>r._app=true);renderValList(pendingRisks);}
+async function confirmVal(){
+  const app=pendingRisks.filter(r=>r._app!==false);
+  if(!app.length){alert('Approve at least one risk');return;}
+  showLoad(lang==='ar'?'جاري الحفظ...':'Saving register...');
   try{
-    await sbFetch('risks?project_id=eq.'+currentProjectId,'DELETE');
-    const toInsert=approved.map(r=>({
-      project_id:currentProjectId,risk_id:r.id,type:r.type||'threat',category:r.category,
+    await sb('risks?project_id=eq.'+cProjId,'DELETE');
+    const ins=app.map(r=>({
+      project_id:cProjId,risk_id:r.id,type:r.type||'threat',category:r.category,
       description:r.description,cause:r.cause||'',probability:r.probability,
       impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,
       impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,
@@ -1063,363 +1030,330 @@ async function confirmValidation(){
       mitigation:r.mitigation,owner:r.owner||'',
       activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null
     }));
-    await sbFetch('risks','POST',toInsert);
-    const analyzedAt=new Date().toLocaleDateString();
-    await sbFetch('projects?id=eq.'+currentProjectId,'PATCH',{summary:currentProjectData.summary,analyzed_at:analyzedAt,has_schedule:currentProjectData.has_schedule});
-    hideLoading();
-    document.getElementById('valOverlay').classList.remove('show');
-    await selectProject(currentProjectId);
-    showSync();
-  }catch(e){hideLoading();alert('Save error: '+e.message);}
+    await sb('risks','POST',ins);
+    await sb('projects?id=eq.'+cProjId,'PATCH',{
+      summary:cProj.summary,
+      analyzed_at:new Date().toLocaleDateString(),
+      has_schedule:cProj.has_schedule
+    });
+    hideLoad();
+    document.getElementById('valOv').classList.remove('on');
+    await selectProj(cProjId);showSync();
+  }catch(e){hideLoad();alert('Save error: '+e.message);}
 }
 
-// ═══════════════════════════════════════════════════════
-// REGISTER
-// ═══════════════════════════════════════════════════════
-function renderRegister(){
-  const risks=currentProjectData?.risks||[];
-  if(!risks.length){
-    document.getElementById('registerContent').innerHTML=`<div class="empty-state"><div class="empty-title">${t('regEmpty')}</div></div>`;
-    return;
-  }
-  const lc={high:'var(--red)',medium:'var(--yellow)',low:'var(--green)'};
-  const respClass={Avoid:'resp-avoid',Mitigate:'resp-mitigate',Transfer:'resp-transfer',Accept:'resp-accept',Escalate:'resp-escalate',Exploit:'resp-exploit',Enhance:'resp-enhance',Share:'resp-share'};
-
-  const threats=risks.filter(r=>r.type==='threat'||!r.type);
-  const opps=risks.filter(r=>r.type==='opportunity');
-
+// ═══ REGISTER ═════════════════════════════════════════════
+function renderReg(){
+  const risks=cProj?.risks||[];
+  if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-t">${t('regEmpty')}</div></div>`;return;}
+  const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
+  const rc={Avoid:'r-avoid',Mitigate:'r-mitigate',Transfer:'r-transfer',Accept:'r-accept',Escalate:'r-escalate',Exploit:'r-exploit',Enhance:'r-enhance',Share:'r-share'};
   const buildRows=arr=>arr.map(r=>`
-    <tr class="${r.type==='opportunity'?'opportunity-row':'threat-row'}">
-      <td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${r.risk_id||r.id?.slice(0,8)}</span></td>
-      <td><span class="risk-type-badge ${r.type==='opportunity'?'type-opportunity':'type-threat'}">${r.type==='opportunity'?'OPP':'THREAT'}</span></td>
-      <td><span class="cat-badge">${r.category}</span></td>
-      <td><div style="font-size:12.5px;color:var(--text)">${r.description}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${r.cause||''}</div></td>
-      <td style="text-align:center"><span style="font-size:13px;font-weight:600">${r.probability}</span></td>
-      <td><div class="impact-col">
-        <div class="impact-row"><span style="font-size:10.5px;color:var(--text3);min-width:16px">C</span><div class="impact-bar"><div class="impact-fill" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--accent)'}"></div></div><span style="font-size:10.5px;color:var(--text2)">${r.impact_cost}</span></div>
-        <div class="impact-row"><span style="font-size:10.5px;color:var(--text3);min-width:16px">S</span><div class="impact-bar"><div class="impact-fill" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--accent)'}"></div></div><span style="font-size:10.5px;color:var(--text2)">${r.impact_schedule}</span></div>
-        <div class="impact-row"><span style="font-size:10.5px;color:var(--text3);min-width:16px">Q</span><div class="impact-bar"><div class="impact-fill" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--accent)'}"></div></div><span style="font-size:10.5px;color:var(--text2)">${r.impact_qhse}</span></div>
+    <tr class="${r.type==='opportunity'?'opp':'thr'}">
+      <td><span style="font-family:var(--mono);font-size:10.5px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
+      <td><span class="bdg ${r.type==='opportunity'?'bdg-opp':'bdg-threat'}">${r.type==='opportunity'?'OPP':'THR'}</span></td>
+      <td><span class="cat-bdg">${r.category}</span></td>
+      <td><div style="font-size:12.5px;color:var(--t1);max-width:220px;">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
+      <td style="text-align:center"><b>${r.probability}</b><div style="font-size:9.5px;color:var(--t3)">${PL[r.probability]||''}</div></td>
+      <td><div class="imp-col">
+        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">C</span><div class="bar"><div class="bar-fill" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_cost}</span></div>
+        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">S</span><div class="bar"><div class="bar-fill" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_schedule}</span></div>
+        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">Q</span><div class="bar"><div class="bar-fill" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_qhse}</span></div>
+        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">R</span><div class="bar"><div class="bar-fill" style="width:${r.impact_reputation*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_reputation}</span></div>
       </div></td>
-      <td><span style="font-size:11px;color:${lc[r.level]||'var(--text2)'};font-weight:600">${r.level?.toUpperCase()}</span></td>
-      <td><span class="response-badge ${respClass[r.response_strategy]||'resp-accept'}">${r.response_strategy||'—'}</span></td>
-      <td><div style="font-size:11.5px;color:var(--text2);max-width:200px;line-height:1.5">${r.mitigation}</div></td>
-      <td style="font-size:11.5px;color:var(--text2)">${r.owner||'—'}</td>
+      <td><span class="bdg bdg-${r.level}">${(r.level||'').toUpperCase()}</span></td>
+      <td><span class="resp ${rc[r.response_strategy]||'r-accept'}">${r.response_strategy||'—'}</span></td>
+      <td><div style="font-size:11.5px;color:var(--t2);max-width:180px;line-height:1.5">${r.mitigation}</div></td>
+      <td style="font-size:11.5px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
     </tr>`).join('');
 
-  const headers='<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>P</th><th>Impact</th><th>Level</th><th>Response</th><th>Action Plan</th><th>Owner</th></tr>';
+  const thr=risks.filter(r=>r.type==='threat'||!r.type);
+  const opp=risks.filter(r=>r.type==='opportunity');
+  const hdr='<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>P</th><th>Impact</th><th>Level</th><th>Response</th><th>Action Plan</th><th>Owner</th></tr>';
 
-  document.getElementById('registerContent').innerHTML=`
-    ${currentProjectData.summary?`<div class="alert alert-info">${currentProjectData.summary}</div>`:''}
-    ${threats.length?`<div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Threats (${threats.length})</div><div class="table-wrap" style="margin-bottom:18px"><table class="rt"><thead>${headers}</thead><tbody>${buildRows(threats)}</tbody></table></div>`:''}
-    ${opps.length?`<div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Opportunities (${opps.length})</div><div class="table-wrap"><table class="rt"><thead>${headers}</thead><tbody>${buildRows(opps)}</tbody></table></div>`:''}
-    <div class="export-bar"><button class="btn btn-ghost" onclick="exportRisks()">${t('btnExport')}</button><span style="font-size:11px;color:var(--text3)">${risks.length} risks · ${currentProjectData.analyzed_at||'—'}</span></div>`;
+  document.getElementById('regContent').innerHTML=`
+    ${cProj.summary?`<div class="alert-i ai-info">${cProj.summary}</div>`:''}
+    ${thr.length?`
+      <div class="section-sep" style="color:var(--red)">Threats (${thr.length})</div>
+      <div class="tw" style="margin-bottom:16px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>
+    `:''}
+    ${opp.length?`
+      <div class="section-sep" style="color:var(--teal)">Opportunities (${opp.length})</div>
+      <div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>
+    `:''}
+    <div class="ebar">
+      <button class="btn btn-ghost" onclick="exportCSV()">${t('btnExport')}</button>
+      <span style="font-size:11px;color:var(--t3)">${risks.length} risks · ${cProj.analyzed_at||'—'}</span>
+    </div>`;
 }
 
-// ═══════════════════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════════════════
-function renderDashboard(){
-  const risks=currentProjectData?.risks||[];
-  const updates=currentProjectData?.updates||[];
-  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty-state"><div class="empty-title">${t('dashEmpty')}</div></div>`;return;}
+// ═══ DASHBOARD ════════════════════════════════════════════
+function renderDash(){
+  const risks=cProj?.risks||[];
+  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-t">${t('dashEmpty')}</div></div>`;return;}
 
   const high=risks.filter(r=>r.level==='high').length;
-  const med=risks.filter(r=>r.level==='medium'||r.level==='med').length;
+  const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
-  const threats=risks.filter(r=>r.type==='threat'||!r.type).length;
-  const opps=risks.filter(r=>r.type==='opportunity').length;
+  const thr=risks.filter(r=>r.type==='threat'||!r.type).length;
+  const opp=risks.filter(r=>r.type==='opportunity').length;
 
   document.getElementById('dashContent').innerHTML=`
+    <div class="mini-stat-row">
+      <div class="mini-stat"><div><div class="ms-label">${lang==='ar'?'مرتفعة':'High Risk'}</div><div class="ms-val" style="color:var(--red)">${high}</div></div><div style="font-size:22px;opacity:.3">▲</div></div>
+      <div class="mini-stat"><div><div class="ms-label">${lang==='ar'?'متوسطة':'Medium Risk'}</div><div class="ms-val" style="color:var(--yel)">${med}</div></div><div style="font-size:22px;opacity:.3">◆</div></div>
+      <div class="mini-stat"><div><div class="ms-label">${lang==='ar'?'فرص':'Opportunities'}</div><div class="ms-val" style="color:var(--teal)">${opp}</div></div><div style="font-size:22px;opacity:.3">★</div></div>
+    </div>
     <div class="dash-grid">
       <div class="chart-card">
-        <div class="chart-title">Risk Level Distribution</div>
-        <canvas id="levelChart" height="200"></canvas>
+        <div class="chart-title">${lang==='ar'?'توزيع مستويات المخاطر':'Risk Level Distribution'}</div>
+        <canvas id="lvlChart" height="180"></canvas>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Risk Matrix (Probability × Impact)</div>
-        <div id="matrixContainer"></div>
-      </div>
-      <div class="chart-card dash-full">
-        <div class="chart-title">Risk Trend Over Updates</div>
-        <canvas id="trendChart" height="120"></canvas>
+        <div class="chart-title">${lang==='ar'?'مصفوفة المخاطر':'Risk Matrix (P × Impact)'}</div>
+        <div id="matrixDiv"></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">By Category</div>
-        <canvas id="catChart" height="200"></canvas>
+        <div class="chart-title">${lang==='ar'?'استراتيجيات الاستجابة':'Response Strategies'}</div>
+        <canvas id="respChart" height="180"></canvas>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">Response Strategies</div>
-        <canvas id="respChart" height="200"></canvas>
+      <div class="chart-card dash-2">
+        <div class="chart-title">${lang==='ar'?'المخاطر حسب الفئة':'Risks by Category'}</div>
+        <canvas id="catChart" height="100"></canvas>
+      </div>
+      <div class="chart-card dash-wide">
+        <div class="chart-title">${lang==='ar'?'مؤشر المخاطر الإجمالي':'Risk Trend (Cumulative)'}</div>
+        <canvas id="trendChart" height="80"></canvas>
       </div>
     </div>`;
 
   setTimeout(()=>{
-    // Level donut
-    new Chart(document.getElementById('levelChart'),{type:'doughnut',data:{labels:['High','Medium','Low','Opportunities'],datasets:[{data:[high,med,low,opps],backgroundColor:['#e05252','#d4a017','#2e9e5b','#0e8f8f'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:11}}}},cutout:'65%'}});
+    // Level chart
+    new Chart(document.getElementById('lvlChart'),{
+      type:'doughnut',
+      data:{labels:['High','Medium','Low','Opportunities'],datasets:[{data:[high,med,low,opp],backgroundColor:['#e05252','#c9a020','#2a9e5b','#0a8f8f'],borderWidth:0,hoverOffset:4}]},
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#7a92ab',font:{size:10},padding:10}}},cutout:'68%',layout:{padding:4}}
+    });
 
     // Matrix
-    buildMatrix();
+    const mc=Array.from({length:5},()=>Array(5).fill(0));
+    risks.forEach(r=>{
+      const p=Math.max(1,Math.min(5,r.probability||1))-1;
+      const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1)+(r.impact_qhse||1))/3);
+      const ix=Math.max(1,Math.min(5,imp))-1;
+      mc[4-p][ix]++;
+    });
+    const mcolor=(p,i)=>{
+      const s=(p+1)*(i+1);
+      if(s>=16)return'rgba(224,82,82,.65)';
+      if(s>=9)return'rgba(201,160,32,.55)';
+      if(s>=4)return'rgba(201,160,32,.28)';
+      return'rgba(42,158,91,.35)';
+    };
+    let mhtml='<div style="font-size:9.5px;color:var(--t3);text-align:center;margin-bottom:5px">← Impact →</div><div class="mg">';
+    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mhtml+=`<div class="mc" style="background:${mcolor(4-pi,ii)}">${v||''}</div>`;});});
+    mhtml+='</div><div style="font-size:9px;color:var(--t3);margin-top:4px;text-align:center">↑ Probability ↑</div>';
+    document.getElementById('matrixDiv').innerHTML=mhtml;
+
+    // Response chart
+    const resp={};risks.forEach(r=>{if(r.response_strategy)resp[r.response_strategy]=(resp[r.response_strategy]||0)+1;});
+    const rc2={'Avoid':'#e05252','Mitigate':'#c9a020','Transfer':'#1e73e8','Accept':'#7a92ab','Escalate':'#8855dd','Exploit':'#0a8f8f','Enhance':'#2a9e5b','Share':'#1e73e8'};
+    new Chart(document.getElementById('respChart'),{
+      type:'doughnut',
+      data:{labels:Object.keys(resp),datasets:[{data:Object.values(resp),backgroundColor:Object.keys(resp).map(k=>rc2[k]||'#4a6070'),borderWidth:0}]},
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#7a92ab',font:{size:10},padding:8}}},cutout:'60%',layout:{padding:4}}
+    });
+
+    // Category bar
+    const cats={};risks.forEach(r=>{cats[r.category]=(cats[r.category]||0)+1;});
+    new Chart(document.getElementById('catChart'),{
+      type:'bar',
+      data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:'rgba(30,115,232,.55)',borderRadius:3,borderSkipped:false}]},
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a92ab',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a92ab',font:{size:10},stepSize:1},grid:{color:'rgba(28,45,66,.5)'}}},layout:{padding:{top:4}}}
+    });
 
     // Trend
-    buildTrend(updates,risks);
-
-    // Category
-    const cats={};
-    risks.forEach(r=>{cats[r.category]=(cats[r.category]||0)+1;});
-    new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:'rgba(26,110,232,.6)',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}}},y:{ticks:{color:'#7a91a8',font:{size:10}},grid:{color:'rgba(30,45,66,.5)'}}}}});
-
-    // Response
-    const resp={};
-    risks.forEach(r=>{if(r.response_strategy)resp[r.response_strategy]=(resp[r.response_strategy]||0)+1;});
-    const respColors={'Avoid':'#e05252','Mitigate':'#d4a017','Transfer':'#1a6ee8','Accept':'#7a91a8','Escalate':'#bc64ff','Exploit':'#0e8f8f','Enhance':'#2e9e5b','Share':'#1a6ee8'};
-    new Chart(document.getElementById('respChart'),{type:'pie',data:{labels:Object.keys(resp),datasets:[{data:Object.values(resp),backgroundColor:Object.keys(resp).map(k=>respColors[k]||'#4a5f75'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:11}}}}}});
-  },100);
-}
-
-function buildMatrix(){
-  const risks=currentProjectData?.risks||[];
-  const container=document.getElementById('matrixContainer');
-  if(!container)return;
-
-  // 5x5 grid — probability (y, 5=top) x avg impact (x)
-  const cells=Array.from({length:5},()=>Array(5).fill(0));
-  risks.forEach(r=>{
-    const p=Math.max(1,Math.min(5,r.probability||1))-1;
-    const imp=Math.round((r.impact_cost+r.impact_schedule)/2);
-    const i=Math.max(1,Math.min(5,imp))-1;
-    cells[4-p][i]++;
-  });
-
-  const colors=(p,i)=>{
-    const score=(p+1)*(i+1);
-    if(score>=16)return'rgba(224,82,82,.6)';
-    if(score>=9)return'rgba(212,160,23,.5)';
-    if(score>=4)return'rgba(212,160,23,.25)';
-    return'rgba(46,158,91,.3)';
-  };
-
-  let html='<div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:8px">Impact →</div>';
-  html+='<div style="display:flex;gap:3px;align-items:center"><div style="writing-mode:vertical-lr;font-size:10px;color:var(--text3);transform:rotate(180deg);margin-inline-end:4px">← Probability</div><div style="flex:1"><div class="matrix-grid">';
-  cells.forEach((row,pi)=>{
-    row.forEach((val,ii)=>{
-      html+=`<div class="matrix-cell" style="background:${colors(4-pi,ii)};border:1px solid var(--border)">${val>0?val:''}</div>`;
+    const upds=cProj?.upds||[];
+    const tLabels=['Initial'];
+    const hd=[high];const md2=[med];
+    upds.slice().reverse().forEach(u=>{
+      if(u.new_risks_count>0){
+        tLabels.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));
+        hd.push(hd[hd.length-1]+1);md2.push(md2[md2.length-1]);
+      }
     });
-  });
-  html+='</div></div></div>';
-  container.innerHTML=html;
+    new Chart(document.getElementById('trendChart'),{
+      type:'line',
+      data:{labels:tLabels,datasets:[
+        {label:'High',data:hd,borderColor:'#e05252',backgroundColor:'rgba(224,82,82,.07)',tension:.4,fill:true,borderWidth:1.5},
+        {label:'Medium',data:md2,borderColor:'#c9a020',backgroundColor:'rgba(201,160,32,.06)',tension:.4,fill:true,borderWidth:1.5}
+      ]},
+      options:{plugins:{legend:{position:'top',labels:{color:'#7a92ab',font:{size:10},padding:10}}},scales:{x:{ticks:{color:'#7a92ab',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a92ab',font:{size:10},stepSize:1},grid:{color:'rgba(28,45,66,.5)'}}},layout:{padding:{top:4}}}
+    });
+  },80);
 }
 
-function buildTrend(updates,currentRisks){
-  const canvas=document.getElementById('trendChart');
-  if(!canvas)return;
-  const labels=['Initial'];
-  const highData=[currentRisks.filter(r=>r.level==='high').length];
-  const medData=[currentRisks.filter(r=>r.level==='medium'||r.level==='med').length];
-  // Simulate trend from updates
-  updates.slice().reverse().forEach(u=>{
-    if(u.new_risks_count>0){
-      labels.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));
-      highData.push(highData[highData.length-1]+(u.new_risks_count>0?1:0));
-      medData.push(medData[medData.length-1]);
-    }
-  });
-  new Chart(canvas,{type:'line',data:{labels,datasets:[{label:'High',data:highData,borderColor:'#e05252',backgroundColor:'rgba(224,82,82,.08)',tension:.4,fill:true},{label:'Medium',data:medData,borderColor:'#d4a017',backgroundColor:'rgba(212,160,23,.06)',tension:.4,fill:true}]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:11}}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}}},y:{ticks:{color:'#7a91a8',font:{size:10},stepSize:1},grid:{color:'rgba(30,45,66,.5)'}}}}});
-}
-
-// ═══════════════════════════════════════════════════════
-// EARLY WARNING
-// ═══════════════════════════════════════════════════════
-function renderWarning(){
-  const risks=currentProjectData?.risks||[];
-  const hasSchedule=currentProjectData?.has_schedule;
-  const el=document.getElementById('warningContent');
-
-  if(!risks.length){el.innerHTML=`<div class="empty-state"><div class="empty-title">${t('ewEmpty')}</div></div>`;return;}
-
-  if(!hasSchedule){
-    el.innerHTML=`
-      <div class="no-schedule-msg">
-        <div style="font-size:28px;margin-bottom:12px;color:var(--text3)">⚠</div>
-        <h3>${lang==='ar'?'لا يوجد جدول زمني مرفوع':'No Schedule File Uploaded'}</h3>
-        <p style="font-size:12px;line-height:1.7;max-width:400px;margin:0 auto">${lang==='ar'?'لإنشاء تقرير الإنذار المبكر، يجب رفع الجدول الزمني للمشروع (Excel أو تصدير برامفيرا). الجدول الزمني يتيح للنظام تحديد المخاطر المرتبطة بالأنشطة القادمة خلال الأسبوعين القادمين.':'To generate Early Warning reports, please upload the project schedule (Excel or Primavera export). The schedule allows the system to identify risks linked to upcoming activities in the next 2 weeks.'}</p>
-        <div style="margin-top:16px;"><button class="btn btn-primary" onclick="switchTab('upload')">${lang==='ar'?'رفع الجدول الزمني':'Upload Schedule'}</button></div>
-      </div>`;
-    return;
+// ═══ EARLY WARNING ════════════════════════════════════════
+function renderWarn(){
+  const risks=cProj?.risks||[];
+  const el=document.getElementById('warnContent');
+  if(!risks.length){el.innerHTML=`<div class="empty"><div class="empty-t">${t('warnEmpty')}</div></div>`;return;}
+  if(!cProj.has_schedule){
+    el.innerHTML=`<div class="no-sched">
+      <h3>${lang==='ar'?'لا يوجد جدول زمني مرفوع':'No Schedule File Uploaded'}</h3>
+      <p>${lang==='ar'?'لإنشاء تقرير الإنذار المبكر، ارفع الجدول الزمني (Excel أو تصدير برامفيرا). يتيح ذلك للنظام تحديد المخاطر المرتبطة بالأنشطة القادمة خلال الأسبوعين القادمين.':'To generate Early Warning reports, upload the project schedule (Excel or Primavera export). This allows the system to identify risks linked to upcoming activities in the next 2 weeks.'}</p>
+      <button class="btn btn-primary" onclick="switchTab('files')">${lang==='ar'?'رفع الجدول الزمني':'Upload Schedule'}</button>
+    </div>`;return;
   }
-
-  // Filter risks with expected_weeks 1 or 2
-  const week1=risks.filter(r=>r.expected_weeks===1);
-  const week2=risks.filter(r=>r.expected_weeks===2);
-  const soon=risks.filter(r=>r.expected_weeks===3||r.expected_weeks===4);
+  const w1=risks.filter(r=>r.expected_weeks===1);
+  const w2=risks.filter(r=>r.expected_weeks===2);
+  const w34=risks.filter(r=>r.expected_weeks===3||r.expected_weeks===4);
 
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div>
-        <div style="font-size:14px;font-weight:600;">${lang==='ar'?'تقرير الإنذار المبكر':'Early Warning Report'}</div>
-        <div style="font-size:11.5px;color:var(--text3);margin-top:2px;">${lang==='ar'?'المخاطر المتوقعة خلال الأسبوعين القادمين':'Risks expected to materialize in the next 2 weeks'}</div>
+        <div style="font-size:13.5px;font-weight:700;">${lang==='ar'?'تقرير الإنذار المبكر':'Early Warning Report'}</div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:2px;">${lang==='ar'?'المخاطر المتوقعة خلال الأسبوعين القادمين بناءً على الجدول الزمني':'Risks expected to materialize in the next 2 weeks based on schedule'}</div>
       </div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${lang==='ar'?'تاريخ التقرير:':'Report Date:'} ${new Date().toLocaleDateString()}</div>
+      <div style="font-size:10.5px;color:var(--t3);font-family:var(--mono);">${new Date().toLocaleDateString()}</div>
     </div>
-
-    ${week1.length?`
-      <div style="font-size:11.5px;font-weight:600;color:var(--red);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">
-        ${lang==='ar'?'هذا الأسبوع — إجراء فوري مطلوب':'This Week — Immediate Action Required'} (${week1.length})
-      </div>
-      ${week1.map(r=>buildEWCard(r,1)).join('')}
-    `:''}
-
-    ${week2.length?`
-      <div style="font-size:11.5px;font-weight:600;color:var(--yellow);margin-bottom:8px;margin-top:16px;text-transform:uppercase;letter-spacing:.06em;">
-        ${lang==='ar'?'الأسبوع القادم — تحضير مطلوب':'Next Week — Preparation Required'} (${week2.length})
-      </div>
-      ${week2.map(r=>buildEWCard(r,2)).join('')}
-    `:''}
-
-    ${soon.length?`
-      <div style="font-size:11.5px;font-weight:600;color:var(--text3);margin-bottom:8px;margin-top:16px;text-transform:uppercase;letter-spacing:.06em;">
-        ${lang==='ar'?'خلال 3-4 أسابيع — مراقبة':'3–4 Weeks — Monitor'} (${soon.length})
-      </div>
-      ${soon.map(r=>buildEWCard(r,r.expected_weeks)).join('')}
-    `:''}
-
-    ${!week1.length&&!week2.length&&!soon.length?`
-      <div class="alert alert-success">
-        ${lang==='ar'?'لا توجد مخاطر متوقعة خلال الأسبوعين القادمين بناءً على الجدول الزمني الحالي.':'No risks expected to materialize in the next 2 weeks based on the current schedule.'}
-      </div>
-    `:''}`;
+    ${w1.length?`<div class="section-sep" style="color:var(--red)">${lang==='ar'?'هذا الأسبوع — إجراء فوري':'This Week — Immediate Action'} (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
+    ${w2.length?`<div class="section-sep" style="color:var(--yel);margin-top:14px;">${lang==='ar'?'الأسبوع القادم — تحضير مطلوب':'Next Week — Preparation Required'} (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
+    ${w34.length?`<div class="section-sep" style="color:var(--t3);margin-top:14px;">${lang==='ar'?'3-4 أسابيع — مراقبة':'3–4 Weeks — Monitor'} (${w34.length})</div>${w34.map(r=>ewCard(r,r.expected_weeks)).join('')}`:''}
+    ${!w1.length&&!w2.length&&!w34.length?`<div class="alert-i ai-ok">${lang==='ar'?'لا توجد مخاطر متوقعة خلال الأسبوعين القادمين.':'No risks expected to materialize in the next 2 weeks based on the current schedule.'}</div>`:''}`;
 }
 
-function buildEWCard(r,week){
-  const levelClass={high:'ew-high',medium:'ew-med',med:'ew-med',low:'ew-low'};
-  const cls=levelClass[r.level]||'ew-low';
-  const weekLabel=week===1?(lang==='ar'?'هذا الأسبوع':'This Week'):(week===2?(lang==='ar'?'الأسبوع القادم':'Next Week'):`Week ${week}`);
-  const weekCls=week===1?'week-1':'week-2';
-  return`
-    <div class="ew-card ${cls}">
-      <div class="ew-header">
-        <div>
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
-            <span style="font-family:var(--mono);font-size:10.5px;color:var(--text3)">${r.risk_id||r.id?.slice(0,8)}</span>
-            <span class="risk-type-badge ${r.type==='opportunity'?'type-opportunity':'type-threat'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
-            <span class="cat-badge">${r.category}</span>
-          </div>
-          <div class="ew-title">${r.description}</div>
+function ewCard(r,week){
+  const cls={high:'ew-h',medium:'ew-m',low:'ew-l'}[r.level]||'ew-l';
+  const wlbl=week===1?(lang==='ar'?'هذا الأسبوع':'This Week'):week===2?(lang==='ar'?'الأسبوع القادم':'Next Week'):`Week ${week}`;
+  const wc=week===1?'wb1':week===2?'wb2':'wb3';
+  return`<div class="ew-card ${cls}">
+    <div class="ew-hdr">
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span>
+          <span class="bdg ${r.type==='opportunity'?'bdg-opp':'bdg-threat'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
+          <span class="cat-bdg">${r.category}</span>
+          <span class="bdg bdg-${r.level}">${(r.level||'').toUpperCase()}</span>
         </div>
-        <span class="week-badge ${weekCls}">${weekLabel}</span>
+        <div class="ew-title">${r.description}</div>
       </div>
-      ${r.activity_ref?`<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Activity: ${r.activity_ref}</div>`:''}
-      <div class="ew-body">${lang==='ar'?'السبب: ':'Cause: '}${r.cause||'—'}</div>
-      <div class="ew-action">${lang==='ar'?'الإجراء المقترح: ':'Recommended action: '}${r.mitigation}</div>
-    </div>`;
+      <span class="wbadge ${wc}">${wlbl}</span>
+    </div>
+    ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3);margin:4px 0;">${lang==='ar'?'النشاط:':'Activity:'} ${r.activity_ref}</div>`:''}
+    <div style="font-size:12px;color:var(--t2);margin-top:5px;">${lang==='ar'?'السبب: ':'Cause: '}${r.cause||'—'}</div>
+    <div style="font-size:11.5px;color:var(--t3);font-style:italic;margin-top:5px;">${lang==='ar'?'الإجراء: ':'Action: '}${r.mitigation}</div>
+  </div>`;
 }
 
-// ═══════════════════════════════════════════════════════
-// UPDATES
-// ═══════════════════════════════════════════════════════
-function selectUpdateType(btn,type){
-  document.querySelectorAll('.pill-btn').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');currentUpdateType=type;
+// ═══ UPDATES ══════════════════════════════════════════════
+function setUT(btn,type){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');cUT=type;
 }
 
 async function addUpdate(){
-  const text=document.getElementById('updateText').value.trim();
-  const fileDesc=document.getElementById('updateFileDesc').value.trim();
-  if(!text&&!updateFiles.length){alert(lang==='ar'?'يرجى كتابة تفاصيل أو رفع ملف':'Please add details or attach a file');return;}
-  const typeLabels={change_order:lang==='ar'?'أمر تغيير':'Change Order',delay:lang==='ar'?'تأخير':'Delay',scope:lang==='ar'?'تغيير نطاق':'Scope Change',site:lang==='ar'?'مستجد ميداني':'Site Update',contract:lang==='ar'?'تعديل عقدي':'Contract Amendment',note:lang==='ar'?'ملاحظة':'Note'};
-  const existing=(currentProjectData.risks||[]).map(r=>`${r.risk_id||r.id}: ${r.description} [${r.type||'threat'}]`).join('\n');
-  showLoading(lang==='ar'?'جاري تحليل التحديث...':'Analyzing update...');
+  const text=document.getElementById('utext').value.trim();
+  const fdesc=document.getElementById('ufdesc').value.trim();
+  if(!text&&!uFiles.length){alert(lang==='ar'?'يرجى كتابة تفاصيل أو رفع ملف':'Please add details or attach a file');return;}
+  const tl={change_order:lang==='ar'?'أمر تغيير':'Change Order',delay:lang==='ar'?'تأخير':'Delay',scope:lang==='ar'?'تغيير نطاق':'Scope Change',site:lang==='ar'?'مستجد ميداني':'Site Update',contract:lang==='ar'?'تعديل عقدي':'Contract Amendment',meeting:lang==='ar'?'محضر اجتماع':'Meeting Minutes',note:lang==='ar'?'ملاحظة':'Note'};
+  const existing=(cProj.risks||[]).map(r=>`${r.risk_id||r.id}: ${r.description} [${r.type||'threat'},${r.level}]`).join('\n');
+  showLoad(lang==='ar'?'جاري تحليل التحديث...':'Analyzing update...');
 
-  const parts=[{type:'text',text:`Risk manager analyzing project update.
-Project: ${currentProjectData.name}
-Existing risks:\n${existing||'None'}
-Update type: ${typeLabels[currentUpdateType]}
+  const parts=[{type:'text',text:`Risk manager analyzing construction project update.
+Project: ${cProj.name} | Type: ${cProj.type}
+Existing risks:\n${existing||'None yet'}
+Update type: ${tl[cUT]}
 Details: ${text}
-${fileDesc?'File: '+fileDesc:''}
-Identify new risks AND opportunities from this update.
-JSON only:
-{"analysis":"brief impact analysis","new_risks":[{"id":"R${String((currentProjectData.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"","owner":"","expected_weeks":2}]}`}];
+${fdesc?'File: '+fdesc:''}
 
-  for(const f of updateFiles){
-    const ext=f.name.split('.').pop().toLowerCase();
-    if(['png','jpg','jpeg'].includes(ext))parts.push({type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:f.dataUrl.split(',')[1]}});
-    else if(ext==='pdf')parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.dataUrl.split(',')[1]}});
+Identify NEW risks or opportunities from this update. Be concise, max 20 words per field.
+Respond with ONLY valid JSON:
+{"analysis":"brief impact summary under 30 words","new_risks":[{"id":"R${String((cProj.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"","owner":"","expected_weeks":2}]}`}];
+
+  for(const f of uFiles){
+    if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
+    else if(f.extype==='pdf_raw'&&f.data){parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});}
+    else if(f.text){parts.push({type:'text',text:f.text});}
   }
 
   try{
-    const data=await callAPI({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:parts}]});
-    hideLoading();
+    const data=await callAPI({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:parts}]});
+    hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
-    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){
-      // Try to extract JSON from anywhere in the text
-      try{
-        const raw=data.content[0].text;
-        const start=raw.indexOf('{');
-        const end=raw.lastIndexOf('}');
-        if(start>=0&&end>start){parsed=JSON.parse(raw.slice(start,end+1));}
-        else{parsed={analysis:raw.slice(0,300),new_risks:[]};}
-      }catch(e2){parsed={analysis:data.content[0].text.slice(0,300),new_risks:[];};}
-    }
+    try{parsed=parseJSON(data.content[0].text);}
+    catch(e){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[]};}
+
     if(parsed.new_risks?.length){
-      const toInsert=parsed.new_risks.map(r=>({project_id:currentProjectId,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
-      await sbFetch('risks','POST',toInsert);
+      const ins=parsed.new_risks.map(r=>({
+        project_id:cProjId,risk_id:r.id,type:r.type||'threat',category:r.category||'Scope',
+        description:r.description,cause:r.cause||'',probability:r.probability||3,
+        impact_cost:r.impact_cost||2,impact_schedule:r.impact_schedule||2,
+        impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,
+        level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',
+        mitigation:r.mitigation||'',owner:r.owner||'',
+        activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null
+      }));
+      await sb('risks','POST',ins);
     }
-    await sbFetch('updates','POST',{project_id:currentProjectId,type:currentUpdateType,type_label:typeLabels[currentUpdateType],content:text,file_desc:fileDesc,files_count:updateFiles.length,analysis:parsed.analysis||'',new_risks_count:(parsed.new_risks||[]).length});
-    document.getElementById('updateText').value='';
-    document.getElementById('updateFileDesc').value='';
-    updateFiles=[];renderUpdatePreview();
-    await selectProject(currentProjectId);
-    showSync();
-  }catch(e){hideLoading();alert('Error: '+e.message);}
+    await sb('updates','POST',{
+      project_id:cProjId,type:cUT,type_label:tl[cUT],
+      content:text,file_desc:fdesc,files_count:uFiles.length,
+      analysis:parsed.analysis||'',new_risks_count:(parsed.new_risks||[]).length
+    });
+    document.getElementById('utext').value='';
+    document.getElementById('ufdesc').value='';
+    uFiles=[];renderUFPrev();
+    await selectProj(cProjId);showSync();
+  }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
-function renderUpdates(){
-  const updates=currentProjectData?.updates||[];
-  const tl=document.getElementById('updatesTimeline');
-  if(!updates.length){tl.innerHTML=`<div class="empty-state" style="padding:24px"><div class="empty-title">${t('noUpdates')}</div></div>`;return;}
-  const dc={change_order:'dot-co',delay:'dot-delay',scope:'dot-scope',site:'dot-site',contract:'dot-contract',note:'dot-note'};
-  tl.innerHTML=updates.map(u=>`
-    <div class="tl-item">
-      <div class="tl-dot ${dc[u.type]||'dot-note'}"></div>
-      <div class="tl-card">
-        <div class="tl-header"><span class="tl-type">${u.type_label||u.type}</span><span class="tl-date">${new Date(u.created_at).toLocaleString()}</span></div>
-        ${u.content?`<div class="tl-text">${u.content}</div>`:''}
-        ${u.files_count?`<div style="font-size:11px;color:var(--text3);margin-top:5px;">↑ ${u.files_count} file attached${u.file_desc?' — '+u.file_desc:''}</div>`:''}
-        ${u.analysis?`<div style="margin-top:7px;font-size:11.5px;color:var(--text2);border-top:1px solid var(--border);padding-top:7px">${u.analysis}</div>`:''}
-        ${u.new_risks_count>0?`<div class="new-risk-alert">${u.new_risks_count} new risk${u.new_risks_count>1?'s':''} added to register</div>`:''}
+function renderUpds(){
+  const upds=cProj?.upds||[];
+  const el=document.getElementById('tlEl');
+  if(!upds.length){el.innerHTML=`<div class="empty" style="padding:22px"><div class="empty-t">${t('noUpd')}</div></div>`;return;}
+  const dc={change_order:'dc',delay:'dd',scope:'ds',site:'dsi',contract:'dco',meeting:'dco',note:'dn'};
+  el.innerHTML=upds.map(u=>`
+    <div class="tli">
+      <div class="tld ${dc[u.type]||'dn'}"></div>
+      <div class="tlc">
+        <div class="tlh">
+          <span class="tlt">${u.type_label||u.type}</span>
+          <span class="tld2">${new Date(u.created_at).toLocaleString()}</span>
+        </div>
+        ${u.content?`<div class="tlb">${u.content}</div>`:''}
+        ${u.files_count?`<div style="font-size:10.5px;color:var(--t3);margin-top:4px;">↑ ${u.files_count} file${u.files_count>1?'s':''}${u.file_desc?' — '+u.file_desc:''}</div>`:''}
+        ${u.analysis?`<div style="margin-top:7px;font-size:12px;color:var(--t2);border-top:1px solid var(--b1);padding-top:7px">${u.analysis}</div>`:''}
+        ${u.new_risks_count>0?`<div class="nra">+ ${u.new_risks_count} new risk${u.new_risks_count>1?'s':''} added to register</div>`:''}
       </div>
     </div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════
-// STATS
-// ═══════════════════════════════════════════════════════
+// ═══ STATS ════════════════════════════════════════════════
 function updateStats(){
-  const risks=currentProjectData?.risks||[];
-  document.getElementById('statTotal').textContent=risks.length;
-  document.getElementById('statThreats').textContent=risks.filter(r=>r.type==='threat'||!r.type).length;
-  document.getElementById('statOpps').textContent=risks.filter(r=>r.type==='opportunity').length;
-  document.getElementById('statHigh').textContent=risks.filter(r=>r.level==='high').length;
-  document.getElementById('statDate').textContent=currentProjectData?.analyzed_at||'—';
+  const risks=cProj?.risks||[];
+  document.getElementById('stTotal').textContent=risks.length;
+  document.getElementById('stThr').textContent=risks.filter(r=>r.type==='threat'||!r.type).length;
+  document.getElementById('stOpp').textContent=risks.filter(r=>r.type==='opportunity').length;
+  document.getElementById('stHigh').textContent=risks.filter(r=>r.level==='high').length;
+  document.getElementById('stDate').textContent=cProj?.analyzed_at||'—';
 }
 
-// ═══════════════════════════════════════════════════════
-// EXPORT
-// ═══════════════════════════════════════════════════════
-function exportRisks(){
-  const risks=currentProjectData?.risks||[];
+// ═══ EXPORT ═══════════════════════════════════════════════
+function exportCSV(){
+  const risks=cProj?.risks||[];
   if(!risks.length){alert('No risks to export');return;}
   const h=['ID','Type','Category','Description','Cause','Probability','Impact Cost','Impact Schedule','Impact QHSE','Impact Reputation','Level','Response Strategy','Action Plan','Owner','Activity Ref','Expected Week'];
-  const rows=risks.map(r=>[r.risk_id||r.id,r.type||'threat',r.category,r.description,r.cause||'',PROB_LABELS[r.probability]||r.probability,IMP_LABELS[r.impact_cost]||r.impact_cost,IMP_LABELS[r.impact_schedule]||r.impact_schedule,IMP_LABELS[r.impact_qhse]||r.impact_qhse,IMP_LABELS[r.impact_reputation]||r.impact_reputation,r.level,r.response_strategy||'—',r.mitigation,r.owner||'',r.activity_ref||'',r.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
+  const rows=risks.map(r=>[r.risk_id||r.id,r.type||'threat',r.category,r.description,r.cause||'',PL[r.probability]||r.probability,IL[r.impact_cost]||r.impact_cost,IL[r.impact_schedule]||r.impact_schedule,IL[r.impact_qhse]||r.impact_qhse,IL[r.impact_reputation]||r.impact_reputation,r.level,r.response_strategy||'—',r.mitigation,r.owner||'',r.activity_ref||'',r.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`RiskRegister_${currentProjectData.name}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.csv`;a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`RiskRegister_${cProj.name}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.csv`;a.click();
 }
 
-// ═══════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════
-function showLoading(t){document.getElementById('loadingText').textContent=t;document.getElementById('loadingOverlay').classList.add('show');}
-function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show');}
+// ═══ LOADING ══════════════════════════════════════════════
+function showLoad(t){document.getElementById('loadT').textContent=t;document.getElementById('loadOv').classList.add('on');}
+function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
 </script>
 </body>
 </html>
