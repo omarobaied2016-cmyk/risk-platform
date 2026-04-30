@@ -937,7 +937,7 @@ Generate 12-18 risks minimum including at least 3 opportunities.`}];
   }
 
   try{
-    const data=await callAPI({model:'claude-opus-4-5',max_tokens:4000,messages:[{role:'user',content:parts}]});
+    const data=await callAPI({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:parts}]});
     hideLoading();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
