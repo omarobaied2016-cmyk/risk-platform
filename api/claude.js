@@ -16,11 +16,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = req.body;
-    if (body && body.max_tokens && body.max_tokens > 8000) {
-      body.max_tokens = 8000;
-    }
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -28,18 +23,24 @@ export default async function handler(req, res) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(req.body)
     });
 
-    const text = await response.text();
-    console.log('Status:', response.status);
-    console.log('Response preview:', text.slice(0, 800));
+    const data = await response.json();
 
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch(parseErr) {
-      return res.status(500).json({ error: { message: 'Failed to parse Claude response: ' + text.slice(0, 200) } });
+    // Clean the text content if it exists
+    if (data.content && data.content[0] && data.content[0].text) {
+      let text = data.content[0].text.trim();
+      // Remove markdown code blocks
+      const match = text.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+      if (match) {
+        text = match[1].trim();
+      } else {
+        // Find first { or [
+        const j = text.search(/[\[{]/);
+        if (j > 0) text = text.slice(j);
+      }
+      data.content[0].text = text;
     }
 
     return res.status(response.status).json(data);
