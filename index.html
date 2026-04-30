@@ -937,7 +937,7 @@ Generate 12 risks including 3 opportunities. Keep ALL fields under 15 words each
   }
 
   try{
-    const data=await callAPI({model:'claude-opus-4-5',max_tokens:8000,messages:[{role:'user',content:parts}]});
+    const data=await callAPI({model:'claude-opus-4-5',max_tokens:16000,messages:[{role:'user',content:parts}]});
     hideLoading();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
