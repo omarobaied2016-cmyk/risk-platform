@@ -31,7 +31,17 @@ export default async function handler(req, res) {
       body: JSON.stringify(body)
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    console.log('Status:', response.status);
+    console.log('Response preview:', text.slice(0, 800));
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(parseErr) {
+      return res.status(500).json({ error: { message: 'Failed to parse Claude response: ' + text.slice(0, 200) } });
+    }
+
     return res.status(response.status).json(data);
   } catch (err) {
     return res.status(500).json({ error: { message: err.message } });
