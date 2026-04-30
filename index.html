@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" id="htmlRoot">
+<html lang="en" dir="ltr" id="R">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,373 +10,375 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
-  --bg:#090d12;--s1:#0f1823;--s2:#172030;--s3:#1f2c3e;
-  --b1:#1c2d42;--b2:#243650;--b3:#2e4460;
-  --t1:#cdd8e8;--t2:#7a92ab;--t3:#4a6070;
-  --acc:#1e73e8;--acc2:#1558c0;
-  --red:#e05252;--org:#d4780a;--yel:#c9a020;--grn:#2a9e5b;--teal:#0a8f8f;--pur:#8855dd;
-  --font-ar:'IBM Plex Sans Arabic',sans-serif;
-  --font-en:'IBM Plex Sans',sans-serif;
-  --mono:'IBM Plex Mono',monospace;
-  --r:6px;
+  --bg:#080c12;--s1:#0d1520;--s2:#132030;--s3:#192840;
+  --b1:#1a2d42;--b2:#223550;--b3:#2c4460;
+  --t1:#ccd8e5;--t2:#7a91a8;--t3:#4a6070;
+  --acc:#1e72e8;--acc2:#1558c0;
+  --red:#e05252;--org:#d4780a;--yel:#c9a020;--grn:#2a9e5b;--teal:#0a8f8f;--pur:#8855dd;--blue:#1e72e8;
+  --r:5px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font-en);background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;line-height:1.6;}
-[lang="ar"] body,[lang="ar"] .lang-apply{font-family:var(--font-ar);}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;line-height:1.6;}
+[lang=ar] body{font-family:'IBM Plex Sans Arabic',sans-serif;}
+[lang=ar] .fi,[lang=ar] .fs,[lang=ar] .fta,[lang=ar] .btn,[lang=ar] .pill{font-family:'IBM Plex Sans Arabic',sans-serif;}
 
-/* ── Layout ── */
-.header{background:var(--s1);border-bottom:1px solid var(--b1);height:50px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.brand{font-size:13.5px;font-weight:600;letter-spacing:.02em;color:var(--t1);}
-.brand-pill{font-size:9.5px;font-weight:600;background:rgba(30,115,232,.12);color:var(--acc);border:1px solid rgba(30,115,232,.2);padding:2px 8px;border-radius:20px;margin-inline-start:8px;letter-spacing:.06em;}
-.hdr-right{display:flex;align-items:center;gap:8px;}
-.api-bar{background:var(--s1);border-bottom:1px solid var(--b1);padding:6px 24px;display:flex;align-items:center;gap:10px;}
-.api-label{font-size:11px;font-weight:500;color:var(--t3);white-space:nowrap;}
-.api-inp{width:280px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:5px 10px;color:var(--t1);font-family:var(--mono);font-size:11px;outline:none;}
+.hdr{background:var(--s1);border-bottom:1px solid var(--b1);height:48px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.brand-pill{font-size:9px;font-weight:700;background:rgba(30,114,232,.12);color:var(--acc);border:1px solid rgba(30,114,232,.2);padding:2px 8px;border-radius:20px;letter-spacing:.08em;}
+.api-bar{background:var(--s1);border-bottom:1px solid var(--b1);padding:6px 22px;display:flex;align-items:center;gap:10px;}
+.api-lbl{font-size:11px;font-weight:500;color:var(--t3);white-space:nowrap;}
+.api-inp{width:260px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:5px 9px;color:var(--t1);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;}
 .api-inp:focus{border-color:var(--acc);}
-.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--b3);flex-shrink:0;}
-.conn-dot.on{background:var(--grn);}
-.conn-lbl{font-size:11px;color:var(--t3);}
-.conn-lbl.on{color:var(--grn);}
-.app{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 78px);}
-.sidebar{background:var(--s1);border-inline-end:1px solid var(--b1);padding:12px;overflow-y:auto;}
-.sb-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);padding:0 8px;margin-bottom:8px;}
-.proj-item{padding:8px 10px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:3px;transition:background .12s;}
-.proj-item:hover{background:var(--s2);}
-.proj-item.active{background:var(--s2);border-color:var(--b2);}
-.proj-name{font-size:12.5px;font-weight:500;color:var(--t1);margin-bottom:2px;}
-.proj-sub{font-size:10.5px;color:var(--t3);}
-.main{overflow-y:auto;padding:22px 26px;}
-
-/* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid var(--b2);font-family:inherit;transition:all .12s;white-space:nowrap;}
-.btn-primary{background:var(--acc);border-color:var(--acc);color:#fff;}
-.btn-primary:hover{background:var(--acc2);}
-.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
-.btn-ghost{background:transparent;color:var(--t2);}
-.btn-ghost:hover{background:var(--s2);color:var(--t1);}
-.btn-ok{background:rgba(42,158,91,.1);border-color:rgba(42,158,91,.25);color:var(--grn);}
+.cdot{width:7px;height:7px;border-radius:50%;background:var(--b3);}
+.cdot.on{background:var(--grn);}
+.clbl{font-size:11px;color:var(--t3);}
+.clbl.on{color:var(--grn);}
+.app{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 76px);}
+.sb{background:var(--s1);border-inline-end:1px solid var(--b1);padding:10px;overflow-y:auto;}
+.sb-hd{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);padding:0 7px;margin-bottom:8px;}
+.pi{padding:8px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:background .12s;}
+.pi:hover{background:var(--s2);}
+.pi.on{background:var(--s2);border-color:var(--b2);}
+.pi-n{font-size:12.5px;font-weight:500;margin-bottom:2px;}
+.pi-s{font-size:10.5px;color:var(--t3);}
+.main{overflow-y:auto;padding:20px 24px;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b2);transition:all .12s;white-space:nowrap;font-family:inherit;}
+.btn-p{background:var(--acc);border-color:var(--acc);color:#fff;}
+.btn-p:hover{background:var(--acc2);}
+.btn-p:disabled{opacity:.3;cursor:not-allowed;}
+.btn-g{background:transparent;color:var(--t2);}
+.btn-g:hover{background:var(--s2);color:var(--t1);}
+.btn-ok{background:rgba(42,158,91,.1);border-color:rgba(42,158,91,.22);color:var(--grn);}
 .btn-ok:hover{background:rgba(42,158,91,.18);}
-.btn-del{background:transparent;border-color:rgba(224,82,82,.25);color:var(--red);}
-.btn-del:hover{background:rgba(224,82,82,.08);}
-.btn-warn{background:rgba(201,160,32,.1);border-color:rgba(201,160,32,.25);color:var(--yel);}
-.lang-btn{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 12px;color:var(--t2);font-size:11.5px;cursor:pointer;font-family:inherit;}
+.btn-del{background:transparent;border-color:rgba(224,82,82,.22);color:var(--red);}
+.btn-del:hover{background:rgba(224,82,82,.07);}
+.btn-warn{background:rgba(201,160,32,.1);border-color:rgba(201,160,32,.22);color:var(--yel);}
+.lang-btn{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;color:var(--t2);font-size:11.5px;cursor:pointer;font-family:inherit;}
 .lang-btn:hover{border-color:var(--acc);color:var(--acc);}
-
-/* ── Tabs ── */
-.tabs{display:flex;border-bottom:1px solid var(--b1);margin-bottom:20px;gap:2px;}
-.tab{padding:7px 14px;font-size:12.5px;font-weight:500;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;white-space:nowrap;}
+.tabs{display:flex;border-bottom:1px solid var(--b1);margin-bottom:18px;}
+.tab{padding:7px 13px;font-size:12.5px;font-weight:500;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;white-space:nowrap;}
 .tab:hover{color:var(--t2);}
 .tab.on{color:var(--acc);border-bottom-color:var(--acc);}
 .pane{display:none;}
 .pane.on{display:block;}
-
-/* ── Forms ── */
-.fg{display:flex;flex-direction:column;gap:5px;}
-.fl{font-size:11px;font-weight:500;color:var(--t3);}
-.fi,.fs,.fta{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:7px 10px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;}
+.fi,.fs,.fta{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:6px 9px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;}
 .fi:focus,.fs:focus,.fta:focus{border-color:var(--acc);}
-.fta{resize:vertical;min-height:72px;}
+.fta{resize:vertical;min-height:68px;}
 .fs option{background:var(--s2);}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px;}
 .fgrid .full{grid-column:1/-1;}
-
-/* ── Stats ── */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
-.stat{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 15px;}
-.stat-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:7px;}
-.stat-val{font-size:22px;font-weight:700;line-height:1;}
-
-/* ── Table ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:16px;}
+.sc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px 14px;}
+.sc-l{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:6px;}
+.sc-v{font-size:21px;font-weight:700;line-height:1;}
 .tw{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;overflow-x:auto;}
-.rt{width:100%;border-collapse:collapse;font-size:12px;}
-.rt th{background:var(--s2);padding:8px 11px;text-align:start;font-weight:500;color:var(--t3);font-size:11px;border-bottom:1px solid var(--b1);white-space:nowrap;}
-.rt td{padding:10px 11px;border-bottom:1px solid var(--b1);vertical-align:top;}
+.rt{width:100%;border-collapse:collapse;font-size:11.5px;}
+.rt th{background:var(--s2);padding:8px 10px;text-align:start;font-weight:600;color:var(--t3);font-size:10.5px;border-bottom:1px solid var(--b1);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
+.rt td{padding:9px 10px;border-bottom:1px solid var(--b1);vertical-align:middle;}
 .rt tr:last-child td{border-bottom:none;}
-.rt tr:hover td{background:rgba(255,255,255,.012);}
+.rt tr:hover td{background:rgba(255,255,255,.01);}
 .rt .thr td:first-child{border-inline-start:2px solid var(--red);}
 .rt .opp td:first-child{border-inline-start:2px solid var(--teal);}
-
-/* ── Badges ── */
-.bdg{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:600;letter-spacing:.03em;}
-.bdg-threat{background:rgba(224,82,82,.1);color:var(--red);}
-.bdg-opp{background:rgba(10,143,143,.1);color:var(--teal);}
-.bdg-high{background:rgba(224,82,82,.1);color:var(--red);}
-.bdg-medium{background:rgba(201,160,32,.1);color:var(--yel);}
-.bdg-low{background:rgba(42,158,91,.1);color:var(--grn);}
-.cat-bdg{padding:2px 7px;border-radius:3px;font-size:11px;background:var(--s3);color:var(--t2);}
-.resp{padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:500;}
-.r-avoid{background:rgba(224,82,82,.1);color:var(--red);}
-.r-mitigate{background:rgba(201,160,32,.1);color:var(--yel);}
-.r-transfer{background:rgba(30,115,232,.1);color:var(--acc);}
-.r-accept{background:rgba(122,145,168,.1);color:var(--t2);}
-.r-escalate{background:rgba(136,85,221,.1);color:var(--pur);}
-.r-exploit{background:rgba(10,143,143,.1);color:var(--teal);}
-.r-enhance{background:rgba(42,158,91,.1);color:var(--grn);}
-.r-share{background:rgba(30,115,232,.1);color:var(--acc);}
-.imp-col{font-size:11px;display:flex;flex-direction:column;gap:3px;min-width:90px;}
-.imp-row{display:flex;align-items:center;gap:5px;}
-.bar{width:36px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:2px;}
-
-/* ── Upload ── */
-.drop{border:1.5px dashed var(--b3);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;position:relative;transition:all .15s;background:var(--s1);}
-.drop:hover{border-color:var(--acc);background:rgba(30,115,232,.03);}
+.bdg{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.04em;}
+.b-thr{background:rgba(224,82,82,.1);color:var(--red);}
+.b-opp{background:rgba(10,143,143,.1);color:var(--teal);}
+.b-h{background:rgba(224,82,82,.1);color:var(--red);}
+.b-m{background:rgba(201,160,32,.1);color:var(--yel);}
+.b-l{background:rgba(42,158,91,.1);color:var(--grn);}
+.cb{padding:2px 7px;border-radius:3px;font-size:10.5px;background:var(--s3);color:var(--t2);}
+.resp{padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;}
+.r-avoid,.r-تجنب{background:rgba(224,82,82,.1);color:var(--red);}
+.r-mitigate,.r-تخفيف{background:rgba(201,160,32,.1);color:var(--yel);}
+.r-transfer,.r-نقل{background:rgba(30,114,232,.1);color:var(--acc);}
+.r-accept,.r-قبول{background:rgba(122,145,168,.1);color:var(--t2);}
+.r-escalate,.r-تصعيد{background:rgba(136,85,221,.1);color:var(--pur);}
+.r-exploit,.r-استغلال{background:rgba(10,143,143,.1);color:var(--teal);}
+.r-enhance,.r-تعزيز{background:rgba(42,158,91,.1);color:var(--grn);}
+.r-share,.r-مشاركة{background:rgba(30,114,232,.1);color:var(--acc);}
+.ic{font-size:10.5px;display:flex;flex-direction:column;gap:2px;min-width:80px;}
+.ir{display:flex;align-items:center;gap:4px;}
+.ib{width:32px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.ibf{height:100%;border-radius:2px;}
+.drop{border:1.5px dashed var(--b3);border-radius:var(--r);padding:26px 18px;text-align:center;cursor:pointer;position:relative;background:var(--s1);}
+.drop:hover{border-color:var(--acc);background:rgba(30,114,232,.025);}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.drop-title{font-size:13px;font-weight:500;margin-bottom:4px;}
-.drop-sub{font-size:11.5px;color:var(--t3);}
-.fgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-top:14px;}
-.fc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:11px;position:relative;}
-.fext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:3px;margin-bottom:5px;display:inline-block;}
-.fe-pdf{background:rgba(224,82,82,.1);color:var(--red);}
-.fe-xl{background:rgba(42,158,91,.1);color:var(--grn);}
-.fe-img{background:rgba(30,115,232,.1);color:var(--acc);}
-.fe-doc{background:rgba(10,143,143,.1);color:var(--teal);}
-.fe-txt{background:rgba(122,145,168,.1);color:var(--t2);}
-.fn{font-size:11.5px;font-weight:500;word-break:break-all;margin-bottom:3px;}
-.fs2{font-size:10.5px;color:var(--t3);}
-.frem{position:absolute;top:6px;inset-inline-end:6px;width:18px;height:18px;background:var(--s2);border:none;border-radius:3px;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;}
+.fg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px;}
+.fcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px;position:relative;}
+.fext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 5px;border-radius:3px;margin-bottom:5px;display:inline-block;}
+.fx-pdf{background:rgba(224,82,82,.1);color:var(--red);}
+.fx-xl{background:rgba(42,158,91,.1);color:var(--grn);}
+.fx-img{background:rgba(30,114,232,.1);color:var(--acc);}
+.fx-doc{background:rgba(10,143,143,.1);color:var(--teal);}
+.fx-txt{background:rgba(122,145,168,.1);color:var(--t2);}
+.fn{font-size:11px;font-weight:500;word-break:break-all;margin-bottom:2px;}
+.fsz{font-size:10px;color:var(--t3);}
+.frem{position:absolute;top:6px;inset-inline-end:6px;width:17px;height:17px;background:var(--s2);border:none;border-radius:3px;color:var(--t3);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;}
 .frem:hover{background:rgba(224,82,82,.15);color:var(--red);}
-
-/* ── Update form ── */
-.uform{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;margin-bottom:18px;}
-.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.pill{padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:transparent;font-family:inherit;transition:all .12s;}
+.uform{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:16px;}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;}
+.pill{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:transparent;font-family:inherit;transition:all .12s;}
 .pill:hover{border-color:var(--acc);color:var(--acc);}
 .pill.on{background:var(--acc);border-color:var(--acc);color:#fff;}
-.fdrop{border:1px dashed var(--b3);border-radius:var(--r);padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2);}
+.fdrop{border:1px dashed var(--b3);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:9px;background:var(--s2);}
 .fdrop:hover{border-color:var(--acc);}
 .fdrop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-
-/* ── Timeline ── */
 .tl{position:relative;}
-.tl::before{content:'';position:absolute;inset-inline-end:13px;top:0;bottom:0;width:1px;background:var(--b1);}
-.tli{display:flex;gap:12px;margin-bottom:14px;padding-inline-end:34px;position:relative;}
-.tld{position:absolute;inset-inline-end:6px;top:5px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);}
-.dc{background:var(--acc);}
-.dd{background:var(--red);}
-.ds{background:var(--yel);}
-.dsi{background:var(--grn);}
-.dco{background:var(--teal);}
-.dn{background:var(--t3);}
-.tlc{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:11px 13px;}
-.tlh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-.tlt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);}
-.tld2{font-size:10.5px;color:var(--t3);font-family:var(--mono);}
-.tlb{font-size:12.5px;color:var(--t2);line-height:1.55;}
-.nra{margin-top:8px;padding:7px 10px;background:rgba(224,82,82,.06);border:1px solid rgba(224,82,82,.14);border-radius:4px;font-size:11.5px;color:var(--red);}
-
-/* ── Dashboard ── */
-.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
-.dash-wide{grid-column:1/-1;}
-.dash-2{grid-column:span 2;}
-.chart-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;}
-.chart-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:12px;}
-.mini-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-.mini-stat{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;}
-.ms-label{font-size:10.5px;color:var(--t3);}
-.ms-val{font-size:16px;font-weight:700;}
-
-/* ── Matrix ── */
-.matrix-wrap{display:flex;align-items:flex-start;gap:6px;}
-.matrix-y-label{writing-mode:vertical-lr;transform:rotate(180deg);font-size:10px;color:var(--t3);align-self:center;}
-.matrix-inner{flex:1;}
-.matrix-x-label{font-size:10px;color:var(--t3);text-align:center;margin-top:4px;}
-.mg{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;}
-.mc{height:28px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.8);}
-
-/* ── Tolerance ── */
-.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:10px;}
-.tol-title{font-size:12.5px;font-weight:600;margin-bottom:10px;color:var(--t1);}
-.tol-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.tol-lv{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s2);border-radius:4px;border:1px solid var(--b1);margin-bottom:5px;}
-.tol-lv input{background:transparent;border:none;color:var(--t2);font-family:inherit;font-size:12px;flex:1;outline:none;}
-.tol-lbl{font-size:10.5px;font-weight:600;min-width:100px;white-space:nowrap;}
-
-/* ── Validation ── */
-.val-ov{display:none;position:fixed;inset:0;background:rgba(8,12,18,.92);z-index:500;overflow-y:auto;padding:18px;}
+.tl::before{content:'';position:absolute;inset-inline-end:12px;top:0;bottom:0;width:1px;background:var(--b1);}
+.tli{display:flex;gap:11px;margin-bottom:13px;padding-inline-end:32px;position:relative;}
+.tld{position:absolute;inset-inline-end:5px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);}
+.tlc{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px;}
+.tlh{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.tlt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);}
+.tld2{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;}
+.tlb{font-size:12px;color:var(--t2);line-height:1.55;}
+.nra{margin-top:7px;padding:6px 9px;background:rgba(224,82,82,.05);border:1px solid rgba(224,82,82,.13);border-radius:4px;font-size:11px;color:var(--red);}
+.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:9px;}
+.tol-t{font-size:12.5px;font-weight:600;margin-bottom:9px;}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.tlv{display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--s2);border-radius:4px;border:1px solid var(--b1);margin-bottom:4px;}
+.tlv input{background:transparent;border:none;color:var(--t2);font-family:inherit;font-size:11.5px;flex:1;outline:none;}
+.tlv-l{font-size:10px;font-weight:700;min-width:95px;white-space:nowrap;}
+.val-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.93);z-index:500;overflow-y:auto;padding:16px;}
 .val-ov.on{display:block;}
-.val-box{max-width:860px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:20px;}
-.val-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b1);gap:10px;}
-.vc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:9px;transition:all .15s;}
-.vc.app2{border-color:rgba(42,158,91,.3);background:rgba(42,158,91,.03);}
-.vc.rej{opacity:.28;border-style:dashed;}
-.vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px;}
-.vca{display:flex;gap:5px;flex-shrink:0;}
-.chip{padding:2px 7px;border-radius:3px;font-size:11px;background:var(--s2);color:var(--t2);}
-
-/* ── EW ── */
-.ew-card{border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:9px;}
-.ew-h{border-color:rgba(224,82,82,.28);background:rgba(224,82,82,.04);}
-.ew-m{border-color:rgba(201,160,32,.28);background:rgba(201,160,32,.04);}
-.ew-l{border-color:rgba(42,158,91,.28);background:rgba(42,158,91,.04);}
-.ew-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
-.ew-title{font-size:12.5px;font-weight:500;}
-.wbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;}
-.wb1{background:rgba(224,82,82,.12);color:var(--red);}
-.wb2{background:rgba(201,160,32,.12);color:var(--yel);}
-.wb3{background:rgba(122,145,168,.12);color:var(--t2);}
-.no-sched{text-align:center;padding:40px 20px;}
-.no-sched h3{font-size:13.5px;font-weight:500;color:var(--t2);margin-bottom:8px;}
-.no-sched p{font-size:12px;color:var(--t3);line-height:1.7;max-width:420px;margin:0 auto 16px;}
-
-/* ── Misc ── */
-.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--b1);}
-.ph-name{font-size:16px;font-weight:700;margin-bottom:3px;}
-.ph-sub{font-size:11.5px;color:var(--t3);}
-.alert-i{padding:9px 13px;border-radius:var(--r);font-size:12.5px;margin-bottom:13px;display:flex;gap:8px;}
-.ai-info{background:rgba(30,115,232,.06);border:1px solid rgba(30,115,232,.14);color:#6aabff;}
-.ai-ok{background:rgba(42,158,91,.06);border:1px solid rgba(42,158,91,.14);color:#5ec98a;}
-.ebar{display:flex;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--b1);margin-top:18px;}
-.empty{text-align:center;padding:45px 20px;color:var(--t3);}
-.empty-t{font-size:13.5px;font-weight:500;color:var(--t2);margin-bottom:5px;}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
-.load-ov{display:none;position:fixed;inset:0;background:rgba(8,12,18,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
-.load-ov.on{display:flex;}
-.spin{width:34px;height:34px;border:2.5px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.load-t{color:var(--t3);font-size:12.5px;}
-.modal-ov{display:none;position:fixed;inset:0;background:rgba(8,12,18,.75);z-index:200;align-items:center;justify-content:center;}
+.vbox{max-width:840px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:18px;}
+.vhdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--b1);gap:10px;}
+.vc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:8px;transition:all .15s;}
+.vc.app2{border-color:rgba(42,158,91,.28);background:rgba(42,158,91,.025);}
+.vc.rej{opacity:.25;border-style:dashed;}
+.vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;gap:9px;}
+.vca{display:flex;gap:4px;flex-shrink:0;}
+.chip{padding:2px 7px;border-radius:3px;font-size:10.5px;background:var(--s2);color:var(--t2);}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.75);z-index:200;align-items:center;justify-content:center;}
 .modal-ov.on{display:flex;}
-.modal{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:22px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;}
-.modal-t{font-size:14.5px;font-weight:600;margin-bottom:16px;}
-.welcome{max-width:500px;margin:65px auto;text-align:center;}
-.welcome h1{font-size:19px;font-weight:700;margin-bottom:9px;}
-.welcome p{color:var(--t3);font-size:12.5px;line-height:1.75;margin-bottom:26px;}
-::-webkit-scrollbar{width:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--b3);border-radius:3px;}
-.section-sep{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;display:flex;align-items:center;gap:8px;}
-.section-sep::after{content:'';flex:1;height:1px;background:var(--b1);}
+.modal{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:20px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto;}
+.modal-t{font-size:14px;font-weight:700;margin-bottom:14px;}
+.load-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.load-ov.on{display:flex;}
+.spin{width:32px;height:32px;border:2.5px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.load-t{color:var(--t3);font-size:12px;}
+.welcome{max-width:480px;margin:60px auto;text-align:center;}
+.welcome h1{font-size:18px;font-weight:700;margin-bottom:8px;}
+.welcome p{color:var(--t3);font-size:12.5px;line-height:1.75;margin-bottom:24px;}
+.sep{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);display:flex;align-items:center;gap:7px;margin:15px 0 10px;}
+.sep::after{content:'';flex:1;height:1px;background:var(--b1);}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid var(--b1);}
+.ph-n{font-size:15.5px;font-weight:700;margin-bottom:3px;}
+.ph-s{font-size:11px;color:var(--t3);}
+.ai{padding:9px 12px;border-radius:var(--r);font-size:12px;margin-bottom:12px;display:flex;gap:7px;}
+.ai-i{background:rgba(30,114,232,.05);border:1px solid rgba(30,114,232,.13);color:#6aabff;}
+.ai-ok{background:rgba(42,158,91,.05);border:1px solid rgba(42,158,91,.13);color:#5ec98a;}
+.ai-w{background:rgba(201,160,32,.05);border:1px solid rgba(201,160,32,.13);color:var(--yel);}
+.ebar{display:flex;gap:7px;align-items:center;padding:9px 0;border-top:1px solid var(--b1);margin-top:16px;}
+.empty{text-align:center;padding:42px 20px;color:var(--t3);}
+.et{font-size:13px;font-weight:500;color:var(--t2);margin-bottom:4px;}
+.sync-d{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:pu 2s infinite;}
+@keyframes pu{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* DASHBOARD */
+.dboard{display:grid;gap:11px;}
+.drow{display:grid;gap:11px;}
+.drow-3{grid-template-columns:1fr 1fr 1fr;}
+.drow-2{grid-template-columns:2fr 1fr;}
+.drow-1{grid-template-columns:1fr;}
+.dcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;}
+.dcard-t{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:11px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:11px;}
+.kpi{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+.kpi-l{font-size:10px;color:var(--t3);}
+.kpi-v{font-size:18px;font-weight:700;}
+.exp-tbl{width:100%;border-collapse:collapse;font-size:11.5px;}
+.exp-tbl th{padding:6px 9px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);border-bottom:1px solid var(--b1);}
+.exp-tbl td{padding:7px 9px;border-bottom:1px solid var(--b1);}
+.exp-tbl tr:last-child td{border-bottom:none;}
+.exp-tbl tr:hover td{background:rgba(255,255,255,.01);}
+.rs-bar{height:6px;border-radius:3px;background:var(--b1);overflow:hidden;margin-top:3px;}
+.rs-fill{height:100%;border-radius:3px;}
+.status-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;}
+.sb-seg{flex:1;transition:flex .3s;}
+
+/* TREND/EW */
+.ew-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:12px;}
+.ew-sec-t{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.ew-card{border:1px solid var(--b1);border-radius:var(--r);padding:11px;margin-bottom:8px;}
+.ew-h{border-color:rgba(224,82,82,.25);background:rgba(224,82,82,.03);}
+.ew-m{border-color:rgba(201,160,32,.25);background:rgba(201,160,32,.03);}
+.ew-l{border-color:rgba(42,158,91,.25);background:rgba(42,158,91,.03);}
+.wbdg{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;}
+.wb1{background:rgba(224,82,82,.1);color:var(--red);}
+.wb2{background:rgba(201,160,32,.1);color:var(--yel);}
+.wb3{background:rgba(122,145,168,.1);color:var(--t2);}
+.trend-form{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:12px;}
+.ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.ind-item{display:flex;flex-direction:column;gap:3px;}
+.ind-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);}
+.ind-inp{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:5px 8px;color:var(--t1);font-family:inherit;font-size:12px;outline:none;width:100%;}
+.ind-inp:focus{border-color:var(--acc);}
+.trend-hist{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:11px;margin-bottom:12px;}
+.th-table{width:100%;border-collapse:collapse;font-size:11px;}
+.th-table th{padding:5px 8px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b1);}
+.th-table td{padding:6px 8px;border-bottom:1px solid var(--b1);}
+.th-table tr:last-child td{border-bottom:none;}
+.trend-alert{padding:10px 12px;border-radius:var(--r);font-size:12px;margin-bottom:8px;border:1px solid;}
+.ta-r{background:rgba(224,82,82,.05);border-color:rgba(224,82,82,.2);color:var(--red);}
+.ta-y{background:rgba(201,160,32,.05);border-color:rgba(201,160,32,.2);color:var(--yel);}
+.ta-g{background:rgba(42,158,91,.05);border-color:rgba(42,158,91,.2);color:var(--grn);}
+
+/* EDIT MODAL */
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.edit-full{grid-column:1/-1;}
+
+/* CONTACTS */
+.contact-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.contact-info{flex:1;}
+.contact-name{font-size:12.5px;font-weight:500;}
+.contact-det{font-size:11px;color:var(--t3);margin-top:2px;}
+
+/* NOTIFICATION */
+.notif-modal{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:20px;width:620px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.msg-card{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:8px;}
+.msg-hdr{display:flex;justify-content:space-between;margin-bottom:7px;}
+.msg-body{font-size:11.5px;color:var(--t2);line-height:1.65;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;}
 </style>
 </head>
 <body>
 
-<!-- Loading -->
 <div class="load-ov" id="loadOv"><div class="spin"></div><div class="load-t" id="loadT">Processing...</div></div>
 
 <!-- Validation -->
 <div class="val-ov" id="valOv">
-  <div class="val-box">
-    <div class="val-hdr">
-      <div>
-        <div style="font-size:15px;font-weight:700;" id="valTitle">Review & Approve Risks</div>
-        <div style="font-size:11.5px;color:var(--t3);margin-top:3px;" id="valSub">Review each identified risk before saving to the register</div>
-      </div>
-      <div style="display:flex;gap:7px;align-items:center;flex-shrink:0;">
-        <span style="font-size:12px;color:var(--t3);" id="valCtr">0/0</span>
-        <button class="btn btn-ok" onclick="approveAll()" id="btnApAll">Approve All</button>
-        <button class="btn btn-primary" onclick="confirmVal()" id="btnSaveReg">Save Register</button>
+  <div class="vbox">
+    <div class="vhdr">
+      <div><div style="font-size:14.5px;font-weight:700" id="T_valTitle">Review & Approve Risks</div><div style="font-size:11px;color:var(--t3);margin-top:2px" id="T_valSub">Review before saving to register</div></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        <span style="font-size:11.5px;color:var(--t3)" id="valCtr">0/0</span>
+        <button class="btn btn-ok" onclick="approveAll()" id="T_btnApAll">Approve All</button>
+        <button class="btn btn-p" onclick="confirmVal()" id="T_btnSave">Save Register</button>
       </div>
     </div>
     <div id="valList"></div>
   </div>
 </div>
 
-<!-- Header -->
-<div class="header">
-  <div style="display:flex;align-items:center;">
-    <span class="brand" id="brandName">Risk Intelligence</span>
-    <span class="brand-pill" id="brandPill">AI-POWERED</span>
-  </div>
-  <div class="hdr-right">
-    <div style="display:flex;align-items:center;gap:6px;" id="syncInd" style="display:none;">
-      <div class="sync-dot"></div>
-      <span style="font-size:11px;color:var(--grn);" id="syncLbl">Synced</span>
+<!-- Edit Risk Modal -->
+<div class="modal-ov" id="editOv">
+  <div class="modal" style="width:620px;">
+    <div class="modal-t" id="T_editTitle">Edit Risk</div>
+    <div class="edit-grid">
+      <div class="fg"><label class="fl" id="T_eDesc">Description</label><textarea class="fta" id="e_desc" style="min-height:60px"></textarea></div>
+      <div class="fg"><label class="fl" id="T_eCause">Cause</label><textarea class="fta" id="e_cause" style="min-height:60px"></textarea></div>
+      <div class="fg"><label class="fl" id="T_eType">Type</label><select class="fs" id="e_type"><option value="threat">Threat</option><option value="opportunity">Opportunity</option></select></div>
+      <div class="fg"><label class="fl" id="T_eCat">Category</label><select class="fs" id="e_cat"><option>Schedule</option><option>Cost</option><option>Scope</option><option>Contract</option><option>Design</option><option>Execution</option><option>Suppliers</option><option>QHSE</option><option>Quality</option><option>Regulatory</option><option>Financial</option></select></div>
+      <div class="fg"><label class="fl" id="T_eLevel">Level</label><select class="fs" id="e_level"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+      <div class="fg"><label class="fl" id="T_eResp">Response Strategy</label><select class="fs" id="e_resp"><option>Avoid</option><option>Mitigate</option><option>Transfer</option><option>Accept</option><option>Escalate</option><option>Exploit</option><option>Enhance</option><option>Share</option></select></div>
+      <div class="fg"><label class="fl" id="T_eProb">Probability (1-5)</label><input type="number" class="fi" id="e_prob" min="1" max="5"/></div>
+      <div class="fg"><label class="fl" id="T_eOwner">Owner</label><input type="text" class="fi" id="e_owner"/></div>
+      <div class="fg edit-full"><label class="fl" id="T_eMit">Action Plan / Mitigation</label><textarea class="fta" id="e_mit"></textarea></div>
     </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-g" onclick="closeEdit()" id="T_eCan">Cancel</button>
+      <button class="btn btn-p" onclick="saveEdit()" id="T_eSave">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notifications Modal -->
+<div class="modal-ov" id="notifOv">
+  <div class="notif-modal">
+    <div class="modal-t" id="T_notifTitle">Notification Messages</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:12px;" id="T_notifSub">Copy and send these messages to each responsible party</div>
+    <div id="notifList"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <button class="btn btn-g" onclick="document.getElementById('notifOv').classList.remove('on')" id="T_notifClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="brand"><span id="T_brand">Risk Intelligence</span><span class="brand-pill" id="T_brandPill">AI-POWERED</span></div>
+  <div style="display:flex;align-items:center;gap:7px;">
+    <div style="display:flex;align-items:center;gap:5px" id="syncInd" style="display:none"><div class="sync-d"></div><span style="font-size:10.5px;color:var(--grn)" id="T_synced">Synced</span></div>
     <button class="lang-btn" onclick="toggleLang()" id="langBtn">العربية</button>
-    <button class="btn btn-primary" onclick="openModal()" id="btnNew">+ New Project</button>
+    <button class="btn btn-p" onclick="openProjModal()" id="T_btnNew">+ New Project</button>
   </div>
 </div>
 
 <!-- API Bar -->
 <div class="api-bar">
-  <span class="api-label" id="apiLbl">Claude API Key</span>
+  <span class="api-lbl" id="T_apiLbl">Claude API Key</span>
   <input type="password" class="api-inp" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()"/>
-  <div class="conn-dot" id="connDot"></div>
-  <span class="conn-lbl" id="connLbl" id="connLblEl">Not connected</span>
+  <div class="cdot" id="cdot"></div>
+  <span class="clbl" id="clbl">Not connected</span>
 </div>
 
-<!-- App -->
 <div class="app">
-  <div class="sidebar">
-    <div class="sb-head" id="sbHead">Projects</div>
-    <div id="projList"><div style="padding:8px;font-size:11px;color:var(--t3)">Loading...</div></div>
+  <div class="sb">
+    <div class="sb-hd" id="T_sbHd">Projects</div>
+    <div id="projList"><div style="padding:7px;font-size:10.5px;color:var(--t3)">Loading...</div></div>
   </div>
 
   <div class="main">
-    <!-- Welcome -->
     <div id="welcome" class="welcome">
-      <h1 id="wTitle">Risk Intelligence Platform</h1>
-      <p id="wText">Upload your project documents — contracts, schedules, drawings, BOQ — and Claude will analyze them to generate a professional, updatable risk register shared with your team.</p>
-      <button class="btn btn-primary" onclick="openModal()" id="wBtn">Create First Project</button>
+      <h1 id="T_wTitle">Risk Intelligence Platform</h1>
+      <p id="T_wText">Upload project documents — contracts, schedules, drawings, BOQ — and Claude will generate a professional, team-shared risk register.</p>
+      <button class="btn btn-p" onclick="openProjModal()" id="T_wBtn">Create First Project</button>
     </div>
 
-    <!-- Project View -->
-    <div id="projView" style="display:none;">
+    <div id="projView" style="display:none">
       <div class="ph">
-        <div>
-          <div class="ph-name" id="phName">—</div>
-          <div class="ph-sub" id="phSub">—</div>
-        </div>
-        <div style="display:flex;gap:7px;">
-          <button class="btn btn-ghost" onclick="exportCSV()" id="btnExport">Export CSV</button>
-          <button class="btn btn-del" onclick="delProject()" id="btnDel">Delete</button>
+        <div><div class="ph-n" id="phName">—</div><div class="ph-s" id="phSub">—</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-warn" onclick="showNotifModal()" id="T_btnNotif">Notifications</button>
+          <button class="btn btn-g" onclick="exportCSV()" id="T_btnExport">Export CSV</button>
+          <button class="btn btn-del" onclick="delProj()" id="T_btnDel">Delete</button>
         </div>
       </div>
-
-      <!-- Stats -->
       <div class="stats">
-        <div class="stat"><div class="stat-lbl" id="slTotal">Total Risks</div><div class="stat-val" id="stTotal">0</div></div>
-        <div class="stat"><div class="stat-lbl" id="slThr">Threats</div><div class="stat-val" style="color:var(--red)" id="stThr">0</div></div>
-        <div class="stat"><div class="stat-lbl" id="slOpp">Opportunities</div><div class="stat-val" style="color:var(--teal)" id="stOpp">0</div></div>
-        <div class="stat"><div class="stat-lbl" id="slHigh">High</div><div class="stat-val" style="color:var(--red)" id="stHigh">0</div></div>
-        <div class="stat"><div class="stat-lbl" id="slDate">Last Analysis</div><div class="stat-val" style="font-size:12px;padding-top:5px;" id="stDate">—</div></div>
+        <div class="sc"><div class="sc-l" id="T_stTotal">Total</div><div class="sc-v" id="svTotal">0</div></div>
+        <div class="sc"><div class="sc-l" id="T_stThr">Threats</div><div class="sc-v" style="color:var(--red)" id="svThr">0</div></div>
+        <div class="sc"><div class="sc-l" id="T_stOpp">Opportunities</div><div class="sc-v" style="color:var(--teal)" id="svOpp">0</div></div>
+        <div class="sc"><div class="sc-l" id="T_stHigh">High</div><div class="sc-v" style="color:var(--red)" id="svHigh">0</div></div>
+        <div class="sc"><div class="sc-l" id="T_stDate">Last Analysis</div><div class="sc-v" style="font-size:11.5px;padding-top:4px" id="svDate">—</div></div>
       </div>
-
-      <!-- Tabs -->
       <div class="tabs">
-        <div class="tab on" onclick="switchTab('files')" id="tabFiles">Files</div>
-        <div class="tab" onclick="switchTab('dash')" id="tabDash">Dashboard</div>
-        <div class="tab" onclick="switchTab('reg')" id="tabReg">Risk Register</div>
-        <div class="tab" onclick="switchTab('warn')" id="tabWarn">Early Warning</div>
-        <div class="tab" onclick="switchTab('upd')" id="tabUpd">Updates</div>
-        <div class="tab" onclick="switchTab('tol')" id="tabTol">Risk Appetite</div>
+        <div class="tab on" onclick="ST('files')" id="tab-files" id="T_tabFiles">Files</div>
+        <div class="tab" onclick="ST('dash')" id="tab-dash" id="T_tabDash">Dashboard</div>
+        <div class="tab" onclick="ST('reg')" id="tab-reg" id="T_tabReg">Risk Register</div>
+        <div class="tab" onclick="ST('warn')" id="tab-warn" id="T_tabWarn">Early Warning</div>
+        <div class="tab" onclick="ST('upd')" id="tab-upd" id="T_tabUpd">Updates</div>
+        <div class="tab" onclick="ST('tol')" id="tab-tol" id="T_tabTol">Risk Appetite</div>
+        <div class="tab" onclick="ST('contacts')" id="tab-contacts" id="T_tabContacts">Contacts</div>
       </div>
 
-      <!-- Files -->
+      <!-- FILES -->
       <div class="pane on" id="pane-files">
-        <div class="drop">
-          <input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
-          <div class="drop-title" id="dropTitle">Drag files here or click to browse</div>
-          <div class="drop-sub" id="dropSub">PDF · Excel · Word · Drawings · CSV · Primavera export</div>
+        <div class="drop"><input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
+          <div style="font-size:13px;font-weight:500;margin-bottom:3px" id="T_dropT">Drag files here or click to browse</div>
+          <div style="font-size:11px;color:var(--t3)" id="T_dropS">PDF · Excel · Word · Drawings · CSV · Primavera</div>
         </div>
-        <div class="fgrid2" id="fgrid"></div>
-        <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
-          <button class="btn btn-primary" id="anaBtn" onclick="analyze()" disabled>Analyze & Generate Risk Register</button>
-          <span style="font-size:11.5px;color:var(--t3);" id="fcLbl">No files</span>
+        <div class="fg2" id="fgrid"></div>
+        <div style="margin-top:14px;display:flex;gap:9px;align-items:center">
+          <button class="btn btn-p" id="anaBtn" onclick="analyze()" disabled id="T_btnAna">Analyze & Generate Risk Register</button>
+          <span style="font-size:11px;color:var(--t3)" id="fcLbl">No files</span>
         </div>
       </div>
 
-      <!-- Dashboard -->
-      <div class="pane" id="pane-dash">
-        <div id="dashContent"><div class="empty"><div class="empty-t" id="dashEmpty">Run analysis to see dashboard</div></div></div>
-      </div>
+      <!-- DASHBOARD -->
+      <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="et" id="T_dashEmpty">Run analysis to see dashboard</div></div></div></div>
 
-      <!-- Register -->
-      <div class="pane" id="pane-reg">
-        <div id="regContent"><div class="empty"><div class="empty-t" id="regEmpty">No risk register yet</div></div></div>
-      </div>
+      <!-- REGISTER -->
+      <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="et" id="T_regEmpty">No risk register yet</div></div></div></div>
 
-      <!-- Early Warning -->
-      <div class="pane" id="pane-warn">
-        <div id="warnContent"><div class="empty"><div class="empty-t" id="warnEmpty">Run analysis to generate early warnings</div></div></div>
-      </div>
+      <!-- EARLY WARNING -->
+      <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="et" id="T_warnEmpty">Run analysis to generate early warnings</div></div></div></div>
 
-      <!-- Updates -->
+      <!-- UPDATES -->
       <div class="pane" id="pane-upd">
         <div class="uform">
-          <div style="font-size:12.5px;font-weight:600;margin-bottom:11px;" id="uTitle">Add New Update</div>
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:10px" id="T_uTitle">Add New Update</div>
           <div class="pills" id="updPills">
             <button class="pill on" onclick="setUT(this,'change_order')" data-ar="أمر تغيير" data-en="Change Order">Change Order</button>
             <button class="pill" onclick="setUT(this,'delay')" data-ar="تأخير" data-en="Delay">Delay</button>
@@ -386,81 +388,74 @@ body{font-family:var(--font-en);background:var(--bg);color:var(--t1);min-height:
             <button class="pill" onclick="setUT(this,'meeting')" data-ar="محضر اجتماع" data-en="Meeting Minutes">Meeting Minutes</button>
             <button class="pill" onclick="setUT(this,'note')" data-ar="ملاحظة" data-en="Note">Note</button>
           </div>
-          <div class="fdrop">
-            <input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)"/>
-            <div style="font-size:18px;color:var(--t3);">↑</div>
-            <div>
-              <div style="font-size:12.5px;font-weight:500;" id="fdTitle">Attach file (optional)</div>
-              <div style="font-size:11.5px;color:var(--t3);" id="fdSub">Meeting minutes · Change order · Subcontract · Correspondence</div>
-            </div>
+          <div class="fdrop"><input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)"/>
+            <div style="font-size:18px;color:var(--t3)">↑</div>
+            <div><div style="font-size:12px;font-weight:500" id="T_fdT">Attach file (optional)</div><div style="font-size:11px;color:var(--t3)" id="T_fdS">Meeting minutes · Change order · Correspondence</div></div>
           </div>
-          <div id="ufPrev" style="margin-bottom:9px;"></div>
-          <div class="fg" style="margin-bottom:10px;">
-            <label class="fl" id="fdescLbl">File description (optional)</label>
-            <input type="text" class="fi" id="ufdesc" placeholder="e.g. Coordination meeting minutes #12"/>
-          </div>
-          <textarea class="fta" id="utext" style="width:100%;margin-bottom:11px;" placeholder="Describe the update in detail..."></textarea>
-          <button class="btn btn-primary" onclick="addUpdate()" id="btnAddUpd">Analyze & Add to Register</button>
+          <div id="ufPrev" style="margin-bottom:8px"></div>
+          <div class="fg" style="margin-bottom:9px"><label class="fl" id="T_fdesc">File description</label><input type="text" class="fi" id="ufdesc" placeholder="e.g. Meeting minutes #12"/></div>
+          <textarea class="fta" id="utext" style="width:100%;margin-bottom:10px" placeholder="Describe the update..."></textarea>
+          <button class="btn btn-p" onclick="addUpdate()" id="T_btnAddUpd">Analyze & Add to Register</button>
         </div>
-        <div class="tl" id="tlEl"><div class="empty" style="padding:24px"><div class="empty-t" id="noUpd">No updates yet</div></div></div>
+        <div class="tl" id="tlEl"><div class="empty" style="padding:20px"><div class="et" id="T_noUpd">No updates yet</div></div></div>
       </div>
 
-      <!-- Tolerance -->
+      <!-- TOLERANCE -->
       <div class="pane" id="pane-tol">
-        <div style="max-width:760px;">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px;" id="tolTitle">Risk Appetite & Tolerance</div>
-          <div style="font-size:12px;color:var(--t3);margin-bottom:18px;" id="tolSub">Define acceptable thresholds — Claude uses these to classify risks accurately</div>
-
-          <div class="tol-sec">
-            <div class="tol-title" id="tolCS">Cost & Schedule Thresholds</div>
-            <div class="tol-grid">
-              <div>
-                <label class="fl" style="margin-bottom:6px;display:block;" id="tolCL">Max acceptable cost overrun</label>
-                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px;">
-                  <input type="number" class="fi" id="tc_pct" placeholder="5" style="width:65px;" oninput="dbTol()"/>
-                  <span style="font-size:12px;color:var(--t3);" id="tolPct">% of contract value</span>
-                </div>
-                <div style="display:flex;gap:7px;align-items:center;">
-                  <input type="number" class="fi" id="tc_val" placeholder="500000" style="width:120px;" oninput="dbTol()"/>
-                  <span style="font-size:12px;color:var(--t3);" id="tolSAR">SAR max</span>
-                </div>
+        <div style="max-width:740px">
+          <div style="font-size:13.5px;font-weight:700;margin-bottom:3px" id="T_tolTitle">Risk Appetite & Tolerance</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:16px" id="T_tolSub">Define thresholds — Claude uses these to classify risks accurately</div>
+          <div class="tol-sec"><div class="tol-t" id="T_tolCS">Cost & Schedule</div>
+            <div class="tg">
+              <div><label class="fl" style="margin-bottom:5px;display:block" id="T_tolCL">Max cost overrun</label>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input type="number" class="fi" id="tc_pct" placeholder="5" style="width:60px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolPct">% of contract</span></div>
+                <div style="display:flex;gap:6px;align-items:center"><input type="number" class="fi" id="tc_val" placeholder="500000" style="width:110px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolSAR">SAR max</span></div>
               </div>
-              <div>
-                <label class="fl" style="margin-bottom:6px;display:block;" id="tolSL">Max acceptable delay</label>
-                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px;">
-                  <input type="number" class="fi" id="ts_days" placeholder="30" style="width:65px;" oninput="dbTol()"/>
-                  <span style="font-size:12px;color:var(--t3);" id="tolDays">days</span>
-                </div>
-                <div style="display:flex;gap:7px;align-items:center;">
-                  <input type="number" class="fi" id="ts_pct" placeholder="10" style="width:65px;" oninput="dbTol()"/>
-                  <span style="font-size:12px;color:var(--t3);" id="tolSpct">% of total duration</span>
-                </div>
+              <div><label class="fl" style="margin-bottom:5px;display:block" id="T_tolSL">Max delay</label>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input type="number" class="fi" id="ts_days" placeholder="30" style="width:60px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolDays">days</span></div>
+                <div style="display:flex;gap:6px;align-items:center"><input type="number" class="fi" id="ts_pct" placeholder="10" style="width:60px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolSpct">% of duration</span></div>
               </div>
             </div>
           </div>
-
-          <div class="tol-sec"><div class="tol-title" id="tolQT">QHSE Levels</div><div id="qhse_lvl"></div></div>
-          <div class="tol-sec"><div class="tol-title" id="tolRT">Reputation Levels</div><div id="rep_lvl"></div></div>
-          <div class="tol-sec">
-            <div class="tol-title" id="tolMT">Probability & Impact Scale</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-              <div><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px;" id="tolPT">Probability (1–5)</div><div id="prob_lvl"></div></div>
-              <div><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px;" id="tolIT">Impact (1–5)</div><div id="imp_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t" id="T_tolQT">QHSE Levels</div><div id="qhse_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t" id="T_tolRT">Reputation Levels</div><div id="rep_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t" id="T_tolMT">Probability & Impact Scale</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+              <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:5px" id="T_tolPT">Probability (1–5)</div><div id="prob_lvl"></div></div>
+              <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:5px" id="T_tolIT">Impact (1–5)</div><div id="imp_lvl"></div></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- CONTACTS -->
+      <div class="pane" id="pane-contacts">
+        <div style="max-width:700px">
+          <div style="font-size:13.5px;font-weight:700;margin-bottom:3px" id="T_contactsTitle">Team Contacts</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:16px" id="T_contactsSub">Add team contacts to receive risk notifications</div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:10px" id="T_addContact">Add Contact</div>
+            <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
+              <div class="fg"><label class="fl" id="T_cName">Name</label><input type="text" class="fi" id="c_name" placeholder="Ahmed Al-Rashidi"/></div>
+              <div class="fg"><label class="fl" id="T_cRole">Role</label><input type="text" class="fi" id="c_role" placeholder="Project Manager"/></div>
+              <div class="fg"><label class="fl" id="T_cEmail">Email / WhatsApp</label><input type="text" class="fi" id="c_contact" placeholder="ahmed@company.com"/></div>
+            </div>
+            <button class="btn btn-p" onclick="addContact()" id="T_btnAddC">Add Contact</button>
+          </div>
+          <div id="contactsList"></div>
         </div>
       </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal-ov" id="modalOv">
+    <!-- PROJECT MODAL -->
+    <div class="modal-ov" id="projModal">
       <div class="modal">
-        <div class="modal-t" id="modalT">New Project</div>
+        <div class="modal-t" id="T_modalT">New Project</div>
         <div class="fgrid">
-          <div class="fg"><label class="fl" id="lName">Project Name *</label><input type="text" class="fi" id="np_n" placeholder="e.g. Al-Riyadh Residential Complex"/></div>
-          <div class="fg"><label class="fl" id="lCon">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
-          <div class="fg"><label class="fl" id="lVal">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
-          <div class="fg"><label class="fl" id="lType">Project Type</label>
+          <div class="fg"><label class="fl" id="T_lName">Project Name *</label><input type="text" class="fi" id="np_n"/></div>
+          <div class="fg"><label class="fl" id="T_lCon">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
+          <div class="fg"><label class="fl" id="T_lVal">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
+          <div class="fg"><label class="fl" id="T_lType">Project Type</label>
             <select class="fs" id="np_t">
               <option value="Residential">Residential — سكني</option>
               <option value="Commercial">Commercial — تجاري</option>
@@ -470,22 +465,22 @@ body{font-family:var(--font-en);background:var(--bg);color:var(--t1);min-height:
               <option value="Industrial">Industrial — صناعي</option>
               <option value="Healthcare">Healthcare — صحي</option>
               <option value="Educational">Educational — تعليمي</option>
-              <option value="Hospitality">Hospitality — فندقي وضيافة</option>
-              <option value="Landscaping">Landscaping — تشجير وتنسيق</option>
-              <option value="Marine">Marine — بحري وموانئ</option>
-              <option value="MEP">MEP — ميكانيكا وكهرباء وسباكة</option>
-              <option value="Renovation">Renovation — ترميم وصيانة</option>
-              <option value="Government">Government — حكومي ومجمعات</option>
+              <option value="Hospitality">Hospitality — فندقي</option>
+              <option value="Landscaping">Landscaping — تشجير</option>
+              <option value="Marine">Marine — بحري</option>
+              <option value="MEP">MEP — ميكانيكا وكهرباء</option>
+              <option value="Renovation">Renovation — ترميم</option>
+              <option value="Government">Government — حكومي</option>
               <option value="Other">Other — أخرى</option>
             </select>
           </div>
-          <div class="fg"><label class="fl" id="lSt">Start Date</label><input type="date" class="fi" id="np_s"/></div>
-          <div class="fg"><label class="fl" id="lEn">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
-          <div class="fg full"><label class="fl" id="lDesc">Description</label><textarea class="fta" id="np_d" placeholder="Brief project description..."></textarea></div>
+          <div class="fg"><label class="fl" id="T_lSt">Start Date</label><input type="date" class="fi" id="np_s"/></div>
+          <div class="fg"><label class="fl" id="T_lEn">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
+          <div class="fg full"><label class="fl" id="T_lDesc">Description</label><textarea class="fta" id="np_d"></textarea></div>
         </div>
-        <div style="display:flex;gap:7px;justify-content:flex-end;">
-          <button class="btn btn-ghost" onclick="closeModal()" id="btnCan">Cancel</button>
-          <button class="btn btn-primary" onclick="createProject()" id="btnCre">Create Project</button>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn btn-g" onclick="closeProjModal()" id="T_btnCan">Cancel</button>
+          <button class="btn btn-p" onclick="createProj()" id="T_btnCre">Create Project</button>
         </div>
       </div>
     </div>
@@ -493,168 +488,181 @@ body{font-family:var(--font-en);background:var(--bg);color:var(--t1);min-height:
 </div>
 
 <script>
-// ═══ SUPABASE ═══════════════════════════════════════════
-const SB_URL='https://ssogxdqwcoehcoqaajxy.supabase.co';
-const SB_KEY='sb_publishable_a2Zyo0zJMuBqMxGEk4WKGQ_JNHO5KBQ';
+// ═══ CONFIG ═══
+const SB='https://ssogxdqwcoehcoqaajxy.supabase.co';
+const SK='sb_publishable_a2Zyo0zJMuBqMxGEk4WKGQ_JNHO5KBQ';
 async function sb(path,method='GET',body=null){
-  const h={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
-  if(method==='POST')h['Prefer']='return=representation';
-  const r=await fetch(SB_URL+'/rest/v1/'+path,{method,headers:h,body:body?JSON.stringify(body):null});
+  const h={'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK};
+  if(method==='POST')h.Prefer='return=representation';
+  const r=await fetch(SB+'/rest/v1/'+path,{method,headers:h,body:body?JSON.stringify(body):null});
   if(!r.ok)throw new Error(await r.text());
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-// ═══ LANGUAGE ════════════════════════════════════════════
-let lang='en';
+// ═══ TRANSLATIONS ═══
+let L='en';
 const TR={
-  brandName:{ar:'منصة المخاطر',en:'Risk Intelligence'},
-  brandPill:{ar:'بالذكاء الاصطناعي',en:'AI-POWERED'},
-  apiLbl:{ar:'مفتاح Claude API',en:'Claude API Key'},
-  connConn:{ar:'متصل',en:'Connected'},
-  connDis:{ar:'غير متصل',en:'Not connected'},
-  sbHead:{ar:'المشاريع',en:'Projects'},
-  wTitle:{ar:'منصة إدارة المخاطر الذكية',en:'Risk Intelligence Platform'},
-  wText:{ar:'ارفع ملفات مشروعك وسيحلل Claude البيانات ويولّد سجل مخاطر احترافي مشترك مع فريقك.',en:'Upload your project documents and Claude will analyze them to generate a professional shared risk register.'},
-  wBtn:{ar:'إنشاء أول مشروع',en:'Create First Project'},
-  btnNew:{ar:'+ مشروع جديد',en:'+ New Project'},
-  langBtn:{ar:'English',en:'العربية'},
-  tabFiles:{ar:'الملفات',en:'Files'},
-  tabDash:{ar:'لوحة التحكم',en:'Dashboard'},
-  tabReg:{ar:'سجل المخاطر',en:'Risk Register'},
-  tabWarn:{ar:'الإنذار المبكر',en:'Early Warning'},
-  tabUpd:{ar:'التحديثات',en:'Updates'},
-  tabTol:{ar:'مدى السماحية',en:'Risk Appetite'},
-  slTotal:{ar:'إجمالي المخاطر',en:'Total Risks'},
-  slThr:{ar:'التهديدات',en:'Threats'},
-  slOpp:{ar:'الفرص',en:'Opportunities'},
-  slHigh:{ar:'عالية',en:'High'},
-  slDate:{ar:'آخر تحليل',en:'Last Analysis'},
-  dropTitle:{ar:'اسحب الملفات هنا أو اضغط للاختيار',en:'Drag files here or click to browse'},
-  dropSub:{ar:'PDF · Excel · Word · المخططات · CSV · برامفيرا',en:'PDF · Excel · Word · Drawings · CSV · Primavera export'},
-  btnExport:{ar:'تصدير CSV',en:'Export CSV'},
-  btnDel:{ar:'حذف',en:'Delete'},
-  modalT:{ar:'مشروع جديد',en:'New Project'},
-  lName:{ar:'اسم المشروع *',en:'Project Name *'},
-  lCon:{ar:'رقم العقد',en:'Contract No.'},
-  lVal:{ar:'قيمة العقد (ريال)',en:'Contract Value (SAR)'},
-  lType:{ar:'نوع المشروع',en:'Project Type'},
-  lSt:{ar:'تاريخ البداية',en:'Start Date'},
-  lEn:{ar:'تاريخ الإنجاز',en:'Completion Date'},
-  lDesc:{ar:'الوصف',en:'Description'},
-  btnCan:{ar:'إلغاء',en:'Cancel'},
-  btnCre:{ar:'إنشاء المشروع',en:'Create Project'},
-  uTitle:{ar:'إضافة تحديث جديد',en:'Add New Update'},
-  fdTitle:{ar:'رفع ملف (اختياري)',en:'Attach file (optional)'},
-  fdSub:{ar:'محضر اجتماع · أمر تغيير · عقد باطن · مراسلة',en:'Meeting minutes · Change order · Subcontract · Correspondence'},
-  fdescLbl:{ar:'وصف الملف (اختياري)',en:'File description (optional)'},
-  btnAddUpd:{ar:'تحليل وإضافة للسجل',en:'Analyze & Add to Register'},
-  noUpd:{ar:'لا توجد تحديثات',en:'No updates yet'},
-  valTitle:{ar:'مراجعة واعتماد المخاطر',en:'Review & Approve Risks'},
-  valSub:{ar:'راجع كل مخاطرة قبل حفظ السجل',en:'Review each identified risk before saving to the register'},
-  btnApAll:{ar:'اعتماد الكل',en:'Approve All'},
-  btnSaveReg:{ar:'حفظ السجل',en:'Save Register'},
-  dashEmpty:{ar:'قم بالتحليل أولاً',en:'Run analysis to see dashboard'},
-  regEmpty:{ar:'لا يوجد سجل مخاطر بعد',en:'No risk register yet'},
-  warnEmpty:{ar:'قم بالتحليل أولاً',en:'Run analysis to generate early warnings'},
-  syncLbl:{ar:'متزامن',en:'Synced'},
-  tolTitle:{ar:'مدى السماحية في المخاطر',en:'Risk Appetite & Tolerance'},
-  tolSub:{ar:'حدد الحدود المقبولة لكل بعد',en:'Define acceptable thresholds — Claude uses these to classify risks accurately'},
-  tolCS:{ar:'التكلفة والجدول الزمني',en:'Cost & Schedule Thresholds'},
-  tolCL:{ar:'الحد الأقصى للتكلفة الإضافية',en:'Max acceptable cost overrun'},
-  tolPct:{ar:'% من قيمة العقد',en:'% of contract value'},
-  tolSAR:{ar:'ريال كحد أقصى',en:'SAR max'},
-  tolSL:{ar:'الحد الأقصى للتأخير',en:'Max acceptable delay'},
-  tolDays:{ar:'يوم',en:'days'},
-  tolSpct:{ar:'% من المدة الكلية',en:'% of total duration'},
-  tolQT:{ar:'مستويات QHSE',en:'QHSE Levels'},
-  tolRT:{ar:'مستويات السمعة',en:'Reputation Levels'},
-  tolMT:{ar:'مستويات الاحتمالية والتأثير',en:'Probability & Impact Scale'},
-  tolPT:{ar:'الاحتمالية (1-5)',en:'Probability (1–5)'},
-  tolIT:{ar:'التأثير (1-5)',en:'Impact (1–5)'},
-  btnAnalyze:{ar:'تحليل وتوليد سجل المخاطر',en:'Analyze & Generate Risk Register'},
+  T_brand:{en:'Risk Intelligence',ar:'منصة المخاطر'},
+  T_brandPill:{en:'AI-POWERED',ar:'بالذكاء الاصطناعي'},
+  T_apiLbl:{en:'Claude API Key',ar:'مفتاح Claude API'},
+  T_connOn:{en:'Connected',ar:'متصل'},
+  T_connOff:{en:'Not connected',ar:'غير متصل'},
+  T_sbHd:{en:'Projects',ar:'المشاريع'},
+  T_wTitle:{en:'Risk Intelligence Platform',ar:'منصة إدارة المخاطر الذكية'},
+  T_wText:{en:'Upload project documents and Claude will generate a professional shared risk register.',ar:'ارفع ملفات مشروعك وسيحلل Claude البيانات ويولّد سجل مخاطر احترافي مشترك مع فريقك.'},
+  T_wBtn:{en:'Create First Project',ar:'إنشاء أول مشروع'},
+  T_btnNew:{en:'+ New Project',ar:'+ مشروع جديد'},
+  T_btnNotif:{en:'Notifications',ar:'الإشعارات'},
+  T_btnExport:{en:'Export CSV',ar:'تصدير CSV'},
+  T_btnDel:{en:'Delete',ar:'حذف'},
+  T_stTotal:{en:'Total',ar:'الإجمالي'},
+  T_stThr:{en:'Threats',ar:'التهديدات'},
+  T_stOpp:{en:'Opportunities',ar:'الفرص'},
+  T_stHigh:{en:'High',ar:'عالية'},
+  T_stDate:{en:'Last Analysis',ar:'آخر تحليل'},
+  T_tabFiles:{en:'Files',ar:'الملفات'},
+  T_tabDash:{en:'Dashboard',ar:'لوحة التحكم'},
+  T_tabReg:{en:'Risk Register',ar:'سجل المخاطر'},
+  T_tabWarn:{en:'Early Warning',ar:'الإنذار المبكر'},
+  T_tabUpd:{en:'Updates',ar:'التحديثات'},
+  T_tabTol:{en:'Risk Appetite',ar:'مدى السماحية'},
+  T_tabContacts:{en:'Contacts',ar:'جهات الاتصال'},
+  T_dropT:{en:'Drag files here or click to browse',ar:'اسحب الملفات هنا أو اضغط للاختيار'},
+  T_dropS:{en:'PDF · Excel · Word · Drawings · CSV · Primavera',ar:'PDF · Excel · Word · المخططات · CSV · برامفيرا'},
+  T_btnAna:{en:'Analyze & Generate Risk Register',ar:'تحليل وتوليد سجل المخاطر'},
+  T_dashEmpty:{en:'Run analysis to see dashboard',ar:'قم بالتحليل أولاً لعرض لوحة التحكم'},
+  T_regEmpty:{en:'No risk register yet',ar:'لا يوجد سجل مخاطر بعد'},
+  T_warnEmpty:{en:'Run analysis to generate early warnings',ar:'قم بالتحليل أولاً لعرض الإنذارات'},
+  T_uTitle:{en:'Add New Update',ar:'إضافة تحديث جديد'},
+  T_fdT:{en:'Attach file (optional)',ar:'رفع ملف (اختياري)'},
+  T_fdS:{en:'Meeting minutes · Change order · Correspondence',ar:'محضر اجتماع · أمر تغيير · مراسلة'},
+  T_fdesc:{en:'File description',ar:'وصف الملف'},
+  T_btnAddUpd:{en:'Analyze & Add to Register',ar:'تحليل وإضافة للسجل'},
+  T_noUpd:{en:'No updates yet',ar:'لا توجد تحديثات'},
+  T_tolTitle:{en:'Risk Appetite & Tolerance',ar:'مدى السماحية في المخاطر'},
+  T_tolSub:{en:'Define thresholds — Claude uses these to classify risks accurately',ar:'حدد الحدود المقبولة لكل بعد — يستخدمها Claude لتصنيف المخاطر بدقة'},
+  T_tolCS:{en:'Cost & Schedule',ar:'التكلفة والجدول الزمني'},
+  T_tolCL:{en:'Max cost overrun',ar:'الحد الأقصى للتكلفة الإضافية'},
+  T_tolPct:{en:'% of contract',ar:'% من قيمة العقد'},
+  T_tolSAR:{en:'SAR max',ar:'ريال كحد أقصى'},
+  T_tolSL:{en:'Max delay',ar:'الحد الأقصى للتأخير'},
+  T_tolDays:{en:'days',ar:'يوم'},
+  T_tolSpct:{en:'% of duration',ar:'% من المدة الكلية'},
+  T_tolQT:{en:'QHSE Levels',ar:'مستويات QHSE'},
+  T_tolRT:{en:'Reputation Levels',ar:'مستويات السمعة'},
+  T_tolMT:{en:'Probability & Impact Scale',ar:'مستويات الاحتمالية والتأثير'},
+  T_tolPT:{en:'Probability (1–5)',ar:'الاحتمالية (1-5)'},
+  T_tolIT:{en:'Impact (1–5)',ar:'التأثير (1-5)'},
+  T_valTitle:{en:'Review & Approve Risks',ar:'مراجعة واعتماد المخاطر'},
+  T_valSub:{en:'Review before saving to register',ar:'راجع كل مخاطرة قبل حفظ السجل'},
+  T_btnApAll:{en:'Approve All',ar:'اعتماد الكل'},
+  T_btnSave:{en:'Save Register',ar:'حفظ السجل'},
+  T_editTitle:{en:'Edit Risk',ar:'تعديل المخاطرة'},
+  T_eDesc:{en:'Description',ar:'الوصف'},
+  T_eCause:{en:'Cause',ar:'السبب'},
+  T_eType:{en:'Type',ar:'النوع'},
+  T_eCat:{en:'Category',ar:'الفئة'},
+  T_eLevel:{en:'Level',ar:'المستوى'},
+  T_eResp:{en:'Response Strategy',ar:'استراتيجية الاستجابة'},
+  T_eProb:{en:'Probability (1-5)',ar:'الاحتمالية (1-5)'},
+  T_eOwner:{en:'Owner',ar:'المسؤول'},
+  T_eMit:{en:'Action Plan',ar:'خطة التخفيف'},
+  T_eCan:{en:'Cancel',ar:'إلغاء'},
+  T_eSave:{en:'Save Changes',ar:'حفظ التعديلات'},
+  T_notifTitle:{en:'Notification Messages',ar:'رسائل الإشعارات'},
+  T_notifSub:{en:'Copy and send to each responsible party',ar:'انسخ وأرسل هذه الرسائل لكل مسؤول'},
+  T_notifClose:{en:'Close',ar:'إغلاق'},
+  T_contactsTitle:{en:'Team Contacts',ar:'جهات اتصال الفريق'},
+  T_contactsSub:{en:'Add contacts to receive risk notifications',ar:'أضف جهات الاتصال لاستقبال إشعارات المخاطر'},
+  T_addContact:{en:'Add Contact',ar:'إضافة جهة اتصال'},
+  T_cName:{en:'Name',ar:'الاسم'},
+  T_cRole:{en:'Role',ar:'الدور'},
+  T_cEmail:{en:'Email / WhatsApp',ar:'البريد / واتساب'},
+  T_btnAddC:{en:'Add Contact',ar:'إضافة'},
+  T_modalT:{en:'New Project',ar:'مشروع جديد'},
+  T_lName:{en:'Project Name *',ar:'اسم المشروع *'},
+  T_lCon:{en:'Contract No.',ar:'رقم العقد'},
+  T_lVal:{en:'Contract Value (SAR)',ar:'قيمة العقد (ريال)'},
+  T_lType:{en:'Project Type',ar:'نوع المشروع'},
+  T_lSt:{en:'Start Date',ar:'تاريخ البداية'},
+  T_lEn:{en:'Completion Date',ar:'تاريخ الإنجاز'},
+  T_lDesc:{en:'Description',ar:'الوصف'},
+  T_btnCan:{en:'Cancel',ar:'إلغاء'},
+  T_btnCre:{en:'Create Project',ar:'إنشاء المشروع'},
+  T_synced:{en:'Synced',ar:'متزامن'},
+  T_trendTitle:{en:'Weekly Trend Indicators',ar:'مؤشرات الاتجاه الأسبوعية'},
+  T_trendSub:{en:'Enter this week\'s project indicators for AI trend analysis',ar:'أدخل مؤشرات هذا الأسبوع لتحليل الاتجاه بالذكاء الاصطناعي'},
+  T_btnTrend:{en:'Analyze Trend',ar:'تحليل الاتجاه'},
 };
-function t(k){return (TR[k]&&TR[k][lang])||k;}
+function t(k){return (TR[k]&&TR[k][L])||k;}
 function applyLang(){
-  const ar=lang==='ar';
-  document.getElementById('htmlRoot').setAttribute('lang',lang);
-  document.getElementById('htmlRoot').setAttribute('dir',ar?'rtl':'ltr');
-  document.body.style.fontFamily=ar?'var(--font-ar)':'var(--font-en)';
-  Object.keys(TR).forEach(k=>{const el=document.getElementById(k);if(el)el.textContent=t(k);});
-  document.querySelectorAll('.pill').forEach(p=>{const lbl=ar?p.dataset.ar:p.dataset.en;if(lbl)p.textContent=lbl;});
+  const ar=L==='ar';
+  document.getElementById('R').setAttribute('lang',L);
+  document.getElementById('R').setAttribute('dir',ar?'rtl':'ltr');
+  Object.keys(TR).forEach(k=>{
+    if(k.startsWith('T_conn'))return;
+    const el=document.getElementById(k);
+    if(el)el.textContent=t(k);
+  });
+  document.querySelectorAll('.pill').forEach(p=>{
+    const lbl=ar?p.dataset.ar:p.dataset.en;
+    if(lbl)p.textContent=lbl;
+  });
   document.getElementById('langBtn').textContent=ar?'English':'العربية';
-  const ab=document.getElementById('anaBtn');if(ab)ab.textContent=t('btnAnalyze');
+  checkKey();
 }
-function toggleLang(){lang=lang==='ar'?'en':'ar';localStorage.setItem('lang',lang);applyLang();}
+function toggleLang(){L=L==='ar'?'en':'ar';localStorage.setItem('L',L);applyLang();if(CP)renderAll();}
 
-// ═══ DEFAULTS ════════════════════════════════════════════
-const DEF_QHSE=[
-  {l:'1 — Zero Tolerance',d:'Any fatality or permanent disability — not acceptable'},
-  {l:'2 — Critical',d:'Serious injury requiring extended hospitalization'},
-  {l:'3 — High',d:'Moderate injury requiring medical treatment'},
-  {l:'4 — Medium',d:'Minor injury — first aid only required'},
-  {l:'5 — Low',d:'Near miss or unsafe condition with no injury'}
-];
-const DEF_REP=[
-  {l:'1 — Zero Tolerance',d:'Any reputational impact on company is unacceptable'},
-  {l:'2 — National',d:'National media coverage or client escalation'},
-  {l:'3 — Regional',d:'Regional impact within the area or sector'},
-  {l:'4 — Local',d:'Local impact within the project or city'},
-  {l:'5 — Internal',d:'Impact contained within project team only'}
-];
-const DEF_PROB=[
-  {l:'1 — Rare',d:'Less than 10% probability'},
-  {l:'2 — Unlikely',d:'10–30% probability'},
-  {l:'3 — Possible',d:'30–50% probability'},
-  {l:'4 — Likely',d:'50–70% probability'},
-  {l:'5 — Almost Certain',d:'Greater than 70% probability'}
-];
-const DEF_IMP=[
-  {l:'1 — Negligible',d:'No meaningful effect on project objectives'},
-  {l:'2 — Minor',d:'Minor effect manageable within existing resources'},
-  {l:'3 — Moderate',d:'Noticeable effect requiring corrective action'},
-  {l:'4 — Major',d:'Significant effect on cost, schedule, or quality'},
-  {l:'5 — Critical',d:'Severe effect — may halt project or cause major loss'}
-];
-const LC=['#e05252','#d4780a','#c9a020','#2a9e5b','#1e73e8'];
+// ═══ DEFAULTS ═══
+const DQ=[{l:'1 — Zero Tolerance',d:'Any fatality or permanent disability'},{l:'2 — Critical',d:'Serious injury requiring hospitalization'},{l:'3 — High',d:'Medical treatment required'},{l:'4 — Medium',d:'First aid only'},{l:'5 — Low',d:'Near miss only'}];
+const DR=[{l:'1 — Zero Tolerance',d:'Any company image impact'},{l:'2 — National',d:'National media coverage'},{l:'3 — Regional',d:'Regional impact'},{l:'4 — Local',d:'Local city impact'},{l:'5 — Internal',d:'Project team only'}];
+const DP=[{l:'1 — Rare',d:'<10%'},{l:'2 — Unlikely',d:'10-30%'},{l:'3 — Possible',d:'30-50%'},{l:'4 — Likely',d:'50-70%'},{l:'5 — Almost Certain',d:'>70%'}];
+const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Minor manageable effect'},{l:'3 — Moderate',d:'Requires corrective action'},{l:'4 — Major',d:'Significant project impact'},{l:'5 — Critical',d:'May halt project'}];
+const LC=['#e05252','#d4780a','#c9a020','#2a9e5b','#1e72e8'];
 const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
 const IL=['','Negligible','Minor','Moderate','Major','Critical'];
+const PL_AR=['','نادر','محتمل نادراً','محتمل','مرجح','شبه مؤكد'];
+const IL_AR=['','ضئيل','منخفض','متوسط','عالي','حرج'];
+const RL_EN={high:'HIGH',medium:'MEDIUM',low:'LOW'};
+const RL_AR={high:'عالي',medium:'متوسط',low:'منخفض'};
+const RESP_AR={Avoid:'تجنب',Mitigate:'تخفيف',Transfer:'نقل',Accept:'قبول',Escalate:'تصعيد',Exploit:'استغلال',Enhance:'تعزيز',Share:'مشاركة'};
+const CAT_AR={Schedule:'الجدول الزمني',Cost:'التكلفة',Scope:'النطاق',Contract:'العقد',Design:'التصميم',Execution:'التنفيذ',Suppliers:'الموردين',QHSE:'الصحة والسلامة',Quality:'الجودة',Regulatory:'تنظيمي',Financial:'مالي'};
 
-// ═══ STATE ════════════════════════════════════════════════
-let projects=[],cProjId=null,cProj=null;
-let cUT='change_order',projFiles={},uFiles=[],pendingRisks=[];
+// ═══ STATE ═══
+let projs=[],CP=null,CID=null;
+let cUT='change_order',PF={},UF=[],PR=[];
+let editRiskId=null;
 
-// ═══ INIT ═════════════════════════════════════════════════
+// ═══ INIT ═══
 window.onload=async()=>{
-  lang=localStorage.getItem('lang')||'en';
+  L=localStorage.getItem('L')||'en';
   applyLang();
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const k=localStorage.getItem('aKey');
   if(k){document.getElementById('apiKey').value=k;checkKey();}
-  await loadProjects();
+  await loadProjs();
 };
 
 function checkKey(){
   const k=document.getElementById('apiKey').value.trim();
-  const dot=document.getElementById('connDot');
-  const lbl=document.getElementById('connLbl');
+  const dot=document.getElementById('cdot'),lbl=document.getElementById('clbl');
   if(k.startsWith('sk-ant-')&&k.length>20){
     dot.classList.add('on');lbl.classList.add('on');
-    lbl.textContent=t('connConn');
-    localStorage.setItem('aKey',k);
+    lbl.textContent=t('T_connOn');localStorage.setItem('aKey',k);
   }else{
     dot.classList.remove('on');lbl.classList.remove('on');
-    lbl.textContent=t('connDis');
+    lbl.textContent=t('T_connOff');
   }
   refreshBtn();
 }
-const getKey=()=>document.getElementById('apiKey').value.trim();
+const GK=()=>document.getElementById('apiKey').value.trim();
 
-async function callAPI(payload){
-  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey()},body:JSON.stringify(payload)});
-  return await r.json();
+async function api(payload){
+  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':GK()},body:JSON.stringify(payload)});
+  return r.json();
 }
 
-function parseJSON(text){
+function pJSON(text){
   text=text.trim();
   const m=text.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
   if(m)return JSON.parse(m[1].trim());
@@ -665,113 +673,89 @@ function parseJSON(text){
   return JSON.parse(text);
 }
 
-// ═══ SYNC ═════════════════════════════════════════════════
-function showSync(){
-  const el=document.getElementById('syncInd');
-  el.style.display='flex';
-  setTimeout(()=>el.style.display='none',2500);
-}
+// ═══ SYNC ═══
+function showSync(){const el=document.getElementById('syncInd');el.style.display='flex';setTimeout(()=>el.style.display='none',2500);}
 
-// ═══ PROJECTS ═════════════════════════════════════════════
-async function loadProjects(){
+// ═══ PROJECTS ═══
+async function loadProjs(){
   try{
-    projects=await sb('projects?order=created_at.desc&select=*')||[];
-    renderProjs();
-    if(projects.length>0&&!cProjId)selectProj(projects[0].id);
-    else if(!projects.length){document.getElementById('welcome').style.display='block';document.getElementById('projView').style.display='none';}
+    projs=await sb('projects?order=created_at.desc&select=*')||[];
+    renderProjList();
+    if(projs.length&&!CID)selectProj(projs[0].id);
+    else if(!projs.length){document.getElementById('welcome').style.display='block';document.getElementById('projView').style.display='none';}
     showSync();
-  }catch(e){console.error('load',e);}
+  }catch(e){console.error(e);}
 }
-
-function openModal(){document.getElementById('modalOv').classList.add('on');setTimeout(()=>document.getElementById('np_n').focus(),80);}
-function closeModal(){document.getElementById('modalOv').classList.remove('on');}
-
-async function createProject(){
+function openProjModal(){document.getElementById('projModal').classList.add('on');setTimeout(()=>document.getElementById('np_n').focus(),80);}
+function closeProjModal(){document.getElementById('projModal').classList.remove('on');}
+async function createProj(){
   const name=document.getElementById('np_n').value.trim();
-  if(!name){alert(lang==='ar'?'يرجى إدخال اسم المشروع':'Please enter project name');return;}
-  showLoad(lang==='ar'?'جاري الإنشاء...':'Creating project...');
+  if(!name){alert(L==='ar'?'يرجى إدخال اسم المشروع':'Please enter project name');return;}
+  showLoad(L==='ar'?'جاري الإنشاء...':'Creating...');
   try{
-    const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DEF_QHSE,rep:DEF_REP,prob:DEF_PROB,imp:DEF_IMP};
-    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,
-      type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,
-      end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol};
+    const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
+    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[]};
     const res=await sb('projects','POST',d);
-    hideLoad();closeModal();
+    hideLoad();closeProjModal();
     ['np_n','np_c','np_v','np_d','np_s','np_e'].forEach(id=>document.getElementById(id).value='');
-    await loadProjects();
-    if(res&&res[0])selectProj(res[0].id);
+    await loadProjs();if(res&&res[0])selectProj(res[0].id);
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
-
-async function delProject(){
-  if(!confirm(lang==='ar'?'هل أنت متأكد؟':'Are you sure?'))return;
-  showLoad(lang==='ar'?'جاري الحذف...':'Deleting...');
+async function delProj(){
+  if(!confirm(L==='ar'?'هل أنت متأكد؟':'Are you sure?'))return;
+  showLoad(L==='ar'?'جاري الحذف...':'Deleting...');
   try{
-    await sb('projects?id=eq.'+cProjId,'DELETE');
-    hideLoad();cProjId=null;cProj=null;
+    await sb('projects?id=eq.'+CID,'DELETE');
+    hideLoad();CID=null;CP=null;
     document.getElementById('projView').style.display='none';
     document.getElementById('welcome').style.display='block';
-    await loadProjects();
+    await loadProjs();
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
-
-function renderProjs(){
+function renderProjList(){
   const el=document.getElementById('projList');
-  if(!projects.length){el.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--t3)">${lang==='ar'?'لا توجد مشاريع':'No projects'}</div>`;return;}
-  el.innerHTML=projects.map(p=>`
-    <div class="proj-item ${p.id===cProjId?'active':''}" onclick="selectProj('${p.id}')">
-      <div class="proj-name">${p.name}</div>
-      <div class="proj-sub">${p.type||'—'}</div>
-    </div>`).join('');
+  if(!projs.length){el.innerHTML=`<div style="padding:7px;font-size:10.5px;color:var(--t3)">${L==='ar'?'لا توجد مشاريع':'No projects'}</div>`;return;}
+  el.innerHTML=projs.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join('');
 }
-
 async function selectProj(id){
-  cProjId=id;
-  showLoad(lang==='ar'?'جاري التحميل...':'Loading...');
+  CID=id;showLoad(L==='ar'?'جاري التحميل...':'Loading...');
   try{
     const p=await sb('projects?id=eq.'+id+'&select=*');
-    cProj=p&&p[0]?p[0]:null;
-    if(!cProj){hideLoad();return;}
-    if(!cProj.tolerance)cProj.tolerance={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DEF_QHSE,rep:DEF_REP,prob:DEF_PROB,imp:DEF_IMP};
+    CP=p&&p[0]?p[0]:null;if(!CP){hideLoad();return;}
+    if(!CP.tolerance)CP.tolerance={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
+    if(!CP.contacts)CP.contacts=[];
+    if(!CP.trend_data)CP.trend_data=[];
     const risks=await sb('risks?project_id=eq.'+id+'&order=created_at.asc&select=*')||[];
     const upds=await sb('updates?project_id=eq.'+id+'&order=created_at.desc&select=*')||[];
-    cProj.risks=risks;cProj.upds=upds;
+    CP.risks=risks;CP.upds=upds;
     hideLoad();
     document.getElementById('welcome').style.display='none';
     document.getElementById('projView').style.display='block';
-    document.getElementById('phName').textContent=cProj.name;
-    document.getElementById('phSub').textContent=[cProj.type,cProj.value?cProj.value+' SAR':'',cProj.contract].filter(Boolean).join(' · ');
-    renderProjs();renderFiles();renderReg();renderUpds();renderTol();renderWarn();updateStats();
-    if(risks.length)renderDash();
-    switchTab('files');
+    document.getElementById('phName').textContent=CP.name;
+    document.getElementById('phSub').textContent=[CP.type,CP.value?CP.value+' SAR':'',CP.contract].filter(Boolean).join(' · ');
+    renderAll();ST('files');
   }catch(e){hideLoad();console.error(e);}
 }
-
-// ═══ TABS ═════════════════════════════════════════════════
-function switchTab(name){
-  ['files','dash','reg','warn','upd','tol'].forEach(n=>{
-    document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1))?.classList.toggle('on',n===name);
-    document.getElementById('pane-'+n)?.classList.toggle('on',n===name);
-  });
-  // Fix tab IDs
-  const tabMap={files:'tabFiles',dash:'tabDash',reg:'tabReg',warn:'tabWarn',upd:'tabUpd',tol:'tabTol'};
-  Object.entries(tabMap).forEach(([n,tid])=>{
-    document.getElementById(tid)?.classList.toggle('on',n===name);
-  });
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  const tp=document.getElementById('pane-'+name);
-  if(tp)tp.classList.add('on');
+function renderAll(){
+  renderProjList();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
+  if(CP?.risks?.length)renderDash();
 }
 
-// ═══ FILE EXTRACTION ══════════════════════════════════════
+// ═══ TABS ═══
+function ST(name){
+  const names=['files','dash','reg','warn','upd','tol','contacts'];
+  names.forEach(n=>{
+    const tb=document.getElementById('tab-'+n);const pn=document.getElementById('pane-'+n);
+    if(tb)tb.classList.toggle('on',n===name);
+    if(pn)pn.classList.toggle('on',n===name);
+  });
+}
+
+// ═══ FILE EXTRACTION ═══
 async function extractText(file){
   const ext=file.name.split('.').pop().toLowerCase();
   if(['png','jpg','jpeg','gif','webp'].includes(ext)){
-    return new Promise(res=>{
-      const r=new FileReader();
-      r.onload=ev=>res({extype:'image',data:ev.target.result,fileType:file.type||'image/jpeg',name:file.name});
-      r.readAsDataURL(file);
-    });
+    return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({extype:'image',data:ev.target.result,fileType:file.type||'image/jpeg',name:file.name});r.readAsDataURL(file);});
   }
   if(ext==='pdf'){
     try{
@@ -779,318 +763,332 @@ async function extractText(file){
       const pdf=await pdfjsLib.getDocument({data:ab}).promise;
       let text=`[PDF: ${file.name} — ${pdf.numPages} pages]\n`;
       for(let i=1;i<=Math.min(pdf.numPages,60);i++){
-        const pg=await pdf.getPage(i);
-        const ct=await pg.getTextContent();
+        const pg=await pdf.getPage(i);const ct=await pg.getTextContent();
         text+=ct.items.map(s=>s.str).join(' ')+'\n';
       }
       return {extype:'text',text:text.slice(0,60000),name:file.name};
-    }catch(e){
-      return new Promise(res=>{
-        const r=new FileReader();
-        r.onload=ev=>res({extype:'pdf_raw',data:ev.target.result,name:file.name});
-        r.readAsDataURL(file);
-      });
-    }
+    }catch(e){return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({extype:'pdf_raw',data:ev.target.result,name:file.name});r.readAsDataURL(file);});}
   }
   if(['doc','docx'].includes(ext)){
-    try{
-      const ab=await file.arrayBuffer();
-      const result=await mammoth.extractRawText({arrayBuffer:ab});
-      return {extype:'text',text:`[DOCX: ${file.name}]\n`+result.value.slice(0,60000),name:file.name};
-    }catch(e){return {extype:'text',text:`[Could not extract: ${file.name}]`,name:file.name};}
+    try{const ab=await file.arrayBuffer();const res=await mammoth.extractRawText({arrayBuffer:ab});return {extype:'text',text:`[DOCX: ${file.name}]\n`+res.value.slice(0,60000),name:file.name};}
+    catch(e){return {extype:'text',text:`[Cannot extract: ${file.name}]`,name:file.name};}
   }
-  if(['xlsx','xls'].includes(ext)){
-    return new Promise(res=>{
-      const r=new FileReader();
-      r.onload=ev=>res({extype:'text',text:`[Excel: ${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});
-      r.readAsText(file);
-    });
-  }
-  return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=ev=>res({extype:'text',text:`[${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});
-    r.readAsText(file);
-  });
+  return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({extype:'text',text:`[${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});r.readAsText(file);});
 }
-
 function handleFiles(e){
-  if(!projFiles[cProjId])projFiles[cProjId]=[];
-  Array.from(e.target.files).forEach(async file=>{
-    const ex=await extractText(file);
-    projFiles[cProjId].push({name:file.name,size:file.size,...ex});
-    renderFiles();
-  });
+  if(!PF[CID])PF[CID]=[];
+  Array.from(e.target.files).forEach(async file=>{const ex=await extractText(file);PF[CID].push({name:file.name,size:file.size,...ex});renderFiles();});
 }
 function renderFiles(){
-  const files=projFiles[cProjId]||[];
-  document.getElementById('fcLbl').textContent=files.length?`${files.length} file${files.length>1?'s':''} ready`:'No files';
+  const files=PF[CID]||[];
+  document.getElementById('fcLbl').textContent=files.length?`${files.length} ${L==='ar'?'ملف':'file'+(files.length>1?'s':'')} ${L==='ar'?'جاهز':'ready'}`:(L==='ar'?'لا توجد ملفات':'No files');
   refreshBtn();
   document.getElementById('fgrid').innerHTML=files.map((f,i)=>{
     const ext=f.name.split('.').pop().toLowerCase();
-    const tc=ext==='pdf'?'fe-pdf':['xlsx','xls','csv'].includes(ext)?'fe-xl':['png','jpg','jpeg'].includes(ext)?'fe-img':['doc','docx'].includes(ext)?'fe-doc':'fe-txt';
+    const tc=ext==='pdf'?'fx-pdf':['xlsx','xls','csv','mpp'].includes(ext)?'fx-xl':['png','jpg','jpeg'].includes(ext)?'fx-img':['doc','docx'].includes(ext)?'fx-doc':'fx-txt';
     const sz=f.size>1048576?(f.size/1048576).toFixed(1)+' MB':Math.round(f.size/1024)+' KB';
-    return`<div class="fc"><button class="frem" onclick="remFile(${i})">×</button><div class="fext ${tc}">${ext.toUpperCase()}</div><div class="fn">${f.name}</div><div class="fs2">${sz}${f.extype==='text'?' · text extracted':''}</div></div>`;
+    return`<div class="fcard"><button class="frem" onclick="remFile(${i})">×</button><div class="fext ${tc}">${ext.toUpperCase()}</div><div class="fn">${f.name}</div><div class="fsz">${sz}${f.extype==='text'?' ✓':''}</div></div>`;
   }).join('');
 }
 function refreshBtn(){
-  const files=projFiles[cProjId]||[];
-  document.getElementById('anaBtn').disabled=files.length===0||!getKey().startsWith('sk-ant-');
+  const files=PF[CID]||[];
+  document.getElementById('anaBtn').disabled=files.length===0||!GK().startsWith('sk-ant-');
 }
-function remFile(i){projFiles[cProjId].splice(i,1);renderFiles();}
-
-function handleUF(e){
-  Array.from(e.target.files).forEach(async file=>{
-    const ex=await extractText(file);
-    uFiles.push({name:file.name,size:file.size,...ex});
-    renderUFPrev();
-  });
-}
-function renderUFPrev(){
+function remFile(i){PF[CID].splice(i,1);renderFiles();}
+function handleUF(e){Array.from(e.target.files).forEach(async file=>{const ex=await extractText(file);UF.push({name:file.name,...ex});renderUFP();});}
+function renderUFP(){
   const el=document.getElementById('ufPrev');
-  if(!uFiles.length){el.innerHTML='';return;}
-  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">'+
-    uFiles.map((f,i)=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:4px 9px;font-size:11.5px;display:flex;align-items:center;gap:6px;">↑ ${f.name}<button onclick="remUF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;">×</button></div>`).join('')+'</div>';
+  if(!UF.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px">'+UF.map((f,i)=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:3px;padding:3px 8px;font-size:11px;display:flex;align-items:center;gap:5px">↑ ${f.name}<button onclick="remUF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px">×</button></div>`).join('')+'</div>';
 }
-function remUF(i){uFiles.splice(i,1);renderUFPrev();}
+function remUF(i){UF.splice(i,1);renderUFP();}
 
-// ═══ TOLERANCE ════════════════════════════════════════════
+// ═══ TOLERANCE ═══
 function renderTol(){
-  if(!cProj)return;
-  const tl=cProj.tolerance;
+  if(!CP)return;
+  const tl=CP.tolerance;
   document.getElementById('tc_pct').value=tl.cost_pct||'';
   document.getElementById('tc_val').value=tl.cost_val||'';
   document.getElementById('ts_days').value=tl.sched_days||'';
   document.getElementById('ts_pct').value=tl.sched_pct||'';
-  renderLvls('qhse_lvl',tl.qhse||DEF_QHSE,'qhse');
-  renderLvls('rep_lvl',tl.rep||DEF_REP,'rep');
-  renderLvls('prob_lvl',tl.prob||DEF_PROB,'prob');
-  renderLvls('imp_lvl',tl.imp||DEF_IMP,'imp');
+  renderLvls('qhse_lvl',tl.qhse||DQ,'qhse');
+  renderLvls('rep_lvl',tl.rep||DR,'rep');
+  renderLvls('prob_lvl',tl.prob||DP,'prob');
+  renderLvls('imp_lvl',tl.imp||DI,'imp');
 }
 function renderLvls(cid,lvs,key){
   document.getElementById(cid).innerHTML=lvs.map((lv,i)=>`
-    <div class="tol-lv" style="border-inline-start:3px solid ${LC[i]}">
-      <span class="tol-lbl" style="color:${LC[i]}">${lv.l}</span>
+    <div class="tlv" style="border-inline-start:3px solid ${LC[i]}">
+      <span class="tlv-l" style="color:${LC[i]}">${lv.l}</span>
       <input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/>
     </div>`).join('');
 }
-function updLvl(key,idx,val){
-  if(!cProj)return;
-  if(!cProj.tolerance[key])cProj.tolerance[key]=DEF_QHSE.map(x=>({...x}));
-  cProj.tolerance[key][idx].d=val;
-  dbTol();
-}
+function updLvl(key,idx,val){if(!CP)return;CP.tolerance[key][idx].d=val;dbTol();}
 let tolT=null;
 function dbTol(){clearTimeout(tolT);tolT=setTimeout(saveTol,1200);}
 async function saveTol(){
-  if(!cProj)return;
-  cProj.tolerance.cost_pct=document.getElementById('tc_pct').value;
-  cProj.tolerance.cost_val=document.getElementById('tc_val').value;
-  cProj.tolerance.sched_days=document.getElementById('ts_days').value;
-  cProj.tolerance.sched_pct=document.getElementById('ts_pct').value;
-  try{await sb('projects?id=eq.'+cProjId,'PATCH',{tolerance:cProj.tolerance});showSync();}
-  catch(e){console.error(e);}
+  if(!CP)return;
+  CP.tolerance.cost_pct=document.getElementById('tc_pct').value;
+  CP.tolerance.cost_val=document.getElementById('tc_val').value;
+  CP.tolerance.sched_days=document.getElementById('ts_days').value;
+  CP.tolerance.sched_pct=document.getElementById('ts_pct').value;
+  try{await sb('projects?id=eq.'+CID,'PATCH',{tolerance:CP.tolerance});showSync();}catch(e){console.error(e);}
 }
 
-// ═══ ANALYZE ══════════════════════════════════════════════
+// ═══ CONTACTS ═══
+function renderContacts(){
+  if(!CP)return;
+  const el=document.getElementById('contactsList');
+  if(!CP.contacts?.length){el.innerHTML=`<div class="empty" style="padding:20px"><div class="et">${L==='ar'?'لا توجد جهات اتصال':'No contacts added yet'}</div></div>`;return;}
+  el.innerHTML=CP.contacts.map((c,i)=>`
+    <div class="contact-card">
+      <div class="contact-info">
+        <div class="contact-name">${c.name}</div>
+        <div class="contact-det">${c.role}${c.contact?' · '+c.contact:''}</div>
+      </div>
+      <button class="btn btn-del" onclick="removeContact(${i})">×</button>
+    </div>`).join('');
+}
+async function addContact(){
+  const name=document.getElementById('c_name').value.trim();
+  const role=document.getElementById('c_role').value.trim();
+  const contact=document.getElementById('c_contact').value.trim();
+  if(!name||!role){alert(L==='ar'?'الاسم والدور مطلوبان':'Name and role are required');return;}
+  if(!CP.contacts)CP.contacts=[];
+  CP.contacts.push({name,role,contact});
+  await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
+  ['c_name','c_role','c_contact'].forEach(id=>document.getElementById(id).value='');
+  renderContacts();showSync();
+}
+async function removeContact(i){
+  CP.contacts.splice(i,1);
+  await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
+  renderContacts();
+}
+
+// ═══ NOTIFICATIONS ═══
+function showNotifModal(){
+  const risks=CP?.risks||[];
+  if(!risks.length){alert(L==='ar'?'لا توجد مخاطر في السجل':'No risks in register');return;}
+  const contacts=CP?.contacts||[];
+  if(!contacts.length){alert(L==='ar'?'لا توجد جهات اتصال — أضفها أولاً':'No contacts — add them first in Contacts tab');return;}
+
+  const byOwner={};
+  risks.forEach(r=>{
+    const owner=r.owner||'—';
+    if(!byOwner[owner])byOwner[owner]=[];
+    byOwner[owner].push(r);
+  });
+
+  let html='';
+  Object.entries(byOwner).forEach(([owner,ownerRisks])=>{
+    const contact=contacts.find(c=>c.role.toLowerCase().includes(owner.toLowerCase().split(' ')[0])||owner.toLowerCase().includes(c.role.toLowerCase().split(' ')[0]))||null;
+    const high=ownerRisks.filter(r=>r.level==='high');
+    const msg=L==='ar'?
+`تنبيه — مخاطر تحت مسؤوليتك
+المشروع: ${CP.name}
+المسؤول: ${owner}
+
+المخاطر المسجلة:
+${ownerRisks.map(r=>`• [${r.level==='high'?'عالي':r.level==='medium'?'متوسط':'منخفض'}] ${r.description}
+  الإجراء المطلوب: ${r.mitigation}`).join('\n')}
+
+${high.length?`⚠️ تحذير: ${high.length} مخاطرة عالية تحتاج إجراء فوري`:''}
+تاريخ: ${new Date().toLocaleDateString('ar-SA')}`:
+`Risk Notification — Action Required
+Project: ${CP.name}
+Responsible: ${owner}
+
+Assigned Risks:
+${ownerRisks.map(r=>`• [${r.level.toUpperCase()}] ${r.description}
+  Action Required: ${r.mitigation}`).join('\n')}
+
+${high.length?`⚠️ URGENT: ${high.length} high-level risk${high.length>1?'s':''} require immediate action`:''}
+Date: ${new Date().toLocaleDateString()}`;
+
+    html+=`<div class="msg-card">
+      <div class="msg-hdr">
+        <div>
+          <span style="font-size:12.5px;font-weight:600">${owner}</span>
+          ${contact?`<span style="font-size:11px;color:var(--t3);margin-inline-start:8px">${contact.name} · ${contact.contact||''}</span>`:''}
+        </div>
+        <button class="btn btn-g" style="padding:3px 9px;font-size:11px" onclick="copyMsg(this,'msg_${owner.replace(/\s/g,'_')}')">${L==='ar'?'نسخ':'Copy'}</button>
+      </div>
+      <div class="msg-body" id="msg_${owner.replace(/\s/g,'_')}">${msg}</div>
+    </div>`;
+  });
+
+  document.getElementById('notifList').innerHTML=html;
+  document.getElementById('notifOv').classList.add('on');
+}
+function copyMsg(btn,id){
+  const el=document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent);
+  btn.textContent=L==='ar'?'تم النسخ ✓':'Copied ✓';
+  setTimeout(()=>btn.textContent=L==='ar'?'نسخ':'Copy',2000);
+}
+
+// ═══ ANALYZE ═══
 async function analyze(){
-  const files=projFiles[cProjId]||[];
-  const tl=cProj.tolerance||{};
+  const files=PF[CID]||[];
+  const tl=CP.tolerance||{};
   const hasSched=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
-  showLoad(lang==='ar'?'جاري تحليل ملفات المشروع...':'Analyzing project files...');
+  showLoad(L==='ar'?'جاري تحليل ملفات المشروع...':'Analyzing project files...');
 
-  const tolCtx=`RISK APPETITE:
-Cost: max ${tl.cost_pct||5}% or ${tl.cost_val||'unspecified'} SAR
-Schedule: max ${tl.sched_days||30} days or ${tl.sched_pct||10}%
-QHSE: ${(tl.qhse||DEF_QHSE).map(x=>x.l+': '+x.d).join(' | ')}
-Reputation: ${(tl.rep||DEF_REP).map(x=>x.l+': '+x.d).join(' | ')}
-Probability: ${(tl.prob||DEF_PROB).map(x=>x.l+': '+x.d).join(' | ')}
-Impact: ${(tl.imp||DEF_IMP).map(x=>x.l+': '+x.d).join(' | ')}`;
+  const lang_instruction=L==='ar'?'IMPORTANT: Generate ALL risk descriptions, causes, mitigation plans, and owner titles in ARABIC language.':'Generate ALL content in ENGLISH.';
+  const tolCtx=`Risk Appetite: Cost max ${tl.cost_pct||5}% or ${tl.cost_val||'N/A'} SAR | Schedule max ${tl.sched_days||30} days | QHSE: ${(tl.qhse||DQ).map(x=>x.l+':'+x.d).join('|')} | Rep: ${(tl.rep||DR).map(x=>x.l+':'+x.d).join('|')}`;
 
-  const parts=[{type:'text',text:`You are a senior risk manager for construction projects in Saudi Arabia.
-
-PROJECT: ${cProj.name}
-Type: ${cProj.type} | Value: ${cProj.value||'—'} SAR | Contract: ${cProj.contract||'—'}
-Start: ${cProj.start_date||'—'} | Completion: ${cProj.end_date||'—'}
-Description: ${cProj.description||'—'}
-
+  const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia.
+${lang_instruction}
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR | Contract: ${CP.contract||'—'}
+Start: ${CP.start_date||'—'} | Completion: ${CP.end_date||'—'} | Description: ${CP.description||'—'}
 ${tolCtx}
-${hasSched?'Schedule file uploaded — use activity names and dates for timeline-based assessment.':'No schedule file — set has_schedule:false. Still assess expected_weeks based on project timeline if dates provided.'}
+${hasSched?'Schedule uploaded — use activity names/dates.':'No schedule — set has_schedule:false.'}
 
-Analyze all files. Generate risks including THREATS (negative) and OPPORTUNITIES (positive).
-
-CRITICAL: Respond with ONLY valid JSON, no markdown, no explanation. Keep ALL text fields under 25 words each.
-
-{
-  "summary": "2-sentence analysis",
-  "has_schedule": true,
-  "risks": [{
-    "id": "R001",
-    "type": "threat",
-    "category": "Schedule",
-    "description": "brief risk description under 20 words",
-    "cause": "root cause under 15 words",
-    "probability": 3,
-    "impact_cost": 3,
-    "impact_schedule": 4,
-    "impact_qhse": 1,
-    "impact_reputation": 2,
-    "level": "high",
-    "response_strategy": "Mitigate",
-    "mitigation": "action plan under 25 words",
-    "owner": "Role title",
-    "activity_ref": "Activity name if applicable",
-    "expected_weeks": 2
-  }]
-}
-
-Types: threat or opportunity
-Threat strategies: Avoid, Mitigate, Transfer, Accept, Escalate
-Opportunity strategies: Exploit, Enhance, Share, Accept, Escalate
-Categories: Schedule, Cost, Scope, Contract, Design, Execution, Suppliers, QHSE, Quality, Regulatory, Financial
-Levels: high, medium, low
-expected_weeks: 1-4 or null
-Generate 12-15 risks including 3 opportunities minimum.`}];
+Respond ONLY with valid JSON. Keep each field under 25 words.
+{"summary":"2-sentence summary","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"<25 words>","cause":"<15 words>","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"<25 words>","owner":"Role Title","activity_ref":"","expected_weeks":2}]}
+Types: threat/opportunity. Threat strategies: Avoid/Mitigate/Transfer/Accept/Escalate. Opportunity: Exploit/Enhance/Share/Accept/Escalate.
+Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
+Generate 12-15 risks including 3 opportunities.`}];
 
   for(const f of files){
-    if(f.extype==='image'&&f.data){
-      parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
-      parts.push({type:'text',text:`[Drawing: ${f.name}]`});
-    }else if(f.extype==='pdf_raw'&&f.data){
-      parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});
-    }else if(f.text){
-      parts.push({type:'text',text:f.text});
-    }
+    if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});parts.push({type:'text',text:`[Drawing: ${f.name}]`});}
+    else if(f.extype==='pdf_raw'&&f.data){parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});}
+    else if(f.text){parts.push({type:'text',text:f.text});}
   }
 
   try{
-    const data=await callAPI({model:'claude-opus-4-5',max_tokens:8000,messages:[{role:'user',content:parts}]});
+    const data=await api({model:'claude-opus-4-5',max_tokens:8000,messages:[{role:'user',content:parts}]});
     hideLoad();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
-    try{parsed=parseJSON(data.content[0].text);}
+    try{parsed=pJSON(data.content[0].text);}
     catch(e){alert('Parse error: '+data.content[0].text.slice(0,300));return;}
-    cProj.summary=parsed.summary||'';
-    cProj.has_schedule=parsed.has_schedule!==false;
-    pendingRisks=parsed.risks||[];
-    showVal(pendingRisks);
+    CP.summary=parsed.summary||'';CP.has_schedule=parsed.has_schedule!==false;
+    PR=parsed.risks||[];showVal(PR);
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
-// ═══ VALIDATION ═══════════════════════════════════════════
+// ═══ VALIDATION ═══
 function showVal(risks){document.getElementById('valOv').classList.add('on');renderValList(risks);}
 function renderValList(risks){
-  const app=risks.filter(r=>r._app!==false).length;
+  const app=risks.filter(r=>r._a!==false).length;
   document.getElementById('valCtr').textContent=`${app}/${risks.length}`;
   const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
   document.getElementById('valList').innerHTML=risks.map((r,i)=>`
-    <div class="vc ${r._app===false?'rej':r._app?'app2':''}" id="vc${i}">
+    <div class="vc ${r._a===false?'rej':r._a?'app2':''}" id="vc${i}">
       <div class="vch">
         <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
-            <span style="font-family:var(--mono);font-size:10.5px;color:var(--t3)">${r.id}</span>
-            <span class="bdg ${r.type==='opportunity'?'bdg-opp':'bdg-threat'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
-            <span class="cat-bdg">${r.category}</span>
-            <span style="font-size:11px;color:${lc[r.level]||'var(--t2)'}">● ${(r.level||'').toUpperCase()}</span>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.id}</span>
+            <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
+            <span class="cb">${r.category}</span>
+            <span style="font-size:10.5px;color:${lc[r.level]||'var(--t2)'}">● ${(r.level||'').toUpperCase()}</span>
             <span class="resp r-${(r.response_strategy||'').toLowerCase()}">${r.response_strategy||'—'}</span>
-            ${r.expected_weeks?`<span class="chip" style="background:rgba(201,160,32,.1);color:var(--yel)">Wk ${r.expected_weeks}</span>`:''}
+            ${r.expected_weeks?`<span class="chip">Wk${r.expected_weeks}</span>`:''}
           </div>
-          <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:3px;">${r.description}</div>
-          <div style="font-size:11.5px;color:var(--t3);">${r.cause||''}</div>
+          <div style="font-size:12.5px;font-weight:500;margin-bottom:2px">${r.description}</div>
+          <div style="font-size:11px;color:var(--t3)">${r.cause||''}</div>
         </div>
         <div class="vca">
-          <button class="btn btn-ok" style="padding:4px 10px;font-size:11.5px;" onclick="appR(${i})">✓</button>
-          <button class="btn btn-del" style="padding:4px 10px;font-size:11.5px;" onclick="rejR(${i})">✕</button>
+          <button class="btn btn-ok" style="padding:3px 9px;font-size:11px" onclick="appR(${i})">✓</button>
+          <button class="btn btn-del" style="padding:3px 9px;font-size:11px" onclick="rejR(${i})">✕</button>
         </div>
       </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">
-        <span class="chip">P: ${r.probability} — ${PL[r.probability]||''}</span>
-        <span class="chip">Cost: ${IL[r.impact_cost]||r.impact_cost}</span>
-        <span class="chip">Sched: ${IL[r.impact_schedule]||r.impact_schedule}</span>
-        <span class="chip">QHSE: ${IL[r.impact_qhse]||r.impact_qhse}</span>
-        <span class="chip">Rep: ${IL[r.impact_reputation]||r.impact_reputation}</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+        <span class="chip">P:${r.probability} ${(L==='ar'?PL_AR:PL)[r.probability]||''}</span>
+        <span class="chip">C:${(L==='ar'?IL_AR:IL)[r.impact_cost]||r.impact_cost}</span>
+        <span class="chip">S:${(L==='ar'?IL_AR:IL)[r.impact_schedule]||r.impact_schedule}</span>
+        <span class="chip">Q:${(L==='ar'?IL_AR:IL)[r.impact_qhse]||r.impact_qhse}</span>
+        <span class="chip">R:${(L==='ar'?IL_AR:IL)[r.impact_reputation]||r.impact_reputation}</span>
       </div>
-      <div style="font-size:11.5px;color:var(--t2);background:var(--s2);padding:7px 10px;border-radius:4px;">${r.mitigation}</div>
+      <div style="font-size:11px;color:var(--t2);background:var(--s2);padding:6px 9px;border-radius:4px">${r.mitigation}</div>
     </div>`).join('');
 }
-function appR(i){pendingRisks[i]._app=true;renderValList(pendingRisks);}
-function rejR(i){pendingRisks[i]._app=false;renderValList(pendingRisks);}
-function approveAll(){pendingRisks.forEach(r=>r._app=true);renderValList(pendingRisks);}
+function appR(i){PR[i]._a=true;renderValList(PR);}
+function rejR(i){PR[i]._a=false;renderValList(PR);}
+function approveAll(){PR.forEach(r=>r._a=true);renderValList(PR);}
 async function confirmVal(){
-  const app=pendingRisks.filter(r=>r._app!==false);
+  const app=PR.filter(r=>r._a!==false);
   if(!app.length){alert('Approve at least one risk');return;}
-  showLoad(lang==='ar'?'جاري الحفظ...':'Saving register...');
+  showLoad(L==='ar'?'جاري الحفظ...':'Saving...');
   try{
-    await sb('risks?project_id=eq.'+cProjId,'DELETE');
-    const ins=app.map(r=>({
-      project_id:cProjId,risk_id:r.id,type:r.type||'threat',category:r.category,
-      description:r.description,cause:r.cause||'',probability:r.probability,
-      impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,
-      impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,
-      level:r.level,response_strategy:r.response_strategy||'Mitigate',
-      mitigation:r.mitigation,owner:r.owner||'',
-      activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null
-    }));
+    await sb('risks?project_id=eq.'+CID,'DELETE');
+    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
     await sb('risks','POST',ins);
-    await sb('projects?id=eq.'+cProjId,'PATCH',{
-      summary:cProj.summary,
-      analyzed_at:new Date().toLocaleDateString(),
-      has_schedule:cProj.has_schedule
-    });
-    hideLoad();
-    document.getElementById('valOv').classList.remove('on');
-    await selectProj(cProjId);showSync();
+    await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
+    hideLoad();document.getElementById('valOv').classList.remove('on');
+    await selectProj(CID);showSync();
   }catch(e){hideLoad();alert('Save error: '+e.message);}
 }
 
-// ═══ REGISTER ═════════════════════════════════════════════
+// ═══ EDIT RISK ═══
+function openEdit(riskDbId){
+  const r=CP.risks.find(x=>x.id===riskDbId);if(!r)return;
+  editRiskId=riskDbId;
+  document.getElementById('e_desc').value=r.description||'';
+  document.getElementById('e_cause').value=r.cause||'';
+  document.getElementById('e_type').value=r.type||'threat';
+  document.getElementById('e_cat').value=r.category||'Schedule';
+  document.getElementById('e_level').value=r.level||'medium';
+  document.getElementById('e_resp').value=r.response_strategy||'Mitigate';
+  document.getElementById('e_prob').value=r.probability||3;
+  document.getElementById('e_owner').value=r.owner||'';
+  document.getElementById('e_mit').value=r.mitigation||'';
+  document.getElementById('editOv').classList.add('on');
+}
+function closeEdit(){document.getElementById('editOv').classList.remove('on');editRiskId=null;}
+async function saveEdit(){
+  if(!editRiskId)return;
+  showLoad(L==='ar'?'جاري الحفظ...':'Saving...');
+  try{
+    const updates={description:document.getElementById('e_desc').value,cause:document.getElementById('e_cause').value,type:document.getElementById('e_type').value,category:document.getElementById('e_cat').value,level:document.getElementById('e_level').value,response_strategy:document.getElementById('e_resp').value,probability:parseInt(document.getElementById('e_prob').value)||3,owner:document.getElementById('e_owner').value,mitigation:document.getElementById('e_mit').value};
+    await sb('risks?id=eq.'+editRiskId,'PATCH',updates);
+    hideLoad();closeEdit();await selectProj(CID);showSync();
+  }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+// ═══ REGISTER ═══
 function renderReg(){
-  const risks=cProj?.risks||[];
-  if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-t">${t('regEmpty')}</div></div>`;return;}
+  const risks=CP?.risks||[];
+  if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="et">${t('T_regEmpty')}</div></div>`;return;}
   const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
   const rc={Avoid:'r-avoid',Mitigate:'r-mitigate',Transfer:'r-transfer',Accept:'r-accept',Escalate:'r-escalate',Exploit:'r-exploit',Enhance:'r-enhance',Share:'r-share'};
   const buildRows=arr=>arr.map(r=>`
     <tr class="${r.type==='opportunity'?'opp':'thr'}">
-      <td><span style="font-family:var(--mono);font-size:10.5px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
-      <td><span class="bdg ${r.type==='opportunity'?'bdg-opp':'bdg-threat'}">${r.type==='opportunity'?'OPP':'THR'}</span></td>
-      <td><span class="cat-bdg">${r.category}</span></td>
-      <td><div style="font-size:12.5px;color:var(--t1);max-width:220px;">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
-      <td style="text-align:center"><b>${r.probability}</b><div style="font-size:9.5px;color:var(--t3)">${PL[r.probability]||''}</div></td>
-      <td><div class="imp-col">
-        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">C</span><div class="bar"><div class="bar-fill" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_cost}</span></div>
-        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">S</span><div class="bar"><div class="bar-fill" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_schedule}</span></div>
-        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">Q</span><div class="bar"><div class="bar-fill" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_qhse}</span></div>
-        <div class="imp-row"><span style="font-size:10px;color:var(--t3);min-width:14px">R</span><div class="bar"><div class="bar-fill" style="width:${r.impact_reputation*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:10px">${r.impact_reputation}</span></div>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
+      <td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THR'}</span></td>
+      <td><span class="cb">${r.category}</span></td>
+      <td><div style="font-size:12px;max-width:210px">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:1px">${r.cause||''}</div></td>
+      <td style="text-align:center"><b style="font-size:13px">${r.probability}</b></td>
+      <td><div class="ic">
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">C</span><div class="ib"><div class="ibf" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_cost}</span></div>
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">S</span><div class="ib"><div class="ibf" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_schedule}</span></div>
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">Q</span><div class="ib"><div class="ibf" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_qhse}</span></div>
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">R</span><div class="ib"><div class="ibf" style="width:${r.impact_reputation*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_reputation}</span></div>
       </div></td>
-      <td><span class="bdg bdg-${r.level}">${(r.level||'').toUpperCase()}</span></td>
-      <td><span class="resp ${rc[r.response_strategy]||'r-accept'}">${r.response_strategy||'—'}</span></td>
-      <td><div style="font-size:11.5px;color:var(--t2);max-width:180px;line-height:1.5">${r.mitigation}</div></td>
-      <td style="font-size:11.5px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
+      <td><span class="bdg b-${r.level}">${L==='ar'?RL_AR[r.level]:RL_EN[r.level]}</span></td>
+      <td><span class="resp ${rc[r.response_strategy]||'r-accept'}">${L==='ar'?(RESP_AR[r.response_strategy]||r.response_strategy):r.response_strategy||'—'}</span></td>
+      <td><div style="font-size:11px;color:var(--t2);max-width:175px;line-height:1.5">${r.mitigation}</div></td>
+      <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
+      <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">${L==='ar'?'تعديل':'Edit'}</button></td>
     </tr>`).join('');
 
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
-  const hdr='<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>P</th><th>Impact</th><th>Level</th><th>Response</th><th>Action Plan</th><th>Owner</th></tr>';
+  const hdr=`<tr><th>ID</th><th>${L==='ar'?'النوع':'Type'}</th><th>${L==='ar'?'الفئة':'Category'}</th><th>${L==='ar'?'المخاطرة':'Description'}</th><th>P</th><th>${L==='ar'?'التأثير':'Impact'}</th><th>${L==='ar'?'المستوى':'Level'}</th><th>${L==='ar'?'الاستجابة':'Response'}</th><th>${L==='ar'?'خطة التخفيف':'Action Plan'}</th><th>${L==='ar'?'المسؤول':'Owner'}</th><th></th></tr>`;
 
   document.getElementById('regContent').innerHTML=`
-    ${cProj.summary?`<div class="alert-i ai-info">${cProj.summary}</div>`:''}
-    ${thr.length?`
-      <div class="section-sep" style="color:var(--red)">Threats (${thr.length})</div>
-      <div class="tw" style="margin-bottom:16px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>
-    `:''}
-    ${opp.length?`
-      <div class="section-sep" style="color:var(--teal)">Opportunities (${opp.length})</div>
-      <div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>
-    `:''}
-    <div class="ebar">
-      <button class="btn btn-ghost" onclick="exportCSV()">${t('btnExport')}</button>
-      <span style="font-size:11px;color:var(--t3)">${risks.length} risks · ${cProj.analyzed_at||'—'}</span>
-    </div>`;
+    ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
+    ${thr.length?`<div class="sep" style="color:var(--red)">${L==='ar'?'التهديدات':'Threats'} (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
+    ${opp.length?`<div class="sep" style="color:var(--teal)">${L==='ar'?'الفرص':'Opportunities'} (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
+    <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">${t('T_btnExport')}</button><span style="font-size:11px;color:var(--t3)">${risks.length} ${L==='ar'?'مخاطرة':'risks'} · ${CP.analyzed_at||'—'}</span></div>`;
 }
 
-// ═══ DASHBOARD ════════════════════════════════════════════
+// ═══ DASHBOARD ═══
 function renderDash(){
-  const risks=cProj?.risks||[];
-  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-t">${t('dashEmpty')}</div></div>`;return;}
+  const risks=CP?.risks||[];
+  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="et">${t('T_dashEmpty')}</div></div>`;return;}
 
   const high=risks.filter(r=>r.level==='high').length;
   const med=risks.filter(r=>r.level==='medium').length;
@@ -1098,261 +1096,382 @@ function renderDash(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type).length;
   const opp=risks.filter(r=>r.type==='opportunity').length;
 
+  // Risk Score (weighted: high=10, med=5, low=1)
+  const riskScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
+  // Exposure estimate
+  const val=parseFloat((CP.value||'0').replace(/[^0-9.]/g,''))||0;
+  const exposure=val>0?Math.round(val*0.05*high+val*0.02*med):null;
+
+  // Category breakdown
+  const cats={};risks.forEach(r=>{const c=L==='ar'?(CAT_AR[r.category]||r.category):r.category;cats[c]=(cats[c]||0)+1;});
+  const catSorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+
+  // Status counts
+  const byResp={};risks.forEach(r=>{const rs=L==='ar'?(RESP_AR[r.response_strategy]||r.response_strategy||'—'):(r.response_strategy||'—');byResp[rs]=(byResp[rs]||0)+1;});
+
   document.getElementById('dashContent').innerHTML=`
-    <div class="mini-stat-row">
-      <div class="mini-stat"><div><div class="ms-label">${lang==='ar'?'مرتفعة':'High Risk'}</div><div class="ms-val" style="color:var(--red)">${high}</div></div><div style="font-size:22px;opacity:.3">▲</div></div>
-      <div class="mini-stat"><div><div class="ms-label">${lang==='ar'?'متوسطة':'Medium Risk'}</div><div class="ms-val" style="color:var(--yel)">${med}</div></div><div style="font-size:22px;opacity:.3">◆</div></div>
-      <div class="mini-stat"><div><div class="ms-label">${lang==='ar'?'فرص':'Opportunities'}</div><div class="ms-val" style="color:var(--teal)">${opp}</div></div><div style="font-size:22px;opacity:.3">★</div></div>
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="kpi"><div><div class="kpi-l">${L==='ar'?'مؤشر المخاطر':'Risk Score'}</div><div class="kpi-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'var(--yel)':'var(--grn)'}">${riskScore}</div></div><div style="font-size:20px;opacity:.3">●</div></div>
+      ${exposure?`<div class="kpi"><div><div class="kpi-l">${L==='ar'?'التعرض المالي':'Financial Exposure'}</div><div class="kpi-v" style="font-size:13px;padding-top:3px">${(exposure/1000000).toFixed(1)}M SAR</div></div><div style="font-size:20px;opacity:.3">＄</div></div>`:''}
+      <div class="kpi"><div><div class="kpi-l">${L==='ar'?'مرتفعة':'High'}</div><div class="kpi-v" style="color:var(--red)">${high}</div></div><div style="font-size:18px;opacity:.3">▲</div></div>
+      <div class="kpi"><div><div class="kpi-l">${L==='ar'?'فرص':'Opportunities'}</div><div class="kpi-v" style="color:var(--teal)">${opp}</div></div><div style="font-size:18px;opacity:.3">★</div></div>
     </div>
-    <div class="dash-grid">
-      <div class="chart-card">
-        <div class="chart-title">${lang==='ar'?'توزيع مستويات المخاطر':'Risk Level Distribution'}</div>
-        <canvas id="lvlChart" height="180"></canvas>
+
+    <!-- Row 1: Risk Table + Level Chart -->
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="dcard">
+        <div class="dcard-t">${L==='ar'?'قائمة المخاطر حسب الفئة':'Risk Count by Category'}</div>
+        <table class="exp-tbl">
+          <thead><tr><th>${L==='ar'?'الفئة':'Category'}</th><th>${L==='ar'?'عدد':'Count'}</th><th>${L==='ar'?'المستوى':'Distribution'}</th></tr></thead>
+          <tbody>${catSorted.map(([cat,cnt])=>{
+            const pct=Math.round(cnt/risks.length*100);
+            const catRisks=risks.filter(r=>(L==='ar'?(CAT_AR[r.category]||r.category):r.category)===cat);
+            const ch=catRisks.filter(r=>r.level==='high').length;
+            const cm=catRisks.filter(r=>r.level==='medium').length;
+            return`<tr><td>${cat}</td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar" style="background:var(--b1)"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'var(--yel)':'var(--grn)'}"></div></div></td></tr>`;
+          }).join('')}</tbody>
+        </table>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">${lang==='ar'?'مصفوفة المخاطر':'Risk Matrix (P × Impact)'}</div>
-        <div id="matrixDiv"></div>
+      <div class="dcard">
+        <div class="dcard-t">${L==='ar'?'توزيع المستويات':'Level Distribution'}</div>
+        <canvas id="lvlC" height="200"></canvas>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">${lang==='ar'?'استراتيجيات الاستجابة':'Response Strategies'}</div>
-        <canvas id="respChart" height="180"></canvas>
+    </div>
+
+    <!-- Row 2: Matrix + Response + Project Exposure -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="dcard">
+        <div class="dcard-t">${L==='ar'?'مصفوفة المخاطر':'Risk Matrix P × Impact'}</div>
+        <div id="matDiv"></div>
       </div>
-      <div class="chart-card dash-2">
-        <div class="chart-title">${lang==='ar'?'المخاطر حسب الفئة':'Risks by Category'}</div>
-        <canvas id="catChart" height="100"></canvas>
+      <div class="dcard">
+        <div class="dcard-t">${L==='ar'?'استراتيجيات الاستجابة':'Response Strategies'}</div>
+        <canvas id="respC" height="200"></canvas>
       </div>
-      <div class="chart-card dash-wide">
-        <div class="chart-title">${lang==='ar'?'مؤشر المخاطر الإجمالي':'Risk Trend (Cumulative)'}</div>
-        <canvas id="trendChart" height="80"></canvas>
+      <div class="dcard">
+        <div class="dcard-t">${L==='ar'?'توزيع النوع':'Threats vs Opportunities'}</div>
+        <canvas id="typeC" height="200"></canvas>
       </div>
+    </div>
+
+    <!-- Row 3: Trend Chart -->
+    <div class="dcard">
+      <div class="dcard-t">${L==='ar'?'اتجاه المخاطر عبر الوقت':'Risk Register Trend'}</div>
+      <canvas id="trendC" height="80"></canvas>
     </div>`;
 
   setTimeout(()=>{
-    // Level chart
-    new Chart(document.getElementById('lvlChart'),{
-      type:'doughnut',
-      data:{labels:['High','Medium','Low','Opportunities'],datasets:[{data:[high,med,low,opp],backgroundColor:['#e05252','#c9a020','#2a9e5b','#0a8f8f'],borderWidth:0,hoverOffset:4}]},
-      options:{plugins:{legend:{position:'bottom',labels:{color:'#7a92ab',font:{size:10},padding:10}}},cutout:'68%',layout:{padding:4}}
-    });
+    // Level donut
+    new Chart(document.getElementById('lvlC'),{type:'doughnut',data:{labels:[L==='ar'?'عالية':'High',L==='ar'?'متوسطة':'Medium',L==='ar'?'منخفضة':'Low',L==='ar'?'فرص':'Opp'],datasets:[{data:[high,med,low,opp],backgroundColor:['#e05252','#c9a020','#2a9e5b','#0a8f8f'],borderWidth:0,hoverOffset:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}});
 
     // Matrix
     const mc=Array.from({length:5},()=>Array(5).fill(0));
     risks.forEach(r=>{
       const p=Math.max(1,Math.min(5,r.probability||1))-1;
-      const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1)+(r.impact_qhse||1))/3);
-      const ix=Math.max(1,Math.min(5,imp))-1;
-      mc[4-p][ix]++;
+      const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);
+      const ix=Math.max(1,Math.min(5,imp))-1;mc[4-p][ix]++;
     });
-    const mcolor=(p,i)=>{
-      const s=(p+1)*(i+1);
-      if(s>=16)return'rgba(224,82,82,.65)';
-      if(s>=9)return'rgba(201,160,32,.55)';
-      if(s>=4)return'rgba(201,160,32,.28)';
-      return'rgba(42,158,91,.35)';
-    };
-    let mhtml='<div style="font-size:9.5px;color:var(--t3);text-align:center;margin-bottom:5px">← Impact →</div><div class="mg">';
-    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mhtml+=`<div class="mc" style="background:${mcolor(4-pi,ii)}">${v||''}</div>`;});});
-    mhtml+='</div><div style="font-size:9px;color:var(--t3);margin-top:4px;text-align:center">↑ Probability ↑</div>';
-    document.getElementById('matrixDiv').innerHTML=mhtml;
+    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(224,82,82,.7)':s>=9?'rgba(201,160,32,.6)':s>=4?'rgba(201,160,32,.3)':'rgba(42,158,91,.4)';};
+    let mh='<div style="font-size:9px;color:var(--t3);text-align:center;margin-bottom:4px">← Impact →</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">';
+    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:2px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.85)">${v||''}</div>`;});});
+    mh+='</div><div style="font-size:9px;color:var(--t3);text-align:center;margin-top:3px">↑ Probability ↑</div>';
+    document.getElementById('matDiv').innerHTML=mh;
 
-    // Response chart
-    const resp={};risks.forEach(r=>{if(r.response_strategy)resp[r.response_strategy]=(resp[r.response_strategy]||0)+1;});
-    const rc2={'Avoid':'#e05252','Mitigate':'#c9a020','Transfer':'#1e73e8','Accept':'#7a92ab','Escalate':'#8855dd','Exploit':'#0a8f8f','Enhance':'#2a9e5b','Share':'#1e73e8'};
-    new Chart(document.getElementById('respChart'),{
-      type:'doughnut',
-      data:{labels:Object.keys(resp),datasets:[{data:Object.values(resp),backgroundColor:Object.keys(resp).map(k=>rc2[k]||'#4a6070'),borderWidth:0}]},
-      options:{plugins:{legend:{position:'bottom',labels:{color:'#7a92ab',font:{size:10},padding:8}}},cutout:'60%',layout:{padding:4}}
-    });
+    // Response
+    const respColors={'Avoid':'#e05252','Mitigate':'#c9a020','Transfer':'#1e72e8','Accept':'#7a91a8','Escalate':'#8855dd','Exploit':'#0a8f8f','Enhance':'#2a9e5b','Share':'#1e72e8','تجنب':'#e05252','تخفيف':'#c9a020','نقل':'#1e72e8','قبول':'#7a91a8','تصعيد':'#8855dd','استغلال':'#0a8f8f','تعزيز':'#2a9e5b','مشاركة':'#1e72e8'};
+    new Chart(document.getElementById('respC'),{type:'doughnut',data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#4a6070'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:10},padding:7}}},cutout:'62%',layout:{padding:2}}});
 
-    // Category bar
-    const cats={};risks.forEach(r=>{cats[r.category]=(cats[r.category]||0)+1;});
-    new Chart(document.getElementById('catChart'),{
-      type:'bar',
-      data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:'rgba(30,115,232,.55)',borderRadius:3,borderSkipped:false}]},
-      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a92ab',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a92ab',font:{size:10},stepSize:1},grid:{color:'rgba(28,45,66,.5)'}}},layout:{padding:{top:4}}}
-    });
+    // Type
+    new Chart(document.getElementById('typeC'),{type:'doughnut',data:{labels:[L==='ar'?'تهديدات':'Threats',L==='ar'?'فرص':'Opportunities'],datasets:[{data:[thr,opp],backgroundColor:['#e05252','#0a8f8f'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}});
 
     // Trend
-    const upds=cProj?.upds||[];
-    const tLabels=['Initial'];
-    const hd=[high];const md2=[med];
-    upds.slice().reverse().forEach(u=>{
-      if(u.new_risks_count>0){
-        tLabels.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));
-        hd.push(hd[hd.length-1]+1);md2.push(md2[md2.length-1]);
-      }
-    });
-    new Chart(document.getElementById('trendChart'),{
-      type:'line',
-      data:{labels:tLabels,datasets:[
-        {label:'High',data:hd,borderColor:'#e05252',backgroundColor:'rgba(224,82,82,.07)',tension:.4,fill:true,borderWidth:1.5},
-        {label:'Medium',data:md2,borderColor:'#c9a020',backgroundColor:'rgba(201,160,32,.06)',tension:.4,fill:true,borderWidth:1.5}
-      ]},
-      options:{plugins:{legend:{position:'top',labels:{color:'#7a92ab',font:{size:10},padding:10}}},scales:{x:{ticks:{color:'#7a92ab',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a92ab',font:{size:10},stepSize:1},grid:{color:'rgba(28,45,66,.5)'}}},layout:{padding:{top:4}}}
-    });
-  },80);
+    const upds=CP?.upds||[];const tl2=['Start'];const hd=[high];const md=[med];
+    upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md.push(md[md.length-1]);}});
+    new Chart(document.getElementById('trendC'),{type:'line',data:{labels:tl2,datasets:[{label:L==='ar'?'مرتفعة':'High',data:hd,borderColor:'#e05252',backgroundColor:'rgba(224,82,82,.06)',tension:.4,fill:true,borderWidth:1.5},{label:L==='ar'?'متوسطة':'Medium',data:md,borderColor:'#c9a020',backgroundColor:'rgba(201,160,32,.05)',tension:.4,fill:true,borderWidth:1.5}]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a91a8',font:{size:10},stepSize:1},grid:{color:'rgba(26,45,66,.5)'}}},layout:{padding:{top:2}}}});
+  },60);
 }
 
-// ═══ EARLY WARNING ════════════════════════════════════════
+// ═══ EARLY WARNING ═══
 function renderWarn(){
-  const risks=cProj?.risks||[];
-  const el=document.getElementById('warnContent');
-  if(!risks.length){el.innerHTML=`<div class="empty"><div class="empty-t">${t('warnEmpty')}</div></div>`;return;}
-  if(!cProj.has_schedule){
-    el.innerHTML=`<div class="no-sched">
-      <h3>${lang==='ar'?'لا يوجد جدول زمني مرفوع':'No Schedule File Uploaded'}</h3>
-      <p>${lang==='ar'?'لإنشاء تقرير الإنذار المبكر، ارفع الجدول الزمني (Excel أو تصدير برامفيرا). يتيح ذلك للنظام تحديد المخاطر المرتبطة بالأنشطة القادمة خلال الأسبوعين القادمين.':'To generate Early Warning reports, upload the project schedule (Excel or Primavera export). This allows the system to identify risks linked to upcoming activities in the next 2 weeks.'}</p>
-      <button class="btn btn-primary" onclick="switchTab('files')">${lang==='ar'?'رفع الجدول الزمني':'Upload Schedule'}</button>
-    </div>`;return;
-  }
+  const risks=CP?.risks||[];const el=document.getElementById('warnContent');
+  if(!risks.length){el.innerHTML=`<div class="empty"><div class="et">${t('T_warnEmpty')}</div></div>`;return;}
+
   const w1=risks.filter(r=>r.expected_weeks===1);
   const w2=risks.filter(r=>r.expected_weeks===2);
   const w34=risks.filter(r=>r.expected_weeks===3||r.expected_weeks===4);
+  const noSched=!CP.has_schedule;
 
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div>
-        <div style="font-size:13.5px;font-weight:700;">${lang==='ar'?'تقرير الإنذار المبكر':'Early Warning Report'}</div>
-        <div style="font-size:11.5px;color:var(--t3);margin-top:2px;">${lang==='ar'?'المخاطر المتوقعة خلال الأسبوعين القادمين بناءً على الجدول الزمني':'Risks expected to materialize in the next 2 weeks based on schedule'}</div>
+    <!-- Section 1: Schedule-based warnings -->
+    <div class="ew-sec">
+      <div class="ew-sec-t">
+        <span style="background:rgba(224,82,82,.12);color:var(--red);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${L==='ar'?'الجدول الزمني':'SCHEDULE'}</span>
+        ${L==='ar'?'المخاطر المرتبطة بالجدول الزمني':'Schedule-Based Risk Warnings'}
       </div>
-      <div style="font-size:10.5px;color:var(--t3);font-family:var(--mono);">${new Date().toLocaleDateString()}</div>
+      ${noSched?`<div class="ai ai-w" style="margin-bottom:0">
+        <div>
+          <div style="font-weight:600;margin-bottom:3px">${L==='ar'?'لم يتم رفع الجدول الزمني':'No Schedule File Uploaded'}</div>
+          <div style="font-size:11.5px">${L==='ar'?'ارفع ملف الجدول الزمني (Excel أو برامفيرا) لتفعيل الإنذار المبكر المرتبط بالأنشطة':'Upload schedule file (Excel or Primavera export) to enable activity-linked early warnings'}</div>
+          <button class="btn btn-g" style="margin-top:8px;padding:4px 10px;font-size:11px" onclick="ST('files')">${L==='ar'?'رفع الجدول':'Upload Schedule'}</button>
+        </div>
+      </div>`:`
+      ${w1.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.06em;margin-bottom:7px">${L==='ar'?'هذا الأسبوع — إجراء فوري':'This Week — Immediate Action'} (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
+      ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--yel);letter-spacing:.06em;margin:12px 0 7px">${L==='ar'?'الأسبوع القادم':'Next Week — Prepare'} (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
+      ${w34.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:12px 0 7px">${L==='ar'?'3-4 أسابيع — مراقبة':'3–4 Weeks — Monitor'} (${w34.length})</div>${w34.map(r=>ewCard(r,3)).join('')}`:''}
+      ${!w1.length&&!w2.length&&!w34.length?`<div class="ai ai-ok" style="margin-bottom:0">${L==='ar'?'لا توجد مخاطر متوقعة خلال الأسبوعين القادمين بناءً على الجدول الزمني.':'No risks expected in the next 2 weeks based on current schedule.'}</div>`:''}`}
     </div>
-    ${w1.length?`<div class="section-sep" style="color:var(--red)">${lang==='ar'?'هذا الأسبوع — إجراء فوري':'This Week — Immediate Action'} (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
-    ${w2.length?`<div class="section-sep" style="color:var(--yel);margin-top:14px;">${lang==='ar'?'الأسبوع القادم — تحضير مطلوب':'Next Week — Preparation Required'} (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
-    ${w34.length?`<div class="section-sep" style="color:var(--t3);margin-top:14px;">${lang==='ar'?'3-4 أسابيع — مراقبة':'3–4 Weeks — Monitor'} (${w34.length})</div>${w34.map(r=>ewCard(r,r.expected_weeks)).join('')}`:''}
-    ${!w1.length&&!w2.length&&!w34.length?`<div class="alert-i ai-ok">${lang==='ar'?'لا توجد مخاطر متوقعة خلال الأسبوعين القادمين.':'No risks expected to materialize in the next 2 weeks based on the current schedule.'}</div>`:''}`;
+
+    <!-- Section 2: Trend Analysis -->
+    <div class="ew-sec">
+      <div class="ew-sec-t">
+        <span style="background:rgba(30,114,232,.12);color:var(--acc);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${L==='ar'?'تحليل الاتجاه':'TREND ANALYSIS'}</span>
+        ${L==='ar'?'تحليل مؤشرات الأداء الأسبوعية':'Weekly Performance Indicator Analysis'}
+      </div>
+      <div class="trend-form">
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px" id="T_trendTitle">${t('T_trendTitle')}</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px" id="T_trendSub">${t('T_trendSub')}</div>
+        <div class="ind-grid">
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'انحراف الجدول (SV)':'Schedule Variance (SV %)'}</label><input type="number" class="ind-inp" id="ind_sv" placeholder="${L==='ar'?'مثال: -5 (متأخر)':'e.g. -5 (behind)'}"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'معدل الصرف (%)':'Budget Burn Rate (%)'}</label><input type="number" class="ind-inp" id="ind_br" placeholder="${L==='ar'?'مثال: 45':'e.g. 45'}"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'عدد الـ RFIs المفتوحة':'Open RFI Count'}</label><input type="number" class="ind-inp" id="ind_rfi" placeholder="0"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'المشاكل المفتوحة':'Open Issues'}</label><input type="number" class="ind-inp" id="ind_iss" placeholder="0"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'أداء المقاولين (1-5)':'Subcontractor Performance (1-5)'}</label><input type="number" class="ind-inp" id="ind_sub" placeholder="3" min="1" max="5"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'أيام تأخير الموقع':'Site Delay Days'}</label><input type="number" class="ind-inp" id="ind_del" placeholder="0"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'حوادث السلامة':'Safety Incidents'}</label><input type="number" class="ind-inp" id="ind_saf" placeholder="0"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'حالة المواد (1-5)':'Material Delivery Status (1-5)'}</label><input type="number" class="ind-inp" id="ind_mat" placeholder="4" min="1" max="5"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'تقدم العمل الفعلي (%)':'Actual Work Progress (%)'}</label><input type="number" class="ind-inp" id="ind_prog" placeholder="40"/></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-p" onclick="analyzeTrend()">${t('T_btnTrend')}</button>
+          <span style="font-size:11px;color:var(--t3)" id="trendWeekLbl">${CP.trend_data?.length?`${CP.trend_data.length} ${L==='ar'?'أسابيع مسجلة':'weeks recorded'}`:''}</span>
+        </div>
+      </div>
+
+      ${CP.trend_data?.length?`
+      <div class="trend-hist">
+        <div style="font-size:11.5px;font-weight:600;margin-bottom:8px">${L==='ar'?'سجل المؤشرات الأسبوعية':'Weekly Indicators History'}</div>
+        <table class="th-table">
+          <thead><tr><th>${L==='ar'?'الأسبوع':'Week'}</th><th>SV%</th><th>${L==='ar'?'الصرف':'Burn%'}</th><th>RFIs</th><th>${L==='ar'?'أداء':'Perf'}</th><th>${L==='ar'?'تأخير':'Delay'}</th><th>${L==='ar'?'تحذير':'Alert'}</th></tr></thead>
+          <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr>
+            <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td>
+            <td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'var(--yel)':'var(--grn)'}">${w.sv||0}%</td>
+            <td>${w.burn_rate||0}%</td>
+            <td>${w.rfi_count||0}</td>
+            <td>${w.subcontractor_perf||'—'}/5</td>
+            <td>${w.site_delays||0}d</td>
+            <td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${w.alert_level?.toUpperCase()||'OK'}</span></td>
+          </tr>`).join('')}</tbody>
+        </table>
+        <div style="margin-top:10px"><canvas id="trendIndC" height="80"></canvas></div>
+      </div>
+      `:''}
+      <div id="trendAnalysis"></div>
+    </div>`;
+
+  // Draw trend indicators chart if data exists
+  if(CP.trend_data?.length>1){
+    setTimeout(()=>{
+      const td=CP.trend_data.slice(-10);
+      const labels=td.map(w=>w.date);
+      new Chart(document.getElementById('trendIndC'),{type:'line',data:{labels,datasets:[
+        {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'#e05252',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'Burn%',data:td.map(w=>w.burn_rate||0),borderColor:'#c9a020',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'RFIs',data:td.map(w=>w.rfi_count||0),borderColor:'#1e72e8',tension:.4,borderWidth:1.5,pointRadius:3},
+      ]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a91a8',font:{size:10}},grid:{color:'rgba(26,45,66,.4)'}}},layout:{padding:{top:2}}}});
+    },60);
+  }
 }
 
 function ewCard(r,week){
   const cls={high:'ew-h',medium:'ew-m',low:'ew-l'}[r.level]||'ew-l';
-  const wlbl=week===1?(lang==='ar'?'هذا الأسبوع':'This Week'):week===2?(lang==='ar'?'الأسبوع القادم':'Next Week'):`Week ${week}`;
+  const wl=week===1?(L==='ar'?'هذا الأسبوع':'This Week'):week===2?(L==='ar'?'الأسبوع القادم':'Next Week'):`${L==='ar'?'أسبوع':'Week'} ${week}`;
   const wc=week===1?'wb1':week===2?'wb2':'wb3';
   return`<div class="ew-card ${cls}">
-    <div class="ew-hdr">
-      <div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-          <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span>
-          <span class="bdg ${r.type==='opportunity'?'bdg-opp':'bdg-threat'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
-          <span class="cat-bdg">${r.category}</span>
-          <span class="bdg bdg-${r.level}">${(r.level||'').toUpperCase()}</span>
-        </div>
-        <div class="ew-title">${r.description}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span>
+        <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
+        <span class="cb">${r.category}</span>
+        <span class="bdg b-${r.level}">${L==='ar'?RL_AR[r.level]:RL_EN[r.level]}</span>
       </div>
-      <span class="wbadge ${wc}">${wlbl}</span>
+      <span class="wbdg ${wc}">${wl}</span>
     </div>
-    ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3);margin:4px 0;">${lang==='ar'?'النشاط:':'Activity:'} ${r.activity_ref}</div>`:''}
-    <div style="font-size:12px;color:var(--t2);margin-top:5px;">${lang==='ar'?'السبب: ':'Cause: '}${r.cause||'—'}</div>
-    <div style="font-size:11.5px;color:var(--t3);font-style:italic;margin-top:5px;">${lang==='ar'?'الإجراء: ':'Action: '}${r.mitigation}</div>
+    <div style="font-size:12.5px;font-weight:500;margin-bottom:3px">${r.description}</div>
+    ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3);margin-bottom:3px">${L==='ar'?'النشاط:':'Activity:'} ${r.activity_ref}</div>`:''}
+    <div style="font-size:11.5px;color:var(--t2);font-style:italic">${L==='ar'?'الإجراء:':'Action:'} ${r.mitigation}</div>
   </div>`;
 }
 
-// ═══ UPDATES ══════════════════════════════════════════════
-function setUT(btn,type){
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
-  btn.classList.add('on');cUT=type;
-}
+async function analyzeTrend(){
+  const sv=parseFloat(document.getElementById('ind_sv').value)||0;
+  const br=parseFloat(document.getElementById('ind_br').value)||0;
+  const rfi=parseInt(document.getElementById('ind_rfi').value)||0;
+  const iss=parseInt(document.getElementById('ind_iss').value)||0;
+  const sub=parseFloat(document.getElementById('ind_sub').value)||3;
+  const del=parseInt(document.getElementById('ind_del').value)||0;
+  const saf=parseInt(document.getElementById('ind_saf').value)||0;
+  const mat=parseFloat(document.getElementById('ind_mat').value)||4;
+  const prog=parseFloat(document.getElementById('ind_prog').value)||0;
+  const weekDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
 
-async function addUpdate(){
-  const text=document.getElementById('utext').value.trim();
-  const fdesc=document.getElementById('ufdesc').value.trim();
-  if(!text&&!uFiles.length){alert(lang==='ar'?'يرجى كتابة تفاصيل أو رفع ملف':'Please add details or attach a file');return;}
-  const tl={change_order:lang==='ar'?'أمر تغيير':'Change Order',delay:lang==='ar'?'تأخير':'Delay',scope:lang==='ar'?'تغيير نطاق':'Scope Change',site:lang==='ar'?'مستجد ميداني':'Site Update',contract:lang==='ar'?'تعديل عقدي':'Contract Amendment',meeting:lang==='ar'?'محضر اجتماع':'Meeting Minutes',note:lang==='ar'?'ملاحظة':'Note'};
-  const existing=(cProj.risks||[]).map(r=>`${r.risk_id||r.id}: ${r.description} [${r.type||'threat'},${r.level}]`).join('\n');
-  showLoad(lang==='ar'?'جاري تحليل التحديث...':'Analyzing update...');
+  showLoad(L==='ar'?'جاري تحليل المؤشرات...':'Analyzing indicators...');
 
-  const parts=[{type:'text',text:`Risk manager analyzing construction project update.
-Project: ${cProj.name} | Type: ${cProj.type}
-Existing risks:\n${existing||'None yet'}
-Update type: ${tl[cUT]}
-Details: ${text}
-${fdesc?'File: '+fdesc:''}
-
-Identify NEW risks or opportunities from this update. Be concise, max 20 words per field.
-Respond with ONLY valid JSON:
-{"analysis":"brief impact summary under 30 words","new_risks":[{"id":"R${String((cProj.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"","owner":"","expected_weeks":2}]}`}];
-
-  for(const f of uFiles){
-    if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
-    else if(f.extype==='pdf_raw'&&f.data){parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});}
-    else if(f.text){parts.push({type:'text',text:f.text});}
-  }
+  const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
+  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, Burn=${w.burn_rate}%, RFIs=${w.rfi_count}, Delay=${w.site_delays}d, Alert=${w.alert_level}`).join('\n')||'No history';
+  const lang_inst=L==='ar'?'Respond in ARABIC.':'Respond in ENGLISH.';
 
   try{
-    const data=await callAPI({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:parts}]});
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:`Construction project weekly trend analysis. ${lang_inst}
+Project: ${CP.name} | Type: ${CP.type}
+Existing Risks:\n${existing}
+Historical Trend:\n${history}
+
+THIS WEEK INDICATORS:
+- Schedule Variance: ${sv}%
+- Budget Burn Rate: ${br}%
+- Open RFIs: ${rfi}
+- Open Issues: ${iss}
+- Subcontractor Performance: ${sub}/5
+- Site Delay Days: ${del}
+- Safety Incidents: ${saf}
+- Material Delivery Status: ${mat}/5
+- Actual Progress: ${prog}%
+
+Analyze these indicators and provide:
+1. Overall health assessment
+2. Key warning signals
+3. Predicted risks for next 2 weeks
+4. Recommended immediate actions
+
+Respond ONLY with valid JSON:
+{
+  "alert_level": "high|medium|low",
+  "health_score": 75,
+  "summary": "2-sentence overall assessment",
+  "warnings": ["warning 1", "warning 2"],
+  "predicted_risks": ["predicted risk 1", "predicted risk 2"],
+  "actions": ["action 1", "action 2", "action 3"]
+}`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
-    try{parsed=parseJSON(data.content[0].text);}
-    catch(e){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[]};}
+    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Parse error');return;}
 
-    if(parsed.new_risks?.length){
-      const ins=parsed.new_risks.map(r=>({
-        project_id:cProjId,risk_id:r.id,type:r.type||'threat',category:r.category||'Scope',
-        description:r.description,cause:r.cause||'',probability:r.probability||3,
-        impact_cost:r.impact_cost||2,impact_schedule:r.impact_schedule||2,
-        impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,
-        level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',
-        mitigation:r.mitigation||'',owner:r.owner||'',
-        activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null
-      }));
-      await sb('risks','POST',ins);
-    }
-    await sb('updates','POST',{
-      project_id:cProjId,type:cUT,type_label:tl[cUT],
-      content:text,file_desc:fdesc,files_count:uFiles.length,
-      analysis:parsed.analysis||'',new_risks_count:(parsed.new_risks||[]).length
-    });
-    document.getElementById('utext').value='';
-    document.getElementById('ufdesc').value='';
-    uFiles=[];renderUFPrev();
-    await selectProj(cProjId);showSync();
+    // Save to trend history
+    const entry={date:weekDate,sv,burn_rate:br,rfi_count:rfi,open_issues:iss,subcontractor_perf:sub,site_delays:del,safety_incidents:saf,material_status:mat,progress:prog,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50};
+    if(!CP.trend_data)CP.trend_data=[];
+    CP.trend_data.push(entry);
+    await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});
+
+    // Render analysis
+    const alertClass={high:'ta-r',medium:'ta-y',low:'ta-g'}[parsed.alert_level]||'ta-y';
+    const alertIcon={high:'⚠️',medium:'◆',low:'✓'}[parsed.alert_level]||'◆';
+    document.getElementById('trendAnalysis').innerHTML=`
+      <div class="trend-alert ${alertClass}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-weight:700">${alertIcon} ${L==='ar'?'نتيجة التحليل — الأسبوع '+weekDate:'Analysis Result — Week '+weekDate}</span>
+          <span style="font-size:11px">Health Score: <b>${parsed.health_score}/100</b></span>
+        </div>
+        <div style="font-size:12px;margin-bottom:8px">${parsed.summary}</div>
+      </div>
+      ${parsed.warnings?.length?`<div style="margin-bottom:10px"><div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--yel);margin-bottom:6px">${L==='ar'?'إشارات تحذير':'Warning Signals'}</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--b1)">• ${w}</div>`).join('')}</div>`:''}
+      ${parsed.predicted_risks?.length?`<div style="margin-bottom:10px"><div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);margin-bottom:6px">${L==='ar'?'مخاطر متوقعة خلال أسبوعين':'Predicted Risks (Next 2 Weeks)'}</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--b1)">▲ ${r}</div>`).join('')}</div>`:''}
+      ${parsed.actions?.length?`<div><div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--grn);margin-bottom:6px">${L==='ar'?'الإجراءات الموصى بها':'Recommended Actions'}</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--b1)">${i+1}. ${a}</div>`).join('')}</div>`:''}`;
+
+    // Clear inputs
+    ['ind_sv','ind_br','ind_rfi','ind_iss','ind_sub','ind_del','ind_saf','ind_mat','ind_prog'].forEach(id=>{document.getElementById(id).value='';});
+    renderWarn();showSync();
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
+// ═══ UPDATES ═══
+function setUT(btn,type){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');cUT=type;}
+async function addUpdate(){
+  const text=document.getElementById('utext').value.trim();
+  const fdesc=document.getElementById('ufdesc').value.trim();
+  if(!text&&!UF.length){alert(L==='ar'?'يرجى كتابة تفاصيل أو رفع ملف':'Please add details or attach a file');return;}
+  const tl={change_order:L==='ar'?'أمر تغيير':'Change Order',delay:L==='ar'?'تأخير':'Delay',scope:L==='ar'?'تغيير نطاق':'Scope Change',site:L==='ar'?'مستجد ميداني':'Site Update',contract:L==='ar'?'تعديل عقدي':'Contract Amendment',meeting:L==='ar'?'محضر اجتماع':'Meeting Minutes',note:L==='ar'?'ملاحظة':'Note'};
+  const existing=(CP.risks||[]).map(r=>`${r.risk_id||r.id}: ${r.description}`).join('\n');
+  const lang_inst=L==='ar'?'Generate ALL content in ARABIC.':'Generate in ENGLISH.';
+  showLoad(L==='ar'?'جاري تحليل التحديث...':'Analyzing update...');
+
+  const parts=[{type:'text',text:`Construction risk manager. ${lang_inst}
+Project: ${CP.name} | Type: ${CP.type}
+Existing risks:\n${existing||'None'}
+Update: ${tl[cUT]} — ${text}
+${fdesc?'File: '+fdesc:''}
+Identify new risks. Respond ONLY with valid JSON (max 20 words per field):
+{"analysis":"impact summary","new_risks":[{"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"","owner":"","expected_weeks":2}]}`}];
+
+  for(const f of UF){
+    if(f.extype==='image'&&f.data)parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
+    else if(f.extype==='pdf_raw'&&f.data)parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});
+    else if(f.text)parts.push({type:'text',text:f.text});
+  }
+
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:parts}]});
+    hideLoad();if(data.error){alert('Error: '+data.error.message);return;}
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}
+    catch(e){
+      try{
+        const raw=data.content[0].text;
+        const s=raw.indexOf('{'),e2=raw.lastIndexOf('}');
+        if(s>=0&&e2>s)parsed=JSON.parse(raw.slice(s,e2+1));
+        else parsed={analysis:raw.slice(0,200),new_risks:[]};
+      }catch(e3){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[]};}
+    }
+    if(parsed.new_risks?.length){
+      const ins=parsed.new_risks.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category||'Scope',description:r.description,cause:r.cause||'',probability:r.probability||3,impact_cost:r.impact_cost||2,impact_schedule:r.impact_schedule||2,impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation||'',owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
+      await sb('risks','POST',ins);
+    }
+    await sb('updates','POST',{project_id:CID,type:cUT,type_label:tl[cUT],content:text,file_desc:fdesc,files_count:UF.length,analysis:parsed.analysis||'',new_risks_count:(parsed.new_risks||[]).length});
+    document.getElementById('utext').value='';document.getElementById('ufdesc').value='';
+    UF=[];renderUFP();await selectProj(CID);showSync();
+  }catch(e){hideLoad();alert('Error: '+e.message);}
+}
 function renderUpds(){
-  const upds=cProj?.upds||[];
-  const el=document.getElementById('tlEl');
-  if(!upds.length){el.innerHTML=`<div class="empty" style="padding:22px"><div class="empty-t">${t('noUpd')}</div></div>`;return;}
+  const upds=CP?.upds||[];const el=document.getElementById('tlEl');
+  if(!upds.length){el.innerHTML=`<div class="empty" style="padding:18px"><div class="et">${t('T_noUpd')}</div></div>`;return;}
   const dc={change_order:'dc',delay:'dd',scope:'ds',site:'dsi',contract:'dco',meeting:'dco',note:'dn'};
+  const tl={change_order:L==='ar'?'أمر تغيير':'Change Order',delay:L==='ar'?'تأخير':'Delay',scope:L==='ar'?'تغيير نطاق':'Scope Change',site:L==='ar'?'مستجد ميداني':'Site Update',contract:L==='ar'?'تعديل عقدي':'Contract Amendment',meeting:L==='ar'?'محضر اجتماع':'Meeting Minutes',note:L==='ar'?'ملاحظة':'Note'};
   el.innerHTML=upds.map(u=>`
     <div class="tli">
-      <div class="tld ${dc[u.type]||'dn'}"></div>
+      <div class="tld ${dc[u.type]||'dn'}" style="background:${{change_order:'var(--acc)',delay:'var(--red)',scope:'var(--yel)',site:'var(--grn)',contract:'var(--teal)',meeting:'var(--teal)',note:'var(--t3)'}[u.type]||'var(--t3)'}"></div>
       <div class="tlc">
-        <div class="tlh">
-          <span class="tlt">${u.type_label||u.type}</span>
-          <span class="tld2">${new Date(u.created_at).toLocaleString()}</span>
-        </div>
+        <div class="tlh"><span class="tlt">${tl[u.type]||u.type_label||u.type}</span><span class="tld2">${new Date(u.created_at).toLocaleString()}</span></div>
         ${u.content?`<div class="tlb">${u.content}</div>`:''}
-        ${u.files_count?`<div style="font-size:10.5px;color:var(--t3);margin-top:4px;">↑ ${u.files_count} file${u.files_count>1?'s':''}${u.file_desc?' — '+u.file_desc:''}</div>`:''}
-        ${u.analysis?`<div style="margin-top:7px;font-size:12px;color:var(--t2);border-top:1px solid var(--b1);padding-top:7px">${u.analysis}</div>`:''}
-        ${u.new_risks_count>0?`<div class="nra">+ ${u.new_risks_count} new risk${u.new_risks_count>1?'s':''} added to register</div>`:''}
+        ${u.files_count?`<div style="font-size:10.5px;color:var(--t3);margin-top:3px">↑ ${u.files_count} ${L==='ar'?'ملف':'file'}${u.file_desc?' — '+u.file_desc:''}</div>`:''}
+        ${u.analysis?`<div style="margin-top:6px;font-size:11.5px;color:var(--t2);border-top:1px solid var(--b1);padding-top:6px">${u.analysis}</div>`:''}
+        ${u.new_risks_count>0?`<div class="nra">+ ${u.new_risks_count} ${L==='ar'?'مخاطر جديدة أضيفت للسجل':'new risks added to register'}</div>`:''}
       </div>
     </div>`).join('');
 }
 
-// ═══ STATS ════════════════════════════════════════════════
+// ═══ STATS ═══
 function updateStats(){
-  const risks=cProj?.risks||[];
-  document.getElementById('stTotal').textContent=risks.length;
-  document.getElementById('stThr').textContent=risks.filter(r=>r.type==='threat'||!r.type).length;
-  document.getElementById('stOpp').textContent=risks.filter(r=>r.type==='opportunity').length;
-  document.getElementById('stHigh').textContent=risks.filter(r=>r.level==='high').length;
-  document.getElementById('stDate').textContent=cProj?.analyzed_at||'—';
+  const r=CP?.risks||[];
+  document.getElementById('svTotal').textContent=r.length;
+  document.getElementById('svThr').textContent=r.filter(x=>x.type==='threat'||!x.type).length;
+  document.getElementById('svOpp').textContent=r.filter(x=>x.type==='opportunity').length;
+  document.getElementById('svHigh').textContent=r.filter(x=>x.level==='high').length;
+  document.getElementById('svDate').textContent=CP?.analyzed_at||'—';
 }
 
-// ═══ EXPORT ═══════════════════════════════════════════════
+// ═══ EXPORT ═══
 function exportCSV(){
-  const risks=cProj?.risks||[];
-  if(!risks.length){alert('No risks to export');return;}
+  const r=CP?.risks||[];if(!r.length){alert('No risks');return;}
   const h=['ID','Type','Category','Description','Cause','Probability','Impact Cost','Impact Schedule','Impact QHSE','Impact Reputation','Level','Response Strategy','Action Plan','Owner','Activity Ref','Expected Week'];
-  const rows=risks.map(r=>[r.risk_id||r.id,r.type||'threat',r.category,r.description,r.cause||'',PL[r.probability]||r.probability,IL[r.impact_cost]||r.impact_cost,IL[r.impact_schedule]||r.impact_schedule,IL[r.impact_qhse]||r.impact_qhse,IL[r.impact_reputation]||r.impact_reputation,r.level,r.response_strategy||'—',r.mitigation,r.owner||'',r.activity_ref||'',r.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
+  const rows=r.map(x=>[x.risk_id||x.id,x.type||'threat',x.category,x.description,x.cause||'',(L==='ar'?PL_AR:PL)[x.probability]||x.probability,(L==='ar'?IL_AR:IL)[x.impact_cost]||x.impact_cost,(L==='ar'?IL_AR:IL)[x.impact_schedule]||x.impact_schedule,(L==='ar'?IL_AR:IL)[x.impact_qhse]||x.impact_qhse,(L==='ar'?IL_AR:IL)[x.impact_reputation]||x.impact_reputation,x.level,L==='ar'?(RESP_AR[x.response_strategy]||x.response_strategy||'—'):(x.response_strategy||'—'),x.mitigation,x.owner||'',x.activity_ref||'',x.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=`RiskRegister_${cProj.name}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.csv`;a.click();
+  a.download=`RiskRegister_${CP.name}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.csv`;a.click();
 }
 
-// ═══ LOADING ══════════════════════════════════════════════
-function showLoad(t){document.getElementById('loadT').textContent=t;document.getElementById('loadOv').classList.add('on');}
+// ═══ UTILS ═══
+function showLoad(txt){document.getElementById('loadT').textContent=txt;document.getElementById('loadOv').classList.add('on');}
 function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
 </script>
 </body>
