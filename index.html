@@ -941,7 +941,7 @@ Generate 12-18 risks minimum including at least 3 opportunities.`}];
     hideLoading();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
-    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){alert('Parse error — try again');return;}
+    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){alert('Parse error details: '+String(e)+' | Raw: '+data.content[0].text.slice(0,400));return;}
     currentProjectData.summary=parsed.summary||'';
     currentProjectData.has_schedule=parsed.has_schedule!==false;
     pendingRisks=parsed.risks||[];
