@@ -6,6 +6,8 @@
 <title>Risk Intelligence Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
   --bg:#0a0e13;--surface:#111720;--surface2:#1a2130;--surface3:#212d3d;
@@ -781,12 +783,60 @@ function switchTab(name){
 // ═══════════════════════════════════════════════════════
 // FILES
 // ═══════════════════════════════════════════════════════
+async function extractText(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  // Images - keep as base64
+  if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+    return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({type:'image',data:ev.target.result,name:file.name});r.readAsDataURL(file);});
+  }
+  // PDF - extract text
+  if(ext==='pdf'){
+    try{
+      const ab=await file.arrayBuffer();
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+      let text='';
+      for(let i=1;i<=Math.min(pdf.numPages,50);i++){
+        const page=await pdf.getPage(i);
+        const content=await page.getTextContent();
+        text+=content.items.map(s=>s.str).join(' ')+'
+';
+      }
+      return {type:'text',text:text.slice(0,50000),name:file.name};
+    }catch(e){
+      return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({type:'pdf_raw',data:ev.target.result,name:file.name});r.readAsDataURL(file);});
+    }
+  }
+  // Word docs - extract text
+  if(['doc','docx'].includes(ext)){
+    try{
+      const ab=await file.arrayBuffer();
+      const result=await mammoth.extractRawText({arrayBuffer:ab});
+      return {type:'text',text:result.value.slice(0,50000),name:file.name};
+    }catch(e){return {type:'text',text:'[Could not extract: '+file.name+']',name:file.name};}
+  }
+  // Excel/CSV - read as text
+  if(['xlsx','xls','csv','txt'].includes(ext)){
+    return new Promise(res=>{
+      const r=new FileReader();
+      r.onload=ev=>res({type:'text',text:ev.target.result.slice(0,50000),name:file.name});
+      r.readAsText(file);
+    });
+  }
+  // Default - read as text
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=ev=>res({type:'text',text:ev.target.result.slice(0,30000),name:file.name});
+    r.readAsText(file);
+  });
+}
+
 function handleFiles(e){
   if(!projectFiles[currentProjectId])projectFiles[currentProjectId]=[];
-  Array.from(e.target.files).forEach(file=>{
-    const r=new FileReader();
-    r.onload=ev=>{projectFiles[currentProjectId].push({name:file.name,size:file.size,type:file.type,dataUrl:ev.target.result});renderFiles();};
-    r.readAsDataURL(file);
+  Array.from(e.target.files).forEach(async file=>{
+    const extracted=await extractText(file);
+    projectFiles[currentProjectId].push({name:file.name,size:file.size,type:file.type,...extracted});
+    renderFiles();
   });
 }
 
@@ -927,21 +977,27 @@ Response strategies for opportunities: Exploit, Enhance, Share, Accept, Escalate
 Categories: Schedule, Cost, Scope, Contract, Design, Execution, Suppliers, QHSE, Quality, Regulatory
 Levels: high (exceeds appetite), medium (approaches limit), low (within tolerance)
 expected_weeks: 1-4 (when is this risk likely to materialize based on schedule), null if unknown
-Generate 12 risks including 3 opportunities. Keep ALL fields under 15 words each. Be very concise.`}];
+Generate 12-18 risks minimum including at least 3 opportunities.`}];
 
   for(const f of files){
-    const ext=f.name.split('.').pop().toLowerCase();
-    if(['png','jpg','jpeg'].includes(ext)){parts.push({type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:f.dataUrl.split(',')[1]}});parts.push({type:'text',text:`[Drawing: ${f.name}]`});}
-    else if(ext==='pdf')parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.dataUrl.split(',')[1]}});
-    else parts.push({type:'text',text:`[File: ${f.name}]`});
+    if(f.type==='image'&&f.data){
+      parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
+      parts.push({type:'text',text:`[Drawing: ${f.name}]`});
+    } else if(f.type==='pdf_raw'&&f.data){
+      parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});
+    } else if(f.text){
+      parts.push({type:'text',text:`=== File: ${f.name} ===
+${f.text}
+`});
+    }
   }
 
   try{
-    const data=await callAPI({model:'claude-opus-4-5',max_tokens:16000,messages:[{role:'user',content:parts}]});
+    const data=await callAPI({model:'claude-opus-4-5',max_tokens:4000,messages:[{role:'user',content:parts}]});
     hideLoading();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
-    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){alert('Parse error details: '+String(e)+' | Raw: '+data.content[0].text.slice(0,400));return;}
+    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){alert('Parse error — try again');return;}
     currentProjectData.summary=parsed.summary||'';
     currentProjectData.has_schedule=parsed.has_schedule!==false;
     pendingRisks=parsed.risks||[];
@@ -1291,7 +1347,7 @@ JSON only:
   }
 
   try{
-    const data=await callAPI({model:'claude-opus-4-5',max_tokens:1500,messages:[{role:'user',content:parts}]});
+    const data=await callAPI({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:parts}]});
     hideLoading();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
