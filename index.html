@@ -1350,7 +1350,16 @@ JSON only:
     hideLoading();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
-    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){parsed={analysis:data.content[0].text,new_risks:[]};}
+    try{let _r=data.content[0].text.trim();const _m=_r.match(/```(?:json)?\s*([\s\S]+?)\s*```/);if(_m)_r=_m[1].trim();else{const _j=_r.indexOf('{');if(_j>=0)_r=_r.slice(_j);}parsed=JSON.parse(_r);}catch(e){
+      // Try to extract JSON from anywhere in the text
+      try{
+        const raw=data.content[0].text;
+        const start=raw.indexOf('{');
+        const end=raw.lastIndexOf('}');
+        if(start>=0&&end>start){parsed=JSON.parse(raw.slice(start,end+1));}
+        else{parsed={analysis:raw.slice(0,300),new_risks:[]};}
+      }catch(e2){parsed={analysis:data.content[0].text.slice(0,300),new_risks:[];};}
+    }
     if(parsed.new_risks?.length){
       const toInsert=parsed.new_risks.map(r=>({project_id:currentProjectId,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
       await sbFetch('risks','POST',toInsert);
