@@ -1,8 +1,7 @@
 {
-  "version": 2,
   "functions": {
     "api/claude.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   }
 }
