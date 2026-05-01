@@ -1016,12 +1016,12 @@ Respond ONLY with valid JSON. Keep each field under 25 words.
 {"summary":"2-sentence summary","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"<25 words>","cause":"<15 words>","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"<25 words>","owner":"Role Title","activity_ref":"","expected_weeks":2}]}
 Types: threat/opportunity. Threat strategies: Avoid/Mitigate/Transfer/Accept/Escalate. Opportunity: Exploit/Enhance/Share/Accept/Escalate.
 Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
-Assess project complexity from the files and project info:
-- Simple (value <5M SAR, straightforward scope): generate 8-10 risks, 2 opportunities
-- Medium (5-50M SAR, moderate complexity): generate 12-20 risks, 3 opportunities  
-- Complex (50-500M SAR, multi-discipline): generate 20-30 risks, 4 opportunities
-- Mega (>500M SAR or highly complex): generate 30-40 risks, 5 opportunities
-Include your complexity assessment in the summary field.`}];
+Assess project complexity and generate risks accordingly. CRITICAL: Keep EVERY field under 15 words maximum.
+- Simple (<5M SAR): 8 risks + 2 opportunities = 10 total
+- Medium (5-50M SAR): 12 risks + 3 opportunities = 15 total  
+- Complex (50-500M SAR): 16 risks + 4 opportunities = 20 total
+- Mega (>500M SAR): 20 risks + 5 opportunities = 25 total
+Include complexity level in summary.`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});parts.push({type:'text',text:`[Drawing: ${f.name}]`});}
