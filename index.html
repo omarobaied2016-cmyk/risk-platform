@@ -364,13 +364,13 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
         <div class="sc"><div class="sc-l" id="T_stDate">Last Analysis</div><div class="sc-v" style="font-size:11.5px;padding-top:4px" id="svDate">—</div></div>
       </div>
       <div class="tabs">
-        <div class="tab on" onclick="ST('files')" id="tab-files" id="T_tabFiles">Files</div>
-        <div class="tab" onclick="ST('dash')" id="tab-dash" id="T_tabDash">Dashboard</div>
-        <div class="tab" onclick="ST('reg')" id="tab-reg" id="T_tabReg">Risk Register</div>
-        <div class="tab" onclick="ST('warn')" id="tab-warn" id="T_tabWarn">Early Warning</div>
-        <div class="tab" onclick="ST('upd')" id="tab-upd" id="T_tabUpd">Updates</div>
-        <div class="tab" onclick="ST('tol')" id="tab-tol" id="T_tabTol">Risk Appetite</div>
-        <div class="tab" onclick="ST('contacts')" id="tab-contacts" id="T_tabContacts">Contacts</div>
+        <div class="tab on" onclick="ST('files')" id="tab-files" data-tid="T_tabFiles">Files</div>
+        <div class="tab" onclick="ST('dash')" id="tab-dash" data-tid="T_tabDash">Dashboard</div>
+        <div class="tab" onclick="ST('reg')" id="tab-reg" data-tid="T_tabReg">Risk Register</div>
+        <div class="tab" onclick="ST('warn')" id="tab-warn" data-tid="T_tabWarn">Early Warning</div>
+        <div class="tab" onclick="ST('upd')" id="tab-upd" data-tid="T_tabUpd">Updates</div>
+        <div class="tab" onclick="ST('tol')" id="tab-tol" data-tid="T_tabTol">Risk Appetite</div>
+        <div class="tab" onclick="ST('contacts')" id="tab-contacts" data-tid="T_tabContacts">Contacts</div>
       </div>
 
       <!-- FILES -->
@@ -381,7 +381,7 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
         </div>
         <div class="fg2" id="fgrid"></div>
         <div style="margin-top:14px;display:flex;gap:9px;align-items:center">
-          <button class="btn btn-p" id="anaBtn" onclick="analyze()" disabled id="T_btnAna">Analyze & Generate Risk Register</button>
+          <button class="btn btn-p" id="anaBtn" onclick="analyze()" disabled>Analyze & Generate Risk Register</button>
           <span style="font-size:11px;color:var(--t3)" id="fcLbl">No files</span>
         </div>
       </div>
@@ -703,6 +703,15 @@ function applyLang(){
     const el=document.getElementById(k);
     if(el)el.textContent=t(k);
   });
+  // Also translate tabs with data-tid
+  document.querySelectorAll('[data-tid]').forEach(el=>{
+    const k=el.dataset.tid;
+    if(TR[k])el.textContent=t(k);
+  });
+  // Translate buttons with id
+  const btnAna=document.getElementById('anaBtn');
+  if(btnAna&&btnAna.disabled===false)btnAna.textContent=t('T_btnAna');
+  else if(btnAna)btnAna.textContent=t('T_btnAna');
   document.querySelectorAll('.pill').forEach(p=>{
     const lbl=ar?p.dataset.ar:p.dataset.en;
     if(lbl)p.textContent=lbl;
