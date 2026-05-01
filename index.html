@@ -630,98 +630,35 @@ async function translateRegister(){
   const targetLang=L==='ar'?'Arabic':'English';
   showLoad(L==='ar'?'جاري ترجمة السجل...':'Translating register...');
   try{
-    // Translate in batches of 5
-    const batchSize=5;
-    for(let i=0;i<risks.length;i+=batchSize){
-      const batch=risks.slice(i,i+batchSize);
-      const toTranslate=batch.map(r=>({id:r.id,d:r.description,c:r.cause||'',m:r.mitigation||'',o:r.owner||''}));
-      document.getElementById('loadT').textContent=(L==='ar'?'جاري ترجمة السجل...':'Translating...')+' '+(i+1)+'-'+Math.min(i+batchSize,risks.length)+'/'+risks.length;
-      const data=await api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:'Translate to '+targetLang+'. Keep technical construction terms accurate. Return ONLY a JSON array, no other text.
-Input:'+JSON.stringify(toTranslate)+'
-Return same structure with translated values for d,c,m,o fields. Keep id unchanged.'}]});
-      if(data.error){hideLoad();alert('Error: '+data.error.message);return;}
-      let translated;
-      try{translated=pJSON(data.content[0].text);}
-      catch(e){
-        try{const raw=data.content[0].text;const s=raw.indexOf('[');const e2=raw.lastIndexOf(']');if(s>=0&&e2>s)translated=JSON.parse(raw.slice(s,e2+1));else continue;}
-        catch(e3){continue;}
-      }
-      for(const tr of translated){
-        const orig=risks.find(r=>r.id===tr.id);
-        if(!orig)continue;
-        await sb('risks?id=eq.'+tr.id,'PATCH',{description:tr.d||tr.description,cause:tr.c||tr.cause,mitigation:tr.m||tr.mitigation,owner:tr.o||tr.owner});
-        orig.description=tr.d||tr.description||orig.description;
-        orig.cause=tr.c||tr.cause||orig.cause;
-        orig.mitigation=tr.m||tr.mitigation||orig.mitigation;
-        orig.owner=tr.o||tr.owner||orig.owner;
-      }
+    // Translate one risk at a time to avoid parse issues
+    for(let i=0;i<risks.length;i++){
+      const r=risks[i];
+      document.getElementById('loadT').textContent=(L==='ar'?'ترجمة ':'Translating ')+(i+1)+'/'+risks.length;
+      const prompt=`Translate to ${targetLang}. Return ONLY a JSON object with these exact keys: desc, cause, mit, owner.
+desc: ${r.description}
+cause: ${r.cause||''}
+mit: ${r.mitigation||''}
+owner: ${r.owner||''}
+Return format: {"desc":"...","cause":"...","mit":"...","owner":"..."}`;
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:500,messages:[{role:'user',content:prompt}]});
+      if(data.error)continue;
+      let tr;
+      try{
+        const raw=data.content[0].text.trim();
+        const s=raw.indexOf('{');const e=raw.lastIndexOf('}');
+        if(s>=0&&e>s)tr=JSON.parse(raw.slice(s,e+1));
+        else continue;
+      }catch(e){continue;}
+      await sb('risks?id=eq.'+r.id,'PATCH',{description:tr.desc||r.description,cause:tr.cause||r.cause,mitigation:tr.mit||r.mitigation,owner:tr.owner||r.owner});
+      r.description=tr.desc||r.description;
+      r.cause=tr.cause||r.cause;
+      r.mitigation=tr.mit||r.mitigation;
+      r.owner=tr.owner||r.owner;
     }
     hideLoad();renderReg();renderDash();renderWarn();showSync();
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
-function applyLang(){
-  const ar=L==='ar';
-  document.getElementById('R').setAttribute('lang',L);
-  document.getElementById('R').setAttribute('dir',ar?'rtl':'ltr');
-  Object.keys(TR).forEach(k=>{
-    if(k.startsWith('T_conn'))return;
-    const el=document.getElementById(k);
-    if(el)el.textContent=t(k);
-  });
-  document.querySelectorAll('.pill').forEach(p=>{
-    const lbl=ar?p.dataset.ar:p.dataset.en;
-    if(lbl)p.textContent=lbl;
-  });
-  document.getElementById('langBtn').textContent=ar?'English':'العربية';
-  checkKey();
-  translateSelects();
-}
-function toggleLang(){L=L==='ar'?'en':'ar';localStorage.setItem('L',L);applyLang();if(CP)renderAll();}
-
-// ═══ DEFAULTS ═══
-const DQ=[{l:'1 — Zero Tolerance',d:'Any fatality or permanent disability'},{l:'2 — Critical',d:'Serious injury requiring hospitalization'},{l:'3 — High',d:'Medical treatment required'},{l:'4 — Medium',d:'First aid only'},{l:'5 — Low',d:'Near miss only'}];
-const DR=[{l:'1 — Zero Tolerance',d:'Any company image impact'},{l:'2 — National',d:'National media coverage'},{l:'3 — Regional',d:'Regional impact'},{l:'4 — Local',d:'Local city impact'},{l:'5 — Internal',d:'Project team only'}];
-const DP=[{l:'1 — Rare',d:'<10%'},{l:'2 — Unlikely',d:'10-30%'},{l:'3 — Possible',d:'30-50%'},{l:'4 — Likely',d:'50-70%'},{l:'5 — Almost Certain',d:'>70%'}];
-const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Minor manageable effect'},{l:'3 — Moderate',d:'Requires corrective action'},{l:'4 — Major',d:'Significant project impact'},{l:'5 — Critical',d:'May halt project'}];
-const LC=['#e05252','#d4780a','#c9a020','#2a9e5b','#1e72e8'];
-const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
-const IL=['','Negligible','Minor','Moderate','Major','Critical'];
-const PL_AR=['','نادر','محتمل نادراً','محتمل','مرجح','شبه مؤكد'];
-const IL_AR=['','ضئيل','منخفض','متوسط','عالي','حرج'];
-const RL_EN={high:'HIGH',medium:'MEDIUM',low:'LOW'};
-const RL_AR={high:'عالي',medium:'متوسط',low:'منخفض'};
-const RESP_AR={Avoid:'تجنب',Mitigate:'تخفيف',Transfer:'نقل',Accept:'قبول',Escalate:'تصعيد',Exploit:'استغلال',Enhance:'تعزيز',Share:'مشاركة'};
-const CAT_AR={Schedule:'الجدول الزمني',Cost:'التكلفة',Scope:'النطاق',Contract:'العقد',Design:'التصميم',Execution:'التنفيذ',Suppliers:'الموردين',QHSE:'الصحة والسلامة',Quality:'الجودة',Regulatory:'تنظيمي',Financial:'مالي'};
-
-// ═══ STATE ═══
-let projs=[],CP=null,CID=null;
-let cUT='change_order',PF={},UF=[],PR=[];
-let editRiskId=null;
-
-// ═══ INIT ═══
-window.onload=async()=>{
-  L=localStorage.getItem('L')||'en';
-  applyLang();
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const k=localStorage.getItem('aKey');
-  if(k){document.getElementById('apiKey').value=k;checkKey();}
-  await loadProjs();
-};
-
-function checkKey(){
-  const k=document.getElementById('apiKey').value.trim();
-  const dot=document.getElementById('cdot'),lbl=document.getElementById('clbl');
-  if(k.startsWith('sk-ant-')&&k.length>20){
-    dot.classList.add('on');lbl.classList.add('on');
-    lbl.textContent=t('T_connOn');localStorage.setItem('aKey',k);
-  }else{
-    dot.classList.remove('on');lbl.classList.remove('on');
-    lbl.textContent=t('T_connOff');
-  }
-  refreshBtn();
-}
-const GK=()=>document.getElementById('apiKey').value.trim();
 
 async function api(payload){
   const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':GK()},body:JSON.stringify(payload)});
