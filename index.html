@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" id="R">
+<html lang="ar" dir="rtl" id="R">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +18,7 @@
   --r:5px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;line-height:1.6;}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;line-height:1.6;}
 [lang=ar] body{font-family:'IBM Plex Sans Arabic',sans-serif;}
 [lang=ar] .fi,[lang=ar] .fs,[lang=ar] .fta,[lang=ar] .btn,[lang=ar] .pill{font-family:'IBM Plex Sans Arabic',sans-serif;}
 
@@ -322,7 +322,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
   <div class="brand"><span id="T_brand">Risk Intelligence</span><span class="brand-pill" id="T_brandPill">AI-POWERED</span></div>
   <div style="display:flex;align-items:center;gap:7px;">
     <div style="display:flex;align-items:center;gap:5px" id="syncInd" style="display:none"><div class="sync-d"></div><span style="font-size:10.5px;color:var(--grn)" id="T_synced">Synced</span></div>
-    <button class="lang-btn" onclick="toggleLang()" id="langBtn">العربية</button>
     <button class="btn btn-p" onclick="openProjModal()" id="T_btnNew">+ New Project</button>
   </div>
 </div>
@@ -1543,7 +1542,7 @@ function showLoad(txt){document.getElementById('loadT').textContent=txt;document
 function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
 
 window.onload=async()=>{
-  L=localStorage.getItem('L')||'en';
+  L=localStorage.getItem('L')||'ar';
   applyLang();
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const k=localStorage.getItem('aKey');
