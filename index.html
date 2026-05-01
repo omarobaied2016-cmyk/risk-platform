@@ -1030,7 +1030,7 @@ Include your complexity assessment in the summary field.`}];
   }
 
   try{
-    const data=await api({model:'claude-opus-4-5',max_tokens:8000,messages:[{role:'user',content:parts}]});
+    const data=await api({model:'claude-opus-4-5',max_tokens:16000,messages:[{role:'user',content:parts}]});
     hideLoad();
     if(data.error){alert('API Error: '+data.error.message);return;}
     let parsed;
