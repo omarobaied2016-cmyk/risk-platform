@@ -1143,10 +1143,10 @@ function renderReg(){
     ${thr.length?`<div class="sep" style="color:var(--red)">${L==='ar'?'التهديدات':'Threats'} (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">${L==='ar'?'الفرص':'Opportunities'} (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
     <div class="ebar">
-      <button class="btn btn-g" onclick="exportCSV()">\${t('T_btnExport')}</button>
-      <button class="btn btn-warn" onclick="translateRegister()" style="font-size:11.5px">\${L==='ar'?'ترجمة السجل للإنجليزي':'ترجمة السجل للعربي'}</button>
-      <span style="font-size:11px;color:var(--t3)">\${risks.length} \${L==='ar'?'مخاطرة':'risks'} · \${CP.analyzed_at||'—'}</span>
-    </div>\`;
+      <button class="btn btn-g" onclick="exportCSV()">${t('T_btnExport')}</button>
+      <button class="btn btn-warn" onclick="translateRegister()" style="font-size:11.5px">${L==='ar'?'ترجمة السجل للإنجليزي':'ترجمة السجل للعربي'}</button>
+      <span style="font-size:11px;color:var(--t3)">${risks.length} ${L==='ar'?'مخاطرة':'risks'} · ${CP.analyzed_at||'—'}</span>
+    </div>`;
 }
 
 // ═══ DASHBOARD ═══
