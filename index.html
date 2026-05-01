@@ -616,6 +616,27 @@ const TR={
   T_btnTrend:{en:'Analyze Trend',ar:'تحليل الاتجاه'},
 };
 function t(k){return (TR[k]&&TR[k][L])||k;}
+
+// ═══ DEFAULTS ═══
+const DQ=[{l:'1 — Zero Tolerance',d:'Any fatality or permanent disability'},{l:'2 — Critical',d:'Serious injury requiring hospitalization'},{l:'3 — High',d:'Medical treatment required'},{l:'4 — Medium',d:'First aid only'},{l:'5 — Low',d:'Near miss only'}];
+const DR=[{l:'1 — Zero Tolerance',d:'Any company image impact'},{l:'2 — National',d:'National media coverage'},{l:'3 — Regional',d:'Regional impact'},{l:'4 — Local',d:'Local city impact'},{l:'5 — Internal',d:'Project team only'}];
+const DP=[{l:'1 — Rare',d:'<10%'},{l:'2 — Unlikely',d:'10-30%'},{l:'3 — Possible',d:'30-50%'},{l:'4 — Likely',d:'50-70%'},{l:'5 — Almost Certain',d:'>70%'}];
+const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Minor manageable effect'},{l:'3 — Moderate',d:'Requires corrective action'},{l:'4 — Major',d:'Significant project impact'},{l:'5 — Critical',d:'May halt project'}];
+const LC=['#e05252','#d4780a','#c9a020','#2a9e5b','#1e72e8'];
+const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
+const IL=['','Negligible','Minor','Moderate','Major','Critical'];
+const PL_AR=['','نادر','محتمل نادراً','محتمل','مرجح','شبه مؤكد'];
+const IL_AR=['','ضئيل','منخفض','متوسط','عالي','حرج'];
+const RL_EN={high:'HIGH',medium:'MEDIUM',low:'LOW'};
+const RL_AR={high:'عالي',medium:'متوسط',low:'منخفض'};
+const RESP_AR={Avoid:'تجنب',Mitigate:'تخفيف',Transfer:'نقل',Accept:'قبول',Escalate:'تصعيد',Exploit:'استغلال',Enhance:'تعزيز',Share:'مشاركة'};
+const CAT_AR={Schedule:'الجدول الزمني',Cost:'التكلفة',Scope:'النطاق',Contract:'العقد',Design:'التصميم',Execution:'التنفيذ',Suppliers:'الموردين',QHSE:'الصحة والسلامة',Quality:'الجودة',Regulatory:'تنظيمي',Financial:'مالي'};
+
+// ═══ STATE ═══
+let projs=[],CP=null,CID=null;
+let cUT='change_order',PF={},UF=[],PR=[];
+let editRiskId=null;
+
 function translateSelects(){
   // Translate all select options based on language
   document.querySelectorAll('select option[data-ar]').forEach(opt=>{
