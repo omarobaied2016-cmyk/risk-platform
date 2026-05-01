@@ -630,20 +630,31 @@ async function translateRegister(){
   const targetLang=L==='ar'?'Arabic':'English';
   showLoad(L==='ar'?'جاري ترجمة السجل...':'Translating register...');
   try{
-    const toTranslate=risks.map(r=>({id:r.id,description:r.description,cause:r.cause||'',mitigation:r.mitigation||'',owner:r.owner||''}));
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate these construction risk register fields to ${targetLang}. Keep technical terms accurate. Respond ONLY with JSON array matching input structure exactly.
-Input: ${JSON.stringify(toTranslate)}
-Output format: [{"id":"same_id","description":"translated","cause":"translated","mitigation":"translated","owner":"translated"}]`}]});
-    if(data.error){hideLoad();alert('Error: '+data.error.message);return;}
-    let translated;
-    try{translated=pJSON(data.content[0].text);}
-    catch(e){hideLoad();alert('Parse error');return;}
-    // Update each risk in DB
-    for(const tr of translated){
-      const orig=risks.find(r=>r.id===tr.id);
-      if(!orig)continue;
-      await sb('risks?id=eq.'+tr.id,'PATCH',{description:tr.description,cause:tr.cause,mitigation:tr.mitigation,owner:tr.owner});
-      orig.description=tr.description;orig.cause=tr.cause;orig.mitigation=tr.mitigation;orig.owner=tr.owner;
+    // Translate in batches of 5
+    const batchSize=5;
+    for(let i=0;i<risks.length;i+=batchSize){
+      const batch=risks.slice(i,i+batchSize);
+      const toTranslate=batch.map(r=>({id:r.id,d:r.description,c:r.cause||'',m:r.mitigation||'',o:r.owner||''}));
+      document.getElementById('loadT').textContent=(L==='ar'?'جاري ترجمة السجل...':'Translating...')+' '+(i+1)+'-'+Math.min(i+batchSize,risks.length)+'/'+risks.length;
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:'Translate to '+targetLang+'. Keep technical construction terms accurate. Return ONLY a JSON array, no other text.
+Input:'+JSON.stringify(toTranslate)+'
+Return same structure with translated values for d,c,m,o fields. Keep id unchanged.'}]});
+      if(data.error){hideLoad();alert('Error: '+data.error.message);return;}
+      let translated;
+      try{translated=pJSON(data.content[0].text);}
+      catch(e){
+        try{const raw=data.content[0].text;const s=raw.indexOf('[');const e2=raw.lastIndexOf(']');if(s>=0&&e2>s)translated=JSON.parse(raw.slice(s,e2+1));else continue;}
+        catch(e3){continue;}
+      }
+      for(const tr of translated){
+        const orig=risks.find(r=>r.id===tr.id);
+        if(!orig)continue;
+        await sb('risks?id=eq.'+tr.id,'PATCH',{description:tr.d||tr.description,cause:tr.c||tr.cause,mitigation:tr.m||tr.mitigation,owner:tr.o||tr.owner});
+        orig.description=tr.d||tr.description||orig.description;
+        orig.cause=tr.c||tr.cause||orig.cause;
+        orig.mitigation=tr.m||tr.mitigation||orig.mitigation;
+        orig.owner=tr.o||tr.owner||orig.owner;
+      }
     }
     hideLoad();renderReg();renderDash();renderWarn();showSync();
   }catch(e){hideLoad();alert('Error: '+e.message);}
