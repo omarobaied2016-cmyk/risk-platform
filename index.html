@@ -707,7 +707,7 @@ function applyLang(){
     const lbl=ar?p.dataset.ar:p.dataset.en;
     if(lbl)p.textContent=lbl;
   });
-  document.getElementById('langBtn').textContent=ar?'English':'العربية';
+  const lb=document.getElementById('langBtn');if(lb)lb.textContent=ar?'English':'العربية';
   checkKey();
   translateSelects();
 }
