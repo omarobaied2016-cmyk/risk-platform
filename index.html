@@ -660,6 +660,41 @@ Return format: {"desc":"...","cause":"...","mit":"...","owner":"..."}`;
 }
 
 
+function checkKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  const dot=document.getElementById('cdot'),lbl=document.getElementById('clbl');
+  if(k.startsWith('sk-ant-')&&k.length>20){
+    dot.classList.add('on');lbl.classList.add('on');
+    lbl.textContent=t('T_connOn');localStorage.setItem('aKey',k);
+  }else{
+    dot.classList.remove('on');lbl.classList.remove('on');
+    lbl.textContent=t('T_connOff');
+  }
+  refreshBtn();
+}
+const GK=()=>document.getElementById('apiKey').value.trim();
+
+function applyLang(){
+  const ar=L==='ar';
+  document.getElementById('R').setAttribute('lang',L);
+  document.getElementById('R').setAttribute('dir',ar?'rtl':'ltr');
+  Object.keys(TR).forEach(k=>{
+    if(k.startsWith('T_conn'))return;
+    const el=document.getElementById(k);
+    if(el)el.textContent=t(k);
+  });
+  document.querySelectorAll('.pill').forEach(p=>{
+    const lbl=ar?p.dataset.ar:p.dataset.en;
+    if(lbl)p.textContent=lbl;
+  });
+  document.getElementById('langBtn').textContent=ar?'English':'العربية';
+  checkKey();
+  translateSelects();
+}
+
+function toggleLang(){L=L==='ar'?'en':'ar';localStorage.setItem('L',L);applyLang();if(CP)renderAll();}
+
+
 async function api(payload){
   const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':GK()},body:JSON.stringify(payload)});
   return r.json();
@@ -1485,6 +1520,15 @@ function exportCSV(){
 // ═══ UTILS ═══
 function showLoad(txt){document.getElementById('loadT').textContent=txt;document.getElementById('loadOv').classList.add('on');}
 function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
+
+window.onload=async()=>{
+  L=localStorage.getItem('L')||'en';
+  applyLang();
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const k=localStorage.getItem('aKey');
+  if(k){document.getElementById('apiKey').value=k;checkKey();}
+  await loadProjs();
+};
 </script>
 </body>
 </html>
