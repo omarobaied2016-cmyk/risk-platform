@@ -269,10 +269,31 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
     <div class="edit-grid">
       <div class="fg"><label class="fl" id="T_eDesc">Description</label><textarea class="fta" id="e_desc" style="min-height:60px"></textarea></div>
       <div class="fg"><label class="fl" id="T_eCause">Cause</label><textarea class="fta" id="e_cause" style="min-height:60px"></textarea></div>
-      <div class="fg"><label class="fl" id="T_eType">Type</label><select class="fs" id="e_type"><option value="threat">Threat</option><option value="opportunity">Opportunity</option></select></div>
-      <div class="fg"><label class="fl" id="T_eCat">Category</label><select class="fs" id="e_cat"><option>Schedule</option><option>Cost</option><option>Scope</option><option>Contract</option><option>Design</option><option>Execution</option><option>Suppliers</option><option>QHSE</option><option>Quality</option><option>Regulatory</option><option>Financial</option></select></div>
-      <div class="fg"><label class="fl" id="T_eLevel">Level</label><select class="fs" id="e_level"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
-      <div class="fg"><label class="fl" id="T_eResp">Response Strategy</label><select class="fs" id="e_resp"><option>Avoid</option><option>Mitigate</option><option>Transfer</option><option>Accept</option><option>Escalate</option><option>Exploit</option><option>Enhance</option><option>Share</option></select></div>
+      <div class="fg"><label class="fl" id="T_eType">Type</label><select class="fs" id="e_type"><option value="threat" data-ar="تهديد" data-en="Threat">Threat</option><option value="opportunity" data-ar="فرصة" data-en="Opportunity">Opportunity</option></select></div>
+      <div class="fg"><label class="fl" id="T_eCat">Category</label><select class="fs" id="e_cat">
+<option value="Schedule" data-ar="الجدول الزمني">Schedule</option>
+<option value="Cost" data-ar="التكلفة">Cost</option>
+<option value="Scope" data-ar="النطاق">Scope</option>
+<option value="Contract" data-ar="العقد">Contract</option>
+<option value="Design" data-ar="التصميم">Design</option>
+<option value="Execution" data-ar="التنفيذ">Execution</option>
+<option value="Suppliers" data-ar="الموردين">Suppliers</option>
+<option value="QHSE" data-ar="الصحة والسلامة">QHSE</option>
+<option value="Quality" data-ar="الجودة">Quality</option>
+<option value="Regulatory" data-ar="تنظيمي">Regulatory</option>
+<option value="Financial" data-ar="مالي">Financial</option>
+</select></div>
+      <div class="fg"><label class="fl" id="T_eLevel">Level</label><select class="fs" id="e_level"><option value="high" data-ar="عالي">High</option><option value="medium" data-ar="متوسط">Medium</option><option value="low" data-ar="منخفض">Low</option></select></div>
+      <div class="fg"><label class="fl" id="T_eResp">Response Strategy</label><select class="fs" id="e_resp">
+<option value="Avoid" data-ar="تجنب">Avoid</option>
+<option value="Mitigate" data-ar="تخفيف">Mitigate</option>
+<option value="Transfer" data-ar="نقل">Transfer</option>
+<option value="Accept" data-ar="قبول">Accept</option>
+<option value="Escalate" data-ar="تصعيد">Escalate</option>
+<option value="Exploit" data-ar="استغلال">Exploit</option>
+<option value="Enhance" data-ar="تعزيز">Enhance</option>
+<option value="Share" data-ar="مشاركة">Share</option>
+</select></div>
       <div class="fg"><label class="fl" id="T_eProb">Probability (1-5)</label><input type="number" class="fi" id="e_prob" min="1" max="5"/></div>
       <div class="fg"><label class="fl" id="T_eOwner">Owner</label><input type="text" class="fi" id="e_owner"/></div>
       <div class="fg edit-full"><label class="fl" id="T_eMit">Action Plan / Mitigation</label><textarea class="fta" id="e_mit"></textarea></div>
@@ -595,6 +616,39 @@ const TR={
   T_btnTrend:{en:'Analyze Trend',ar:'تحليل الاتجاه'},
 };
 function t(k){return (TR[k]&&TR[k][L])||k;}
+function translateSelects(){
+  // Translate all select options based on language
+  document.querySelectorAll('select option[data-ar]').forEach(opt=>{
+    if(L==='ar'){opt.textContent=opt.dataset.ar;}
+    else{opt.textContent=opt.dataset.en||opt.value;}
+  });
+}
+
+async function translateRegister(){
+  const risks=CP?.risks||[];
+  if(!risks.length){alert(L==='ar'?'لا توجد مخاطر':'No risks to translate');return;}
+  const targetLang=L==='ar'?'Arabic':'English';
+  showLoad(L==='ar'?'جاري ترجمة السجل...':'Translating register...');
+  try{
+    const toTranslate=risks.map(r=>({id:r.id,description:r.description,cause:r.cause||'',mitigation:r.mitigation||'',owner:r.owner||''}));
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate these construction risk register fields to ${targetLang}. Keep technical terms accurate. Respond ONLY with JSON array matching input structure exactly.
+Input: ${JSON.stringify(toTranslate)}
+Output format: [{"id":"same_id","description":"translated","cause":"translated","mitigation":"translated","owner":"translated"}]`}]});
+    if(data.error){hideLoad();alert('Error: '+data.error.message);return;}
+    let translated;
+    try{translated=pJSON(data.content[0].text);}
+    catch(e){hideLoad();alert('Parse error');return;}
+    // Update each risk in DB
+    for(const tr of translated){
+      const orig=risks.find(r=>r.id===tr.id);
+      if(!orig)continue;
+      await sb('risks?id=eq.'+tr.id,'PATCH',{description:tr.description,cause:tr.cause,mitigation:tr.mitigation,owner:tr.owner});
+      orig.description=tr.description;orig.cause=tr.cause;orig.mitigation=tr.mitigation;orig.owner=tr.owner;
+    }
+    hideLoad();renderReg();renderDash();renderWarn();showSync();
+  }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
 function applyLang(){
   const ar=L==='ar';
   document.getElementById('R').setAttribute('lang',L);
@@ -610,6 +664,7 @@ function applyLang(){
   });
   document.getElementById('langBtn').textContent=ar?'English':'العربية';
   checkKey();
+  translateSelects();
 }
 function toggleLang(){L=L==='ar'?'en':'ar';localStorage.setItem('L',L);applyLang();if(CP)renderAll();}
 
@@ -949,7 +1004,12 @@ Respond ONLY with valid JSON. Keep each field under 25 words.
 {"summary":"2-sentence summary","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"<25 words>","cause":"<15 words>","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"<25 words>","owner":"Role Title","activity_ref":"","expected_weeks":2}]}
 Types: threat/opportunity. Threat strategies: Avoid/Mitigate/Transfer/Accept/Escalate. Opportunity: Exploit/Enhance/Share/Accept/Escalate.
 Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
-Generate 12-15 risks including 3 opportunities.`}];
+Assess project complexity from the files and project info:
+- Simple (value <5M SAR, straightforward scope): generate 8-10 risks, 2 opportunities
+- Medium (5-50M SAR, moderate complexity): generate 12-20 risks, 3 opportunities  
+- Complex (50-500M SAR, multi-discipline): generate 20-30 risks, 4 opportunities
+- Mega (>500M SAR or highly complex): generate 30-40 risks, 5 opportunities
+Include your complexity assessment in the summary field.`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});parts.push({type:'text',text:`[Drawing: ${f.name}]`});}
@@ -1082,7 +1142,11 @@ function renderReg(){
     ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
     ${thr.length?`<div class="sep" style="color:var(--red)">${L==='ar'?'التهديدات':'Threats'} (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">${L==='ar'?'الفرص':'Opportunities'} (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
-    <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">${t('T_btnExport')}</button><span style="font-size:11px;color:var(--t3)">${risks.length} ${L==='ar'?'مخاطرة':'risks'} · ${CP.analyzed_at||'—'}</span></div>`;
+    <div class="ebar">
+      <button class="btn btn-g" onclick="exportCSV()">\${t('T_btnExport')}</button>
+      <button class="btn btn-warn" onclick="translateRegister()" style="font-size:11.5px">\${L==='ar'?'ترجمة السجل للإنجليزي':'ترجمة السجل للعربي'}</button>
+      <span style="font-size:11px;color:var(--t3)">\${risks.length} \${L==='ar'?'مخاطرة':'risks'} · \${CP.analyzed_at||'—'}</span>
+    </div>\`;
 }
 
 // ═══ DASHBOARD ═══
