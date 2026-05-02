@@ -1211,7 +1211,7 @@ function renderDash(){
       </div>
       <div class="dcard">
         <div class="dcard-t">${L==='ar'?'توزيع المستويات':'Level Distribution'}</div>
-        <canvas id="lvlC" height="200"></canvas>
+        <canvas id="lvlC" height="140"></canvas>
       </div>
     </div>
 
@@ -1223,19 +1223,57 @@ function renderDash(){
       </div>
       <div class="dcard">
         <div class="dcard-t">${L==='ar'?'استراتيجيات الاستجابة':'Response Strategies'}</div>
-        <canvas id="respC" height="200"></canvas>
+        <canvas id="respC" height="140"></canvas>
       </div>
       <div class="dcard">
         <div class="dcard-t">${L==='ar'?'توزيع النوع':'Threats vs Opportunities'}</div>
-        <canvas id="typeC" height="200"></canvas>
+        <canvas id="typeC" height="140"></canvas>
       </div>
     </div>
 
-    <!-- Row 3: Trend Chart -->
+    <!-- Row 3: Early Warning Summary + Trend Chart -->
+    ${CP.trend_data?.length?(()=>{
+      const latest=CP.trend_data[CP.trend_data.length-1];
+      const al=latest.alert_level||'medium';
+      const alColor={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'}[al];
+      const alBg={high:'rgba(224,82,82,.08)',medium:'rgba(201,160,32,.08)',low:'rgba(42,158,91,.08)'}[al];
+      const alIcon={high:'⚠',medium:'◆',low:'✓'}[al];
+      const r=latest.report||{};
+      return `
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="dcard" style="background:${alBg};border-color:${alColor}33">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${alColor}">${alIcon} ${L==='ar'?'تقرير الإنذار المبكر':'Early Warning Report'}</div>
+            <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</div>
+          </div>
+          <div style="display:flex;gap:14px;margin-bottom:9px;flex-wrap:wrap">
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">${L==='ar'?'مستوى التنبيه':'Alert Level'}</div><div style="font-size:14px;font-weight:700;color:${alColor};text-transform:uppercase">${al}</div></div>
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">${L==='ar'?'صحة المشروع':'Health Score'}</div><div style="font-size:14px;font-weight:700">${latest.health_score||'—'}/100</div></div>
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">SV</div><div style="font-size:13px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">${L==='ar'?'الصرف':'Burn'}</div><div style="font-size:13px;font-weight:600">${latest.burn_rate||0}%</div></div>
+          </div>
+          <div style="font-size:11.5px;color:var(--t2);line-height:1.6;border-top:1px solid var(--b1);padding-top:8px">${r.executive_summary||(L==='ar'?'لا يوجد ملخص متاح':'No summary available')}</div>
+          ${r.warnings?.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b1)"><div style="font-size:10px;font-weight:700;color:var(--yel);text-transform:uppercase;margin-bottom:4px">${L==='ar'?'تحذيرات':'Warnings'}</div>${r.warnings.slice(0,2).map(w=>`<div style="font-size:11px;color:var(--t2);padding:2px 0">• ${w}</div>`).join('')}</div>`:''}
+          <div style="margin-top:10px;display:flex;gap:6px">
+            <button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="ST('warn')">${L==='ar'?'عرض التقرير الكامل':'View Full Report'}</button>
+          </div>
+        </div>
+        <div class="dcard">
+          <div class="dcard-t">${L==='ar'?'اتجاه المخاطر عبر الوقت':'Risk Register Trend'}</div>
+          <canvas id="trendC" height="120"></canvas>
+        </div>
+      </div>`;
+    })():`
     <div class="dcard">
       <div class="dcard-t">${L==='ar'?'اتجاه المخاطر عبر الوقت':'Risk Register Trend'}</div>
-      <canvas id="trendC" height="80"></canvas>
-    </div>`;
+      <canvas id="trendC" height="55"></canvas>
+    </div>
+    <div class="dcard" style="margin-top:10px;background:rgba(30,114,232,.04);border-color:rgba(30,114,232,.2)">
+      <div style="font-size:11.5px;color:var(--t2);text-align:center;padding:8px">
+        ${L==='ar'?'لم يتم إدخال مؤشرات أسبوعية بعد. ':'No weekly indicators entered yet. '}
+        <a onclick="ST('warn')" style="color:var(--acc);cursor:pointer;text-decoration:underline">${L==='ar'?'افتح الإنذار المبكر لإدخال المؤشرات':'Open Early Warning to enter indicators'}</a>
+      </div>
+    </div>`}`;
 
   setTimeout(()=>{
     // Level donut
@@ -1307,16 +1345,13 @@ function renderWarn(){
       <div class="trend-form">
         <div style="font-size:12px;font-weight:600;margin-bottom:3px" id="T_trendTitle">${t('T_trendTitle')}</div>
         <div style="font-size:11px;color:var(--t3);margin-bottom:10px" id="T_trendSub">${t('T_trendSub')}</div>
-        <div class="ind-grid">
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'انحراف الجدول (SV)':'Schedule Variance (SV %)'}</label><input type="number" class="ind-inp" id="ind_sv" placeholder="${L==='ar'?'مثال: -5 (متأخر)':'e.g. -5 (behind)'}"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'معدل الصرف (%)':'Budget Burn Rate (%)'}</label><input type="number" class="ind-inp" id="ind_br" placeholder="${L==='ar'?'مثال: 45':'e.g. 45'}"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'عدد الـ RFIs المفتوحة':'Open RFI Count'}</label><input type="number" class="ind-inp" id="ind_rfi" placeholder="0"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'المشاكل المفتوحة':'Open Issues'}</label><input type="number" class="ind-inp" id="ind_iss" placeholder="0"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'أداء المقاولين (1-5)':'Subcontractor Performance (1-5)'}</label><input type="number" class="ind-inp" id="ind_sub" placeholder="3" min="1" max="5"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'أيام تأخير الموقع':'Site Delay Days'}</label><input type="number" class="ind-inp" id="ind_del" placeholder="0"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'حوادث السلامة':'Safety Incidents'}</label><input type="number" class="ind-inp" id="ind_saf" placeholder="0"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'حالة المواد (1-5)':'Material Delivery Status (1-5)'}</label><input type="number" class="ind-inp" id="ind_mat" placeholder="4" min="1" max="5"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'تقدم العمل الفعلي (%)':'Actual Work Progress (%)'}</label><input type="number" class="ind-inp" id="ind_prog" placeholder="40"/></div>
+        <div class="ind-grid" style="grid-template-columns:repeat(2,1fr)">
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'انحراف الجدول الزمني SV (%)':'Schedule Variance SV (%)'}</label><input type="number" class="ind-inp" id="ind_sv" placeholder="${L==='ar'?'مثال: -5 يعني متأخر':'e.g. -5 means behind'}"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'معدل صرف الميزانية (%)':'Budget Burn Rate (%)'}</label><input type="number" class="ind-inp" id="ind_br" placeholder="${L==='ar'?'مثال: 45':'e.g. 45'}"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'طلبات التغيير (Change Requests)':'Change Requests'}</label><input type="number" class="ind-inp" id="ind_cr" placeholder="${L==='ar'?'عدد الطلبات':'count'}"/></div>
+          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'استغلال الموارد (%)':'Resource Utilization (%)'}</label><input type="number" class="ind-inp" id="ind_ru" placeholder="${L==='ar'?'مثال: 80':'e.g. 80'}" min="0" max="100"/></div>
+          <div class="ind-item full-width" style="grid-column:1/-1"><label class="ind-lbl">${L==='ar'?'تأخر التوريد / تبعيات (Vendor/Dependency Delay)':'Vendor / Dependency Delay'}</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="${L==='ar'?'مثال: تأخر تسليم الحديد 5 أيام، الموردX لم يلتزم بالموعد':'e.g. Steel delivery delayed 5 days, vendor X missed schedule'}"></textarea></div>
+          <div class="ind-item full-width" style="grid-column:1/-1"><label class="ind-lbl">${L==='ar'?'ملاحظات إضافية (اختياري)':'Additional Notes (optional)'}</label><textarea class="ind-inp" id="ind_notes" rows="2" style="min-height:50px;font-family:inherit" placeholder="${L==='ar'?'أي ملاحظات أو أحداث هذا الأسبوع':'Any additional notes or events this week'}"></textarea></div>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
           <button class="btn btn-p" onclick="analyzeTrend()">${t('T_btnTrend')}</button>
@@ -1328,18 +1363,19 @@ function renderWarn(){
       <div class="trend-hist">
         <div style="font-size:11.5px;font-weight:600;margin-bottom:8px">${L==='ar'?'سجل المؤشرات الأسبوعية':'Weekly Indicators History'}</div>
         <table class="th-table">
-          <thead><tr><th>${L==='ar'?'الأسبوع':'Week'}</th><th>SV%</th><th>${L==='ar'?'الصرف':'Burn%'}</th><th>RFIs</th><th>${L==='ar'?'أداء':'Perf'}</th><th>${L==='ar'?'تأخير':'Delay'}</th><th>${L==='ar'?'تحذير':'Alert'}</th></tr></thead>
+          <thead><tr><th>${L==='ar'?'الأسبوع':'Week'}</th><th>SV%</th><th>${L==='ar'?'الصرف':'Burn%'}</th><th>${L==='ar'?'تغيير':'Changes'}</th><th>${L==='ar'?'الموارد':'Resources'}</th><th>${L==='ar'?'الموردين':'Vendor'}</th><th>${L==='ar'?'صحة':'Score'}</th><th>${L==='ar'?'تحذير':'Alert'}</th></tr></thead>
           <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr>
             <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td>
             <td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'var(--yel)':'var(--grn)'}">${w.sv||0}%</td>
             <td>${w.burn_rate||0}%</td>
-            <td>${w.rfi_count||0}</td>
-            <td>${w.subcontractor_perf||'—'}/5</td>
-            <td>${w.site_delays||0}d</td>
+            <td>${w.change_requests||0}</td>
+            <td>${w.resource_util||0}%</td>
+            <td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):(L==='ar'?'لا':'OK')}</td>
+            <td><b>${w.health_score||'—'}</b></td>
             <td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${w.alert_level?.toUpperCase()||'OK'}</span></td>
           </tr>`).join('')}</tbody>
         </table>
-        <div style="margin-top:10px"><canvas id="trendIndC" height="80"></canvas></div>
+        <div style="margin-top:10px"><canvas id="trendIndC" height="70"></canvas></div>
       </div>
       `:''}
       <div id="trendAnalysis"></div>
@@ -1353,8 +1389,10 @@ function renderWarn(){
       new Chart(document.getElementById('trendIndC'),{type:'line',data:{labels,datasets:[
         {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'#e05252',tension:.4,borderWidth:1.5,pointRadius:3},
         {label:'Burn%',data:td.map(w=>w.burn_rate||0),borderColor:'#c9a020',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'RFIs',data:td.map(w=>w.rfi_count||0),borderColor:'#1e72e8',tension:.4,borderWidth:1.5,pointRadius:3},
-      ]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a91a8',font:{size:10}},grid:{color:'rgba(26,45,66,.4)'}}},layout:{padding:{top:2}}}});
+        {label:L==='ar'?'تغيير':'Changes',data:td.map(w=>w.change_requests||0),borderColor:'#8855dd',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'RU%',data:td.map(w=>w.resource_util||0),borderColor:'#1e72e8',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:L==='ar'?'الصحة':'Health',data:td.map(w=>w.health_score||0),borderColor:'#2a9e5b',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
+      ]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a91a8',font:{size:10}},grid:{color:'rgba(26,45,66,.4)'}}},layout:{padding:{top:2}}}});
     },60);
   }
 }
@@ -1382,52 +1420,57 @@ function ewCard(r,week){
 async function analyzeTrend(){
   const sv=parseFloat(document.getElementById('ind_sv').value)||0;
   const br=parseFloat(document.getElementById('ind_br').value)||0;
-  const rfi=parseInt(document.getElementById('ind_rfi').value)||0;
-  const iss=parseInt(document.getElementById('ind_iss').value)||0;
-  const sub=parseFloat(document.getElementById('ind_sub').value)||3;
-  const del=parseInt(document.getElementById('ind_del').value)||0;
-  const saf=parseInt(document.getElementById('ind_saf').value)||0;
-  const mat=parseFloat(document.getElementById('ind_mat').value)||4;
-  const prog=parseFloat(document.getElementById('ind_prog').value)||0;
-  const weekDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  const cr=parseInt(document.getElementById('ind_cr').value)||0;
+  const ru=parseFloat(document.getElementById('ind_ru').value)||0;
+  const vd=document.getElementById('ind_vd').value.trim()||'';
+  const notes=document.getElementById('ind_notes').value.trim()||'';
+  const today=new Date();
+  const weekDate=today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const weekISO=today.toISOString().slice(0,10);
 
   showLoad(L==='ar'?'جاري تحليل المؤشرات...':'Analyzing indicators...');
 
   const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
-  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, Burn=${w.burn_rate}%, RFIs=${w.rfi_count}, Delay=${w.site_delays}d, Alert=${w.alert_level}`).join('\n')||'No history';
-  const lang_inst=L==='ar'?'Respond in ARABIC.':'Respond in ENGLISH.';
+  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, Burn=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Vendor: ${w.vendor_delay||'none'}`).join('\n')||'No history';
+  const lang_inst=L==='ar'?'IMPORTANT: Generate ALL output in ARABIC language including all text fields, narrative, and explanations. Use professional construction risk management Arabic terminology.':'Generate output in ENGLISH.';
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:`Construction project weekly trend analysis. ${lang_inst}
-Project: ${CP.name} | Type: ${CP.type}
-Existing Risks:\n${existing}
-Historical Trend:\n${history}
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager analyzing weekly project performance. ${lang_inst}
 
-THIS WEEK INDICATORS:
-- Schedule Variance: ${sv}%
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Existing Risk Register:\n${existing}
+
+Historical Trend (last 4 weeks):\n${history}
+
+THIS WEEK INDICATORS (Week of ${weekDate}):
+- Schedule Variance (SV): ${sv}%  ${sv<0?'(behind schedule)':sv>0?'(ahead of schedule)':'(on track)'}
 - Budget Burn Rate: ${br}%
-- Open RFIs: ${rfi}
-- Open Issues: ${iss}
-- Subcontractor Performance: ${sub}/5
-- Site Delay Days: ${del}
-- Safety Incidents: ${saf}
-- Material Delivery Status: ${mat}/5
-- Actual Progress: ${prog}%
+- Change Requests this week: ${cr}
+- Resource Utilization: ${ru}%
+- Vendor/Dependency Delay: ${vd||'none reported'}
+- Additional Notes: ${notes||'none'}
 
-Analyze these indicators and provide:
-1. Overall health assessment
-2. Key warning signals
-3. Predicted risks for next 2 weeks
-4. Recommended immediate actions
+Provide a COMPREHENSIVE WRITTEN REPORT in JSON format. Each indicator analysis must be 2-4 sentences explaining:
+1. What the number/text means in context
+2. The trend direction (compared to history if available)
+3. Specific risks this could trigger or amplify (reference risk IDs from register if relevant)
+4. Quantified impact (e.g., "could increase R005 probability from 3 to 4")
 
 Respond ONLY with valid JSON:
 {
   "alert_level": "high|medium|low",
   "health_score": 75,
-  "summary": "2-sentence overall assessment",
-  "warnings": ["warning 1", "warning 2"],
-  "predicted_risks": ["predicted risk 1", "predicted risk 2"],
-  "actions": ["action 1", "action 2", "action 3"]
+  "executive_summary": "3-4 sentence overall narrative summary of project health this week",
+  "indicators_analysis": {
+    "schedule_variance": "Detailed 3-4 sentence analysis with risk linkage",
+    "budget_burn_rate": "Detailed 3-4 sentence analysis with risk linkage",
+    "change_requests": "Detailed 3-4 sentence analysis with risk linkage",
+    "resource_utilization": "Detailed 3-4 sentence analysis with risk linkage",
+    "vendor_delay": "Detailed 3-4 sentence analysis with risk linkage"
+  },
+  "warnings": ["Specific warning 1 with reasoning", "Warning 2", "Warning 3"],
+  "predicted_risks": ["Specific risk prediction with reasoning for next 2 weeks", "Risk 2", "Risk 3"],
+  "actions": ["Specific actionable step 1", "Action 2", "Action 3", "Action 4"]
 }`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
@@ -1435,29 +1478,88 @@ Respond ONLY with valid JSON:
     try{parsed=pJSON(data.content[0].text);}catch(e){alert('Parse error');return;}
 
     // Save to trend history
-    const entry={date:weekDate,sv,burn_rate:br,rfi_count:rfi,open_issues:iss,subcontractor_perf:sub,site_delays:del,safety_incidents:saf,material_status:mat,progress:prog,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50};
+    const entry={date:weekDate,date_iso:weekISO,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50,report:parsed};
     if(!CP.trend_data)CP.trend_data=[];
     CP.trend_data.push(entry);
     await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});
 
-    // Render analysis
+    // Render full written report
     const alertClass={high:'ta-r',medium:'ta-y',low:'ta-g'}[parsed.alert_level]||'ta-y';
     const alertIcon={high:'⚠️',medium:'◆',low:'✓'}[parsed.alert_level]||'◆';
+    const ind=parsed.indicators_analysis||{};
+
     document.getElementById('trendAnalysis').innerHTML=`
       <div class="trend-alert ${alertClass}">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="font-weight:700">${alertIcon} ${L==='ar'?'نتيجة التحليل — الأسبوع '+weekDate:'Analysis Result — Week '+weekDate}</span>
-          <span style="font-size:11px">Health Score: <b>${parsed.health_score}/100</b></span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:8px">
+          <span style="font-weight:700;font-size:13px">${alertIcon} ${L==='ar'?'تقرير الإنذار المبكر — أسبوع':'Early Warning Report — Week of'} ${weekDate}</span>
+          <span style="font-size:11px">${L==='ar'?'درجة الصحة:':'Health Score:'} <b style="font-size:14px">${parsed.health_score}/100</b></span>
         </div>
-        <div style="font-size:12px;margin-bottom:8px">${parsed.summary}</div>
+        <div style="font-size:12.5px;line-height:1.6">${parsed.executive_summary||''}</div>
       </div>
-      ${parsed.warnings?.length?`<div style="margin-bottom:10px"><div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--yel);margin-bottom:6px">${L==='ar'?'إشارات تحذير':'Warning Signals'}</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--b1)">• ${w}</div>`).join('')}</div>`:''}
-      ${parsed.predicted_risks?.length?`<div style="margin-bottom:10px"><div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);margin-bottom:6px">${L==='ar'?'مخاطر متوقعة خلال أسبوعين':'Predicted Risks (Next 2 Weeks)'}</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--b1)">▲ ${r}</div>`).join('')}</div>`:''}
-      ${parsed.actions?.length?`<div><div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--grn);margin-bottom:6px">${L==='ar'?'الإجراءات الموصى بها':'Recommended Actions'}</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--b1)">${i+1}. ${a}</div>`).join('')}</div>`:''}`;
+
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:11px;color:var(--acc)">${L==='ar'?'تحليل المؤشرات التفصيلي':'Detailed Indicator Analysis'}</div>
+
+        <div style="margin-bottom:11px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="background:${sv<0?'rgba(224,82,82,.15)':'rgba(42,158,91,.15)'};color:${sv<0?'var(--red)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">SV: ${sv}%</span>
+            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'انحراف الجدول الزمني':'Schedule Variance'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.schedule_variance||'—'}</div>
+        </div>
+
+        <div style="margin-bottom:11px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="background:${br>70?'rgba(224,82,82,.15)':br>50?'rgba(201,160,32,.15)':'rgba(42,158,91,.15)'};color:${br>70?'var(--red)':br>50?'var(--yel)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${br}%</span>
+            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'معدل صرف الميزانية':'Budget Burn Rate'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.budget_burn_rate||'—'}</div>
+        </div>
+
+        <div style="margin-bottom:11px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="background:${cr>3?'rgba(224,82,82,.15)':cr>0?'rgba(201,160,32,.15)':'rgba(42,158,91,.15)'};color:${cr>3?'var(--red)':cr>0?'var(--yel)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${cr}</span>
+            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'طلبات التغيير':'Change Requests'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.change_requests||'—'}</div>
+        </div>
+
+        <div style="margin-bottom:11px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="background:${ru>90||ru<50?'rgba(224,82,82,.15)':ru>80||ru<60?'rgba(201,160,32,.15)':'rgba(42,158,91,.15)'};color:${ru>90||ru<50?'var(--red)':ru>80||ru<60?'var(--yel)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${ru}%</span>
+            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'استغلال الموارد':'Resource Utilization'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.resource_utilization||'—'}</div>
+        </div>
+
+        <div style="margin-bottom:5px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="background:${vd?'rgba(224,82,82,.15)':'rgba(42,158,91,.15)'};color:${vd?'var(--red)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${vd?(L==='ar'?'يوجد':'Reported'):(L==='ar'?'لا يوجد':'None')}</span>
+            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'تأخر الموردين والتبعيات':'Vendor/Dependency Delay'}</span>
+          </div>
+          ${vd?`<div style="font-size:11px;color:var(--t3);font-style:italic;padding-inline-start:8px;margin-bottom:4px">"${vd}"</div>`:''}
+          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.vendor_delay||'—'}</div>
+        </div>
+      </div>
+
+      ${parsed.warnings?.length?`<div style="background:rgba(201,160,32,.05);border:1px solid rgba(201,160,32,.2);border-radius:var(--r);padding:12px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--yel);margin-bottom:8px">⚠ ${L==='ar'?'إشارات تحذيرية':'Warning Signals'}</div>
+        ${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(201,160,32,.1);line-height:1.55">• ${w}</div>`).join('')}
+      </div>`:''}
+
+      ${parsed.predicted_risks?.length?`<div style="background:rgba(224,82,82,.05);border:1px solid rgba(224,82,82,.2);border-radius:var(--r);padding:12px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--red);margin-bottom:8px">▲ ${L==='ar'?'مخاطر متوقعة خلال أسبوعين':'Predicted Risks (Next 2 Weeks)'}</div>
+        ${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(224,82,82,.1);line-height:1.55">▸ ${r}</div>`).join('')}
+      </div>`:''}
+
+      ${parsed.actions?.length?`<div style="background:rgba(42,158,91,.05);border:1px solid rgba(42,158,91,.2);border-radius:var(--r);padding:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grn);margin-bottom:8px">✓ ${L==='ar'?'إجراءات موصى بها':'Recommended Actions'}</div>
+        ${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(42,158,91,.1);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}
+      </div>`:''}`;
 
     // Clear inputs
-    ['ind_sv','ind_br','ind_rfi','ind_iss','ind_sub','ind_del','ind_saf','ind_mat','ind_prog'].forEach(id=>{document.getElementById(id).value='';});
-    renderWarn();showSync();
+    ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{document.getElementById(id).value='';});
+    renderWarn();renderDash();showSync();
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
