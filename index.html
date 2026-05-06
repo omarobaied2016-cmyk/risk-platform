@@ -4,212 +4,241 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>منصة إدارة المخاطر</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
-  /* Sidebar - light theme */
-  --sb-bg:#f7f8fc;
-  --sb-card:#ffffff;
-  --sb-border:#e8ebf2;
-  --sb-text:#1a2238;
-  --sb-text-2:#6e7891;
-  --sb-text-3:#9aa3b8;
-  --sb-hover:#f0f2f8;
-  --sb-active:#eef0fa;
+  /* Sidebar - DARK theme */
+  --sb-bg:#0f1424;
+  --sb-card:#1a2138;
+  --sb-border:#252d4a;
+  --sb-text:#e8ecf5;
+  --sb-text-2:#9aa3c0;
+  --sb-text-3:#6b7593;
+  --sb-hover:#1e2640;
+  --sb-active:#2a3356;
   
-  /* Main - dark theme */
-  --bg:#0a0e1a;
-  --s1:#0f1524;
-  --s2:#162033;
-  --s3:#1f2c44;
-  --b1:#1c2a44;
-  --b2:#253556;
-  --b3:#324870;
-  --t1:#dde4f0;
-  --t2:#8a9ab8;
-  --t3:#566480;
+  /* Main - LIGHT theme */
+  --bg:#f5f6fa;
+  --s1:#ffffff;
+  --s2:#f8f9fc;
+  --s3:#eef0f7;
+  --b1:#e4e7ef;
+  --b2:#d1d6e3;
+  --b3:#aab2c5;
+  --t1:#1a2138;
+  --t2:#525d7a;
+  --t3:#8a93ab;
   
   /* Accents */
   --primary:#5b5cff;
   --primary-2:#4948d6;
-  --primary-light:#7d7eff;
+  --primary-soft:#eef0ff;
   --purple:#a855f7;
   --cyan:#06b6d4;
   --pink:#ec4899;
   --red:#ef4444;
+  --red-soft:#fef2f2;
   --org:#f97316;
   --yel:#eab308;
+  --yel-soft:#fefce8;
   --grn:#22c55e;
+  --grn-soft:#f0fdf4;
   --teal:#14b8a6;
   
   --r:8px;
   --r-sm:6px;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
-  --shadow:0 2px 8px rgba(0,0,0,.06);
-  --shadow-lg:0 8px 24px rgba(0,0,0,.08);
+  --shadow-sm:0 1px 2px rgba(15,20,36,.04);
+  --shadow:0 2px 8px rgba(15,20,36,.06);
+  --shadow-lg:0 8px 24px rgba(15,20,36,.08);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.6;min-height:100vh;}
-[lang=ar]{font-family:'IBM Plex Sans Arabic',sans-serif;}
 
 /* ═══ APP LAYOUT ═══ */
 .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
 
-/* ═══ SIDEBAR ═══ */
+/* ═══ SIDEBAR (DARK) ═══ */
 .sb{background:var(--sb-bg);border-inline-end:1px solid var(--sb-border);padding:0;display:flex;flex-direction:column;}
 .sb-brand{padding:18px 20px;border-bottom:1px solid var(--sb-border);}
-.sb-logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:700;box-shadow:0 4px 12px rgba(91,92,255,.25);}
+.sb-logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:700;box-shadow:0 4px 14px rgba(91,92,255,.4);}
 .sb-name{margin-top:9px;font-size:13px;font-weight:600;color:var(--sb-text);}
 .sb-tag{font-size:10.5px;color:var(--sb-text-3);}
 
 .sb-nav{flex:1;padding:14px 11px;overflow-y:auto;}
-.sb-section{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--sb-text-3);padding:8px 11px 6px;}
+.sb-section{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--sb-text-3);padding:8px 11px 6px;display:flex;justify-content:space-between;align-items:center;}
+.sb-section-action{cursor:pointer;color:var(--primary);font-size:14px;font-weight:700;padding:0 4px;}
+.sb-section-action:hover{color:#7d7eff;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:var(--r-sm);cursor:pointer;color:var(--sb-text-2);font-size:12.5px;font-weight:500;transition:all .15s;margin-bottom:1px;}
 .nav-item:hover{background:var(--sb-hover);color:var(--sb-text);}
-.nav-item.on{background:var(--sb-active);color:var(--primary);}
-.nav-item.on .nav-icon{background:var(--primary);color:white;}
+.nav-item.on{background:var(--sb-active);color:#fff;}
+.nav-item.on .nav-icon{background:linear-gradient(135deg,var(--primary),var(--purple));color:white;}
 .nav-icon{width:26px;height:26px;border-radius:6px;background:var(--sb-card);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sb-text-2);transition:all .15s;flex-shrink:0;}
-.nav-item:hover .nav-icon{background:var(--sb-bg);}
 
-.proj-list{padding:0 4px;}
-.pi{padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;margin-bottom:2px;transition:all .12s;border:1px solid transparent;}
+.portfolio-group{margin-bottom:6px;}
+.pg-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-radius:var(--r-sm);cursor:pointer;color:var(--sb-text-2);transition:all .15s;}
+.pg-hdr:hover{background:var(--sb-hover);}
+.pg-hdr.active{background:var(--sb-card);color:var(--sb-text);}
+.pg-hdr-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.pg-icon{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.pg-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pg-count{font-size:10.5px;color:var(--sb-text-3);background:var(--sb-bg);padding:1px 7px;border-radius:10px;flex-shrink:0;}
+.pg-toggle{font-size:9px;color:var(--sb-text-3);transition:transform .2s;}
+.pg-toggle.open{transform:rotate(90deg);}
+[dir=rtl] .pg-toggle{transform:rotate(180deg);}
+[dir=rtl] .pg-toggle.open{transform:rotate(90deg);}
+.pg-actions{display:none;gap:4px;margin-inline-end:6px;}
+.pg-hdr:hover .pg-actions{display:flex;}
+.pg-act-btn{background:transparent;border:none;color:var(--sb-text-3);cursor:pointer;font-size:11px;padding:2px 5px;border-radius:3px;}
+.pg-act-btn:hover{background:var(--sb-bg);color:var(--sb-text);}
+
+.proj-list{padding:2px 0 4px 4px;display:none;}
+.proj-list.open{display:block;}
+.pi{padding:7px 11px 7px 22px;border-radius:var(--r-sm);cursor:pointer;margin-bottom:2px;transition:all .12s;border:1px solid transparent;position:relative;}
+.pi::before{content:'';position:absolute;inset-inline-start:8px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:var(--sb-text-3);opacity:.4;}
 .pi:hover{background:var(--sb-hover);}
-.pi.on{background:var(--sb-card);border-color:var(--sb-border);box-shadow:var(--shadow-sm);}
-.pi-n{font-size:12px;font-weight:500;color:var(--sb-text);margin-bottom:2px;}
+.pi.on{background:var(--sb-active);}
+.pi.on::before{background:var(--primary);opacity:1;}
+.pi-n{font-size:12px;font-weight:500;color:var(--sb-text-2);margin-bottom:1px;}
+.pi.on .pi-n{color:var(--sb-text);}
 .pi-s{font-size:10px;color:var(--sb-text-3);}
 
-.sb-footer{padding:12px 14px;border-top:1px solid var(--sb-border);background:var(--sb-card);}
+.empty-portfolio{padding:14px 11px;text-align:center;font-size:11px;color:var(--sb-text-3);}
+
+.sb-footer{padding:12px 14px;border-top:1px solid var(--sb-border);background:rgba(0,0,0,.2);}
 .api-row{display:flex;align-items:center;gap:7px;}
-.cdot{width:7px;height:7px;border-radius:50%;background:#cbd2e0;flex-shrink:0;}
+.cdot{width:7px;height:7px;border-radius:50%;background:#3a4566;flex-shrink:0;}
 .cdot.on{background:var(--grn);box-shadow:0 0 0 3px rgba(34,197,94,.18);}
-.api-stat{font-size:10.5px;color:var(--sb-text-2);}
+.api-stat{font-size:10.5px;color:var(--sb-text-3);}
 .api-stat.on{color:var(--grn);}
 
-/* ═══ MAIN AREA ═══ */
-.main{padding:24px 28px;overflow-y:auto;}
-.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
-.search-bar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:50px;padding:7px 16px;width:340px;}
+/* ═══ MAIN AREA (LIGHT) ═══ */
+.main{padding:24px 28px;overflow-y:auto;background:var(--bg);}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px;}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:50px;padding:8px 16px;width:340px;box-shadow:var(--shadow-sm);}
+.search-bar:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.1);}
 .search-bar input{background:transparent;border:none;outline:none;color:var(--t1);font-family:inherit;font-size:12.5px;flex:1;}
 .search-bar input::placeholder{color:var(--t3);}
 .top-actions{display:flex;align-items:center;gap:10px;}
 
 .greeting{margin-bottom:18px;}
-.greet-line{font-size:18px;font-weight:600;color:var(--t1);margin-bottom:3px;}
+.greet-line{font-size:19px;font-weight:700;color:var(--t1);margin-bottom:3px;}
 .greet-sub{font-size:12px;color:var(--t3);}
 
 /* ═══ BUTTONS ═══ */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b2);transition:all .15s;font-family:inherit;white-space:nowrap;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 15px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b1);background:var(--s1);color:var(--t1);transition:all .15s;font-family:inherit;white-space:nowrap;}
+.btn:hover{border-color:var(--b3);}
 .btn-p{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);border-color:transparent;color:white;box-shadow:0 4px 12px rgba(91,92,255,.25);}
 .btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(91,92,255,.35);}
 .btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
-.btn-g{background:transparent;color:var(--t2);}
+.btn-g{background:transparent;color:var(--t2);border-color:var(--b1);}
 .btn-g:hover{background:var(--s2);color:var(--t1);}
-.btn-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.22);color:var(--grn);}
-.btn-ok:hover{background:rgba(34,197,94,.14);}
-.btn-del{background:transparent;border-color:rgba(239,68,68,.22);color:var(--red);}
-.btn-del:hover{background:rgba(239,68,68,.06);}
-.btn-warn{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.22);color:var(--yel);}
+.btn-ok{background:var(--grn-soft);border-color:rgba(34,197,94,.25);color:var(--grn);}
+.btn-ok:hover{background:rgba(34,197,94,.12);}
+.btn-del{background:transparent;border-color:rgba(239,68,68,.25);color:var(--red);}
+.btn-del:hover{background:var(--red-soft);}
+.btn-warn{background:var(--yel-soft);border-color:rgba(234,179,8,.25);color:#a16207;}
 
 /* ═══ CARDS ═══ */
-.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;}
-.card-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:12px;}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;box-shadow:var(--shadow-sm);}
+.card-t{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:12px;}
 
 /* ═══ STATS ═══ */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
-.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),var(--purple));opacity:.5;}
+.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:15px 17px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--purple));}
 .stat-card.red::before{background:linear-gradient(90deg,var(--red),var(--org));}
 .stat-card.green::before{background:linear-gradient(90deg,var(--grn),var(--teal));}
 .stat-card.cyan::before{background:linear-gradient(90deg,var(--cyan),var(--primary));}
 .stat-card.pink::before{background:linear-gradient(90deg,var(--pink),var(--purple));}
-.stat-icon{width:34px;height:34px;border-radius:var(--r-sm);background:rgba(91,92,255,.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:9px;}
-.stat-card.red .stat-icon{background:rgba(239,68,68,.1);color:var(--red);}
-.stat-card.green .stat-icon{background:rgba(34,197,94,.1);color:var(--grn);}
-.stat-card.cyan .stat-icon{background:rgba(6,182,212,.1);color:var(--cyan);}
-.stat-card.pink .stat-icon{background:rgba(236,72,153,.1);color:var(--pink);}
-.stat-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:5px;}
-.stat-v{font-size:23px;font-weight:700;color:var(--t1);line-height:1.1;}
-.stat-sub{font-size:10.5px;color:var(--t3);margin-top:3px;}
+.stat-icon{width:36px;height:36px;border-radius:var(--r-sm);background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px;}
+.stat-card.red .stat-icon{background:var(--red-soft);color:var(--red);}
+.stat-card.green .stat-icon{background:var(--grn-soft);color:var(--grn);}
+.stat-card.cyan .stat-icon{background:#ecfeff;color:var(--cyan);}
+.stat-card.pink .stat-icon{background:#fdf2f8;color:var(--pink);}
+.stat-l{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;}
+.stat-v{font-size:24px;font-weight:700;color:var(--t1);line-height:1.1;}
+.stat-sub{font-size:10.5px;color:var(--t3);margin-top:4px;}
 
 /* ═══ TABS ═══ */
-.tabs{display:flex;gap:2px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:3px;margin-bottom:18px;flex-wrap:wrap;}
+.tabs{display:flex;gap:3px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:4px;margin-bottom:18px;flex-wrap:wrap;box-shadow:var(--shadow-sm);}
 .tab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;border-radius:var(--r-sm);transition:all .15s;}
-.tab:hover{color:var(--t1);background:var(--s2);}
-.tab.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);color:white;box-shadow:0 2px 8px rgba(91,92,255,.25);}
+.tab:hover{color:var(--t1);background:var(--s3);}
+.tab.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);color:white;box-shadow:0 2px 8px rgba(91,92,255,.3);}
 .pane{display:none;}
 .pane.on{display:block;}
 
 /* ═══ FORMS ═══ */
 .fg{display:flex;flex-direction:column;gap:5px;}
 .fl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;}
-.fi,.fs,.fta{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);padding:8px 11px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;transition:border .15s;}
-.fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.12);}
+.fi,.fs,.fta{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:8px 11px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;transition:all .15s;}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.1);}
 .fta{resize:vertical;min-height:70px;}
-.fs option{background:var(--s2);}
+.fs option{background:var(--s1);color:var(--t1);}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
 .fgrid .full{grid-column:1/-1;}
 
 /* ═══ TABLE ═══ */
-.tw{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;overflow-x:auto;background:var(--s1);}
+.tw{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;overflow-x:auto;background:var(--s1);box-shadow:var(--shadow-sm);}
 .rt{width:100%;border-collapse:collapse;font-size:11.5px;}
-.rt th{background:var(--s2);padding:10px 12px;text-align:start;font-weight:600;color:var(--t3);font-size:10px;border-bottom:1px solid var(--b1);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
-.rt td{padding:11px 12px;border-bottom:1px solid var(--b1);vertical-align:middle;}
+.rt th{background:var(--s2);padding:11px 13px;text-align:start;font-weight:700;color:var(--t3);font-size:10px;border-bottom:1px solid var(--b1);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
+.rt td{padding:11px 13px;border-bottom:1px solid var(--b1);vertical-align:middle;color:var(--t1);}
 .rt tr:last-child td{border-bottom:none;}
-.rt tr:hover td{background:rgba(91,92,255,.03);}
+.rt tr:hover td{background:var(--s2);}
 .rt .thr td:first-child{border-inline-start:3px solid var(--red);}
 .rt .opp td:first-child{border-inline-start:3px solid var(--teal);}
 
 /* ═══ BADGES ═══ */
-.bdg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.03em;}
-.b-thr{background:rgba(239,68,68,.12);color:var(--red);}
-.b-opp{background:rgba(20,184,166,.12);color:var(--teal);}
-.b-h{background:rgba(239,68,68,.12);color:var(--red);}
-.b-m{background:rgba(234,179,8,.12);color:var(--yel);}
-.b-l{background:rgba(34,197,94,.12);color:var(--grn);}
-.cb{padding:3px 8px;border-radius:4px;font-size:10.5px;background:var(--s3);color:var(--t2);}
-.resp{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:500;}
-.r-Avoid,.r-تجنب{background:rgba(239,68,68,.1);color:var(--red);}
-.r-Mitigate,.r-تخفيف{background:rgba(234,179,8,.1);color:var(--yel);}
-.r-Transfer,.r-نقل{background:rgba(91,92,255,.1);color:var(--primary);}
-.r-Accept,.r-قبول{background:rgba(138,154,184,.1);color:var(--t2);}
-.r-Escalate,.r-تصعيد{background:rgba(168,85,247,.1);color:var(--purple);}
-.r-Exploit,.r-استغلال{background:rgba(20,184,166,.1);color:var(--teal);}
-.r-Enhance,.r-تعزيز{background:rgba(34,197,94,.1);color:var(--grn);}
-.r-Share,.r-مشاركة{background:rgba(6,182,212,.1);color:var(--cyan);}
+.bdg{display:inline-block;padding:3px 9px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.03em;}
+.b-thr{background:var(--red-soft);color:var(--red);}
+.b-opp{background:#ccfbf1;color:#0d9488;}
+.b-h{background:var(--red-soft);color:var(--red);}
+.b-m{background:var(--yel-soft);color:#a16207;}
+.b-l{background:var(--grn-soft);color:var(--grn);}
+.cb{padding:3px 9px;border-radius:5px;font-size:10.5px;background:var(--s3);color:var(--t2);}
+.resp{padding:3px 9px;border-radius:5px;font-size:10px;font-weight:500;}
+.r-Avoid,.r-تجنب{background:var(--red-soft);color:var(--red);}
+.r-Mitigate,.r-تخفيف{background:var(--yel-soft);color:#a16207;}
+.r-Transfer,.r-نقل{background:var(--primary-soft);color:var(--primary);}
+.r-Accept,.r-قبول{background:#f3f4f6;color:var(--t2);}
+.r-Escalate,.r-تصعيد{background:#faf5ff;color:var(--purple);}
+.r-Exploit,.r-استغلال{background:#ccfbf1;color:#0d9488;}
+.r-Enhance,.r-تعزيز{background:var(--grn-soft);color:var(--grn);}
+.r-Share,.r-مشاركة{background:#ecfeff;color:var(--cyan);}
 
 .ic{font-size:10.5px;display:flex;flex-direction:column;gap:3px;min-width:80px;}
 .ir{display:flex;align-items:center;gap:5px;}
-.ib{width:36px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.ib{width:36px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden;}
 .ibf{height:100%;border-radius:2px;}
 
 /* ═══ DROPZONE ═══ */
-.drop{border:2px dashed var(--b3);border-radius:var(--r);padding:30px 20px;text-align:center;cursor:pointer;position:relative;background:var(--s1);transition:all .2s;}
-.drop:hover{border-color:var(--primary);background:rgba(91,92,255,.025);}
+.drop{border:2px dashed var(--b2);border-radius:var(--r);padding:34px 22px;text-align:center;cursor:pointer;position:relative;background:var(--s1);transition:all .2s;box-shadow:var(--shadow-sm);}
+.drop:hover{border-color:var(--primary);background:var(--primary-soft);}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .drop-icon{font-size:32px;color:var(--t3);margin-bottom:8px;}
 .drop-t{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:3px;}
 .drop-s{font-size:11px;color:var(--t3);}
 
 .fg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-top:13px;}
-.fcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:11px;position:relative;transition:all .15s;}
+.fcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:11px;position:relative;transition:all .15s;box-shadow:var(--shadow-sm);}
 .fcard:hover{border-color:var(--b3);}
 .fext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:3px;margin-bottom:6px;display:inline-block;}
-.fx-pdf{background:rgba(239,68,68,.1);color:var(--red);}
-.fx-xl{background:rgba(34,197,94,.1);color:var(--grn);}
-.fx-img{background:rgba(91,92,255,.1);color:var(--primary);}
-.fx-doc{background:rgba(20,184,166,.1);color:var(--teal);}
-.fx-txt{background:rgba(138,154,184,.1);color:var(--t2);}
+.fx-pdf{background:var(--red-soft);color:var(--red);}
+.fx-xl{background:var(--grn-soft);color:var(--grn);}
+.fx-img{background:var(--primary-soft);color:var(--primary);}
+.fx-doc{background:#ccfbf1;color:#0d9488;}
+.fx-txt{background:#f3f4f6;color:var(--t2);}
 .fn{font-size:11px;font-weight:500;word-break:break-all;margin-bottom:2px;color:var(--t1);}
 .fsz{font-size:10px;color:var(--t3);}
 .frem{position:absolute;top:6px;inset-inline-end:6px;width:18px;height:18px;background:var(--s2);border:none;border-radius:4px;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;}
-.frem:hover{background:rgba(239,68,68,.15);color:var(--red);}
+.frem:hover{background:var(--red-soft);color:var(--red);}
 
-/* ═══ PILLS (UPDATES) ═══ */
+/* ═══ PILLS ═══ */
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;}
-.pill{padding:5px 13px;border-radius:50px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:transparent;font-family:inherit;transition:all .15s;}
+.pill{padding:5px 13px;border-radius:50px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--b1);color:var(--t3);background:var(--s1);font-family:inherit;transition:all .15s;}
 .pill:hover{border-color:var(--primary);color:var(--primary);}
 .pill.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);border-color:transparent;color:white;}
 
@@ -218,45 +247,45 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 .tl::before{content:'';position:absolute;inset-inline-start:8px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--primary),var(--purple));opacity:.3;}
 .tli{position:relative;margin-bottom:14px;}
 .tld{position:absolute;inset-inline-start:-22px;top:5px;width:14px;height:14px;border-radius:50%;border:3px solid var(--bg);}
-.tlc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:11px 13px;}
+.tlc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:11px 13px;box-shadow:var(--shadow-sm);}
 .tlh{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .tlt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);}
 .tld2{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;}
 .tlb{font-size:12px;color:var(--t2);line-height:1.55;}
-.nra{margin-top:7px;padding:7px 10px;background:rgba(91,92,255,.06);border:1px solid rgba(91,92,255,.15);border-radius:5px;font-size:11.5px;color:var(--primary-light);}
+.nra{margin-top:7px;padding:7px 10px;background:var(--primary-soft);border:1px solid rgba(91,92,255,.2);border-radius:5px;font-size:11.5px;color:var(--primary);}
 
 /* ═══ TOLERANCE ═══ */
-.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:11px;}
+.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:11px;box-shadow:var(--shadow-sm);}
 .tol-t{font-size:13px;font-weight:600;margin-bottom:11px;color:var(--t1);}
 .tg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
-.tlv{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--s2);border-radius:5px;border:1px solid var(--b1);margin-bottom:5px;}
-.tlv input{background:transparent;border:none;color:var(--t2);font-family:inherit;font-size:12px;flex:1;outline:none;}
+.tlv{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--s2);border-radius:5px;border:1px solid var(--b1);margin-bottom:4px;}
+.tlv input{background:transparent;border:none;color:var(--t1);font-family:inherit;font-size:12px;flex:1;outline:none;}
 .tlv-l{font-size:10.5px;font-weight:700;min-width:100px;white-space:nowrap;}
 
 /* ═══ MODALS ═══ */
-.modal-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.78);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(15,20,36,.6);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-ov.on{display:flex;}
-.modal{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:22px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.modal{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:24px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
 .modal-t{font-size:15px;font-weight:700;margin-bottom:15px;color:var(--t1);}
 
 /* ═══ LOADING ═══ */
-.load-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(6px);}
+.load-ov{display:none;position:fixed;inset:0;background:rgba(15,20,36,.5);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(6px);}
 .load-ov.on{display:flex;}
-.spin{width:36px;height:36px;border:3px solid var(--b2);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite;}
+.spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg);}}
-.load-t{color:var(--t2);font-size:12.5px;}
+.load-t{color:#fff;font-size:13px;font-weight:500;}
 
 /* ═══ VALIDATION ═══ */
-.val-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.93);z-index:500;overflow-y:auto;padding:18px;backdrop-filter:blur(4px);}
+.val-ov{display:none;position:fixed;inset:0;background:rgba(15,20,36,.7);z-index:500;overflow-y:auto;padding:18px;backdrop-filter:blur(4px);}
 .val-ov.on{display:block;}
-.vbox{max-width:880px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:20px;box-shadow:var(--shadow-lg);}
+.vbox{max-width:880px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:22px;box-shadow:var(--shadow-lg);}
 .vhdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--b1);gap:10px;}
-.vc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r-sm);padding:13px;margin-bottom:9px;transition:all .15s;}
-.vc.app2{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.025);}
-.vc.rej{opacity:.3;border-style:dashed;}
+.vc{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);padding:13px;margin-bottom:9px;transition:all .15s;}
+.vc.app2{border-color:rgba(34,197,94,.4);background:var(--grn-soft);}
+.vc.rej{opacity:.4;border-style:dashed;}
 .vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;gap:10px;}
 .vca{display:flex;gap:5px;flex-shrink:0;}
-.chip{padding:2px 7px;border-radius:4px;font-size:10.5px;background:var(--s2);color:var(--t2);}
+.chip{padding:2px 8px;border-radius:4px;font-size:10.5px;background:var(--s3);color:var(--t2);}
 
 /* ═══ DASHBOARD ═══ */
 .dash-row{display:grid;gap:12px;margin-bottom:12px;}
@@ -264,68 +293,68 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 .dash-2{grid-template-columns:1.6fr 1fr;}
 .dash-21{grid-template-columns:1.4fr 1fr;}
 .exp-tbl{width:100%;border-collapse:collapse;font-size:11.5px;}
-.exp-tbl th{padding:7px 10px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b1);}
-.exp-tbl td{padding:8px 10px;border-bottom:1px solid var(--b1);}
+.exp-tbl th{padding:8px 10px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b1);}
+.exp-tbl td{padding:9px 10px;border-bottom:1px solid var(--b1);}
 .exp-tbl tr:last-child td{border-bottom:none;}
-.rs-bar{height:6px;border-radius:3px;background:var(--b1);overflow:hidden;}
+.rs-bar{height:6px;border-radius:3px;background:var(--s3);overflow:hidden;}
 .rs-fill{height:100%;border-radius:3px;}
 
 /* ═══ EARLY WARNING ═══ */
-.ew-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:15px;margin-bottom:13px;}
+.ew-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;margin-bottom:13px;box-shadow:var(--shadow-sm);}
 .ew-sec-t{font-size:13px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:8px;color:var(--t1);}
 .ew-card{border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;}
-.ew-h{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04);}
-.ew-m{border-color:rgba(234,179,8,.3);background:rgba(234,179,8,.04);}
-.ew-l{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.04);}
+.ew-h{border-color:rgba(239,68,68,.3);background:var(--red-soft);}
+.ew-m{border-color:rgba(234,179,8,.35);background:var(--yel-soft);}
+.ew-l{border-color:rgba(34,197,94,.3);background:var(--grn-soft);}
 .wbdg{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;}
-.wb1{background:rgba(239,68,68,.12);color:var(--red);}
-.wb2{background:rgba(234,179,8,.12);color:var(--yel);}
-.wb3{background:rgba(138,154,184,.12);color:var(--t2);}
+.wb1{background:var(--red-soft);color:var(--red);}
+.wb2{background:var(--yel-soft);color:#a16207;}
+.wb3{background:#f3f4f6;color:var(--t2);}
 
 .trend-form{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);padding:14px;margin-bottom:13px;}
 .ind-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
 .ind-item{display:flex;flex-direction:column;gap:4px;}
 .ind-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);}
 .ind-inp{background:var(--s1);border:1px solid var(--b1);border-radius:5px;padding:7px 10px;color:var(--t1);font-family:inherit;font-size:12px;outline:none;width:100%;}
-.ind-inp:focus{border-color:var(--primary);}
+.ind-inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.1);}
 
-.trend-alert{padding:11px 13px;border-radius:var(--r-sm);font-size:12px;margin-bottom:9px;border:1px solid;}
-.ta-r{background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.22);color:var(--red);}
-.ta-y{background:rgba(234,179,8,.05);border-color:rgba(234,179,8,.22);color:var(--yel);}
-.ta-g{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.22);color:var(--grn);}
+.trend-alert{padding:12px 14px;border-radius:var(--r-sm);font-size:12px;margin-bottom:9px;border:1px solid;}
+.ta-r{background:var(--red-soft);border-color:rgba(239,68,68,.3);color:#991b1b;}
+.ta-y{background:var(--yel-soft);border-color:rgba(234,179,8,.3);color:#a16207;}
+.ta-g{background:var(--grn-soft);border-color:rgba(34,197,94,.3);color:#166534;}
 
 /* ═══ EDIT MODAL ═══ */
 .edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .edit-full{grid-column:1/-1;}
 
 /* ═══ CONTACTS ═══ */
-.contact-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
-.contact-name{font-size:12.5px;font-weight:500;color:var(--t1);}
+.contact-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:var(--shadow-sm);}
+.contact-name{font-size:12.5px;font-weight:600;color:var(--t1);}
 .contact-det{font-size:11px;color:var(--t3);margin-top:2px;}
 
 /* ═══ NOTIFICATIONS ═══ */
-.msg-card{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:9px;}
+.msg-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:9px;}
 .msg-hdr{display:flex;justify-content:space-between;margin-bottom:7px;}
 .msg-body{font-size:11.5px;color:var(--t2);line-height:1.65;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;}
 
 /* ═══ EMPTY STATE ═══ */
 .empty{text-align:center;padding:48px 22px;}
-.empty-icon{font-size:42px;color:var(--t3);margin-bottom:12px;opacity:.5;}
+.empty-icon{font-size:42px;color:var(--t3);margin-bottom:12px;opacity:.6;}
 .et{font-size:13px;font-weight:500;color:var(--t2);margin-bottom:5px;}
 .es{font-size:11.5px;color:var(--t3);}
 
 /* ═══ ALERTS ═══ */
-.ai{padding:10px 13px;border-radius:var(--r-sm);font-size:12px;margin-bottom:13px;display:flex;gap:8px;}
-.ai-i{background:rgba(91,92,255,.06);border:1px solid rgba(91,92,255,.16);color:var(--primary-light);}
-.ai-ok{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.16);color:var(--grn);}
-.ai-w{background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.16);color:var(--yel);}
+.ai{padding:11px 14px;border-radius:var(--r-sm);font-size:12px;margin-bottom:13px;display:flex;gap:8px;}
+.ai-i{background:var(--primary-soft);border:1px solid rgba(91,92,255,.2);color:#3a3aa8;}
+.ai-ok{background:var(--grn-soft);border:1px solid rgba(34,197,94,.2);color:#166534;}
+.ai-w{background:var(--yel-soft);border:1px solid rgba(234,179,8,.25);color:#a16207;}
 
 /* ═══ MISC ═══ */
 .sep{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);display:flex;align-items:center;gap:8px;margin:14px 0 9px;}
 .sep::after{content:'';flex:1;height:1px;background:var(--b1);}
 
-.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding:14px 16px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);}
-.ph-n{font-size:17px;font-weight:700;color:var(--t1);margin-bottom:3px;}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding:16px 18px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);box-shadow:var(--shadow-sm);}
+.ph-n{font-size:18px;font-weight:700;color:var(--t1);margin-bottom:3px;}
 .ph-s{font-size:11.5px;color:var(--t3);}
 
 .ebar{display:flex;gap:7px;align-items:center;padding:11px 0;border-top:1px solid var(--b1);margin-top:16px;}
@@ -336,13 +365,23 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 .sb ::-webkit-scrollbar-thumb{background:var(--sb-border);}
 
 /* ═══ PORTFOLIO ═══ */
-.portfolio-hdr{margin-bottom:18px;}
-.portfolio-tbl-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;}
-.health-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:50px;font-size:10.5px;font-weight:600;}
-.hp-good{background:rgba(34,197,94,.12);color:var(--grn);}
-.hp-warn{background:rgba(234,179,8,.12);color:var(--yel);}
-.hp-bad{background:rgba(239,68,68,.12);color:var(--red);}
-.hp-none{background:rgba(138,154,184,.1);color:var(--t3);}
+.health-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:10.5px;font-weight:600;}
+.hp-good{background:var(--grn-soft);color:var(--grn);}
+.hp-warn{background:var(--yel-soft);color:#a16207;}
+.hp-bad{background:var(--red-soft);color:var(--red);}
+.hp-none{background:#f3f4f6;color:var(--t3);}
+
+.portfolio-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
+.portfolio-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--b3);}
+.portfolio-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin-bottom:18px;}
+.pc-color-bar{position:absolute;top:0;left:0;right:0;height:4px;}
+.pc-name{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.pc-icon{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.pc-desc{font-size:11.5px;color:var(--t3);margin-bottom:11px;line-height:1.5;}
+.pc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:10px;border-top:1px solid var(--b1);}
+.pc-stat{text-align:center;}
+.pc-stat-v{font-size:16px;font-weight:700;color:var(--t1);}
+.pc-stat-l{font-size:9.5px;color:var(--t3);text-transform:uppercase;}
 </style>
 </head>
 <body>
@@ -402,11 +441,49 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
   </div>
 </div>
 
+<!-- PORTFOLIO MODAL -->
+<div class="modal-ov" id="portfModal">
+  <div class="modal" style="width:520px">
+    <div class="modal-t" id="pfModalTitle">محفظة جديدة</div>
+    <div class="fgrid">
+      <div class="fg full"><label class="fl">اسم المحفظة *</label><input type="text" class="fi" id="pf_name" placeholder="محفظة المشاريع السكنية 2026"/></div>
+      <div class="fg full"><label class="fl">الوصف</label><textarea class="fta" id="pf_desc" placeholder="وصف موجز للمحفظة..."></textarea></div>
+      <div class="fg"><label class="fl">اللون المميز</label>
+        <div style="display:flex;gap:7px;flex-wrap:wrap" id="pf_colors"></div>
+        <input type="hidden" id="pf_color" value="#5b5cff"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closePortfModal()">إلغاء</button>
+      <button class="btn btn-p" onclick="savePortfolio()" id="pf_save_btn">إنشاء المحفظة</button>
+    </div>
+  </div>
+</div>
+
+<!-- PORTFOLIO MODAL -->
+<div class="modal-ov" id="portfModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-t">محفظة جديدة</div>
+    <div class="fgrid" style="grid-template-columns:1fr">
+      <div class="fg"><label class="fl">اسم المحفظة *</label><input type="text" class="fi" id="pf_n" placeholder="مثال: مشاريع المنطقة الشرقية"/></div>
+      <div class="fg"><label class="fl">الوصف</label><textarea class="fta" id="pf_d" placeholder="وصف موجز عن المحفظة"></textarea></div>
+      <div class="fg"><label class="fl">المسؤول</label><input type="text" class="fi" id="pf_o" placeholder="مدير المحفظة"/></div>
+    </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closePortfModal()">إلغاء</button>
+      <button class="btn btn-p" onclick="savePortfolio()">إنشاء المحفظة</button>
+    </div>
+  </div>
+</div>
+
 <!-- PROJECT MODAL -->
 <div class="modal-ov" id="projModal">
   <div class="modal">
     <div class="modal-t">مشروع جديد</div>
     <div class="fgrid">
+      <div class="fg full"><label class="fl">المحفظة</label>
+        <select class="fs" id="np_pf"></select>
+      </div>
       <div class="fg"><label class="fl">اسم المشروع *</label><input type="text" class="fi" id="np_n"/></div>
       <div class="fg"><label class="fl">رقم العقد</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
       <div class="fg"><label class="fl">قيمة العقد (ريال)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
@@ -431,6 +508,7 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
       </div>
       <div class="fg"><label class="fl">تاريخ البداية</label><input type="date" class="fi" id="np_s"/></div>
       <div class="fg"><label class="fl">تاريخ الإنجاز</label><input type="date" class="fi" id="np_e"/></div>
+      <div class="fg full"><label class="fl">المحفظة *</label><select class="fs" id="np_pf"></select></div>
       <div class="fg full"><label class="fl">الوصف</label><textarea class="fta" id="np_d"></textarea></div>
     </div>
     <div style="display:flex;gap:7px;justify-content:flex-end">
@@ -451,24 +529,26 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
     </div>
 
     <div class="sb-nav">
-      <div class="sb-section">العرض الرئيسي</div>
-      <div class="nav-item on" id="nav-portfolio" onclick="goPortfolio()">
-        <div class="nav-icon">📊</div>
-        <div>المحفظة الكاملة</div>
+      <div class="nav-item on" id="nav-home" onclick="goHome()">
+        <div class="nav-icon">🏠</div>
+        <div>الرئيسية</div>
       </div>
-      <div class="nav-item" id="nav-new" onclick="openProjModal()">
+      <div class="nav-item" onclick="openProjModal()">
         <div class="nav-icon">＋</div>
         <div>مشروع جديد</div>
       </div>
 
-      <div class="sb-section" style="margin-top:14px">المشاريع</div>
-      <div class="proj-list" id="projList"><div style="padding:10px;font-size:10.5px;color:var(--sb-text-3);text-align:center">جاري التحميل...</div></div>
+      <div class="sb-section">
+        <span>المحافظ</span>
+        <span class="sb-section-action" onclick="openPortfModal()" title="محفظة جديدة">＋</span>
+      </div>
+      <div id="portfolioList"></div>
     </div>
 
     <div class="sb-footer">
       <div class="fg" style="margin-bottom:8px">
         <label style="font-size:10px;color:var(--sb-text-3);font-weight:600">مفتاح Claude API</label>
-        <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()" style="background:var(--sb-bg);border:1px solid var(--sb-border);border-radius:5px;padding:6px 9px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%"/>
+        <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()" style="background:var(--sb-bg);border:1px solid var(--sb-border);border-radius:5px;padding:7px 10px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%"/>
       </div>
       <div class="api-row">
         <div class="cdot" id="cdot"></div>
@@ -479,27 +559,44 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 
   <!-- MAIN -->
   <main class="main">
-    <!-- ══ PORTFOLIO VIEW ══ -->
-    <div id="portfolioView">
+    <!-- HOME (ALL PORTFOLIOS) -->
+    <div id="homeView">
       <div class="top-bar">
         <div class="search-bar">
           <span style="color:var(--t3)">⌕</span>
-          <input type="text" placeholder="ابحث في المشاريع..." id="searchProj" oninput="filterProjs(this.value)"/>
+          <input type="text" placeholder="ابحث في المشاريع والمحافظ..." id="searchInput" oninput="filterAll(this.value)"/>
         </div>
         <div class="top-actions">
-          <button class="btn btn-p" onclick="openProjModal()">+ مشروع جديد</button>
+          <button class="btn btn-g" onclick="openPortfModal()">+ محفظة</button>
+          <button class="btn btn-p" onclick="openProjModal()">+ مشروع</button>
         </div>
       </div>
 
       <div class="greeting">
-        <div class="greet-line">لوحة محفظة المشاريع 👋</div>
-        <div class="greet-sub">نظرة شاملة على جميع المخاطر في المحفظة</div>
+        <div class="greet-line">مرحباً بك 👋</div>
+        <div class="greet-sub">نظرة شاملة على جميع محافظ المشاريع</div>
       </div>
 
+      <div id="homeContent"></div>
+    </div>
+
+    <!-- PORTFOLIO VIEW -->
+    <div id="portfolioView" style="display:none">
+      <div class="top-bar">
+        <div class="search-bar">
+          <span style="color:var(--t3)">⌕</span>
+          <input type="text" placeholder="ابحث في مشاريع المحفظة..." id="searchProj" oninput="filterPortfolioProjs(this.value)"/>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-g" onclick="editCurrentPortfolio()">⚙ تعديل</button>
+          <button class="btn btn-del" onclick="delCurrentPortfolio()">حذف المحفظة</button>
+          <button class="btn btn-p" onclick="openProjModal()">+ مشروع</button>
+        </div>
+      </div>
       <div id="portfolioContent"></div>
     </div>
 
-    <!-- ══ PROJECT VIEW ══ -->
+    <!-- PROJECT VIEW -->
     <div id="projView" style="display:none">
       <div class="ph">
         <div>
@@ -546,7 +643,6 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
         <div class="tab" onclick="ST('contacts')" data-tab="contacts">👥 جهات الاتصال</div>
       </div>
 
-      <!-- FILES PANE -->
       <div class="pane on" id="pane-files">
         <div class="drop">
           <input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
@@ -561,41 +657,14 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
         </div>
       </div>
 
-      <!-- DASHBOARD PANE -->
-      <div class="pane" id="pane-dash">
-        <div id="dashContent">
-          <div class="empty">
-            <div class="empty-icon">📊</div>
-            <div class="et">قم بالتحليل أولاً لعرض لوحة التحكم</div>
-          </div>
-        </div>
-      </div>
+      <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="empty-icon">📊</div><div class="et">قم بالتحليل أولاً لعرض لوحة التحكم</div></div></div></div>
+      <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="empty-icon">📋</div><div class="et">لا يوجد سجل مخاطر بعد</div></div></div></div>
+      <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="empty-icon">🚨</div><div class="et">قم بالتحليل أولاً لعرض الإنذارات</div></div></div></div>
 
-      <!-- REGISTER PANE -->
-      <div class="pane" id="pane-reg">
-        <div id="regContent">
-          <div class="empty">
-            <div class="empty-icon">📋</div>
-            <div class="et">لا يوجد سجل مخاطر بعد</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- EARLY WARNING PANE -->
-      <div class="pane" id="pane-warn">
-        <div id="warnContent">
-          <div class="empty">
-            <div class="empty-icon">🚨</div>
-            <div class="et">قم بالتحليل أولاً لعرض الإنذارات</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- UPDATES PANE -->
       <div class="pane" id="pane-upd">
         <div class="card" style="margin-bottom:15px">
           <div class="card-t">إضافة تحديث جديد</div>
-          <div class="pills" id="updPills">
+          <div class="pills">
             <button class="pill on" onclick="setUT(this,'change_order')">أمر تغيير</button>
             <button class="pill" onclick="setUT(this,'delay')">تأخير</button>
             <button class="pill" onclick="setUT(this,'scope')">تغيير نطاق</button>
@@ -604,7 +673,7 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
             <button class="pill" onclick="setUT(this,'meeting')">محضر اجتماع</button>
             <button class="pill" onclick="setUT(this,'note')">ملاحظة</button>
           </div>
-          <div style="border:1px dashed var(--b3);border-radius:var(--r-sm);padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2);">
+          <div style="border:1px dashed var(--b2);border-radius:var(--r-sm);padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2)">
             <input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer"/>
             <div style="font-size:18px;color:var(--t3)">⬆</div>
             <div>
@@ -620,18 +689,12 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
           <textarea class="fta" id="utext" style="width:100%;margin-bottom:11px" placeholder="اكتب تفاصيل التحديث..."></textarea>
           <button class="btn btn-p" onclick="addUpdate()">تحليل وإضافة للسجل</button>
         </div>
-        <div class="tl" id="tlEl">
-          <div class="empty">
-            <div class="empty-icon">🔄</div>
-            <div class="et">لا توجد تحديثات</div>
-          </div>
-        </div>
+        <div class="tl" id="tlEl"><div class="empty"><div class="empty-icon">🔄</div><div class="et">لا توجد تحديثات</div></div></div>
       </div>
 
-      <!-- TOLERANCE PANE -->
       <div class="pane" id="pane-tol">
         <div style="max-width:780px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px">مدى السماحية في المخاطر</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">مدى السماحية في المخاطر</div>
           <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">حدد الحدود المقبولة لكل بُعد — يستخدمها Claude لتصنيف المخاطر بدقة</div>
           
           <div class="tol-sec">
@@ -662,10 +725,9 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
         </div>
       </div>
 
-      <!-- CONTACTS PANE -->
       <div class="pane" id="pane-contacts">
         <div style="max-width:720px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px">جهات اتصال الفريق</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">جهات اتصال الفريق</div>
           <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">أضف جهات الاتصال لاستقبال إشعارات المخاطر</div>
           <div class="card" style="margin-bottom:13px">
             <div class="card-t">إضافة جهة اتصال</div>
@@ -706,21 +768,37 @@ const IL=['','ضئيل','منخفض','متوسط','عالي','حرج'];
 const RL={high:'عالي',medium:'متوسط',low:'منخفض'};
 const RESP_AR={Avoid:'تجنب',Mitigate:'تخفيف',Transfer:'نقل',Accept:'قبول',Escalate:'تصعيد',Exploit:'استغلال',Enhance:'تعزيز',Share:'مشاركة'};
 const CAT_AR={Schedule:'الجدول الزمني',Cost:'التكلفة',Scope:'النطاق',Contract:'العقد',Design:'التصميم',Execution:'التنفيذ',Suppliers:'الموردين',QHSE:'الصحة والسلامة',Quality:'الجودة',Regulatory:'تنظيمي',Financial:'مالي'};
+const PORTFOLIO_COLORS=['#5b5cff','#a855f7','#ec4899','#f97316','#22c55e','#14b8a6','#06b6d4','#eab308','#ef4444','#0ea5e9'];
 
 // ═══ STATE ═══
-let projs=[],CP=null,CID=null;
+let projs=[],portfolios=[],CP=null,CID=null,currentPF=null;
 let cUT='change_order',PF={},UF=[],PR=[];
-let editRiskId=null;
-let viewMode='portfolio'; // 'portfolio' or 'project'
-let allRisks=[]; // for portfolio
+let editRiskId=null,editingPortfolio=null;
+let viewMode='home';
+let allRisks=[];
+let openPortfolios=new Set();
 
 // ═══ INIT ═══
 window.onload=async()=>{
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const k=localStorage.getItem('aKey');
   if(k){document.getElementById('apiKey').value=k;checkKey();}
-  await loadProjs();
+  // Load saved open portfolios
+  try{const op=JSON.parse(localStorage.getItem('openPF')||'[]');openPortfolios=new Set(op);}catch(e){}
+  initColorPicker();
+  await loadAll();
 };
+
+function initColorPicker(){
+  const el=document.getElementById('pf_colors');
+  el.innerHTML=PORTFOLIO_COLORS.map((c,i)=>`<div onclick="selectPFColor('${c}',this)" style="width:26px;height:26px;border-radius:6px;background:${c};cursor:pointer;border:2px solid ${i===0?'#1a2138':'transparent'};transition:all .15s" data-color="${c}"></div>`).join('');
+  document.getElementById('pf_color').value=PORTFOLIO_COLORS[0];
+}
+function selectPFColor(color,el){
+  document.querySelectorAll('#pf_colors div').forEach(d=>d.style.borderColor='transparent');
+  el.style.borderColor='#1a2138';
+  document.getElementById('pf_color').value=color;
+}
 
 function checkKey(){
   const k=document.getElementById('apiKey').value.trim();
@@ -750,124 +828,327 @@ function pJSON(text){
   return JSON.parse(text);
 }
 
-// ═══ PROJECTS ═══
-async function loadProjs(){
+// ═══ LOAD ALL ═══
+async function loadAll(){
+  try{
+    portfolios=await sb('portfolios?order=created_at.asc&select=*')||[];
+  }catch(e){
+    // Table may not exist yet
+    portfolios=[];
+  }
   try{
     projs=await sb('projects?order=created_at.desc&select=*')||[];
-    // Load all risks for portfolio
-    if(projs.length){
-      try{allRisks=await sb('risks?select=*')||[];}catch(e){allRisks=[];}
-    }
-    renderProjList();
-    if(viewMode==='portfolio')renderPortfolio();
+    if(projs.length){try{allRisks=await sb('risks?select=*')||[];}catch(e){allRisks=[];}}
+    renderSidebar();
+    renderHome();
   }catch(e){console.error(e);}
 }
 
-function renderProjList(){
-  const el=document.getElementById('projList');
-  if(!projs.length){el.innerHTML=`<div style="padding:10px;font-size:10.5px;color:var(--sb-text-3);text-align:center">لا توجد مشاريع</div>`;return;}
-  el.innerHTML=projs.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join('');
+// ═══ SIDEBAR ═══
+function renderSidebar(){
+  const el=document.getElementById('portfolioList');
+  if(!portfolios.length){
+    el.innerHTML=`<div class="empty-portfolio">لا توجد محافظ بعد<br><span style="color:var(--primary);cursor:pointer;font-weight:600" onclick="openPortfModal()">إنشاء أول محفظة</span></div>`;
+    return;
+  }
+  el.innerHTML=portfolios.map(pf=>{
+    const pfProjects=projs.filter(p=>p.portfolio_id===pf.id);
+    const isOpen=openPortfolios.has(pf.id);
+    const isActive=currentPF&&currentPF.id===pf.id;
+    return `
+      <div class="portfolio-group">
+        <div class="pg-hdr ${isActive?'active':''}" onclick="togglePortfolio('${pf.id}')">
+          <div class="pg-hdr-left">
+            <span class="pg-toggle ${isOpen?'open':''}">▶</span>
+            <span class="pg-icon" style="background:${pf.color||'#5b5cff'}"></span>
+            <span class="pg-name">${pf.name}</span>
+          </div>
+          <div class="pg-actions">
+            <button class="pg-act-btn" onclick="event.stopPropagation();openPortfolio('${pf.id}')" title="افتح المحفظة">↗</button>
+          </div>
+          <span class="pg-count">${pfProjects.length}</span>
+        </div>
+        <div class="proj-list ${isOpen?'open':''}">
+          ${pfProjects.length?pfProjects.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join(''):'<div style="padding:6px 11px;font-size:10.5px;color:var(--sb-text-3)">لا توجد مشاريع</div>'}
+        </div>
+      </div>`;
+  }).join('');
 }
 
-function filterProjs(q){
-  q=q.toLowerCase();
-  const filtered=projs.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.type||'').toLowerCase().includes(q));
-  // Re-render portfolio with filtered
-  renderPortfolio(filtered);
+function togglePortfolio(pfId){
+  if(openPortfolios.has(pfId))openPortfolios.delete(pfId);
+  else openPortfolios.add(pfId);
+  localStorage.setItem('openPF',JSON.stringify([...openPortfolios]));
+  renderSidebar();
 }
 
-function openProjModal(){document.getElementById('projModal').classList.add('on');setTimeout(()=>document.getElementById('np_n').focus(),80);}
-function closeProjModal(){document.getElementById('projModal').classList.remove('on');}
-
-async function createProj(){
-  const name=document.getElementById('np_n').value.trim();
-  if(!name){alert('يرجى إدخال اسم المشروع');return;}
-  showLoad('جاري الإنشاء...');
-  try{
-    const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
-    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[]};
-    const res=await sb('projects','POST',d);
-    hideLoad();closeProjModal();
-    ['np_n','np_c','np_v','np_d','np_s','np_e'].forEach(id=>document.getElementById(id).value='');
-    await loadProjs();
-    if(res&&res[0])selectProj(res[0].id);
-  }catch(e){hideLoad();alert('خطأ: '+e.message);}
-}
-
-async function delProj(){
-  if(!confirm('هل أنت متأكد من حذف المشروع؟'))return;
-  showLoad('جاري الحذف...');
-  try{
-    await sb('projects?id=eq.'+CID,'DELETE');
-    hideLoad();CID=null;CP=null;
-    goPortfolio();
-    await loadProjs();
-  }catch(e){hideLoad();alert('خطأ: '+e.message);}
-}
-
-// ═══ PORTFOLIO VIEW ═══
-function goPortfolio(){
-  viewMode='portfolio';CID=null;CP=null;
+function openPortfolio(pfId){
+  if(!openPortfolios.has(pfId)){openPortfolios.add(pfId);localStorage.setItem('openPF',JSON.stringify([...openPortfolios]));}
+  const pf=portfolios.find(p=>p.id===pfId);
+  if(!pf)return;
+  currentPF=pf;CID=null;CP=null;viewMode='portfolio';
+  document.getElementById('homeView').style.display='none';
   document.getElementById('portfolioView').style.display='block';
   document.getElementById('projView').style.display='none';
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-  document.getElementById('nav-portfolio').classList.add('on');
-  renderProjList();
+  renderSidebar();
   renderPortfolio();
 }
 
-async function renderPortfolio(filteredProjs){
-  const list=filteredProjs||projs;
-  const el=document.getElementById('portfolioContent');
+function goHome(){
+  viewMode='home';CID=null;CP=null;currentPF=null;
+  document.getElementById('homeView').style.display='block';
+  document.getElementById('portfolioView').style.display='none';
+  document.getElementById('projView').style.display='none';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  document.getElementById('nav-home').classList.add('on');
+  renderSidebar();renderHome();
+}
+
+// ═══ HOME VIEW ═══
+function renderHome(){
+  const el=document.getElementById('homeContent');
   
-  if(!list.length){
+  // Calculate global stats
+  const totalProjects=projs.length;
+  const totalPortfolios=portfolios.length;
+  const totalRisks=allRisks.length;
+  const totalHigh=allRisks.filter(r=>r.level==='high').length;
+  
+  if(!portfolios.length&&!projs.length){
     el.innerHTML=`
       <div class="empty">
         <div class="empty-icon">📊</div>
-        <div class="et">لا توجد مشاريع في المحفظة</div>
-        <div class="es">اضغط "مشروع جديد" لإضافة أول مشروع</div>
+        <div class="et">ابدأ بإنشاء أول محفظة</div>
+        <div class="es" style="margin-bottom:14px">المحافظ تساعدك على تنظيم المشاريع المتشابهة معاً</div>
+        <button class="btn btn-p" onclick="openPortfModal()">+ إنشاء محفظة</button>
       </div>`;
     return;
   }
 
-  // Calculate portfolio stats
-  const projRisks={};
-  list.forEach(p=>{projRisks[p.id]=allRisks.filter(r=>r.project_id===p.id);});
-  
-  const totalRisks=Object.values(projRisks).reduce((s,r)=>s+r.length,0);
-  const totalThreats=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='threat'||!x.type).length,0);
-  const totalOpps=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='opportunity').length,0);
-  const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='high').length,0);
-  
-  // Total exposure
-  const totalValue=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
-  const totalExposure=list.reduce((s,p)=>{
-    const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
-    const high=projRisks[p.id].filter(r=>r.level==='high').length;
-    const med=projRisks[p.id].filter(r=>r.level==='medium').length;
-    return s+(v*0.05*high+v*0.02*med);
-  },0);
+  // Build portfolios cards
+  const portfolioCards=portfolios.map(pf=>{
+    const pfProjects=projs.filter(p=>p.portfolio_id===pf.id);
+    const pfRisks=allRisks.filter(r=>pfProjects.some(p=>p.id===r.project_id));
+    const high=pfRisks.filter(r=>r.level==='high').length;
+    return `
+      <div class="portfolio-card" onclick="openPortfolio('${pf.id}')">
+        <div class="pc-color-bar" style="background:${pf.color||'#5b5cff'}"></div>
+        <div class="pc-name">
+          <span class="pc-icon" style="background:${pf.color||'#5b5cff'}"></span>
+          ${pf.name}
+        </div>
+        ${pf.description?`<div class="pc-desc">${pf.description}</div>`:'<div class="pc-desc" style="font-style:italic">لا يوجد وصف</div>'}
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="pc-stat-v">${pfProjects.length}</div><div class="pc-stat-l">مشروع</div></div>
+          <div class="pc-stat"><div class="pc-stat-v">${pfRisks.length}</div><div class="pc-stat-l">مخاطر</div></div>
+          <div class="pc-stat"><div class="pc-stat-v" style="color:${high>0?'var(--red)':'var(--t1)'}">${high}</div><div class="pc-stat-l">عالية</div></div>
+        </div>
+      </div>`;
+  }).join('');
 
-  // Project type distribution
-  const typeDist={};list.forEach(p=>{const t=p.type||'أخرى';typeDist[t]=(typeDist[t]||0)+1;});
+  // Unassigned projects
+  const unassigned=projs.filter(p=>!p.portfolio_id);
   
-  // Status distribution
-  const statusDist={analyzed:0,pending:0};
-  list.forEach(p=>{if(projRisks[p.id].length>0)statusDist.analyzed++;else statusDist.pending++;});
-
-  // Build HTML
   el.innerHTML=`
-    <!-- Stats -->
     <div class="stat-grid">
       <div class="stat-card cyan">
         <div class="stat-icon">📁</div>
+        <div class="stat-l">المحافظ</div>
+        <div class="stat-v">${totalPortfolios}</div>
+      </div>
+      <div class="stat-card pink">
+        <div class="stat-icon">📋</div>
         <div class="stat-l">إجمالي المشاريع</div>
-        <div class="stat-v">${list.length}</div>
-        <div class="stat-sub">${statusDist.analyzed} محلل · ${statusDist.pending} في الانتظار</div>
+        <div class="stat-v">${totalProjects}</div>
       </div>
       <div class="stat-card red">
         <div class="stat-icon">⚠</div>
         <div class="stat-l">إجمالي المخاطر</div>
+        <div class="stat-v" style="color:var(--red)">${totalRisks}</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">▲</div>
+        <div class="stat-l">عالية الخطورة</div>
+        <div class="stat-v" style="color:var(--red)">${totalHigh}</div>
+      </div>
+    </div>
+
+    ${portfolios.length?`
+      <div style="font-size:14px;font-weight:700;margin-bottom:11px;color:var(--t1)">المحافظ</div>
+      <div class="portfolio-card-grid">${portfolioCards}</div>
+    `:''}
+
+    ${unassigned.length?`
+      <div style="font-size:14px;font-weight:700;margin-bottom:11px;color:var(--t1)">مشاريع غير مُصنفة في محفظة</div>
+      <div class="card" style="padding:0;margin-bottom:18px">
+        <div style="overflow-x:auto">
+          <table class="rt" style="font-size:12px">
+            <thead><tr><th>المشروع</th><th>النوع</th><th>القيمة</th><th>المخاطر</th><th>الإجراء</th></tr></thead>
+            <tbody>
+              ${unassigned.map(p=>{
+                const r=allRisks.filter(x=>x.project_id===p.id);
+                return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
+                  <td><b>${p.name}</b></td>
+                  <td><span class="cb">${p.type||'—'}</span></td>
+                  <td style="color:var(--t2)">${p.value?p.value+' ر.س':'—'}</td>
+                  <td><b>${r.length}</b></td>
+                  <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();assignToPortfolio('${p.id}')">إضافة لمحفظة</button></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `:''}
+  `;
+}
+
+function filterAll(q){
+  // Filter is just for visual highlighting in this view
+  // For now reload home
+  if(!q){renderHome();return;}
+  q=q.toLowerCase();
+  // Simple filter implementation
+  renderHome();
+}
+
+// ═══ PORTFOLIO MODAL ═══
+function openPortfModal(pfToEdit){
+  editingPortfolio=pfToEdit||null;
+  if(pfToEdit){
+    document.getElementById('pfModalTitle').textContent='تعديل المحفظة';
+    document.getElementById('pf_save_btn').textContent='حفظ التعديلات';
+    document.getElementById('pf_name').value=pfToEdit.name;
+    document.getElementById('pf_desc').value=pfToEdit.description||'';
+    document.getElementById('pf_color').value=pfToEdit.color||'#5b5cff';
+    document.querySelectorAll('#pf_colors div').forEach(d=>{d.style.borderColor=d.dataset.color===pfToEdit.color?'#1a2138':'transparent';});
+  }else{
+    document.getElementById('pfModalTitle').textContent='محفظة جديدة';
+    document.getElementById('pf_save_btn').textContent='إنشاء المحفظة';
+    document.getElementById('pf_name').value='';
+    document.getElementById('pf_desc').value='';
+    document.getElementById('pf_color').value=PORTFOLIO_COLORS[0];
+    document.querySelectorAll('#pf_colors div').forEach((d,i)=>{d.style.borderColor=i===0?'#1a2138':'transparent';});
+  }
+  document.getElementById('portfModal').classList.add('on');
+  setTimeout(()=>document.getElementById('pf_name').focus(),80);
+}
+function closePortfModal(){document.getElementById('portfModal').classList.remove('on');editingPortfolio=null;}
+
+async function savePortfolio(){
+  const name=document.getElementById('pf_name').value.trim();
+  if(!name){alert('يرجى إدخال اسم المحفظة');return;}
+  const data={
+    name,
+    description:document.getElementById('pf_desc').value.trim(),
+    color:document.getElementById('pf_color').value
+  };
+  showLoad('جاري الحفظ...');
+  try{
+    if(editingPortfolio){
+      await sb('portfolios?id=eq.'+editingPortfolio.id,'PATCH',data);
+    }else{
+      const res=await sb('portfolios','POST',data);
+      if(res&&res[0])openPortfolios.add(res[0].id);
+      localStorage.setItem('openPF',JSON.stringify([...openPortfolios]));
+    }
+    hideLoad();closePortfModal();
+    await loadAll();
+  }catch(e){
+    hideLoad();
+    if(e.message.includes('does not exist')||e.message.includes('relation')){
+      alert('يجب إنشاء جدول portfolios في قاعدة البيانات أولاً. راجع التعليمات في رسالة المطور.');
+    }else{
+      alert('خطأ: '+e.message);
+    }
+  }
+}
+
+function editCurrentPortfolio(){if(currentPF)openPortfModal(currentPF);}
+
+async function delCurrentPortfolio(){
+  if(!currentPF)return;
+  const pfProjects=projs.filter(p=>p.portfolio_id===currentPF.id);
+  let msg=`هل أنت متأكد من حذف محفظة "${currentPF.name}"؟`;
+  if(pfProjects.length>0)msg+=`\n\nالمحفظة تحتوي على ${pfProjects.length} مشروع. سيتم إلغاء ربطها بالمحفظة (لن تُحذف).`;
+  if(!confirm(msg))return;
+  showLoad('جاري الحذف...');
+  try{
+    // Unlink projects first
+    for(const p of pfProjects){
+      await sb('projects?id=eq.'+p.id,'PATCH',{portfolio_id:null});
+    }
+    await sb('portfolios?id=eq.'+currentPF.id,'DELETE');
+    hideLoad();goHome();
+    await loadAll();
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
+}
+
+async function assignToPortfolio(projId){
+  if(!portfolios.length){alert('أنشئ محفظة أولاً');return;}
+  const list=portfolios.map((p,i)=>`${i+1}. ${p.name}`).join('\n');
+  const choice=prompt(`اختر رقم المحفظة:\n\n${list}`);
+  if(!choice)return;
+  const idx=parseInt(choice)-1;
+  if(idx<0||idx>=portfolios.length){alert('اختيار غير صحيح');return;}
+  showLoad('جاري الحفظ...');
+  try{
+    await sb('projects?id=eq.'+projId,'PATCH',{portfolio_id:portfolios[idx].id});
+    hideLoad();await loadAll();
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
+}
+
+// ═══ PORTFOLIO VIEW ═══
+async function renderPortfolio(filteredProjs){
+  if(!currentPF)return;
+  const el=document.getElementById('portfolioContent');
+  const list=filteredProjs||projs.filter(p=>p.portfolio_id===currentPF.id);
+  
+  if(!list.length&&!filteredProjs){
+    el.innerHTML=`
+      <div class="greeting">
+        <div class="greet-line" style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:${currentPF.color||'#5b5cff'};display:inline-block"></span>${currentPF.name}</div>
+        <div class="greet-sub">${currentPF.description||'محفظة فارغة'}</div>
+      </div>
+      <div class="empty">
+        <div class="empty-icon">📁</div>
+        <div class="et">لا توجد مشاريع في هذه المحفظة</div>
+        <div class="es" style="margin-bottom:14px">أضف أول مشروع للبدء</div>
+        <button class="btn btn-p" onclick="openProjModal()">+ إضافة مشروع</button>
+      </div>`;
+    return;
+  }
+
+  // Stats
+  const projRisks={};
+  list.forEach(p=>{projRisks[p.id]=allRisks.filter(r=>r.project_id===p.id);});
+  const totalRisks=Object.values(projRisks).reduce((s,r)=>s+r.length,0);
+  const totalThreats=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='threat'||!x.type).length,0);
+  const totalOpps=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='opportunity').length,0);
+  const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='high').length,0);
+  const totalValue=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
+  const totalExposure=list.reduce((s,p)=>{const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;const high=projRisks[p.id].filter(r=>r.level==='high').length;const med=projRisks[p.id].filter(r=>r.level==='medium').length;return s+(v*0.05*high+v*0.02*med);},0);
+  const typeDist={};list.forEach(p=>{const t=p.type||'أخرى';typeDist[t]=(typeDist[t]||0)+1;});
+  const statusDist={analyzed:0,pending:0};
+  list.forEach(p=>{if(projRisks[p.id].length>0)statusDist.analyzed++;else statusDist.pending++;});
+
+  el.innerHTML=`
+    <div class="greeting">
+      <div class="greet-line" style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:${currentPF.color||'#5b5cff'};display:inline-block"></span>${currentPF.name}</div>
+      <div class="greet-sub">${currentPF.description||'نظرة شاملة على مخاطر المحفظة'}</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card cyan">
+        <div class="stat-icon">📁</div>
+        <div class="stat-l">المشاريع</div>
+        <div class="stat-v">${list.length}</div>
+        <div class="stat-sub">${statusDist.analyzed} محلل · ${statusDist.pending} معلق</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⚠</div>
+        <div class="stat-l">المخاطر</div>
         <div class="stat-v" style="color:var(--red)">${totalRisks}</div>
         <div class="stat-sub">${totalThreats} تهديد · ${totalOpps} فرصة</div>
       </div>
@@ -875,7 +1156,7 @@ async function renderPortfolio(filteredProjs){
         <div class="stat-icon">▲</div>
         <div class="stat-l">عالية الخطورة</div>
         <div class="stat-v" style="color:var(--red)">${totalHigh}</div>
-        <div class="stat-sub">عبر جميع المشاريع</div>
+        <div class="stat-sub">عبر المحفظة</div>
       </div>
       <div class="stat-card green">
         <div class="stat-icon">＄</div>
@@ -885,10 +1166,10 @@ async function renderPortfolio(filteredProjs){
       </div>
     </div>
 
-    <!-- Charts row -->
+    ${list.some(p=>projRisks[p.id].length>0)?`
     <div class="dash-row dash-21">
       <div class="card">
-        <div class="card-t">مقارنة درجات المخاطر بين المشاريع</div>
+        <div class="card-t">مقارنة المخاطر بين المشاريع</div>
         <canvas id="portfChart" height="120"></canvas>
       </div>
       <div class="card">
@@ -897,8 +1178,7 @@ async function renderPortfolio(filteredProjs){
       </div>
     </div>
 
-    <!-- AI Report Button -->
-    <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(91,92,255,.08),rgba(168,85,247,.05));border-color:rgba(91,92,255,.3)">
+    <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,${currentPF.color||'#5b5cff'}15,${currentPF.color||'#5b5cff'}05);border-color:${currentPF.color||'#5b5cff'}40">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">📊 تقرير المحفظة بالذكاء الاصطناعي</div>
@@ -908,8 +1188,8 @@ async function renderPortfolio(filteredProjs){
       </div>
     </div>
     <div id="portfReport"></div>
+    `:''}
 
-    <!-- Projects table -->
     <div class="card" style="padding:0">
       <div style="padding:14px 16px;border-bottom:1px solid var(--b1)">
         <div style="font-size:13px;font-weight:700">المشاريع التفصيلية</div>
@@ -935,21 +1215,20 @@ async function renderPortfolio(filteredProjs){
               const r=projRisks[p.id]||[];
               const h=r.filter(x=>x.level==='high').length;
               const m=r.filter(x=>x.level==='medium').length;
-              const l=r.filter(x=>x.level==='low').length;
+              const lo=r.filter(x=>x.level==='low').length;
               const o=r.filter(x=>x.type==='opportunity').length;
-              const score=r.length?Math.max(0,100-Math.round((h*15+m*5+l*1)/(r.length*15)*100)):null;
+              const score=r.length?Math.max(0,100-Math.round((h*15+m*5+lo*1)/(r.length*15)*100)):null;
               const hpc=score===null?'hp-none':score>=70?'hp-good':score>=40?'hp-warn':'hp-bad';
-              const hplbl=score===null?'لم يحلل':score>=70?'صحي':score>=40?'تحذير':'حرج';
               return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
-                <td><div style="font-weight:600;color:var(--t1)">${p.name}</div></td>
+                <td><div style="font-weight:600">${p.name}</div></td>
                 <td><span class="cb">${p.type||'—'}</span></td>
-                <td style="font-family:'IBM Plex Mono',monospace;color:var(--t2)">${p.value?p.value+' ر.س':'—'}</td>
-                <td><b style="color:var(--t1)">${r.length}</b></td>
+                <td style="font-family:'IBM Plex Mono',monospace;color:var(--t2);font-size:11px">${p.value?p.value+' ر.س':'—'}</td>
+                <td><b>${r.length}</b></td>
                 <td>${h?`<span class="bdg b-h">${h}</span>`:'—'}</td>
                 <td>${m?`<span class="bdg b-m">${m}</span>`:'—'}</td>
-                <td>${l?`<span class="bdg b-l">${l}</span>`:'—'}</td>
+                <td>${lo?`<span class="bdg b-l">${lo}</span>`:'—'}</td>
                 <td>${o?`<span class="bdg b-opp">${o}</span>`:'—'}</td>
-                <td>${score===null?`<span class="health-pill ${hpc}">—</span>`:`<span class="health-pill ${hpc}">● ${score}/100</span>`}</td>
+                <td>${score===null?`<span class="health-pill hp-none">—</span>`:`<span class="health-pill ${hpc}">● ${score}/100</span>`}</td>
                 <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();selectProj('${p.id}')">فتح</button></td>
               </tr>`;
             }).join('')}
@@ -961,9 +1240,8 @@ async function renderPortfolio(filteredProjs){
 
   // Render charts
   setTimeout(()=>{
-    // Portfolio comparison chart
     const projWithRisks=list.filter(p=>projRisks[p.id].length>0);
-    if(projWithRisks.length>0){
+    if(projWithRisks.length>0&&document.getElementById('portfChart')){
       new Chart(document.getElementById('portfChart'),{
         type:'bar',
         data:{
@@ -975,82 +1253,75 @@ async function renderPortfolio(filteredProjs){
           ]
         },
         options:{
-          plugins:{legend:{position:'top',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},
+          plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:8}}},
           scales:{
-            x:{stacked:true,ticks:{color:'#8a9ab8',font:{size:10}},grid:{display:false}},
-            y:{stacked:true,ticks:{color:'#8a9ab8',font:{size:10},stepSize:1},grid:{color:'rgba(28,42,68,.5)'}}
+            x:{stacked:true,ticks:{color:'#525d7a',font:{size:10}},grid:{display:false}},
+            y:{stacked:true,ticks:{color:'#525d7a',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}
           },
           layout:{padding:{top:4}}
         }
       });
     }
-    // Type distribution
-    new Chart(document.getElementById('typeChart'),{
-      type:'doughnut',
-      data:{
-        labels:Object.keys(typeDist),
-        datasets:[{data:Object.values(typeDist),backgroundColor:['#5b5cff','#a855f7','#06b6d4','#ec4899','#22c55e','#eab308','#f97316','#14b8a6','#ef4444'],borderWidth:0}]
-      },
-      options:{
-        plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},
-        cutout:'60%',
-        layout:{padding:4}
-      }
-    });
+    if(document.getElementById('typeChart')){
+      new Chart(document.getElementById('typeChart'),{
+        type:'doughnut',
+        data:{labels:Object.keys(typeDist),datasets:[{data:Object.values(typeDist),backgroundColor:['#5b5cff','#a855f7','#06b6d4','#ec4899','#22c55e','#eab308','#f97316','#14b8a6','#ef4444'],borderWidth:0}]},
+        options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'60%',layout:{padding:4}}
+      });
+    }
   },80);
 }
 
+function filterPortfolioProjs(q){
+  if(!currentPF)return;
+  q=q.toLowerCase();
+  const list=projs.filter(p=>p.portfolio_id===currentPF.id&&((p.name||'').toLowerCase().includes(q)||(p.type||'').toLowerCase().includes(q)));
+  renderPortfolio(list);
+}
+
 async function generatePortfolioReport(){
-  if(!projs.length){alert('لا توجد مشاريع');return;}
+  if(!currentPF)return;
+  const list=projs.filter(p=>p.portfolio_id===currentPF.id);
+  if(!list.length){alert('لا توجد مشاريع في المحفظة');return;}
   if(!GK().startsWith('sk-ant-')){alert('يرجى إدخال مفتاح Claude API');return;}
   showLoad('جاري توليد تقرير المحفظة...');
   
-  // Build summary
-  const projSummaries=projs.map(p=>{
+  const projSummaries=list.map(p=>{
     const r=allRisks.filter(x=>x.project_id===p.id);
     const h=r.filter(x=>x.level==='high').length;
     const m=r.filter(x=>x.level==='medium').length;
-    const l=r.filter(x=>x.level==='low').length;
+    const lo=r.filter(x=>x.level==='low').length;
     const o=r.filter(x=>x.type==='opportunity').length;
-    return `${p.name} (${p.type}, ${p.value||'—'} ريال): ${r.length} مخاطر [${h} عالية, ${m} متوسطة, ${l} منخفضة, ${o} فرص]`;
+    return `${p.name} (${p.type}, ${p.value||'—'} ريال): ${r.length} مخاطر [${h} عالية, ${m} متوسطة, ${lo} منخفضة, ${o} فرص]`;
   }).join('\n');
-  
-  const topRisks=allRisks.filter(r=>r.level==='high').slice(0,15).map(r=>{
-    const proj=projs.find(p=>p.id===r.project_id);
-    return `[${proj?.name||'?'}] ${r.description} — ${r.category}`;
-  }).join('\n');
+  const topRisks=allRisks.filter(r=>r.level==='high'&&list.some(p=>p.id===r.project_id)).slice(0,15).map(r=>{const proj=list.find(p=>p.id===r.project_id);return `[${proj?.name||'?'}] ${r.description} — ${r.category}`;}).join('\n');
   
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`أنت مدير محفظة مخاطر إنشائية كبير. أعطني تقرير محفظة شامل بالعربية بصيغة JSON فقط.
 
-المشاريع في المحفظة (${projs.length} مشروع):
+المحفظة: ${currentPF.name}
+${currentPF.description?'الوصف: '+currentPF.description:''}
+
+المشاريع (${list.length} مشروع):
 ${projSummaries}
 
-أعلى 15 مخاطرة عالية:
+أعلى المخاطر:
 ${topRisks}
 
-أعطني تقريراً شاملاً بالصيغة التالية:
-{
-  "executive_summary": "ملخص تنفيذي 4-5 جمل عن صحة المحفظة الإجمالية",
-  "portfolio_health": "good|warning|critical",
-  "key_findings": ["اكتشاف رئيسي 1", "اكتشاف 2", "اكتشاف 3", "اكتشاف 4"],
-  "top_concerns": ["أهم قلق 1 مع ذكر اسم المشروع", "قلق 2", "قلق 3"],
-  "cross_project_patterns": ["نمط مشترك بين المشاريع 1", "نمط 2"],
-  "strategic_recommendations": ["توصية استراتيجية 1", "توصية 2", "توصية 3", "توصية 4"],
-  "priority_projects": ["مشروع يحتاج اهتمام عاجل 1 مع السبب", "مشروع 2"]
-}`}]});
+أعطني تقريراً شاملاً بالصيغة التالية فقط:
+{"executive_summary":"ملخص تنفيذي 4-5 جمل عن صحة المحفظة الإجمالية","portfolio_health":"good|warning|critical","key_findings":["اكتشاف 1","اكتشاف 2","اكتشاف 3","اكتشاف 4"],"top_concerns":["قلق 1 مع ذكر اسم المشروع","قلق 2","قلق 3"],"cross_project_patterns":["نمط مشترك 1","نمط 2"],"strategic_recommendations":["توصية 1","توصية 2","توصية 3","توصية 4"],"priority_projects":["مشروع يحتاج اهتمام عاجل 1 مع السبب","مشروع 2"]}`}]});
     hideLoad();
     if(data.error){alert('خطأ: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}catch(e){alert('خطأ في التحليل');return;}
     
-    const hc={good:'var(--grn)',warning:'var(--yel)',critical:'var(--red)'}[parsed.portfolio_health]||'var(--yel)';
-    const hbg={good:'rgba(34,197,94,.05)',warning:'rgba(234,179,8,.05)',critical:'rgba(239,68,68,.05)'}[parsed.portfolio_health];
+    const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.portfolio_health]||'#a16207';
+    const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.portfolio_health];
     const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.portfolio_health]||'◆';
     const htext={good:'صحي',warning:'تحذير',critical:'حرج'}[parsed.portfolio_health]||'تحذير';
     
     document.getElementById('portfReport').innerHTML=`
-      <div class="card" style="background:${hbg};border-color:${hc}33;margin-bottom:14px">
+      <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
           <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} تقرير المحفظة الإجمالي — ${htext}</div>
           <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${new Date().toLocaleDateString('ar-SA')}</div>
@@ -1059,36 +1330,63 @@ ${topRisks}
       </div>
       
       <div class="dash-row dash-3" style="margin-bottom:14px">
-        <div class="card">
-          <div class="card-t" style="color:var(--primary)">🎯 الاكتشافات الرئيسية</div>
-          ${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}
-        </div>
-        <div class="card">
-          <div class="card-t" style="color:var(--red)">⚠ أهم المخاوف</div>
-          ${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}
-        </div>
-        <div class="card">
-          <div class="card-t" style="color:var(--purple)">🔄 الأنماط المشتركة</div>
-          ${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}
-        </div>
+        <div class="card"><div class="card-t" style="color:var(--primary)">🎯 الاكتشافات الرئيسية</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--red)">⚠ أهم المخاوف</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--purple)">🔄 الأنماط المشتركة</div>${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
       </div>
       
       <div class="dash-row dash-21" style="margin-bottom:14px">
-        <div class="card">
-          <div class="card-t" style="color:var(--grn)">✓ توصيات استراتيجية</div>
-          ${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}
-        </div>
-        <div class="card">
-          <div class="card-t" style="color:var(--org)">🚨 مشاريع تحتاج اهتمام</div>
-          ${(parsed.priority_projects||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}
-        </div>
-      </div>
-    `;
+        <div class="card"><div class="card-t" style="color:var(--grn)">✓ توصيات استراتيجية</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--org)">🚨 مشاريع تحتاج اهتمام</div>${(parsed.priority_projects||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
+      </div>`;
     document.getElementById('portfReport').scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
 
-// ═══ PROJECT VIEW ═══
+// ═══ PROJECT MODAL ═══
+function openProjModal(){
+  // Populate portfolio selector
+  const sel=document.getElementById('np_pf');
+  sel.innerHTML='<option value="">بدون محفظة</option>'+portfolios.map(p=>`<option value="${p.id}" ${currentPF&&p.id===currentPF.id?'selected':''}>${p.name}</option>`).join('');
+  document.getElementById('projModal').classList.add('on');
+  setTimeout(()=>document.getElementById('np_n').focus(),80);
+}
+function closeProjModal(){document.getElementById('projModal').classList.remove('on');}
+
+async function createProj(){
+  const name=document.getElementById('np_n').value.trim();
+  if(!name){alert('يرجى إدخال اسم المشروع');return;}
+  showLoad('جاري الإنشاء...');
+  try{
+    const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
+    const pfId=document.getElementById('np_pf').value;
+    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[]};
+    if(pfId)d.portfolio_id=pfId;
+    const res=await sb('projects','POST',d);
+    hideLoad();closeProjModal();
+    ['np_n','np_c','np_v','np_d','np_s','np_e'].forEach(id=>document.getElementById(id).value='');
+    if(pfId)openPortfolios.add(pfId);
+    await loadAll();
+    if(res&&res[0])selectProj(res[0].id);
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
+}
+
+async function delProj(){
+  if(!confirm('هل أنت متأكد من حذف المشروع؟'))return;
+  showLoad('جاري الحذف...');
+  try{
+    await sb('risks?project_id=eq.'+CID,'DELETE');
+    await sb('updates?project_id=eq.'+CID,'DELETE');
+    await sb('projects?id=eq.'+CID,'DELETE');
+    hideLoad();
+    const wasInPF=CP&&CP.portfolio_id;
+    CID=null;CP=null;
+    await loadAll();
+    if(wasInPF){const pf=portfolios.find(p=>p.id===wasInPF);if(pf){currentPF=pf;openPortfolio(pf.id);}else goHome();}
+    else goHome();
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
+}
+
 async function selectProj(id){
   CID=id;viewMode='project';
   showLoad('جاري التحميل...');
@@ -1102,13 +1400,16 @@ async function selectProj(id){
     const risks=await sb('risks?project_id=eq.'+id+'&order=created_at.asc&select=*')||[];
     const upds=await sb('updates?project_id=eq.'+id+'&order=created_at.desc&select=*')||[];
     CP.risks=risks;CP.upds=upds;
+    // Set current portfolio
+    if(CP.portfolio_id){currentPF=portfolios.find(pf=>pf.id===CP.portfolio_id)||null;openPortfolios.add(CP.portfolio_id);}
     hideLoad();
+    document.getElementById('homeView').style.display='none';
     document.getElementById('portfolioView').style.display='none';
     document.getElementById('projView').style.display='block';
     document.getElementById('phName').textContent=CP.name;
-    document.getElementById('phSub').textContent=[CP.type,CP.value?CP.value+' ر.س':'',CP.contract].filter(Boolean).join(' · ');
+    document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' ر.س':'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-    renderProjList();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
+    renderSidebar();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
     if(risks.length)renderDash();
     ST('files');
   }catch(e){hideLoad();console.error(e);}
@@ -1277,9 +1578,7 @@ Assess project complexity from files and value. CRITICAL: Keep EVERY field under
 - Mega (>500M SAR): 32 threats + 8 opportunities = 40 total
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in Arabic","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"وصف بالعربية","cause":"السبب","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"خطة بالعربية","owner":"مدير المشروع","activity_ref":"","expected_weeks":2}]}
-Types: threat/opportunity. Strategies: Avoid/Mitigate/Transfer/Accept/Escalate or Exploit/Enhance/Share/Accept/Escalate.
-Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial`}];
+{"summary":"2-sentence summary in Arabic","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"وصف بالعربية","cause":"السبب","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"خطة بالعربية","owner":"مدير المشروع","activity_ref":"","expected_weeks":2}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -1304,7 +1603,7 @@ function showVal(risks){document.getElementById('valOv').classList.add('on');ren
 function renderValList(risks){
   const app=risks.filter(r=>r._a!==false).length;
   document.getElementById('valCtr').textContent=`${app}/${risks.length}`;
-  const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
+  const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   document.getElementById('valList').innerHTML=risks.map((r,i)=>`
     <div class="vc ${r._a===false?'rej':r._a?'app2':''}" id="vc${i}">
       <div class="vch">
@@ -1347,7 +1646,7 @@ async function confirmVal(){
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
-    await selectProj(CID);
+    await loadAll();await selectProj(CID);
   }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
 
@@ -1381,7 +1680,7 @@ async function saveEdit(){
 function renderReg(){
   const risks=CP?.risks||[];
   if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="et">لا يوجد سجل مخاطر بعد</div></div>`;return;}
-  const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
+  const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const buildRows=arr=>arr.map(r=>`
     <tr class="${r.type==='opportunity'?'opp':'thr'}">
       <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
@@ -1429,7 +1728,7 @@ function renderDash(){
 
   document.getElementById('dashContent').innerHTML=`
     <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
-      <div class="stat-card cyan"><div class="stat-icon">●</div><div class="stat-l">مؤشر المخاطر</div><div class="stat-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'var(--yel)':'var(--grn)'}">${riskScore}</div></div>
+      <div class="stat-card cyan"><div class="stat-icon">●</div><div class="stat-l">مؤشر المخاطر</div><div class="stat-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'#a16207':'var(--grn)'}">${riskScore}</div></div>
       ${exposure?`<div class="stat-card green"><div class="stat-icon">＄</div><div class="stat-l">التعرض المالي</div><div class="stat-v" style="font-size:16px;padding-top:5px">${(exposure/1000000).toFixed(1)}M ر.س</div></div>`:''}
       <div class="stat-card red"><div class="stat-icon">▲</div><div class="stat-l">عالية</div><div class="stat-v" style="color:var(--red)">${high}</div></div>
       <div class="stat-card pink"><div class="stat-icon">★</div><div class="stat-l">فرص</div><div class="stat-v" style="color:var(--teal)">${opp}</div></div>
@@ -1439,14 +1738,14 @@ function renderDash(){
       <div class="card"><div class="card-t">المخاطر حسب الفئة</div>
         <table class="exp-tbl">
           <thead><tr><th>الفئة</th><th>العدد</th><th>التوزيع</th></tr></thead>
-          <tbody>${catSorted.map(([cat,cnt])=>{const pct=Math.round(cnt/risks.length*100);const catRisks=risks.filter(r=>(CAT_AR[r.category]||r.category)===cat);const ch=catRisks.filter(r=>r.level==='high').length;const cm=catRisks.filter(r=>r.level==='medium').length;return`<tr><td>${cat}</td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'var(--yel)':'var(--grn)'}"></div></div></td></tr>`;}).join('')}</tbody>
+          <tbody>${catSorted.map(([cat,cnt])=>{const pct=Math.round(cnt/risks.length*100);const catRisks=risks.filter(r=>(CAT_AR[r.category]||r.category)===cat);const ch=catRisks.filter(r=>r.level==='high').length;const cm=catRisks.filter(r=>r.level==='medium').length;return`<tr><td>${cat}</td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'#eab308':'var(--grn)'}"></div></div></td></tr>`;}).join('')}</tbody>
         </table>
       </div>
       <div class="card"><div class="card-t">توزيع المستويات</div><canvas id="lvlC" height="140"></canvas></div>
     </div>
 
     <div class="dash-row dash-3">
-      <div class="card"><div class="card-t">مصفوفة المخاطر (احتمالية × تأثير)</div><div id="matDiv"></div></div>
+      <div class="card"><div class="card-t">مصفوفة المخاطر</div><div id="matDiv"></div></div>
       <div class="card"><div class="card-t">استراتيجيات الاستجابة</div><canvas id="respC" height="140"></canvas></div>
       <div class="card"><div class="card-t">تهديدات vs فرص</div><canvas id="typeC" height="140"></canvas></div>
     </div>
@@ -1454,12 +1753,12 @@ function renderDash(){
     ${CP.trend_data?.length?(()=>{
       const latest=CP.trend_data[CP.trend_data.length-1];
       const al=latest.alert_level||'medium';
-      const alColor={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'}[al];
-      const alBg={high:'rgba(239,68,68,.06)',medium:'rgba(234,179,8,.06)',low:'rgba(34,197,94,.06)'}[al];
+      const alColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[al];
+      const alBg={high:'var(--red-soft)',medium:'var(--yel-soft)',low:'var(--grn-soft)'}[al];
       const alIcon={high:'⚠',medium:'◆',low:'✓'}[al];
       const r=latest.report||{};
       return `<div class="dash-row dash-2">
-        <div class="card" style="background:${alBg};border-color:${alColor}33">
+        <div class="card" style="background:${alBg};border-color:${alColor}40">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:8px">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:${alColor}">${alIcon} تقرير الإنذار المبكر</div>
             <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</div>
@@ -1470,7 +1769,7 @@ function renderDash(){
             <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">SV</div><div style="font-size:13px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
             <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">الصرف</div><div style="font-size:13px;font-weight:600">${latest.burn_rate||0}%</div></div>
           </div>
-          <div style="font-size:11.5px;color:var(--t2);line-height:1.6;border-top:1px solid var(--b1);padding-top:8px">${r.executive_summary||'لا يوجد ملخص'}</div>
+          <div style="font-size:11.5px;color:var(--t1);line-height:1.6;border-top:1px solid var(--b1);padding-top:8px">${r.executive_summary||'لا يوجد ملخص'}</div>
           <div style="margin-top:10px"><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="ST('warn')">عرض التقرير الكامل</button></div>
         </div>
         <div class="card"><div class="card-t">اتجاه المخاطر</div><canvas id="trendC" height="120"></canvas></div>
@@ -1479,23 +1778,25 @@ function renderDash(){
   `;
 
   setTimeout(()=>{
-    new Chart(document.getElementById('lvlC'),{type:'doughnut',data:{labels:['عالية','متوسطة','منخفضة','فرص'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,hoverOffset:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}});
+    new Chart(document.getElementById('lvlC'),{type:'doughnut',data:{labels:['عالية','متوسطة','منخفضة','فرص'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,hoverOffset:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}});
     
     const mc=Array.from({length:5},()=>Array(5).fill(0));
     risks.forEach(r=>{const p=Math.max(1,Math.min(5,r.probability||1))-1;const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);const ix=Math.max(1,Math.min(5,imp))-1;mc[4-p][ix]++;});
-    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(239,68,68,.7)':s>=9?'rgba(234,179,8,.6)':s>=4?'rgba(234,179,8,.3)':'rgba(34,197,94,.4)';};
+    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(239,68,68,.85)':s>=9?'rgba(234,179,8,.75)':s>=4?'rgba(234,179,8,.4)':'rgba(34,197,94,.5)';};
     let mh='<div style="font-size:9px;color:var(--t3);text-align:center;margin-bottom:4px">← التأثير →</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">';
-    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:3px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.85)">${v||''}</div>`;});});
+    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:3px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white">${v||''}</div>`;});});
     mh+='</div><div style="font-size:9px;color:var(--t3);text-align:center;margin-top:3px">↑ الاحتمالية ↑</div>';
     document.getElementById('matDiv').innerHTML=mh;
 
-    const respColors={'تجنب':'#ef4444','تخفيف':'#eab308','نقل':'#5b5cff','قبول':'#8a9ab8','تصعيد':'#a855f7','استغلال':'#14b8a6','تعزيز':'#22c55e','مشاركة':'#06b6d4'};
-    new Chart(document.getElementById('respC'),{type:'doughnut',data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#566480'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}});
-    new Chart(document.getElementById('typeC'),{type:'doughnut',data:{labels:['تهديدات','فرص'],datasets:[{data:[thr,opp],backgroundColor:['#ef4444','#14b8a6'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}});
+    const respColors={'تجنب':'#ef4444','تخفيف':'#eab308','نقل':'#5b5cff','قبول':'#8a93ab','تصعيد':'#a855f7','استغلال':'#14b8a6','تعزيز':'#22c55e','مشاركة':'#06b6d4'};
+    new Chart(document.getElementById('respC'),{type:'doughnut',data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#525d7a'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}});
+    new Chart(document.getElementById('typeC'),{type:'doughnut',data:{labels:['تهديدات','فرص'],datasets:[{data:[thr,opp],backgroundColor:['#ef4444','#14b8a6'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}});
 
     const upds=CP?.upds||[];const tl2=['البداية'];const hd=[high];const md=[med];
     upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md.push(md[md.length-1]);}});
-    new Chart(document.getElementById('trendC'),{type:'line',data:{labels:tl2,datasets:[{label:'عالية',data:hd,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',tension:.4,fill:true,borderWidth:1.5},{label:'متوسطة',data:md,borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.05)',tension:.4,fill:true,borderWidth:1.5}]},options:{plugins:{legend:{position:'top',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#8a9ab8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a9ab8',font:{size:10},stepSize:1},grid:{color:'rgba(28,42,68,.5)'}}},layout:{padding:{top:2}}}});
+    if(document.getElementById('trendC')){
+      new Chart(document.getElementById('trendC'),{type:'line',data:{labels:tl2,datasets:[{label:'عالية',data:hd,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',tension:.4,fill:true,borderWidth:1.5},{label:'متوسطة',data:md,borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.06)',tension:.4,fill:true,borderWidth:1.5}]},options:{plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#525d7a',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#525d7a',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:2}}}});
+    }
   },60);
 }
 
@@ -1511,16 +1812,16 @@ function renderWarn(){
 
   el.innerHTML=`
     <div class="ew-sec">
-      <div class="ew-sec-t"><span style="background:rgba(239,68,68,.12);color:var(--red);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">الجدول الزمني</span>المخاطر المرتبطة بالجدول</div>
+      <div class="ew-sec-t"><span style="background:var(--red-soft);color:var(--red);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">الجدول الزمني</span>المخاطر المرتبطة بالجدول</div>
       ${noSched?`<div class="ai ai-w" style="margin-bottom:0"><div><div style="font-weight:600;margin-bottom:3px">لم يتم رفع الجدول الزمني</div><div style="font-size:11.5px">ارفع ملف الجدول لتفعيل الإنذار المبكر</div><button class="btn btn-g" style="margin-top:8px;padding:4px 10px;font-size:11px" onclick="ST('files')">رفع الجدول</button></div></div>`:`
       ${w1.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.06em;margin-bottom:7px">هذا الأسبوع — إجراء فوري (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
-      ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--yel);letter-spacing:.06em;margin:12px 0 7px">الأسبوع القادم (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
+      ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:#a16207;letter-spacing:.06em;margin:12px 0 7px">الأسبوع القادم (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
       ${w34.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:12px 0 7px">3-4 أسابيع (${w34.length})</div>${w34.map(r=>ewCard(r,3)).join('')}`:''}
       ${!w1.length&&!w2.length&&!w34.length?`<div class="ai ai-ok" style="margin-bottom:0">لا توجد مخاطر متوقعة خلال الأسبوعين القادمين</div>`:''}`}
     </div>
 
     <div class="ew-sec">
-      <div class="ew-sec-t"><span style="background:rgba(91,92,255,.12);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">تحليل الاتجاه</span>تحليل المؤشرات الأسبوعية</div>
+      <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">تحليل الاتجاه</span>تحليل المؤشرات الأسبوعية</div>
       <div class="trend-form">
         <div style="font-size:12px;font-weight:600;margin-bottom:3px">مؤشرات الاتجاه الأسبوعية</div>
         <div style="font-size:11px;color:var(--t3);margin-bottom:11px">أدخل مؤشرات هذا الأسبوع لتحليل الاتجاه</div>
@@ -1537,7 +1838,7 @@ function renderWarn(){
 
       ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px"><div class="card-t">سجل المؤشرات الأسبوعية</div>
         <table class="exp-tbl"><thead><tr><th>الأسبوع</th><th>SV%</th><th>الصرف</th><th>تغيير</th><th>الموارد</th><th>الموردين</th><th>الصحة</th><th>التنبيه</th></tr></thead>
-        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'var(--yel)':'var(--grn)'}">${w.sv||0}%</td><td>${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'لا'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table>
+        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'#a16207':'var(--grn)'}">${w.sv||0}%</td><td>${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'لا'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table>
         <div style="margin-top:10px"><canvas id="trendIndC" height="70"></canvas></div></div>`:''}
 
       <div id="trendAnalysis"></div>
@@ -1552,7 +1853,7 @@ function renderWarn(){
         {label:'تغيير',data:td.map(w=>w.change_requests||0),borderColor:'#a855f7',tension:.4,borderWidth:1.5,pointRadius:3},
         {label:'الموارد',data:td.map(w=>w.resource_util||0),borderColor:'#5b5cff',tension:.4,borderWidth:1.5,pointRadius:3},
         {label:'الصحة',data:td.map(w=>w.health_score||0),borderColor:'#22c55e',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
-      ]},options:{plugins:{legend:{position:'top',labels:{color:'#8a9ab8',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#8a9ab8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a9ab8',font:{size:10}},grid:{color:'rgba(28,42,68,.4)'}}},layout:{padding:{top:2}}}});
+      ]},options:{plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#525d7a',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#525d7a',font:{size:10}},grid:{color:'rgba(228,231,239,.6)'}}},layout:{padding:{top:2}}}});
     },60);
   }
 }
@@ -1634,15 +1935,15 @@ Respond ONLY with valid JSON in Arabic:
         <div class="card-t" style="color:var(--primary)">تحليل المؤشرات التفصيلي</div>
         ${[
           {k:'schedule_variance',label:'انحراف الجدول الزمني',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
-          {k:'budget_burn_rate',label:'معدل صرف الميزانية',val:`${br}%`,color:br>70?'var(--red)':br>50?'var(--yel)':'var(--grn)'},
-          {k:'change_requests',label:'طلبات التغيير',val:cr,color:cr>3?'var(--red)':cr>0?'var(--yel)':'var(--grn)'},
-          {k:'resource_utilization',label:'استغلال الموارد',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'var(--yel)':'var(--grn)'},
+          {k:'budget_burn_rate',label:'معدل صرف الميزانية',val:`${br}%`,color:br>70?'var(--red)':br>50?'#a16207':'var(--grn)'},
+          {k:'change_requests',label:'طلبات التغيير',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
+          {k:'resource_utilization',label:'استغلال الموارد',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
           {k:'vendor_delay',label:'تأخر الموردين',val:vd?'يوجد':'لا يوجد',color:vd?'var(--red)':'var(--grn)'}
         ].map(item=>`<div style="margin-bottom:11px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="background:${item.color}22;color:${item.color};padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700">${item.val}</span><span style="font-size:11.5px;font-weight:600">${item.label}</span></div><div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind[item.k]||'—'}</div></div>`).join('')}
       </div>
-      ${parsed.warnings?.length?`<div class="card" style="background:rgba(234,179,8,.05);border-color:rgba(234,179,8,.2);margin-bottom:10px"><div class="card-t" style="color:var(--yel)">⚠ إشارات تحذيرية</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(234,179,8,.1);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
-      ${parsed.predicted_risks?.length?`<div class="card" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.2);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ مخاطر متوقعة خلال أسبوعين</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(239,68,68,.1);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
-      ${parsed.actions?.length?`<div class="card" style="background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2)"><div class="card-t" style="color:var(--grn)">✓ إجراءات موصى بها</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(34,197,94,.1);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}`;
+      ${parsed.warnings?.length?`<div class="card" style="background:var(--yel-soft);border-color:rgba(234,179,8,.3);margin-bottom:10px"><div class="card-t" style="color:#a16207">⚠ إشارات تحذيرية</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(234,179,8,.15);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
+      ${parsed.predicted_risks?.length?`<div class="card" style="background:var(--red-soft);border-color:rgba(239,68,68,.3);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ مخاطر متوقعة خلال أسبوعين</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(239,68,68,.15);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
+      ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(34,197,94,.3)"><div class="card-t" style="color:var(--grn)">✓ إجراءات موصى بها</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(34,197,94,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}`;
 
     ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{document.getElementById(id).value='';});
     renderWarn();renderDash();
@@ -1694,11 +1995,11 @@ function renderUpds(){
   const upds=CP?.upds||[];
   const el=document.getElementById('tlEl');
   if(!upds.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🔄</div><div class="et">لا توجد تحديثات</div></div>`;return;}
-  const dc={change_order:'#5b5cff',delay:'#ef4444',scope:'#eab308',site:'#22c55e',contract:'#14b8a6',meeting:'#a855f7',note:'#566480'};
+  const dc={change_order:'#5b5cff',delay:'#ef4444',scope:'#eab308',site:'#22c55e',contract:'#14b8a6',meeting:'#a855f7',note:'#8a93ab'};
   const tl={change_order:'أمر تغيير',delay:'تأخير',scope:'تغيير نطاق',site:'مستجد ميداني',contract:'تعديل عقدي',meeting:'محضر اجتماع',note:'ملاحظة'};
   el.innerHTML=upds.map(u=>`
     <div class="tli">
-      <div class="tld" style="background:${dc[u.type]||'#566480'}"></div>
+      <div class="tld" style="background:${dc[u.type]||'#8a93ab'}"></div>
       <div class="tlc">
         <div class="tlh"><span class="tlt">${tl[u.type]||u.type}</span><span class="tld2">${new Date(u.created_at).toLocaleString('ar-SA')}</span></div>
         ${u.content?`<div class="tlb">${u.content}</div>`:''}
