@@ -3,508 +3,684 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Risk Intelligence Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>منصة إدارة المخاطر</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
-  --bg:#080c12;--s1:#0d1520;--s2:#132030;--s3:#192840;
-  --b1:#1a2d42;--b2:#223550;--b3:#2c4460;
-  --t1:#ccd8e5;--t2:#7a91a8;--t3:#4a6070;
-  --acc:#1e72e8;--acc2:#1558c0;
-  --red:#e05252;--org:#d4780a;--yel:#c9a020;--grn:#2a9e5b;--teal:#0a8f8f;--pur:#8855dd;--blue:#1e72e8;
-  --r:5px;
+  /* Sidebar - light theme */
+  --sb-bg:#f7f8fc;
+  --sb-card:#ffffff;
+  --sb-border:#e8ebf2;
+  --sb-text:#1a2238;
+  --sb-text-2:#6e7891;
+  --sb-text-3:#9aa3b8;
+  --sb-hover:#f0f2f8;
+  --sb-active:#eef0fa;
+  
+  /* Main - dark theme */
+  --bg:#0a0e1a;
+  --s1:#0f1524;
+  --s2:#162033;
+  --s3:#1f2c44;
+  --b1:#1c2a44;
+  --b2:#253556;
+  --b3:#324870;
+  --t1:#dde4f0;
+  --t2:#8a9ab8;
+  --t3:#566480;
+  
+  /* Accents */
+  --primary:#5b5cff;
+  --primary-2:#4948d6;
+  --primary-light:#7d7eff;
+  --purple:#a855f7;
+  --cyan:#06b6d4;
+  --pink:#ec4899;
+  --red:#ef4444;
+  --org:#f97316;
+  --yel:#eab308;
+  --grn:#22c55e;
+  --teal:#14b8a6;
+  
+  --r:8px;
+  --r-sm:6px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px;line-height:1.6;}
-[lang=ar] body{font-family:'IBM Plex Sans Arabic',sans-serif;}
-[lang=ar] .fi,[lang=ar] .fs,[lang=ar] .fta,[lang=ar] .btn,[lang=ar] .pill{font-family:'IBM Plex Sans Arabic',sans-serif;}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.6;min-height:100vh;}
+[lang=ar]{font-family:'IBM Plex Sans Arabic',sans-serif;}
 
-.hdr{background:var(--s1);border-bottom:1px solid var(--b1);height:48px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.brand{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;}
-.brand-pill{font-size:9px;font-weight:700;background:rgba(30,114,232,.12);color:var(--acc);border:1px solid rgba(30,114,232,.2);padding:2px 8px;border-radius:20px;letter-spacing:.08em;}
-.api-bar{background:var(--s1);border-bottom:1px solid var(--b1);padding:6px 22px;display:flex;align-items:center;gap:10px;}
-.api-lbl{font-size:11px;font-weight:500;color:var(--t3);white-space:nowrap;}
-.api-inp{width:260px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:5px 9px;color:var(--t1);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;}
-.api-inp:focus{border-color:var(--acc);}
-.cdot{width:7px;height:7px;border-radius:50%;background:var(--b3);}
-.cdot.on{background:var(--grn);}
-.clbl{font-size:11px;color:var(--t3);}
-.clbl.on{color:var(--grn);}
-.app{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 76px);}
-.sb{background:var(--s1);border-inline-end:1px solid var(--b1);padding:10px;overflow-y:auto;}
-.sb-hd{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);padding:0 7px;margin-bottom:8px;}
-.pi{padding:8px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:background .12s;}
-.pi:hover{background:var(--s2);}
-.pi.on{background:var(--s2);border-color:var(--b2);}
-.pi-n{font-size:12.5px;font-weight:500;margin-bottom:2px;}
-.pi-s{font-size:10.5px;color:var(--t3);}
-.main{overflow-y:auto;padding:20px 24px;}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b2);transition:all .12s;white-space:nowrap;font-family:inherit;}
-.btn-p{background:var(--acc);border-color:var(--acc);color:#fff;}
-.btn-p:hover{background:var(--acc2);}
-.btn-p:disabled{opacity:.3;cursor:not-allowed;}
+/* ═══ APP LAYOUT ═══ */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+/* ═══ SIDEBAR ═══ */
+.sb{background:var(--sb-bg);border-inline-end:1px solid var(--sb-border);padding:0;display:flex;flex-direction:column;}
+.sb-brand{padding:18px 20px;border-bottom:1px solid var(--sb-border);}
+.sb-logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:700;box-shadow:0 4px 12px rgba(91,92,255,.25);}
+.sb-name{margin-top:9px;font-size:13px;font-weight:600;color:var(--sb-text);}
+.sb-tag{font-size:10.5px;color:var(--sb-text-3);}
+
+.sb-nav{flex:1;padding:14px 11px;overflow-y:auto;}
+.sb-section{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--sb-text-3);padding:8px 11px 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:var(--r-sm);cursor:pointer;color:var(--sb-text-2);font-size:12.5px;font-weight:500;transition:all .15s;margin-bottom:1px;}
+.nav-item:hover{background:var(--sb-hover);color:var(--sb-text);}
+.nav-item.on{background:var(--sb-active);color:var(--primary);}
+.nav-item.on .nav-icon{background:var(--primary);color:white;}
+.nav-icon{width:26px;height:26px;border-radius:6px;background:var(--sb-card);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sb-text-2);transition:all .15s;flex-shrink:0;}
+.nav-item:hover .nav-icon{background:var(--sb-bg);}
+
+.proj-list{padding:0 4px;}
+.pi{padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;margin-bottom:2px;transition:all .12s;border:1px solid transparent;}
+.pi:hover{background:var(--sb-hover);}
+.pi.on{background:var(--sb-card);border-color:var(--sb-border);box-shadow:var(--shadow-sm);}
+.pi-n{font-size:12px;font-weight:500;color:var(--sb-text);margin-bottom:2px;}
+.pi-s{font-size:10px;color:var(--sb-text-3);}
+
+.sb-footer{padding:12px 14px;border-top:1px solid var(--sb-border);background:var(--sb-card);}
+.api-row{display:flex;align-items:center;gap:7px;}
+.cdot{width:7px;height:7px;border-radius:50%;background:#cbd2e0;flex-shrink:0;}
+.cdot.on{background:var(--grn);box-shadow:0 0 0 3px rgba(34,197,94,.18);}
+.api-stat{font-size:10.5px;color:var(--sb-text-2);}
+.api-stat.on{color:var(--grn);}
+
+/* ═══ MAIN AREA ═══ */
+.main{padding:24px 28px;overflow-y:auto;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:50px;padding:7px 16px;width:340px;}
+.search-bar input{background:transparent;border:none;outline:none;color:var(--t1);font-family:inherit;font-size:12.5px;flex:1;}
+.search-bar input::placeholder{color:var(--t3);}
+.top-actions{display:flex;align-items:center;gap:10px;}
+
+.greeting{margin-bottom:18px;}
+.greet-line{font-size:18px;font-weight:600;color:var(--t1);margin-bottom:3px;}
+.greet-sub{font-size:12px;color:var(--t3);}
+
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b2);transition:all .15s;font-family:inherit;white-space:nowrap;}
+.btn-p{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);border-color:transparent;color:white;box-shadow:0 4px 12px rgba(91,92,255,.25);}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(91,92,255,.35);}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
 .btn-g{background:transparent;color:var(--t2);}
 .btn-g:hover{background:var(--s2);color:var(--t1);}
-.btn-ok{background:rgba(42,158,91,.1);border-color:rgba(42,158,91,.22);color:var(--grn);}
-.btn-ok:hover{background:rgba(42,158,91,.18);}
-.btn-del{background:transparent;border-color:rgba(224,82,82,.22);color:var(--red);}
-.btn-del:hover{background:rgba(224,82,82,.07);}
-.btn-warn{background:rgba(201,160,32,.1);border-color:rgba(201,160,32,.22);color:var(--yel);}
-.lang-btn{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;color:var(--t2);font-size:11.5px;cursor:pointer;font-family:inherit;}
-.lang-btn:hover{border-color:var(--acc);color:var(--acc);}
-.tabs{display:flex;border-bottom:1px solid var(--b1);margin-bottom:18px;}
-.tab{padding:7px 13px;font-size:12.5px;font-weight:500;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;white-space:nowrap;}
-.tab:hover{color:var(--t2);}
-.tab.on{color:var(--acc);border-bottom-color:var(--acc);}
+.btn-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.22);color:var(--grn);}
+.btn-ok:hover{background:rgba(34,197,94,.14);}
+.btn-del{background:transparent;border-color:rgba(239,68,68,.22);color:var(--red);}
+.btn-del:hover{background:rgba(239,68,68,.06);}
+.btn-warn{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.22);color:var(--yel);}
+
+/* ═══ CARDS ═══ */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;}
+.card-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:12px;}
+
+/* ═══ STATS ═══ */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),var(--purple));opacity:.5;}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),var(--org));}
+.stat-card.green::before{background:linear-gradient(90deg,var(--grn),var(--teal));}
+.stat-card.cyan::before{background:linear-gradient(90deg,var(--cyan),var(--primary));}
+.stat-card.pink::before{background:linear-gradient(90deg,var(--pink),var(--purple));}
+.stat-icon{width:34px;height:34px;border-radius:var(--r-sm);background:rgba(91,92,255,.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:9px;}
+.stat-card.red .stat-icon{background:rgba(239,68,68,.1);color:var(--red);}
+.stat-card.green .stat-icon{background:rgba(34,197,94,.1);color:var(--grn);}
+.stat-card.cyan .stat-icon{background:rgba(6,182,212,.1);color:var(--cyan);}
+.stat-card.pink .stat-icon{background:rgba(236,72,153,.1);color:var(--pink);}
+.stat-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:5px;}
+.stat-v{font-size:23px;font-weight:700;color:var(--t1);line-height:1.1;}
+.stat-sub{font-size:10.5px;color:var(--t3);margin-top:3px;}
+
+/* ═══ TABS ═══ */
+.tabs{display:flex;gap:2px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:3px;margin-bottom:18px;flex-wrap:wrap;}
+.tab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;border-radius:var(--r-sm);transition:all .15s;}
+.tab:hover{color:var(--t1);background:var(--s2);}
+.tab.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);color:white;box-shadow:0 2px 8px rgba(91,92,255,.25);}
 .pane{display:none;}
 .pane.on{display:block;}
-.fg{display:flex;flex-direction:column;gap:4px;}
-.fl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;}
-.fi,.fs,.fta{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:6px 9px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;}
-.fi:focus,.fs:focus,.fta:focus{border-color:var(--acc);}
-.fta{resize:vertical;min-height:68px;}
+
+/* ═══ FORMS ═══ */
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;}
+.fi,.fs,.fta{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);padding:8px 11px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;transition:border .15s;}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.12);}
+.fta{resize:vertical;min-height:70px;}
 .fs option{background:var(--s2);}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
 .fgrid .full{grid-column:1/-1;}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:16px;}
-.sc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px 14px;}
-.sc-l{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:6px;}
-.sc-v{font-size:21px;font-weight:700;line-height:1;}
-.tw{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;overflow-x:auto;}
+
+/* ═══ TABLE ═══ */
+.tw{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;overflow-x:auto;background:var(--s1);}
 .rt{width:100%;border-collapse:collapse;font-size:11.5px;}
-.rt th{background:var(--s2);padding:8px 10px;text-align:start;font-weight:600;color:var(--t3);font-size:10.5px;border-bottom:1px solid var(--b1);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
-.rt td{padding:9px 10px;border-bottom:1px solid var(--b1);vertical-align:middle;}
+.rt th{background:var(--s2);padding:10px 12px;text-align:start;font-weight:600;color:var(--t3);font-size:10px;border-bottom:1px solid var(--b1);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
+.rt td{padding:11px 12px;border-bottom:1px solid var(--b1);vertical-align:middle;}
 .rt tr:last-child td{border-bottom:none;}
-.rt tr:hover td{background:rgba(255,255,255,.01);}
-.rt .thr td:first-child{border-inline-start:2px solid var(--red);}
-.rt .opp td:first-child{border-inline-start:2px solid var(--teal);}
-.bdg{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.04em;}
-.b-thr{background:rgba(224,82,82,.1);color:var(--red);}
-.b-opp{background:rgba(10,143,143,.1);color:var(--teal);}
-.b-h{background:rgba(224,82,82,.1);color:var(--red);}
-.b-m{background:rgba(201,160,32,.1);color:var(--yel);}
-.b-l{background:rgba(42,158,91,.1);color:var(--grn);}
-.cb{padding:2px 7px;border-radius:3px;font-size:10.5px;background:var(--s3);color:var(--t2);}
-.resp{padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;}
-.r-avoid,.r-تجنب{background:rgba(224,82,82,.1);color:var(--red);}
-.r-mitigate,.r-تخفيف{background:rgba(201,160,32,.1);color:var(--yel);}
-.r-transfer,.r-نقل{background:rgba(30,114,232,.1);color:var(--acc);}
-.r-accept,.r-قبول{background:rgba(122,145,168,.1);color:var(--t2);}
-.r-escalate,.r-تصعيد{background:rgba(136,85,221,.1);color:var(--pur);}
-.r-exploit,.r-استغلال{background:rgba(10,143,143,.1);color:var(--teal);}
-.r-enhance,.r-تعزيز{background:rgba(42,158,91,.1);color:var(--grn);}
-.r-share,.r-مشاركة{background:rgba(30,114,232,.1);color:var(--acc);}
-.ic{font-size:10.5px;display:flex;flex-direction:column;gap:2px;min-width:80px;}
-.ir{display:flex;align-items:center;gap:4px;}
-.ib{width:32px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.rt tr:hover td{background:rgba(91,92,255,.03);}
+.rt .thr td:first-child{border-inline-start:3px solid var(--red);}
+.rt .opp td:first-child{border-inline-start:3px solid var(--teal);}
+
+/* ═══ BADGES ═══ */
+.bdg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.03em;}
+.b-thr{background:rgba(239,68,68,.12);color:var(--red);}
+.b-opp{background:rgba(20,184,166,.12);color:var(--teal);}
+.b-h{background:rgba(239,68,68,.12);color:var(--red);}
+.b-m{background:rgba(234,179,8,.12);color:var(--yel);}
+.b-l{background:rgba(34,197,94,.12);color:var(--grn);}
+.cb{padding:3px 8px;border-radius:4px;font-size:10.5px;background:var(--s3);color:var(--t2);}
+.resp{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:500;}
+.r-Avoid,.r-تجنب{background:rgba(239,68,68,.1);color:var(--red);}
+.r-Mitigate,.r-تخفيف{background:rgba(234,179,8,.1);color:var(--yel);}
+.r-Transfer,.r-نقل{background:rgba(91,92,255,.1);color:var(--primary);}
+.r-Accept,.r-قبول{background:rgba(138,154,184,.1);color:var(--t2);}
+.r-Escalate,.r-تصعيد{background:rgba(168,85,247,.1);color:var(--purple);}
+.r-Exploit,.r-استغلال{background:rgba(20,184,166,.1);color:var(--teal);}
+.r-Enhance,.r-تعزيز{background:rgba(34,197,94,.1);color:var(--grn);}
+.r-Share,.r-مشاركة{background:rgba(6,182,212,.1);color:var(--cyan);}
+
+.ic{font-size:10.5px;display:flex;flex-direction:column;gap:3px;min-width:80px;}
+.ir{display:flex;align-items:center;gap:5px;}
+.ib{width:36px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
 .ibf{height:100%;border-radius:2px;}
-.drop{border:1.5px dashed var(--b3);border-radius:var(--r);padding:26px 18px;text-align:center;cursor:pointer;position:relative;background:var(--s1);}
-.drop:hover{border-color:var(--acc);background:rgba(30,114,232,.025);}
-.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.fg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px;}
-.fcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px;position:relative;}
-.fext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 5px;border-radius:3px;margin-bottom:5px;display:inline-block;}
-.fx-pdf{background:rgba(224,82,82,.1);color:var(--red);}
-.fx-xl{background:rgba(42,158,91,.1);color:var(--grn);}
-.fx-img{background:rgba(30,114,232,.1);color:var(--acc);}
-.fx-doc{background:rgba(10,143,143,.1);color:var(--teal);}
-.fx-txt{background:rgba(122,145,168,.1);color:var(--t2);}
-.fn{font-size:11px;font-weight:500;word-break:break-all;margin-bottom:2px;}
+
+/* ═══ DROPZONE ═══ */
+.drop{border:2px dashed var(--b3);border-radius:var(--r);padding:30px 20px;text-align:center;cursor:pointer;position:relative;background:var(--s1);transition:all .2s;}
+.drop:hover{border-color:var(--primary);background:rgba(91,92,255,.025);}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.drop-icon{font-size:32px;color:var(--t3);margin-bottom:8px;}
+.drop-t{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:3px;}
+.drop-s{font-size:11px;color:var(--t3);}
+
+.fg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-top:13px;}
+.fcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:11px;position:relative;transition:all .15s;}
+.fcard:hover{border-color:var(--b3);}
+.fext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:3px;margin-bottom:6px;display:inline-block;}
+.fx-pdf{background:rgba(239,68,68,.1);color:var(--red);}
+.fx-xl{background:rgba(34,197,94,.1);color:var(--grn);}
+.fx-img{background:rgba(91,92,255,.1);color:var(--primary);}
+.fx-doc{background:rgba(20,184,166,.1);color:var(--teal);}
+.fx-txt{background:rgba(138,154,184,.1);color:var(--t2);}
+.fn{font-size:11px;font-weight:500;word-break:break-all;margin-bottom:2px;color:var(--t1);}
 .fsz{font-size:10px;color:var(--t3);}
-.frem{position:absolute;top:6px;inset-inline-end:6px;width:17px;height:17px;background:var(--s2);border:none;border-radius:3px;color:var(--t3);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;}
-.frem:hover{background:rgba(224,82,82,.15);color:var(--red);}
-.uform{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:16px;}
-.pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;}
-.pill{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:transparent;font-family:inherit;transition:all .12s;}
-.pill:hover{border-color:var(--acc);color:var(--acc);}
-.pill.on{background:var(--acc);border-color:var(--acc);color:#fff;}
-.fdrop{border:1px dashed var(--b3);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:9px;background:var(--s2);}
-.fdrop:hover{border-color:var(--acc);}
-.fdrop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.tl{position:relative;}
-.tl::before{content:'';position:absolute;inset-inline-end:12px;top:0;bottom:0;width:1px;background:var(--b1);}
-.tli{display:flex;gap:11px;margin-bottom:13px;padding-inline-end:32px;position:relative;}
-.tld{position:absolute;inset-inline-end:5px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);}
-.tlc{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px;}
+.frem{position:absolute;top:6px;inset-inline-end:6px;width:18px;height:18px;background:var(--s2);border:none;border-radius:4px;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;}
+.frem:hover{background:rgba(239,68,68,.15);color:var(--red);}
+
+/* ═══ PILLS (UPDATES) ═══ */
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;}
+.pill{padding:5px 13px;border-radius:50px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:transparent;font-family:inherit;transition:all .15s;}
+.pill:hover{border-color:var(--primary);color:var(--primary);}
+.pill.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);border-color:transparent;color:white;}
+
+/* ═══ TIMELINE ═══ */
+.tl{position:relative;padding-inline-start:24px;}
+.tl::before{content:'';position:absolute;inset-inline-start:8px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--primary),var(--purple));opacity:.3;}
+.tli{position:relative;margin-bottom:14px;}
+.tld{position:absolute;inset-inline-start:-22px;top:5px;width:14px;height:14px;border-radius:50%;border:3px solid var(--bg);}
+.tlc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:11px 13px;}
 .tlh{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.tlt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);}
+.tlt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);}
 .tld2{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;}
 .tlb{font-size:12px;color:var(--t2);line-height:1.55;}
-.nra{margin-top:7px;padding:6px 9px;background:rgba(224,82,82,.05);border:1px solid rgba(224,82,82,.13);border-radius:4px;font-size:11px;color:var(--red);}
-.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:9px;}
-.tol-t{font-size:12.5px;font-weight:600;margin-bottom:9px;}
-.tg{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
-.tlv{display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--s2);border-radius:4px;border:1px solid var(--b1);margin-bottom:4px;}
-.tlv input{background:transparent;border:none;color:var(--t2);font-family:inherit;font-size:11.5px;flex:1;outline:none;}
-.tlv-l{font-size:10px;font-weight:700;min-width:95px;white-space:nowrap;}
-.val-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.93);z-index:500;overflow-y:auto;padding:16px;}
-.val-ov.on{display:block;}
-.vbox{max-width:840px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:18px;}
-.vhdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--b1);gap:10px;}
-.vc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:8px;transition:all .15s;}
-.vc.app2{border-color:rgba(42,158,91,.28);background:rgba(42,158,91,.025);}
-.vc.rej{opacity:.25;border-style:dashed;}
-.vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;gap:9px;}
-.vca{display:flex;gap:4px;flex-shrink:0;}
-.chip{padding:2px 7px;border-radius:3px;font-size:10.5px;background:var(--s2);color:var(--t2);}
-.modal-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.75);z-index:200;align-items:center;justify-content:center;}
+.nra{margin-top:7px;padding:7px 10px;background:rgba(91,92,255,.06);border:1px solid rgba(91,92,255,.15);border-radius:5px;font-size:11.5px;color:var(--primary-light);}
+
+/* ═══ TOLERANCE ═══ */
+.tol-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:11px;}
+.tol-t{font-size:13px;font-weight:600;margin-bottom:11px;color:var(--t1);}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.tlv{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--s2);border-radius:5px;border:1px solid var(--b1);margin-bottom:5px;}
+.tlv input{background:transparent;border:none;color:var(--t2);font-family:inherit;font-size:12px;flex:1;outline:none;}
+.tlv-l{font-size:10.5px;font-weight:700;min-width:100px;white-space:nowrap;}
+
+/* ═══ MODALS ═══ */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.78);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-ov.on{display:flex;}
-.modal{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:20px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto;}
-.modal-t{font-size:14px;font-weight:700;margin-bottom:14px;}
-.load-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.modal{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:22px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.modal-t{font-size:15px;font-weight:700;margin-bottom:15px;color:var(--t1);}
+
+/* ═══ LOADING ═══ */
+.load-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(6px);}
 .load-ov.on{display:flex;}
-.spin{width:32px;height:32px;border:2.5px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;}
+.spin{width:36px;height:36px;border:3px solid var(--b2);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg);}}
-.load-t{color:var(--t3);font-size:12px;}
-.welcome{max-width:480px;margin:60px auto;text-align:center;}
-.welcome h1{font-size:18px;font-weight:700;margin-bottom:8px;}
-.welcome p{color:var(--t3);font-size:12.5px;line-height:1.75;margin-bottom:24px;}
-.sep{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);display:flex;align-items:center;gap:7px;margin:15px 0 10px;}
-.sep::after{content:'';flex:1;height:1px;background:var(--b1);}
-.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid var(--b1);}
-.ph-n{font-size:15.5px;font-weight:700;margin-bottom:3px;}
-.ph-s{font-size:11px;color:var(--t3);}
-.ai{padding:9px 12px;border-radius:var(--r);font-size:12px;margin-bottom:12px;display:flex;gap:7px;}
-.ai-i{background:rgba(30,114,232,.05);border:1px solid rgba(30,114,232,.13);color:#6aabff;}
-.ai-ok{background:rgba(42,158,91,.05);border:1px solid rgba(42,158,91,.13);color:#5ec98a;}
-.ai-w{background:rgba(201,160,32,.05);border:1px solid rgba(201,160,32,.13);color:var(--yel);}
-.ebar{display:flex;gap:7px;align-items:center;padding:9px 0;border-top:1px solid var(--b1);margin-top:16px;}
-.empty{text-align:center;padding:42px 20px;color:var(--t3);}
-.et{font-size:13px;font-weight:500;color:var(--t2);margin-bottom:4px;}
-.sync-d{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:pu 2s infinite;}
-@keyframes pu{0%,100%{opacity:1;}50%{opacity:.2;}}
+.load-t{color:var(--t2);font-size:12.5px;}
 
-/* DASHBOARD */
-.dboard{display:grid;gap:11px;}
-.drow{display:grid;gap:11px;}
-.drow-3{grid-template-columns:1fr 1fr 1fr;}
-.drow-2{grid-template-columns:2fr 1fr;}
-.drow-1{grid-template-columns:1fr;}
-.dcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;}
-.dcard-t{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:11px;}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:11px;}
-.kpi{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
-.kpi-l{font-size:10px;color:var(--t3);}
-.kpi-v{font-size:18px;font-weight:700;}
+/* ═══ VALIDATION ═══ */
+.val-ov{display:none;position:fixed;inset:0;background:rgba(6,10,16,.93);z-index:500;overflow-y:auto;padding:18px;backdrop-filter:blur(4px);}
+.val-ov.on{display:block;}
+.vbox{max-width:880px;margin:0 auto;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:20px;box-shadow:var(--shadow-lg);}
+.vhdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--b1);gap:10px;}
+.vc{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r-sm);padding:13px;margin-bottom:9px;transition:all .15s;}
+.vc.app2{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.025);}
+.vc.rej{opacity:.3;border-style:dashed;}
+.vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;gap:10px;}
+.vca{display:flex;gap:5px;flex-shrink:0;}
+.chip{padding:2px 7px;border-radius:4px;font-size:10.5px;background:var(--s2);color:var(--t2);}
+
+/* ═══ DASHBOARD ═══ */
+.dash-row{display:grid;gap:12px;margin-bottom:12px;}
+.dash-3{grid-template-columns:1fr 1fr 1fr;}
+.dash-2{grid-template-columns:1.6fr 1fr;}
+.dash-21{grid-template-columns:1.4fr 1fr;}
 .exp-tbl{width:100%;border-collapse:collapse;font-size:11.5px;}
-.exp-tbl th{padding:6px 9px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);border-bottom:1px solid var(--b1);}
-.exp-tbl td{padding:7px 9px;border-bottom:1px solid var(--b1);}
+.exp-tbl th{padding:7px 10px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b1);}
+.exp-tbl td{padding:8px 10px;border-bottom:1px solid var(--b1);}
 .exp-tbl tr:last-child td{border-bottom:none;}
-.exp-tbl tr:hover td{background:rgba(255,255,255,.01);}
-.rs-bar{height:6px;border-radius:3px;background:var(--b1);overflow:hidden;margin-top:3px;}
+.rs-bar{height:6px;border-radius:3px;background:var(--b1);overflow:hidden;}
 .rs-fill{height:100%;border-radius:3px;}
-.status-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;}
-.sb-seg{flex:1;transition:flex .3s;}
 
-/* TREND/EW */
-.ew-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:12px;}
-.ew-sec-t{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.ew-card{border:1px solid var(--b1);border-radius:var(--r);padding:11px;margin-bottom:8px;}
-.ew-h{border-color:rgba(224,82,82,.25);background:rgba(224,82,82,.03);}
-.ew-m{border-color:rgba(201,160,32,.25);background:rgba(201,160,32,.03);}
-.ew-l{border-color:rgba(42,158,91,.25);background:rgba(42,158,91,.03);}
-.wbdg{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;}
-.wb1{background:rgba(224,82,82,.1);color:var(--red);}
-.wb2{background:rgba(201,160,32,.1);color:var(--yel);}
-.wb3{background:rgba(122,145,168,.1);color:var(--t2);}
-.trend-form{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:12px;}
-.ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.ind-item{display:flex;flex-direction:column;gap:3px;}
-.ind-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);}
-.ind-inp{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:5px 8px;color:var(--t1);font-family:inherit;font-size:12px;outline:none;width:100%;}
-.ind-inp:focus{border-color:var(--acc);}
-.trend-hist{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:11px;margin-bottom:12px;}
-.th-table{width:100%;border-collapse:collapse;font-size:11px;}
-.th-table th{padding:5px 8px;text-align:start;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b1);}
-.th-table td{padding:6px 8px;border-bottom:1px solid var(--b1);}
-.th-table tr:last-child td{border-bottom:none;}
-.trend-alert{padding:10px 12px;border-radius:var(--r);font-size:12px;margin-bottom:8px;border:1px solid;}
-.ta-r{background:rgba(224,82,82,.05);border-color:rgba(224,82,82,.2);color:var(--red);}
-.ta-y{background:rgba(201,160,32,.05);border-color:rgba(201,160,32,.2);color:var(--yel);}
-.ta-g{background:rgba(42,158,91,.05);border-color:rgba(42,158,91,.2);color:var(--grn);}
+/* ═══ EARLY WARNING ═══ */
+.ew-sec{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:15px;margin-bottom:13px;}
+.ew-sec-t{font-size:13px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:8px;color:var(--t1);}
+.ew-card{border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;}
+.ew-h{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04);}
+.ew-m{border-color:rgba(234,179,8,.3);background:rgba(234,179,8,.04);}
+.ew-l{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.04);}
+.wbdg{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;}
+.wb1{background:rgba(239,68,68,.12);color:var(--red);}
+.wb2{background:rgba(234,179,8,.12);color:var(--yel);}
+.wb3{background:rgba(138,154,184,.12);color:var(--t2);}
 
-/* EDIT MODAL */
+.trend-form{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);padding:14px;margin-bottom:13px;}
+.ind-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+.ind-item{display:flex;flex-direction:column;gap:4px;}
+.ind-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);}
+.ind-inp{background:var(--s1);border:1px solid var(--b1);border-radius:5px;padding:7px 10px;color:var(--t1);font-family:inherit;font-size:12px;outline:none;width:100%;}
+.ind-inp:focus{border-color:var(--primary);}
+
+.trend-alert{padding:11px 13px;border-radius:var(--r-sm);font-size:12px;margin-bottom:9px;border:1px solid;}
+.ta-r{background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.22);color:var(--red);}
+.ta-y{background:rgba(234,179,8,.05);border-color:rgba(234,179,8,.22);color:var(--yel);}
+.ta-g{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.22);color:var(--grn);}
+
+/* ═══ EDIT MODAL ═══ */
 .edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .edit-full{grid-column:1/-1;}
 
-/* CONTACTS */
-.contact-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
-.contact-info{flex:1;}
-.contact-name{font-size:12.5px;font-weight:500;}
+/* ═══ CONTACTS ═══ */
+.contact-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.contact-name{font-size:12.5px;font-weight:500;color:var(--t1);}
 .contact-det{font-size:11px;color:var(--t3);margin-top:2px;}
 
-/* NOTIFICATION */
-.notif-modal{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:20px;width:620px;max-width:95vw;max-height:90vh;overflow-y:auto;}
-.msg-card{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin-bottom:8px;}
+/* ═══ NOTIFICATIONS ═══ */
+.msg-card{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r-sm);padding:12px;margin-bottom:9px;}
 .msg-hdr{display:flex;justify-content:space-between;margin-bottom:7px;}
 .msg-body{font-size:11.5px;color:var(--t2);line-height:1.65;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;}
+
+/* ═══ EMPTY STATE ═══ */
+.empty{text-align:center;padding:48px 22px;}
+.empty-icon{font-size:42px;color:var(--t3);margin-bottom:12px;opacity:.5;}
+.et{font-size:13px;font-weight:500;color:var(--t2);margin-bottom:5px;}
+.es{font-size:11.5px;color:var(--t3);}
+
+/* ═══ ALERTS ═══ */
+.ai{padding:10px 13px;border-radius:var(--r-sm);font-size:12px;margin-bottom:13px;display:flex;gap:8px;}
+.ai-i{background:rgba(91,92,255,.06);border:1px solid rgba(91,92,255,.16);color:var(--primary-light);}
+.ai-ok{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.16);color:var(--grn);}
+.ai-w{background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.16);color:var(--yel);}
+
+/* ═══ MISC ═══ */
+.sep{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);display:flex;align-items:center;gap:8px;margin:14px 0 9px;}
+.sep::after{content:'';flex:1;height:1px;background:var(--b1);}
+
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding:14px 16px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);}
+.ph-n{font-size:17px;font-weight:700;color:var(--t1);margin-bottom:3px;}
+.ph-s{font-size:11.5px;color:var(--t3);}
+
+.ebar{display:flex;gap:7px;align-items:center;padding:11px 0;border-top:1px solid var(--b1);margin-top:16px;}
+
+::-webkit-scrollbar{width:7px;height:7px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:4px;}
+.sb ::-webkit-scrollbar-thumb{background:var(--sb-border);}
+
+/* ═══ PORTFOLIO ═══ */
+.portfolio-hdr{margin-bottom:18px;}
+.portfolio-tbl-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;}
+.health-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:50px;font-size:10.5px;font-weight:600;}
+.hp-good{background:rgba(34,197,94,.12);color:var(--grn);}
+.hp-warn{background:rgba(234,179,8,.12);color:var(--yel);}
+.hp-bad{background:rgba(239,68,68,.12);color:var(--red);}
+.hp-none{background:rgba(138,154,184,.1);color:var(--t3);}
 </style>
 </head>
 <body>
 
-<div class="load-ov" id="loadOv"><div class="spin"></div><div class="load-t" id="loadT">Processing...</div></div>
+<!-- LOADING -->
+<div class="load-ov" id="loadOv"><div class="spin"></div><div class="load-t" id="loadT">جاري المعالجة...</div></div>
 
-<!-- Validation -->
+<!-- VALIDATION MODAL -->
 <div class="val-ov" id="valOv">
   <div class="vbox">
     <div class="vhdr">
-      <div><div style="font-size:14.5px;font-weight:700" id="T_valTitle">Review & Approve Risks</div><div style="font-size:11px;color:var(--t3);margin-top:2px" id="T_valSub">Review before saving to register</div></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--t1)">مراجعة واعتماد المخاطر</div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:3px">راجع كل مخاطرة قبل حفظ السجل</div>
+      </div>
+      <div style="display:flex;gap:7px;align-items:center;flex-shrink:0">
         <span style="font-size:11.5px;color:var(--t3)" id="valCtr">0/0</span>
-        <button class="btn btn-ok" onclick="approveAll()" id="T_btnApAll">Approve All</button>
-        <button class="btn btn-p" onclick="confirmVal()" id="T_btnSave">Save Register</button>
+        <button class="btn btn-ok" onclick="approveAll()">اعتماد الكل</button>
+        <button class="btn btn-p" onclick="confirmVal()">حفظ السجل</button>
       </div>
     </div>
     <div id="valList"></div>
   </div>
 </div>
 
-<!-- Edit Risk Modal -->
+<!-- EDIT RISK MODAL -->
 <div class="modal-ov" id="editOv">
-  <div class="modal" style="width:620px;">
-    <div class="modal-t" id="T_editTitle">Edit Risk</div>
+  <div class="modal" style="width:640px">
+    <div class="modal-t">تعديل المخاطرة</div>
     <div class="edit-grid">
-      <div class="fg"><label class="fl" id="T_eDesc">Description</label><textarea class="fta" id="e_desc" style="min-height:60px"></textarea></div>
-      <div class="fg"><label class="fl" id="T_eCause">Cause</label><textarea class="fta" id="e_cause" style="min-height:60px"></textarea></div>
-      <div class="fg"><label class="fl" id="T_eType">Type</label><select class="fs" id="e_type"><option value="threat" data-ar="تهديد" data-en="Threat">Threat</option><option value="opportunity" data-ar="فرصة" data-en="Opportunity">Opportunity</option></select></div>
-      <div class="fg"><label class="fl" id="T_eCat">Category</label><select class="fs" id="e_cat">
-<option value="Schedule" data-ar="الجدول الزمني">Schedule</option>
-<option value="Cost" data-ar="التكلفة">Cost</option>
-<option value="Scope" data-ar="النطاق">Scope</option>
-<option value="Contract" data-ar="العقد">Contract</option>
-<option value="Design" data-ar="التصميم">Design</option>
-<option value="Execution" data-ar="التنفيذ">Execution</option>
-<option value="Suppliers" data-ar="الموردين">Suppliers</option>
-<option value="QHSE" data-ar="الصحة والسلامة">QHSE</option>
-<option value="Quality" data-ar="الجودة">Quality</option>
-<option value="Regulatory" data-ar="تنظيمي">Regulatory</option>
-<option value="Financial" data-ar="مالي">Financial</option>
-</select></div>
-      <div class="fg"><label class="fl" id="T_eLevel">Level</label><select class="fs" id="e_level"><option value="high" data-ar="عالي">High</option><option value="medium" data-ar="متوسط">Medium</option><option value="low" data-ar="منخفض">Low</option></select></div>
-      <div class="fg"><label class="fl" id="T_eResp">Response Strategy</label><select class="fs" id="e_resp">
-<option value="Avoid" data-ar="تجنب">Avoid</option>
-<option value="Mitigate" data-ar="تخفيف">Mitigate</option>
-<option value="Transfer" data-ar="نقل">Transfer</option>
-<option value="Accept" data-ar="قبول">Accept</option>
-<option value="Escalate" data-ar="تصعيد">Escalate</option>
-<option value="Exploit" data-ar="استغلال">Exploit</option>
-<option value="Enhance" data-ar="تعزيز">Enhance</option>
-<option value="Share" data-ar="مشاركة">Share</option>
-</select></div>
-      <div class="fg"><label class="fl" id="T_eProb">Probability (1-5)</label><input type="number" class="fi" id="e_prob" min="1" max="5"/></div>
-      <div class="fg"><label class="fl" id="T_eOwner">Owner</label><input type="text" class="fi" id="e_owner"/></div>
-      <div class="fg edit-full"><label class="fl" id="T_eMit">Action Plan / Mitigation</label><textarea class="fta" id="e_mit"></textarea></div>
+      <div class="fg edit-full"><label class="fl">الوصف</label><textarea class="fta" id="e_desc" style="min-height:60px"></textarea></div>
+      <div class="fg edit-full"><label class="fl">السبب</label><textarea class="fta" id="e_cause" style="min-height:60px"></textarea></div>
+      <div class="fg"><label class="fl">النوع</label><select class="fs" id="e_type"><option value="threat">تهديد</option><option value="opportunity">فرصة</option></select></div>
+      <div class="fg"><label class="fl">الفئة</label><select class="fs" id="e_cat"><option value="Schedule">الجدول الزمني</option><option value="Cost">التكلفة</option><option value="Scope">النطاق</option><option value="Contract">العقد</option><option value="Design">التصميم</option><option value="Execution">التنفيذ</option><option value="Suppliers">الموردين</option><option value="QHSE">الصحة والسلامة</option><option value="Quality">الجودة</option><option value="Regulatory">تنظيمي</option><option value="Financial">مالي</option></select></div>
+      <div class="fg"><label class="fl">المستوى</label><select class="fs" id="e_level"><option value="high">عالي</option><option value="medium">متوسط</option><option value="low">منخفض</option></select></div>
+      <div class="fg"><label class="fl">استراتيجية الاستجابة</label><select class="fs" id="e_resp"><option value="Avoid">تجنب</option><option value="Mitigate">تخفيف</option><option value="Transfer">نقل</option><option value="Accept">قبول</option><option value="Escalate">تصعيد</option><option value="Exploit">استغلال</option><option value="Enhance">تعزيز</option><option value="Share">مشاركة</option></select></div>
+      <div class="fg"><label class="fl">الاحتمالية (1-5)</label><input type="number" class="fi" id="e_prob" min="1" max="5"/></div>
+      <div class="fg"><label class="fl">المسؤول</label><input type="text" class="fi" id="e_owner"/></div>
+      <div class="fg edit-full"><label class="fl">خطة التخفيف</label><textarea class="fta" id="e_mit"></textarea></div>
     </div>
-    <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px;">
-      <button class="btn btn-g" onclick="closeEdit()" id="T_eCan">Cancel</button>
-      <button class="btn btn-p" onclick="saveEdit()" id="T_eSave">Save Changes</button>
+    <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-g" onclick="closeEdit()">إلغاء</button>
+      <button class="btn btn-p" onclick="saveEdit()">حفظ التعديلات</button>
     </div>
   </div>
 </div>
 
-<!-- Notifications Modal -->
+<!-- NOTIFICATIONS MODAL -->
 <div class="modal-ov" id="notifOv">
-  <div class="notif-modal">
-    <div class="modal-t" id="T_notifTitle">Notification Messages</div>
-    <div style="font-size:12px;color:var(--t3);margin-bottom:12px;" id="T_notifSub">Copy and send these messages to each responsible party</div>
+  <div class="modal" style="width:640px">
+    <div class="modal-t">رسائل الإشعارات</div>
+    <div style="font-size:11.5px;color:var(--t3);margin-bottom:13px">انسخ هذه الرسائل وأرسلها لكل مسؤول</div>
     <div id="notifList"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-      <button class="btn btn-g" onclick="document.getElementById('notifOv').classList.remove('on')" id="T_notifClose">Close</button>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-g" onclick="document.getElementById('notifOv').classList.remove('on')">إغلاق</button>
     </div>
   </div>
 </div>
 
-<!-- Header -->
-<div class="hdr">
-  <div class="brand"><span id="T_brand">Risk Intelligence</span><span class="brand-pill" id="T_brandPill">AI-POWERED</span></div>
-  <div style="display:flex;align-items:center;gap:7px;">
-    <div style="display:flex;align-items:center;gap:5px" id="syncInd" style="display:none"><div class="sync-d"></div><span style="font-size:10.5px;color:var(--grn)" id="T_synced">Synced</span></div>
-    <button class="btn btn-p" onclick="openProjModal()" id="T_btnNew">+ New Project</button>
+<!-- PROJECT MODAL -->
+<div class="modal-ov" id="projModal">
+  <div class="modal">
+    <div class="modal-t">مشروع جديد</div>
+    <div class="fgrid">
+      <div class="fg"><label class="fl">اسم المشروع *</label><input type="text" class="fi" id="np_n"/></div>
+      <div class="fg"><label class="fl">رقم العقد</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
+      <div class="fg"><label class="fl">قيمة العقد (ريال)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
+      <div class="fg"><label class="fl">نوع المشروع</label>
+        <select class="fs" id="np_t">
+          <option value="Residential">سكني</option>
+          <option value="Commercial">تجاري</option>
+          <option value="Mixed-Use">متعدد الاستخدامات</option>
+          <option value="Infrastructure">بنية تحتية</option>
+          <option value="Roads & Highways">طرق وجسور</option>
+          <option value="Industrial">صناعي</option>
+          <option value="Healthcare">صحي</option>
+          <option value="Educational">تعليمي</option>
+          <option value="Hospitality">فندقي</option>
+          <option value="Landscaping">تشجير</option>
+          <option value="Marine">بحري</option>
+          <option value="MEP">ميكانيكا وكهرباء</option>
+          <option value="Renovation">ترميم</option>
+          <option value="Government">حكومي</option>
+          <option value="Other">أخرى</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">تاريخ البداية</label><input type="date" class="fi" id="np_s"/></div>
+      <div class="fg"><label class="fl">تاريخ الإنجاز</label><input type="date" class="fi" id="np_e"/></div>
+      <div class="fg full"><label class="fl">الوصف</label><textarea class="fta" id="np_d"></textarea></div>
+    </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closeProjModal()">إلغاء</button>
+      <button class="btn btn-p" onclick="createProj()">إنشاء المشروع</button>
+    </div>
   </div>
 </div>
 
-<!-- API Bar -->
-<div class="api-bar">
-  <span class="api-lbl" id="T_apiLbl">Claude API Key</span>
-  <input type="password" class="api-inp" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()"/>
-  <div class="cdot" id="cdot"></div>
-  <span class="clbl" id="clbl">Not connected</span>
-</div>
-
+<!-- ═══ APP ═══ -->
 <div class="app">
-  <div class="sb">
-    <div class="sb-hd" id="T_sbHd">Projects</div>
-    <div id="projList"><div style="padding:7px;font-size:10.5px;color:var(--t3)">Loading...</div></div>
-  </div>
-
-  <div class="main">
-    <div id="welcome" class="welcome">
-      <h1 id="T_wTitle">Risk Intelligence Platform</h1>
-      <p id="T_wText">Upload project documents — contracts, schedules, drawings, BOQ — and Claude will generate a professional, team-shared risk register.</p>
-      <button class="btn btn-p" onclick="openProjModal()" id="T_wBtn">Create First Project</button>
+  <!-- SIDEBAR -->
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="sb-logo">⚡</div>
+      <div class="sb-name">منصة المخاطر</div>
+      <div class="sb-tag">بالذكاء الاصطناعي</div>
     </div>
 
-    <div id="projView" style="display:none">
-      <div class="ph">
-        <div><div class="ph-n" id="phName">—</div><div class="ph-s" id="phSub">—</div></div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-warn" onclick="showNotifModal()" id="T_btnNotif">Notifications</button>
-          <button class="btn btn-g" onclick="exportCSV()" id="T_btnExport">Export CSV</button>
-          <button class="btn btn-del" onclick="delProj()" id="T_btnDel">Delete</button>
+    <div class="sb-nav">
+      <div class="sb-section">العرض الرئيسي</div>
+      <div class="nav-item on" id="nav-portfolio" onclick="goPortfolio()">
+        <div class="nav-icon">📊</div>
+        <div>المحفظة الكاملة</div>
+      </div>
+      <div class="nav-item" id="nav-new" onclick="openProjModal()">
+        <div class="nav-icon">＋</div>
+        <div>مشروع جديد</div>
+      </div>
+
+      <div class="sb-section" style="margin-top:14px">المشاريع</div>
+      <div class="proj-list" id="projList"><div style="padding:10px;font-size:10.5px;color:var(--sb-text-3);text-align:center">جاري التحميل...</div></div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="fg" style="margin-bottom:8px">
+        <label style="font-size:10px;color:var(--sb-text-3);font-weight:600">مفتاح Claude API</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()" style="background:var(--sb-bg);border:1px solid var(--sb-border);border-radius:5px;padding:6px 9px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%"/>
+      </div>
+      <div class="api-row">
+        <div class="cdot" id="cdot"></div>
+        <span class="api-stat" id="clbl">غير متصل</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- ══ PORTFOLIO VIEW ══ -->
+    <div id="portfolioView">
+      <div class="top-bar">
+        <div class="search-bar">
+          <span style="color:var(--t3)">⌕</span>
+          <input type="text" placeholder="ابحث في المشاريع..." id="searchProj" oninput="filterProjs(this.value)"/>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-p" onclick="openProjModal()">+ مشروع جديد</button>
         </div>
       </div>
-      <div class="stats">
-        <div class="sc"><div class="sc-l" id="T_stTotal">Total</div><div class="sc-v" id="svTotal">0</div></div>
-        <div class="sc"><div class="sc-l" id="T_stThr">Threats</div><div class="sc-v" style="color:var(--red)" id="svThr">0</div></div>
-        <div class="sc"><div class="sc-l" id="T_stOpp">Opportunities</div><div class="sc-v" style="color:var(--teal)" id="svOpp">0</div></div>
-        <div class="sc"><div class="sc-l" id="T_stHigh">High</div><div class="sc-v" style="color:var(--red)" id="svHigh">0</div></div>
-        <div class="sc"><div class="sc-l" id="T_stDate">Last Analysis</div><div class="sc-v" style="font-size:11.5px;padding-top:4px" id="svDate">—</div></div>
-      </div>
-      <div class="tabs">
-        <div class="tab on" onclick="ST('files')" id="tab-files" data-tid="T_tabFiles">Files</div>
-        <div class="tab" onclick="ST('dash')" id="tab-dash" data-tid="T_tabDash">Dashboard</div>
-        <div class="tab" onclick="ST('reg')" id="tab-reg" data-tid="T_tabReg">Risk Register</div>
-        <div class="tab" onclick="ST('warn')" id="tab-warn" data-tid="T_tabWarn">Early Warning</div>
-        <div class="tab" onclick="ST('upd')" id="tab-upd" data-tid="T_tabUpd">Updates</div>
-        <div class="tab" onclick="ST('tol')" id="tab-tol" data-tid="T_tabTol">Risk Appetite</div>
-        <div class="tab" onclick="ST('contacts')" id="tab-contacts" data-tid="T_tabContacts">Contacts</div>
+
+      <div class="greeting">
+        <div class="greet-line">لوحة محفظة المشاريع 👋</div>
+        <div class="greet-sub">نظرة شاملة على جميع المخاطر في المحفظة</div>
       </div>
 
-      <!-- FILES -->
+      <div id="portfolioContent"></div>
+    </div>
+
+    <!-- ══ PROJECT VIEW ══ -->
+    <div id="projView" style="display:none">
+      <div class="ph">
+        <div>
+          <div class="ph-n" id="phName">—</div>
+          <div class="ph-s" id="phSub">—</div>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-warn" onclick="showNotifModal()">🔔 الإشعارات</button>
+          <button class="btn btn-g" onclick="exportCSV()">⬇ CSV</button>
+          <button class="btn btn-del" onclick="delProj()">حذف</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card cyan">
+          <div class="stat-icon">📋</div>
+          <div class="stat-l">الإجمالي</div>
+          <div class="stat-v" id="svTotal">0</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">⚠</div>
+          <div class="stat-l">التهديدات</div>
+          <div class="stat-v" style="color:var(--red)" id="svThr">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">★</div>
+          <div class="stat-l">الفرص</div>
+          <div class="stat-v" style="color:var(--teal)" id="svOpp">0</div>
+        </div>
+        <div class="stat-card pink">
+          <div class="stat-icon">▲</div>
+          <div class="stat-l">عالية</div>
+          <div class="stat-v" style="color:var(--red)" id="svHigh">0</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab on" onclick="ST('files')" data-tab="files">📁 الملفات</div>
+        <div class="tab" onclick="ST('dash')" data-tab="dash">📊 لوحة التحكم</div>
+        <div class="tab" onclick="ST('reg')" data-tab="reg">📋 سجل المخاطر</div>
+        <div class="tab" onclick="ST('warn')" data-tab="warn">🚨 الإنذار المبكر</div>
+        <div class="tab" onclick="ST('upd')" data-tab="upd">🔄 التحديثات</div>
+        <div class="tab" onclick="ST('tol')" data-tab="tol">⚙ السماحية</div>
+        <div class="tab" onclick="ST('contacts')" data-tab="contacts">👥 جهات الاتصال</div>
+      </div>
+
+      <!-- FILES PANE -->
       <div class="pane on" id="pane-files">
-        <div class="drop"><input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
-          <div style="font-size:13px;font-weight:500;margin-bottom:3px" id="T_dropT">Drag files here or click to browse</div>
-          <div style="font-size:11px;color:var(--t3)" id="T_dropS">PDF · Excel · Word · Drawings · CSV · Primavera</div>
+        <div class="drop">
+          <input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
+          <div class="drop-icon">⬆</div>
+          <div class="drop-t">اسحب الملفات هنا أو اضغط للاختيار</div>
+          <div class="drop-s">PDF · Excel · Word · المخططات · CSV · Primavera</div>
         </div>
         <div class="fg2" id="fgrid"></div>
         <div style="margin-top:14px;display:flex;gap:9px;align-items:center">
-          <button class="btn btn-p" id="anaBtn" onclick="analyze()" disabled>Analyze & Generate Risk Register</button>
-          <span style="font-size:11px;color:var(--t3)" id="fcLbl">No files</span>
+          <button class="btn btn-p" id="anaBtn" onclick="analyze()" disabled>تحليل وتوليد سجل المخاطر</button>
+          <span style="font-size:11px;color:var(--t3)" id="fcLbl">لا توجد ملفات</span>
         </div>
       </div>
 
-      <!-- DASHBOARD -->
-      <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="et" id="T_dashEmpty">Run analysis to see dashboard</div></div></div></div>
+      <!-- DASHBOARD PANE -->
+      <div class="pane" id="pane-dash">
+        <div id="dashContent">
+          <div class="empty">
+            <div class="empty-icon">📊</div>
+            <div class="et">قم بالتحليل أولاً لعرض لوحة التحكم</div>
+          </div>
+        </div>
+      </div>
 
-      <!-- REGISTER -->
-      <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="et" id="T_regEmpty">No risk register yet</div></div></div></div>
+      <!-- REGISTER PANE -->
+      <div class="pane" id="pane-reg">
+        <div id="regContent">
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <div class="et">لا يوجد سجل مخاطر بعد</div>
+          </div>
+        </div>
+      </div>
 
-      <!-- EARLY WARNING -->
-      <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="et" id="T_warnEmpty">Run analysis to generate early warnings</div></div></div></div>
+      <!-- EARLY WARNING PANE -->
+      <div class="pane" id="pane-warn">
+        <div id="warnContent">
+          <div class="empty">
+            <div class="empty-icon">🚨</div>
+            <div class="et">قم بالتحليل أولاً لعرض الإنذارات</div>
+          </div>
+        </div>
+      </div>
 
-      <!-- UPDATES -->
+      <!-- UPDATES PANE -->
       <div class="pane" id="pane-upd">
-        <div class="uform">
-          <div style="font-size:12.5px;font-weight:600;margin-bottom:10px" id="T_uTitle">Add New Update</div>
+        <div class="card" style="margin-bottom:15px">
+          <div class="card-t">إضافة تحديث جديد</div>
           <div class="pills" id="updPills">
-            <button class="pill on" onclick="setUT(this,'change_order')" data-ar="أمر تغيير" data-en="Change Order">Change Order</button>
-            <button class="pill" onclick="setUT(this,'delay')" data-ar="تأخير" data-en="Delay">Delay</button>
-            <button class="pill" onclick="setUT(this,'scope')" data-ar="تغيير نطاق" data-en="Scope Change">Scope Change</button>
-            <button class="pill" onclick="setUT(this,'site')" data-ar="مستجد ميداني" data-en="Site Update">Site Update</button>
-            <button class="pill" onclick="setUT(this,'contract')" data-ar="تعديل عقدي" data-en="Contract Amendment">Contract Amendment</button>
-            <button class="pill" onclick="setUT(this,'meeting')" data-ar="محضر اجتماع" data-en="Meeting Minutes">Meeting Minutes</button>
-            <button class="pill" onclick="setUT(this,'note')" data-ar="ملاحظة" data-en="Note">Note</button>
+            <button class="pill on" onclick="setUT(this,'change_order')">أمر تغيير</button>
+            <button class="pill" onclick="setUT(this,'delay')">تأخير</button>
+            <button class="pill" onclick="setUT(this,'scope')">تغيير نطاق</button>
+            <button class="pill" onclick="setUT(this,'site')">مستجد ميداني</button>
+            <button class="pill" onclick="setUT(this,'contract')">تعديل عقدي</button>
+            <button class="pill" onclick="setUT(this,'meeting')">محضر اجتماع</button>
+            <button class="pill" onclick="setUT(this,'note')">ملاحظة</button>
           </div>
-          <div class="fdrop"><input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)"/>
-            <div style="font-size:18px;color:var(--t3)">↑</div>
-            <div><div style="font-size:12px;font-weight:500" id="T_fdT">Attach file (optional)</div><div style="font-size:11px;color:var(--t3)" id="T_fdS">Meeting minutes · Change order · Correspondence</div></div>
+          <div style="border:1px dashed var(--b3);border-radius:var(--r-sm);padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2);">
+            <input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer"/>
+            <div style="font-size:18px;color:var(--t3)">⬆</div>
+            <div>
+              <div style="font-size:12.5px;font-weight:500">رفع ملف (اختياري)</div>
+              <div style="font-size:11px;color:var(--t3)">محضر اجتماع · أمر تغيير · مراسلة</div>
+            </div>
           </div>
-          <div id="ufPrev" style="margin-bottom:8px"></div>
-          <div class="fg" style="margin-bottom:9px"><label class="fl" id="T_fdesc">File description</label><input type="text" class="fi" id="ufdesc" placeholder="e.g. Meeting minutes #12"/></div>
-          <textarea class="fta" id="utext" style="width:100%;margin-bottom:10px" placeholder="Describe the update..."></textarea>
-          <button class="btn btn-p" onclick="addUpdate()" id="T_btnAddUpd">Analyze & Add to Register</button>
+          <div id="ufPrev" style="margin-bottom:9px"></div>
+          <div class="fg" style="margin-bottom:10px">
+            <label class="fl">وصف الملف</label>
+            <input type="text" class="fi" id="ufdesc" placeholder="مثال: محضر اجتماع التنسيق #12"/>
+          </div>
+          <textarea class="fta" id="utext" style="width:100%;margin-bottom:11px" placeholder="اكتب تفاصيل التحديث..."></textarea>
+          <button class="btn btn-p" onclick="addUpdate()">تحليل وإضافة للسجل</button>
         </div>
-        <div class="tl" id="tlEl"><div class="empty" style="padding:20px"><div class="et" id="T_noUpd">No updates yet</div></div></div>
+        <div class="tl" id="tlEl">
+          <div class="empty">
+            <div class="empty-icon">🔄</div>
+            <div class="et">لا توجد تحديثات</div>
+          </div>
+        </div>
       </div>
 
-      <!-- TOLERANCE -->
+      <!-- TOLERANCE PANE -->
       <div class="pane" id="pane-tol">
-        <div style="max-width:740px">
-          <div style="font-size:13.5px;font-weight:700;margin-bottom:3px" id="T_tolTitle">Risk Appetite & Tolerance</div>
-          <div style="font-size:11.5px;color:var(--t3);margin-bottom:16px" id="T_tolSub">Define thresholds — Claude uses these to classify risks accurately</div>
-          <div class="tol-sec"><div class="tol-t" id="T_tolCS">Cost & Schedule</div>
+        <div style="max-width:780px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">مدى السماحية في المخاطر</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">حدد الحدود المقبولة لكل بُعد — يستخدمها Claude لتصنيف المخاطر بدقة</div>
+          
+          <div class="tol-sec">
+            <div class="tol-t">التكلفة والجدول الزمني</div>
             <div class="tg">
-              <div><label class="fl" style="margin-bottom:5px;display:block" id="T_tolCL">Max cost overrun</label>
-                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input type="number" class="fi" id="tc_pct" placeholder="5" style="width:60px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolPct">% of contract</span></div>
-                <div style="display:flex;gap:6px;align-items:center"><input type="number" class="fi" id="tc_val" placeholder="500000" style="width:110px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolSAR">SAR max</span></div>
+              <div>
+                <label class="fl" style="margin-bottom:6px;display:block">الحد الأقصى للتكلفة الإضافية</label>
+                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px"><input type="number" class="fi" id="tc_pct" placeholder="5" style="width:65px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">% من قيمة العقد</span></div>
+                <div style="display:flex;gap:7px;align-items:center"><input type="number" class="fi" id="tc_val" placeholder="500000" style="width:120px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">ريال كحد أقصى</span></div>
               </div>
-              <div><label class="fl" style="margin-bottom:5px;display:block" id="T_tolSL">Max delay</label>
-                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input type="number" class="fi" id="ts_days" placeholder="30" style="width:60px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolDays">days</span></div>
-                <div style="display:flex;gap:6px;align-items:center"><input type="number" class="fi" id="ts_pct" placeholder="10" style="width:60px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)" id="T_tolSpct">% of duration</span></div>
+              <div>
+                <label class="fl" style="margin-bottom:6px;display:block">الحد الأقصى للتأخير</label>
+                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px"><input type="number" class="fi" id="ts_days" placeholder="30" style="width:65px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">يوم</span></div>
+                <div style="display:flex;gap:7px;align-items:center"><input type="number" class="fi" id="ts_pct" placeholder="10" style="width:65px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">% من المدة</span></div>
               </div>
             </div>
           </div>
-          <div class="tol-sec"><div class="tol-t" id="T_tolQT">QHSE Levels</div><div id="qhse_lvl"></div></div>
-          <div class="tol-sec"><div class="tol-t" id="T_tolRT">Reputation Levels</div><div id="rep_lvl"></div></div>
-          <div class="tol-sec"><div class="tol-t" id="T_tolMT">Probability & Impact Scale</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
-              <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:5px" id="T_tolPT">Probability (1–5)</div><div id="prob_lvl"></div></div>
-              <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:5px" id="T_tolIT">Impact (1–5)</div><div id="imp_lvl"></div></div>
+
+          <div class="tol-sec"><div class="tol-t">مستويات QHSE</div><div id="qhse_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t">مستويات السمعة</div><div id="rep_lvl"></div></div>
+          <div class="tol-sec">
+            <div class="tol-t">الاحتمالية والتأثير</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div><div style="font-size:10.5px;font-weight:700;color:var(--t3);margin-bottom:6px">الاحتمالية (1-5)</div><div id="prob_lvl"></div></div>
+              <div><div style="font-size:10.5px;font-weight:700;color:var(--t3);margin-bottom:6px">التأثير (1-5)</div><div id="imp_lvl"></div></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- CONTACTS -->
+      <!-- CONTACTS PANE -->
       <div class="pane" id="pane-contacts">
-        <div style="max-width:700px">
-          <div style="font-size:13.5px;font-weight:700;margin-bottom:3px" id="T_contactsTitle">Team Contacts</div>
-          <div style="font-size:11.5px;color:var(--t3);margin-bottom:16px" id="T_contactsSub">Add team contacts to receive risk notifications</div>
-          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin-bottom:12px">
-            <div style="font-size:12px;font-weight:600;margin-bottom:10px" id="T_addContact">Add Contact</div>
-            <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
-              <div class="fg"><label class="fl" id="T_cName">Name</label><input type="text" class="fi" id="c_name" placeholder="Ahmed Al-Rashidi"/></div>
-              <div class="fg"><label class="fl" id="T_cRole">Role</label><input type="text" class="fi" id="c_role" placeholder="Project Manager"/></div>
-              <div class="fg"><label class="fl" id="T_cEmail">Email / WhatsApp</label><input type="text" class="fi" id="c_contact" placeholder="ahmed@company.com"/></div>
+        <div style="max-width:720px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">جهات اتصال الفريق</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">أضف جهات الاتصال لاستقبال إشعارات المخاطر</div>
+          <div class="card" style="margin-bottom:13px">
+            <div class="card-t">إضافة جهة اتصال</div>
+            <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:11px">
+              <div class="fg"><label class="fl">الاسم</label><input type="text" class="fi" id="c_name" placeholder="أحمد الراشدي"/></div>
+              <div class="fg"><label class="fl">الدور</label><input type="text" class="fi" id="c_role" placeholder="مدير المشروع"/></div>
+              <div class="fg"><label class="fl">البريد / واتساب</label><input type="text" class="fi" id="c_contact" placeholder="ahmed@company.com"/></div>
             </div>
-            <button class="btn btn-p" onclick="addContact()" id="T_btnAddC">Add Contact</button>
+            <button class="btn btn-p" onclick="addContact()">إضافة</button>
           </div>
           <div id="contactsList"></div>
         </div>
       </div>
     </div>
-
-    <!-- PROJECT MODAL -->
-    <div class="modal-ov" id="projModal">
-      <div class="modal">
-        <div class="modal-t" id="T_modalT">New Project</div>
-        <div class="fgrid">
-          <div class="fg"><label class="fl" id="T_lName">Project Name *</label><input type="text" class="fi" id="np_n"/></div>
-          <div class="fg"><label class="fl" id="T_lCon">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
-          <div class="fg"><label class="fl" id="T_lVal">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
-          <div class="fg"><label class="fl" id="T_lType">Project Type</label>
-            <select class="fs" id="np_t">
-              <option value="Residential">Residential — سكني</option>
-              <option value="Commercial">Commercial — تجاري</option>
-              <option value="Mixed-Use">Mixed-Use — متعدد الاستخدامات</option>
-              <option value="Infrastructure">Infrastructure — بنية تحتية</option>
-              <option value="Roads & Highways">Roads & Highways — طرق وجسور</option>
-              <option value="Industrial">Industrial — صناعي</option>
-              <option value="Healthcare">Healthcare — صحي</option>
-              <option value="Educational">Educational — تعليمي</option>
-              <option value="Hospitality">Hospitality — فندقي</option>
-              <option value="Landscaping">Landscaping — تشجير</option>
-              <option value="Marine">Marine — بحري</option>
-              <option value="MEP">MEP — ميكانيكا وكهرباء</option>
-              <option value="Renovation">Renovation — ترميم</option>
-              <option value="Government">Government — حكومي</option>
-              <option value="Other">Other — أخرى</option>
-            </select>
-          </div>
-          <div class="fg"><label class="fl" id="T_lSt">Start Date</label><input type="date" class="fi" id="np_s"/></div>
-          <div class="fg"><label class="fl" id="T_lEn">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
-          <div class="fg full"><label class="fl" id="T_lDesc">Description</label><textarea class="fta" id="np_d"></textarea></div>
-        </div>
-        <div style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="btn btn-g" onclick="closeProjModal()" id="T_btnCan">Cancel</button>
-          <button class="btn btn-p" onclick="createProj()" id="T_btnCre">Create Project</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </main>
 </div>
 
 <script>
@@ -519,115 +695,15 @@ async function sb(path,method='GET',body=null){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-// ═══ TRANSLATIONS ═══
-let L='en';
-const TR={
-  T_brand:{en:'Risk Intelligence',ar:'منصة المخاطر'},
-  T_brandPill:{en:'AI-POWERED',ar:'بالذكاء الاصطناعي'},
-  T_apiLbl:{en:'Claude API Key',ar:'مفتاح Claude API'},
-  T_connOn:{en:'Connected',ar:'متصل'},
-  T_connOff:{en:'Not connected',ar:'غير متصل'},
-  T_sbHd:{en:'Projects',ar:'المشاريع'},
-  T_wTitle:{en:'Risk Intelligence Platform',ar:'منصة إدارة المخاطر الذكية'},
-  T_wText:{en:'Upload project documents and Claude will generate a professional shared risk register.',ar:'ارفع ملفات مشروعك وسيحلل Claude البيانات ويولّد سجل مخاطر احترافي مشترك مع فريقك.'},
-  T_wBtn:{en:'Create First Project',ar:'إنشاء أول مشروع'},
-  T_btnNew:{en:'+ New Project',ar:'+ مشروع جديد'},
-  T_btnNotif:{en:'Notifications',ar:'الإشعارات'},
-  T_btnExport:{en:'Export CSV',ar:'تصدير CSV'},
-  T_btnDel:{en:'Delete',ar:'حذف'},
-  T_stTotal:{en:'Total',ar:'الإجمالي'},
-  T_stThr:{en:'Threats',ar:'التهديدات'},
-  T_stOpp:{en:'Opportunities',ar:'الفرص'},
-  T_stHigh:{en:'High',ar:'عالية'},
-  T_stDate:{en:'Last Analysis',ar:'آخر تحليل'},
-  T_tabFiles:{en:'Files',ar:'الملفات'},
-  T_tabDash:{en:'Dashboard',ar:'لوحة التحكم'},
-  T_tabReg:{en:'Risk Register',ar:'سجل المخاطر'},
-  T_tabWarn:{en:'Early Warning',ar:'الإنذار المبكر'},
-  T_tabUpd:{en:'Updates',ar:'التحديثات'},
-  T_tabTol:{en:'Risk Appetite',ar:'مدى السماحية'},
-  T_tabContacts:{en:'Contacts',ar:'جهات الاتصال'},
-  T_dropT:{en:'Drag files here or click to browse',ar:'اسحب الملفات هنا أو اضغط للاختيار'},
-  T_dropS:{en:'PDF · Excel · Word · Drawings · CSV · Primavera',ar:'PDF · Excel · Word · المخططات · CSV · برامفيرا'},
-  T_btnAna:{en:'Analyze & Generate Risk Register',ar:'تحليل وتوليد سجل المخاطر'},
-  T_dashEmpty:{en:'Run analysis to see dashboard',ar:'قم بالتحليل أولاً لعرض لوحة التحكم'},
-  T_regEmpty:{en:'No risk register yet',ar:'لا يوجد سجل مخاطر بعد'},
-  T_warnEmpty:{en:'Run analysis to generate early warnings',ar:'قم بالتحليل أولاً لعرض الإنذارات'},
-  T_uTitle:{en:'Add New Update',ar:'إضافة تحديث جديد'},
-  T_fdT:{en:'Attach file (optional)',ar:'رفع ملف (اختياري)'},
-  T_fdS:{en:'Meeting minutes · Change order · Correspondence',ar:'محضر اجتماع · أمر تغيير · مراسلة'},
-  T_fdesc:{en:'File description',ar:'وصف الملف'},
-  T_btnAddUpd:{en:'Analyze & Add to Register',ar:'تحليل وإضافة للسجل'},
-  T_noUpd:{en:'No updates yet',ar:'لا توجد تحديثات'},
-  T_tolTitle:{en:'Risk Appetite & Tolerance',ar:'مدى السماحية في المخاطر'},
-  T_tolSub:{en:'Define thresholds — Claude uses these to classify risks accurately',ar:'حدد الحدود المقبولة لكل بعد — يستخدمها Claude لتصنيف المخاطر بدقة'},
-  T_tolCS:{en:'Cost & Schedule',ar:'التكلفة والجدول الزمني'},
-  T_tolCL:{en:'Max cost overrun',ar:'الحد الأقصى للتكلفة الإضافية'},
-  T_tolPct:{en:'% of contract',ar:'% من قيمة العقد'},
-  T_tolSAR:{en:'SAR max',ar:'ريال كحد أقصى'},
-  T_tolSL:{en:'Max delay',ar:'الحد الأقصى للتأخير'},
-  T_tolDays:{en:'days',ar:'يوم'},
-  T_tolSpct:{en:'% of duration',ar:'% من المدة الكلية'},
-  T_tolQT:{en:'QHSE Levels',ar:'مستويات QHSE'},
-  T_tolRT:{en:'Reputation Levels',ar:'مستويات السمعة'},
-  T_tolMT:{en:'Probability & Impact Scale',ar:'مستويات الاحتمالية والتأثير'},
-  T_tolPT:{en:'Probability (1–5)',ar:'الاحتمالية (1-5)'},
-  T_tolIT:{en:'Impact (1–5)',ar:'التأثير (1-5)'},
-  T_valTitle:{en:'Review & Approve Risks',ar:'مراجعة واعتماد المخاطر'},
-  T_valSub:{en:'Review before saving to register',ar:'راجع كل مخاطرة قبل حفظ السجل'},
-  T_btnApAll:{en:'Approve All',ar:'اعتماد الكل'},
-  T_btnSave:{en:'Save Register',ar:'حفظ السجل'},
-  T_editTitle:{en:'Edit Risk',ar:'تعديل المخاطرة'},
-  T_eDesc:{en:'Description',ar:'الوصف'},
-  T_eCause:{en:'Cause',ar:'السبب'},
-  T_eType:{en:'Type',ar:'النوع'},
-  T_eCat:{en:'Category',ar:'الفئة'},
-  T_eLevel:{en:'Level',ar:'المستوى'},
-  T_eResp:{en:'Response Strategy',ar:'استراتيجية الاستجابة'},
-  T_eProb:{en:'Probability (1-5)',ar:'الاحتمالية (1-5)'},
-  T_eOwner:{en:'Owner',ar:'المسؤول'},
-  T_eMit:{en:'Action Plan',ar:'خطة التخفيف'},
-  T_eCan:{en:'Cancel',ar:'إلغاء'},
-  T_eSave:{en:'Save Changes',ar:'حفظ التعديلات'},
-  T_notifTitle:{en:'Notification Messages',ar:'رسائل الإشعارات'},
-  T_notifSub:{en:'Copy and send to each responsible party',ar:'انسخ وأرسل هذه الرسائل لكل مسؤول'},
-  T_notifClose:{en:'Close',ar:'إغلاق'},
-  T_contactsTitle:{en:'Team Contacts',ar:'جهات اتصال الفريق'},
-  T_contactsSub:{en:'Add contacts to receive risk notifications',ar:'أضف جهات الاتصال لاستقبال إشعارات المخاطر'},
-  T_addContact:{en:'Add Contact',ar:'إضافة جهة اتصال'},
-  T_cName:{en:'Name',ar:'الاسم'},
-  T_cRole:{en:'Role',ar:'الدور'},
-  T_cEmail:{en:'Email / WhatsApp',ar:'البريد / واتساب'},
-  T_btnAddC:{en:'Add Contact',ar:'إضافة'},
-  T_modalT:{en:'New Project',ar:'مشروع جديد'},
-  T_lName:{en:'Project Name *',ar:'اسم المشروع *'},
-  T_lCon:{en:'Contract No.',ar:'رقم العقد'},
-  T_lVal:{en:'Contract Value (SAR)',ar:'قيمة العقد (ريال)'},
-  T_lType:{en:'Project Type',ar:'نوع المشروع'},
-  T_lSt:{en:'Start Date',ar:'تاريخ البداية'},
-  T_lEn:{en:'Completion Date',ar:'تاريخ الإنجاز'},
-  T_lDesc:{en:'Description',ar:'الوصف'},
-  T_btnCan:{en:'Cancel',ar:'إلغاء'},
-  T_btnCre:{en:'Create Project',ar:'إنشاء المشروع'},
-  T_synced:{en:'Synced',ar:'متزامن'},
-  T_trendTitle:{en:'Weekly Trend Indicators',ar:'مؤشرات الاتجاه الأسبوعية'},
-  T_trendSub:{en:'Enter this week\'s project indicators for AI trend analysis',ar:'أدخل مؤشرات هذا الأسبوع لتحليل الاتجاه بالذكاء الاصطناعي'},
-  T_btnTrend:{en:'Analyze Trend',ar:'تحليل الاتجاه'},
-};
-function t(k){return (TR[k]&&TR[k][L])||k;}
-
 // ═══ DEFAULTS ═══
-const DQ=[{l:'1 — Zero Tolerance',d:'Any fatality or permanent disability'},{l:'2 — Critical',d:'Serious injury requiring hospitalization'},{l:'3 — High',d:'Medical treatment required'},{l:'4 — Medium',d:'First aid only'},{l:'5 — Low',d:'Near miss only'}];
-const DR=[{l:'1 — Zero Tolerance',d:'Any company image impact'},{l:'2 — National',d:'National media coverage'},{l:'3 — Regional',d:'Regional impact'},{l:'4 — Local',d:'Local city impact'},{l:'5 — Internal',d:'Project team only'}];
-const DP=[{l:'1 — Rare',d:'<10%'},{l:'2 — Unlikely',d:'10-30%'},{l:'3 — Possible',d:'30-50%'},{l:'4 — Likely',d:'50-70%'},{l:'5 — Almost Certain',d:'>70%'}];
-const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Minor manageable effect'},{l:'3 — Moderate',d:'Requires corrective action'},{l:'4 — Major',d:'Significant project impact'},{l:'5 — Critical',d:'May halt project'}];
-const LC=['#e05252','#d4780a','#c9a020','#2a9e5b','#1e72e8'];
-const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
-const IL=['','Negligible','Minor','Moderate','Major','Critical'];
-const PL_AR=['','نادر','محتمل نادراً','محتمل','مرجح','شبه مؤكد'];
-const IL_AR=['','ضئيل','منخفض','متوسط','عالي','حرج'];
-const RL_EN={high:'HIGH',medium:'MEDIUM',low:'LOW'};
-const RL_AR={high:'عالي',medium:'متوسط',low:'منخفض'};
+const DQ=[{l:'1 — لا تسامح',d:'وفاة أو عجز دائم'},{l:'2 — حرج',d:'إصابة خطيرة تستلزم استشفاء'},{l:'3 — عالي',d:'إصابة تتطلب علاج طبي'},{l:'4 — متوسط',d:'إسعافات أولية فقط'},{l:'5 — منخفض',d:'حادثة وشيكة فقط'}];
+const DR=[{l:'1 — لا تسامح',d:'تأثير على صورة الشركة'},{l:'2 — وطني',d:'تغطية إعلامية وطنية'},{l:'3 — إقليمي',d:'تأثير إقليمي'},{l:'4 — محلي',d:'تأثير على المدينة'},{l:'5 — داخلي',d:'فريق المشروع فقط'}];
+const DP=[{l:'1 — نادر',d:'أقل من 10%'},{l:'2 — محتمل نادراً',d:'10-30%'},{l:'3 — محتمل',d:'30-50%'},{l:'4 — مرجح',d:'50-70%'},{l:'5 — شبه مؤكد',d:'أكثر من 70%'}];
+const DI=[{l:'1 — ضئيل',d:'بدون تأثير'},{l:'2 — منخفض',d:'تأثير بسيط'},{l:'3 — متوسط',d:'يتطلب إجراءات تصحيحية'},{l:'4 — عالي',d:'تأثير كبير على المشروع'},{l:'5 — حرج',d:'قد يوقف المشروع'}];
+const LC=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4'];
+const PL=['','نادر','محتمل نادراً','محتمل','مرجح','شبه مؤكد'];
+const IL=['','ضئيل','منخفض','متوسط','عالي','حرج'];
+const RL={high:'عالي',medium:'متوسط',low:'منخفض'};
 const RESP_AR={Avoid:'تجنب',Mitigate:'تخفيف',Transfer:'نقل',Accept:'قبول',Escalate:'تصعيد',Exploit:'استغلال',Enhance:'تعزيز',Share:'مشاركة'};
 const CAT_AR={Schedule:'الجدول الزمني',Cost:'التكلفة',Scope:'النطاق',Contract:'العقد',Design:'التصميم',Execution:'التنفيذ',Suppliers:'الموردين',QHSE:'الصحة والسلامة',Quality:'الجودة',Regulatory:'تنظيمي',Financial:'مالي'};
 
@@ -635,94 +711,28 @@ const CAT_AR={Schedule:'الجدول الزمني',Cost:'التكلفة',Scope:'
 let projs=[],CP=null,CID=null;
 let cUT='change_order',PF={},UF=[],PR=[];
 let editRiskId=null;
+let viewMode='portfolio'; // 'portfolio' or 'project'
+let allRisks=[]; // for portfolio
 
-function translateSelects(){
-  // Translate all select options based on language
-  document.querySelectorAll('select option[data-ar]').forEach(opt=>{
-    if(L==='ar'){opt.textContent=opt.dataset.ar;}
-    else{opt.textContent=opt.dataset.en||opt.value;}
-  });
-}
-
-async function translateRegister(){
-  const risks=CP?.risks||[];
-  if(!risks.length){alert(L==='ar'?'لا توجد مخاطر':'No risks to translate');return;}
-  const targetLang=L==='ar'?'Arabic':'English';
-  showLoad(L==='ar'?'جاري ترجمة السجل...':'Translating register...');
-  try{
-    // Translate one risk at a time to avoid parse issues
-    for(let i=0;i<risks.length;i++){
-      const r=risks[i];
-      document.getElementById('loadT').textContent=(L==='ar'?'ترجمة ':'Translating ')+(i+1)+'/'+risks.length;
-      const prompt=`Translate to ${targetLang}. Return ONLY a JSON object with these exact keys: desc, cause, mit, owner.
-desc: ${r.description}
-cause: ${r.cause||''}
-mit: ${r.mitigation||''}
-owner: ${r.owner||''}
-Return format: {"desc":"...","cause":"...","mit":"...","owner":"..."}`;
-      const data=await api({model:'claude-sonnet-4-5',max_tokens:500,messages:[{role:'user',content:prompt}]});
-      if(data.error)continue;
-      let tr;
-      try{
-        const raw=data.content[0].text.trim();
-        const s=raw.indexOf('{');const e=raw.lastIndexOf('}');
-        if(s>=0&&e>s)tr=JSON.parse(raw.slice(s,e+1));
-        else continue;
-      }catch(e){continue;}
-      await sb('risks?id=eq.'+r.id,'PATCH',{description:tr.desc||r.description,cause:tr.cause||r.cause,mitigation:tr.mit||r.mitigation,owner:tr.owner||r.owner});
-      r.description=tr.desc||r.description;
-      r.cause=tr.cause||r.cause;
-      r.mitigation=tr.mit||r.mitigation;
-      r.owner=tr.owner||r.owner;
-    }
-    hideLoad();renderReg();renderDash();renderWarn();showSync();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
-}
-
+// ═══ INIT ═══
+window.onload=async()=>{
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const k=localStorage.getItem('aKey');
+  if(k){document.getElementById('apiKey').value=k;checkKey();}
+  await loadProjs();
+};
 
 function checkKey(){
   const k=document.getElementById('apiKey').value.trim();
   const dot=document.getElementById('cdot'),lbl=document.getElementById('clbl');
   if(k.startsWith('sk-ant-')&&k.length>20){
-    dot.classList.add('on');lbl.classList.add('on');
-    lbl.textContent=t('T_connOn');localStorage.setItem('aKey',k);
+    dot.classList.add('on');lbl.classList.add('on');lbl.textContent='متصل';localStorage.setItem('aKey',k);
   }else{
-    dot.classList.remove('on');lbl.classList.remove('on');
-    lbl.textContent=t('T_connOff');
+    dot.classList.remove('on');lbl.classList.remove('on');lbl.textContent='غير متصل';
   }
   refreshBtn();
 }
 const GK=()=>document.getElementById('apiKey').value.trim();
-
-function applyLang(){
-  const ar=L==='ar';
-  document.getElementById('R').setAttribute('lang',L);
-  document.getElementById('R').setAttribute('dir',ar?'rtl':'ltr');
-  Object.keys(TR).forEach(k=>{
-    if(k.startsWith('T_conn'))return;
-    const el=document.getElementById(k);
-    if(el)el.textContent=t(k);
-  });
-  // Also translate tabs with data-tid
-  document.querySelectorAll('[data-tid]').forEach(el=>{
-    const k=el.dataset.tid;
-    if(TR[k])el.textContent=t(k);
-  });
-  // Translate buttons with id
-  const btnAna=document.getElementById('anaBtn');
-  if(btnAna&&btnAna.disabled===false)btnAna.textContent=t('T_btnAna');
-  else if(btnAna)btnAna.textContent=t('T_btnAna');
-  document.querySelectorAll('.pill').forEach(p=>{
-    const lbl=ar?p.dataset.ar:p.dataset.en;
-    if(lbl)p.textContent=lbl;
-  });
-  const lb=document.getElementById('langBtn');if(lb)lb.textContent=ar?'English':'العربية';
-  checkKey();
-  translateSelects();
-}
-
-function toggleLang(){L=L==='ar'?'en':'ar';localStorage.setItem('L',L);applyLang();if(CP)renderAll();}
-
 
 async function api(payload){
   const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':GK()},body:JSON.stringify(payload)});
@@ -740,55 +750,352 @@ function pJSON(text){
   return JSON.parse(text);
 }
 
-// ═══ SYNC ═══
-function showSync(){const el=document.getElementById('syncInd');el.style.display='flex';setTimeout(()=>el.style.display='none',2500);}
-
 // ═══ PROJECTS ═══
 async function loadProjs(){
   try{
     projs=await sb('projects?order=created_at.desc&select=*')||[];
+    // Load all risks for portfolio
+    if(projs.length){
+      try{allRisks=await sb('risks?select=*')||[];}catch(e){allRisks=[];}
+    }
     renderProjList();
-    if(projs.length&&!CID)selectProj(projs[0].id);
-    else if(!projs.length){document.getElementById('welcome').style.display='block';document.getElementById('projView').style.display='none';}
-    showSync();
+    if(viewMode==='portfolio')renderPortfolio();
   }catch(e){console.error(e);}
 }
+
+function renderProjList(){
+  const el=document.getElementById('projList');
+  if(!projs.length){el.innerHTML=`<div style="padding:10px;font-size:10.5px;color:var(--sb-text-3);text-align:center">لا توجد مشاريع</div>`;return;}
+  el.innerHTML=projs.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join('');
+}
+
+function filterProjs(q){
+  q=q.toLowerCase();
+  const filtered=projs.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.type||'').toLowerCase().includes(q));
+  // Re-render portfolio with filtered
+  renderPortfolio(filtered);
+}
+
 function openProjModal(){document.getElementById('projModal').classList.add('on');setTimeout(()=>document.getElementById('np_n').focus(),80);}
 function closeProjModal(){document.getElementById('projModal').classList.remove('on');}
+
 async function createProj(){
   const name=document.getElementById('np_n').value.trim();
-  if(!name){alert(L==='ar'?'يرجى إدخال اسم المشروع':'Please enter project name');return;}
-  showLoad(L==='ar'?'جاري الإنشاء...':'Creating...');
+  if(!name){alert('يرجى إدخال اسم المشروع');return;}
+  showLoad('جاري الإنشاء...');
   try{
     const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
     const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[]};
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
     ['np_n','np_c','np_v','np_d','np_s','np_e'].forEach(id=>document.getElementById(id).value='');
-    await loadProjs();if(res&&res[0])selectProj(res[0].id);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+    await loadProjs();
+    if(res&&res[0])selectProj(res[0].id);
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
+
 async function delProj(){
-  if(!confirm(L==='ar'?'هل أنت متأكد؟':'Are you sure?'))return;
-  showLoad(L==='ar'?'جاري الحذف...':'Deleting...');
+  if(!confirm('هل أنت متأكد من حذف المشروع؟'))return;
+  showLoad('جاري الحذف...');
   try{
     await sb('projects?id=eq.'+CID,'DELETE');
     hideLoad();CID=null;CP=null;
-    document.getElementById('projView').style.display='none';
-    document.getElementById('welcome').style.display='block';
+    goPortfolio();
     await loadProjs();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
-function renderProjList(){
-  const el=document.getElementById('projList');
-  if(!projs.length){el.innerHTML=`<div style="padding:7px;font-size:10.5px;color:var(--t3)">${L==='ar'?'لا توجد مشاريع':'No projects'}</div>`;return;}
-  el.innerHTML=projs.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join('');
+
+// ═══ PORTFOLIO VIEW ═══
+function goPortfolio(){
+  viewMode='portfolio';CID=null;CP=null;
+  document.getElementById('portfolioView').style.display='block';
+  document.getElementById('projView').style.display='none';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  document.getElementById('nav-portfolio').classList.add('on');
+  renderProjList();
+  renderPortfolio();
 }
+
+async function renderPortfolio(filteredProjs){
+  const list=filteredProjs||projs;
+  const el=document.getElementById('portfolioContent');
+  
+  if(!list.length){
+    el.innerHTML=`
+      <div class="empty">
+        <div class="empty-icon">📊</div>
+        <div class="et">لا توجد مشاريع في المحفظة</div>
+        <div class="es">اضغط "مشروع جديد" لإضافة أول مشروع</div>
+      </div>`;
+    return;
+  }
+
+  // Calculate portfolio stats
+  const projRisks={};
+  list.forEach(p=>{projRisks[p.id]=allRisks.filter(r=>r.project_id===p.id);});
+  
+  const totalRisks=Object.values(projRisks).reduce((s,r)=>s+r.length,0);
+  const totalThreats=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='threat'||!x.type).length,0);
+  const totalOpps=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='opportunity').length,0);
+  const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='high').length,0);
+  
+  // Total exposure
+  const totalValue=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
+  const totalExposure=list.reduce((s,p)=>{
+    const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
+    const high=projRisks[p.id].filter(r=>r.level==='high').length;
+    const med=projRisks[p.id].filter(r=>r.level==='medium').length;
+    return s+(v*0.05*high+v*0.02*med);
+  },0);
+
+  // Project type distribution
+  const typeDist={};list.forEach(p=>{const t=p.type||'أخرى';typeDist[t]=(typeDist[t]||0)+1;});
+  
+  // Status distribution
+  const statusDist={analyzed:0,pending:0};
+  list.forEach(p=>{if(projRisks[p.id].length>0)statusDist.analyzed++;else statusDist.pending++;});
+
+  // Build HTML
+  el.innerHTML=`
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card cyan">
+        <div class="stat-icon">📁</div>
+        <div class="stat-l">إجمالي المشاريع</div>
+        <div class="stat-v">${list.length}</div>
+        <div class="stat-sub">${statusDist.analyzed} محلل · ${statusDist.pending} في الانتظار</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⚠</div>
+        <div class="stat-l">إجمالي المخاطر</div>
+        <div class="stat-v" style="color:var(--red)">${totalRisks}</div>
+        <div class="stat-sub">${totalThreats} تهديد · ${totalOpps} فرصة</div>
+      </div>
+      <div class="stat-card pink">
+        <div class="stat-icon">▲</div>
+        <div class="stat-l">عالية الخطورة</div>
+        <div class="stat-v" style="color:var(--red)">${totalHigh}</div>
+        <div class="stat-sub">عبر جميع المشاريع</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">＄</div>
+        <div class="stat-l">التعرض الكلي</div>
+        <div class="stat-v" style="font-size:18px;padding-top:5px">${(totalExposure/1000000).toFixed(1)}M</div>
+        <div class="stat-sub">من ${(totalValue/1000000).toFixed(0)}M ريال</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="dash-row dash-21">
+      <div class="card">
+        <div class="card-t">مقارنة درجات المخاطر بين المشاريع</div>
+        <canvas id="portfChart" height="120"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-t">توزيع أنواع المشاريع</div>
+        <canvas id="typeChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- AI Report Button -->
+    <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(91,92,255,.08),rgba(168,85,247,.05));border-color:rgba(91,92,255,.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">📊 تقرير المحفظة بالذكاء الاصطناعي</div>
+          <div style="font-size:11.5px;color:var(--t3)">احصل على تحليل شامل من Claude لجميع مخاطر المحفظة</div>
+        </div>
+        <button class="btn btn-p" onclick="generatePortfolioReport()">توليد التقرير</button>
+      </div>
+    </div>
+    <div id="portfReport"></div>
+
+    <!-- Projects table -->
+    <div class="card" style="padding:0">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--b1)">
+        <div style="font-size:13px;font-weight:700">المشاريع التفصيلية</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="rt" style="font-size:12px">
+          <thead>
+            <tr>
+              <th>المشروع</th>
+              <th>النوع</th>
+              <th>القيمة</th>
+              <th>المخاطر</th>
+              <th>عالية</th>
+              <th>متوسطة</th>
+              <th>منخفضة</th>
+              <th>فرص</th>
+              <th>درجة الصحة</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(p=>{
+              const r=projRisks[p.id]||[];
+              const h=r.filter(x=>x.level==='high').length;
+              const m=r.filter(x=>x.level==='medium').length;
+              const l=r.filter(x=>x.level==='low').length;
+              const o=r.filter(x=>x.type==='opportunity').length;
+              const score=r.length?Math.max(0,100-Math.round((h*15+m*5+l*1)/(r.length*15)*100)):null;
+              const hpc=score===null?'hp-none':score>=70?'hp-good':score>=40?'hp-warn':'hp-bad';
+              const hplbl=score===null?'لم يحلل':score>=70?'صحي':score>=40?'تحذير':'حرج';
+              return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
+                <td><div style="font-weight:600;color:var(--t1)">${p.name}</div></td>
+                <td><span class="cb">${p.type||'—'}</span></td>
+                <td style="font-family:'IBM Plex Mono',monospace;color:var(--t2)">${p.value?p.value+' ر.س':'—'}</td>
+                <td><b style="color:var(--t1)">${r.length}</b></td>
+                <td>${h?`<span class="bdg b-h">${h}</span>`:'—'}</td>
+                <td>${m?`<span class="bdg b-m">${m}</span>`:'—'}</td>
+                <td>${l?`<span class="bdg b-l">${l}</span>`:'—'}</td>
+                <td>${o?`<span class="bdg b-opp">${o}</span>`:'—'}</td>
+                <td>${score===null?`<span class="health-pill ${hpc}">—</span>`:`<span class="health-pill ${hpc}">● ${score}/100</span>`}</td>
+                <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();selectProj('${p.id}')">فتح</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Render charts
+  setTimeout(()=>{
+    // Portfolio comparison chart
+    const projWithRisks=list.filter(p=>projRisks[p.id].length>0);
+    if(projWithRisks.length>0){
+      new Chart(document.getElementById('portfChart'),{
+        type:'bar',
+        data:{
+          labels:projWithRisks.map(p=>p.name.length>15?p.name.slice(0,15)+'...':p.name),
+          datasets:[
+            {label:'عالية',data:projWithRisks.map(p=>projRisks[p.id].filter(r=>r.level==='high').length),backgroundColor:'rgba(239,68,68,.7)',borderRadius:4},
+            {label:'متوسطة',data:projWithRisks.map(p=>projRisks[p.id].filter(r=>r.level==='medium').length),backgroundColor:'rgba(234,179,8,.7)',borderRadius:4},
+            {label:'منخفضة',data:projWithRisks.map(p=>projRisks[p.id].filter(r=>r.level==='low').length),backgroundColor:'rgba(34,197,94,.7)',borderRadius:4},
+          ]
+        },
+        options:{
+          plugins:{legend:{position:'top',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},
+          scales:{
+            x:{stacked:true,ticks:{color:'#8a9ab8',font:{size:10}},grid:{display:false}},
+            y:{stacked:true,ticks:{color:'#8a9ab8',font:{size:10},stepSize:1},grid:{color:'rgba(28,42,68,.5)'}}
+          },
+          layout:{padding:{top:4}}
+        }
+      });
+    }
+    // Type distribution
+    new Chart(document.getElementById('typeChart'),{
+      type:'doughnut',
+      data:{
+        labels:Object.keys(typeDist),
+        datasets:[{data:Object.values(typeDist),backgroundColor:['#5b5cff','#a855f7','#06b6d4','#ec4899','#22c55e','#eab308','#f97316','#14b8a6','#ef4444'],borderWidth:0}]
+      },
+      options:{
+        plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},
+        cutout:'60%',
+        layout:{padding:4}
+      }
+    });
+  },80);
+}
+
+async function generatePortfolioReport(){
+  if(!projs.length){alert('لا توجد مشاريع');return;}
+  if(!GK().startsWith('sk-ant-')){alert('يرجى إدخال مفتاح Claude API');return;}
+  showLoad('جاري توليد تقرير المحفظة...');
+  
+  // Build summary
+  const projSummaries=projs.map(p=>{
+    const r=allRisks.filter(x=>x.project_id===p.id);
+    const h=r.filter(x=>x.level==='high').length;
+    const m=r.filter(x=>x.level==='medium').length;
+    const l=r.filter(x=>x.level==='low').length;
+    const o=r.filter(x=>x.type==='opportunity').length;
+    return `${p.name} (${p.type}, ${p.value||'—'} ريال): ${r.length} مخاطر [${h} عالية, ${m} متوسطة, ${l} منخفضة, ${o} فرص]`;
+  }).join('\n');
+  
+  const topRisks=allRisks.filter(r=>r.level==='high').slice(0,15).map(r=>{
+    const proj=projs.find(p=>p.id===r.project_id);
+    return `[${proj?.name||'?'}] ${r.description} — ${r.category}`;
+  }).join('\n');
+  
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`أنت مدير محفظة مخاطر إنشائية كبير. أعطني تقرير محفظة شامل بالعربية بصيغة JSON فقط.
+
+المشاريع في المحفظة (${projs.length} مشروع):
+${projSummaries}
+
+أعلى 15 مخاطرة عالية:
+${topRisks}
+
+أعطني تقريراً شاملاً بالصيغة التالية:
+{
+  "executive_summary": "ملخص تنفيذي 4-5 جمل عن صحة المحفظة الإجمالية",
+  "portfolio_health": "good|warning|critical",
+  "key_findings": ["اكتشاف رئيسي 1", "اكتشاف 2", "اكتشاف 3", "اكتشاف 4"],
+  "top_concerns": ["أهم قلق 1 مع ذكر اسم المشروع", "قلق 2", "قلق 3"],
+  "cross_project_patterns": ["نمط مشترك بين المشاريع 1", "نمط 2"],
+  "strategic_recommendations": ["توصية استراتيجية 1", "توصية 2", "توصية 3", "توصية 4"],
+  "priority_projects": ["مشروع يحتاج اهتمام عاجل 1 مع السبب", "مشروع 2"]
+}`}]});
+    hideLoad();
+    if(data.error){alert('خطأ: '+data.error.message);return;}
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}catch(e){alert('خطأ في التحليل');return;}
+    
+    const hc={good:'var(--grn)',warning:'var(--yel)',critical:'var(--red)'}[parsed.portfolio_health]||'var(--yel)';
+    const hbg={good:'rgba(34,197,94,.05)',warning:'rgba(234,179,8,.05)',critical:'rgba(239,68,68,.05)'}[parsed.portfolio_health];
+    const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.portfolio_health]||'◆';
+    const htext={good:'صحي',warning:'تحذير',critical:'حرج'}[parsed.portfolio_health]||'تحذير';
+    
+    document.getElementById('portfReport').innerHTML=`
+      <div class="card" style="background:${hbg};border-color:${hc}33;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} تقرير المحفظة الإجمالي — ${htext}</div>
+          <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${new Date().toLocaleDateString('ar-SA')}</div>
+        </div>
+        <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
+      </div>
+      
+      <div class="dash-row dash-3" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-t" style="color:var(--primary)">🎯 الاكتشافات الرئيسية</div>
+          ${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}
+        </div>
+        <div class="card">
+          <div class="card-t" style="color:var(--red)">⚠ أهم المخاوف</div>
+          ${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}
+        </div>
+        <div class="card">
+          <div class="card-t" style="color:var(--purple)">🔄 الأنماط المشتركة</div>
+          ${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}
+        </div>
+      </div>
+      
+      <div class="dash-row dash-21" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-t" style="color:var(--grn)">✓ توصيات استراتيجية</div>
+          ${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}
+        </div>
+        <div class="card">
+          <div class="card-t" style="color:var(--org)">🚨 مشاريع تحتاج اهتمام</div>
+          ${(parsed.priority_projects||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}
+        </div>
+      </div>
+    `;
+    document.getElementById('portfReport').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
+}
+
+// ═══ PROJECT VIEW ═══
 async function selectProj(id){
-  CID=id;showLoad(L==='ar'?'جاري التحميل...':'Loading...');
+  CID=id;viewMode='project';
+  showLoad('جاري التحميل...');
   try{
     const p=await sb('projects?id=eq.'+id+'&select=*');
-    CP=p&&p[0]?p[0]:null;if(!CP){hideLoad();return;}
+    CP=p&&p[0]?p[0]:null;
+    if(!CP){hideLoad();return;}
     if(!CP.tolerance)CP.tolerance={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
     if(!CP.contacts)CP.contacts=[];
     if(!CP.trend_data)CP.trend_data=[];
@@ -796,26 +1103,21 @@ async function selectProj(id){
     const upds=await sb('updates?project_id=eq.'+id+'&order=created_at.desc&select=*')||[];
     CP.risks=risks;CP.upds=upds;
     hideLoad();
-    document.getElementById('welcome').style.display='none';
+    document.getElementById('portfolioView').style.display='none';
     document.getElementById('projView').style.display='block';
     document.getElementById('phName').textContent=CP.name;
-    document.getElementById('phSub').textContent=[CP.type,CP.value?CP.value+' SAR':'',CP.contract].filter(Boolean).join(' · ');
-    renderAll();ST('files');
+    document.getElementById('phSub').textContent=[CP.type,CP.value?CP.value+' ر.س':'',CP.contract].filter(Boolean).join(' · ');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+    renderProjList();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
+    if(risks.length)renderDash();
+    ST('files');
   }catch(e){hideLoad();console.error(e);}
-}
-function renderAll(){
-  renderProjList();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
-  if(CP?.risks?.length)renderDash();
 }
 
 // ═══ TABS ═══
 function ST(name){
-  const names=['files','dash','reg','warn','upd','tol','contacts'];
-  names.forEach(n=>{
-    const tb=document.getElementById('tab-'+n);const pn=document.getElementById('pane-'+n);
-    if(tb)tb.classList.toggle('on',n===name);
-    if(pn)pn.classList.toggle('on',n===name);
-  });
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+name));
 }
 
 // ═══ FILE EXTRACTION ═══
@@ -842,13 +1144,15 @@ async function extractText(file){
   }
   return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({extype:'text',text:`[${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});r.readAsText(file);});
 }
+
 function handleFiles(e){
   if(!PF[CID])PF[CID]=[];
   Array.from(e.target.files).forEach(async file=>{const ex=await extractText(file);PF[CID].push({name:file.name,size:file.size,...ex});renderFiles();});
 }
+
 function renderFiles(){
   const files=PF[CID]||[];
-  document.getElementById('fcLbl').textContent=files.length?`${files.length} ${L==='ar'?'ملف':'file'+(files.length>1?'s':'')} ${L==='ar'?'جاهز':'ready'}`:(L==='ar'?'لا توجد ملفات':'No files');
+  document.getElementById('fcLbl').textContent=files.length?`${files.length} ملف جاهز`:'لا توجد ملفات';
   refreshBtn();
   document.getElementById('fgrid').innerHTML=files.map((f,i)=>{
     const ext=f.name.split('.').pop().toLowerCase();
@@ -857,16 +1161,20 @@ function renderFiles(){
     return`<div class="fcard"><button class="frem" onclick="remFile(${i})">×</button><div class="fext ${tc}">${ext.toUpperCase()}</div><div class="fn">${f.name}</div><div class="fsz">${sz}${f.extype==='text'?' ✓':''}</div></div>`;
   }).join('');
 }
+
 function refreshBtn(){
   const files=PF[CID]||[];
-  document.getElementById('anaBtn').disabled=files.length===0||!GK().startsWith('sk-ant-');
+  const btn=document.getElementById('anaBtn');
+  if(btn)btn.disabled=files.length===0||!GK().startsWith('sk-ant-');
 }
+
 function remFile(i){PF[CID].splice(i,1);renderFiles();}
+
 function handleUF(e){Array.from(e.target.files).forEach(async file=>{const ex=await extractText(file);UF.push({name:file.name,...ex});renderUFP();});}
 function renderUFP(){
   const el=document.getElementById('ufPrev');
   if(!UF.length){el.innerHTML='';return;}
-  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px">'+UF.map((f,i)=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:3px;padding:3px 8px;font-size:11px;display:flex;align-items:center;gap:5px">↑ ${f.name}<button onclick="remUF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px">×</button></div>`).join('')+'</div>';
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px">'+UF.map((f,i)=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:4px 9px;font-size:11px;display:flex;align-items:center;gap:5px">↑ ${f.name}<button onclick="remUF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px">×</button></div>`).join('')+'</div>';
 }
 function remUF(i){UF.splice(i,1);renderUFP();}
 
@@ -884,11 +1192,7 @@ function renderTol(){
   renderLvls('imp_lvl',tl.imp||DI,'imp');
 }
 function renderLvls(cid,lvs,key){
-  document.getElementById(cid).innerHTML=lvs.map((lv,i)=>`
-    <div class="tlv" style="border-inline-start:3px solid ${LC[i]}">
-      <span class="tlv-l" style="color:${LC[i]}">${lv.l}</span>
-      <input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/>
-    </div>`).join('');
+  document.getElementById(cid).innerHTML=lvs.map((lv,i)=>`<div class="tlv" style="border-inline-start:3px solid ${LC[i]}"><span class="tlv-l" style="color:${LC[i]}">${lv.l}</span><input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/></div>`).join('');
 }
 function updLvl(key,idx,val){if(!CP)return;CP.tolerance[key][idx].d=val;dbTol();}
 let tolT=null;
@@ -899,33 +1203,26 @@ async function saveTol(){
   CP.tolerance.cost_val=document.getElementById('tc_val').value;
   CP.tolerance.sched_days=document.getElementById('ts_days').value;
   CP.tolerance.sched_pct=document.getElementById('ts_pct').value;
-  try{await sb('projects?id=eq.'+CID,'PATCH',{tolerance:CP.tolerance});showSync();}catch(e){console.error(e);}
+  try{await sb('projects?id=eq.'+CID,'PATCH',{tolerance:CP.tolerance});}catch(e){console.error(e);}
 }
 
 // ═══ CONTACTS ═══
 function renderContacts(){
   if(!CP)return;
   const el=document.getElementById('contactsList');
-  if(!CP.contacts?.length){el.innerHTML=`<div class="empty" style="padding:20px"><div class="et">${L==='ar'?'لا توجد جهات اتصال':'No contacts added yet'}</div></div>`;return;}
-  el.innerHTML=CP.contacts.map((c,i)=>`
-    <div class="contact-card">
-      <div class="contact-info">
-        <div class="contact-name">${c.name}</div>
-        <div class="contact-det">${c.role}${c.contact?' · '+c.contact:''}</div>
-      </div>
-      <button class="btn btn-del" onclick="removeContact(${i})">×</button>
-    </div>`).join('');
+  if(!CP.contacts?.length){el.innerHTML=`<div class="empty"><div class="empty-icon">👥</div><div class="et">لا توجد جهات اتصال</div></div>`;return;}
+  el.innerHTML=CP.contacts.map((c,i)=>`<div class="contact-card"><div><div class="contact-name">${c.name}</div><div class="contact-det">${c.role}${c.contact?' · '+c.contact:''}</div></div><button class="btn btn-del" onclick="removeContact(${i})">×</button></div>`).join('');
 }
 async function addContact(){
   const name=document.getElementById('c_name').value.trim();
   const role=document.getElementById('c_role').value.trim();
   const contact=document.getElementById('c_contact').value.trim();
-  if(!name||!role){alert(L==='ar'?'الاسم والدور مطلوبان':'Name and role are required');return;}
+  if(!name||!role){alert('الاسم والدور مطلوبان');return;}
   if(!CP.contacts)CP.contacts=[];
   CP.contacts.push({name,role,contact});
   await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
   ['c_name','c_role','c_contact'].forEach(id=>document.getElementById(id).value='');
-  renderContacts();showSync();
+  renderContacts();
 }
 async function removeContact(i){
   CP.contacts.splice(i,1);
@@ -936,63 +1233,26 @@ async function removeContact(i){
 // ═══ NOTIFICATIONS ═══
 function showNotifModal(){
   const risks=CP?.risks||[];
-  if(!risks.length){alert(L==='ar'?'لا توجد مخاطر في السجل':'No risks in register');return;}
+  if(!risks.length){alert('لا توجد مخاطر في السجل');return;}
   const contacts=CP?.contacts||[];
-  if(!contacts.length){alert(L==='ar'?'لا توجد جهات اتصال — أضفها أولاً':'No contacts — add them first in Contacts tab');return;}
-
+  if(!contacts.length){alert('لا توجد جهات اتصال — أضفها أولاً');return;}
   const byOwner={};
-  risks.forEach(r=>{
-    const owner=r.owner||'—';
-    if(!byOwner[owner])byOwner[owner]=[];
-    byOwner[owner].push(r);
-  });
-
+  risks.forEach(r=>{const owner=r.owner||'—';if(!byOwner[owner])byOwner[owner]=[];byOwner[owner].push(r);});
   let html='';
   Object.entries(byOwner).forEach(([owner,ownerRisks])=>{
     const contact=contacts.find(c=>c.role.toLowerCase().includes(owner.toLowerCase().split(' ')[0])||owner.toLowerCase().includes(c.role.toLowerCase().split(' ')[0]))||null;
     const high=ownerRisks.filter(r=>r.level==='high');
-    const msg=L==='ar'?
-`تنبيه — مخاطر تحت مسؤوليتك
-المشروع: ${CP.name}
-المسؤول: ${owner}
-
-المخاطر المسجلة:
-${ownerRisks.map(r=>`• [${r.level==='high'?'عالي':r.level==='medium'?'متوسط':'منخفض'}] ${r.description}
-  الإجراء المطلوب: ${r.mitigation}`).join('\n')}
-
-${high.length?`⚠️ تحذير: ${high.length} مخاطرة عالية تحتاج إجراء فوري`:''}
-تاريخ: ${new Date().toLocaleDateString('ar-SA')}`:
-`Risk Notification — Action Required
-Project: ${CP.name}
-Responsible: ${owner}
-
-Assigned Risks:
-${ownerRisks.map(r=>`• [${r.level.toUpperCase()}] ${r.description}
-  Action Required: ${r.mitigation}`).join('\n')}
-
-${high.length?`⚠️ URGENT: ${high.length} high-level risk${high.length>1?'s':''} require immediate action`:''}
-Date: ${new Date().toLocaleDateString()}`;
-
-    html+=`<div class="msg-card">
-      <div class="msg-hdr">
-        <div>
-          <span style="font-size:12.5px;font-weight:600">${owner}</span>
-          ${contact?`<span style="font-size:11px;color:var(--t3);margin-inline-start:8px">${contact.name} · ${contact.contact||''}</span>`:''}
-        </div>
-        <button class="btn btn-g" style="padding:3px 9px;font-size:11px" onclick="copyMsg(this,'msg_${owner.replace(/\s/g,'_')}')">${L==='ar'?'نسخ':'Copy'}</button>
-      </div>
-      <div class="msg-body" id="msg_${owner.replace(/\s/g,'_')}">${msg}</div>
-    </div>`;
+    const msg=`تنبيه — مخاطر تحت مسؤوليتك\nالمشروع: ${CP.name}\nالمسؤول: ${owner}\n\nالمخاطر المسجلة:\n${ownerRisks.map(r=>`• [${RL[r.level]||r.level}] ${r.description}\n  الإجراء المطلوب: ${r.mitigation}`).join('\n')}\n\n${high.length?`⚠️ تحذير: ${high.length} مخاطرة عالية تحتاج إجراء فوري`:''}\nتاريخ: ${new Date().toLocaleDateString('ar-SA')}`;
+    html+=`<div class="msg-card"><div class="msg-hdr"><div><span style="font-size:12.5px;font-weight:600">${owner}</span>${contact?`<span style="font-size:11px;color:var(--t3);margin-inline-start:8px">${contact.name} · ${contact.contact||''}</span>`:''}</div><button class="btn btn-g" style="padding:3px 9px;font-size:11px" onclick="copyMsg(this,'msg_${owner.replace(/\s/g,'_')}')">نسخ</button></div><div class="msg-body" id="msg_${owner.replace(/\s/g,'_')}">${msg}</div></div>`;
   });
-
   document.getElementById('notifList').innerHTML=html;
   document.getElementById('notifOv').classList.add('on');
 }
 function copyMsg(btn,id){
   const el=document.getElementById(id);
   navigator.clipboard.writeText(el.textContent);
-  btn.textContent=L==='ar'?'تم النسخ ✓':'Copied ✓';
-  setTimeout(()=>btn.textContent=L==='ar'?'نسخ':'Copy',2000);
+  btn.textContent='تم النسخ ✓';
+  setTimeout(()=>btn.textContent='نسخ',2000);
 }
 
 // ═══ ANALYZE ═══
@@ -1000,31 +1260,29 @@ async function analyze(){
   const files=PF[CID]||[];
   const tl=CP.tolerance||{};
   const hasSched=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
-  showLoad(L==='ar'?'جاري تحليل ملفات المشروع...':'Analyzing project files...');
+  showLoad('جاري تحليل ملفات المشروع...');
 
-  const lang_instruction=L==='ar'?'IMPORTANT: Generate ALL risk descriptions, causes, mitigation plans, and owner titles in ARABIC language.':'Generate ALL content in ENGLISH.';
-  const tolCtx=`Risk Appetite: Cost max ${tl.cost_pct||5}% or ${tl.cost_val||'N/A'} SAR | Schedule max ${tl.sched_days||30} days | QHSE: ${(tl.qhse||DQ).map(x=>x.l+':'+x.d).join('|')} | Rep: ${(tl.rep||DR).map(x=>x.l+':'+x.d).join('|')}`;
+  const tolCtx=`Risk Appetite: Cost max ${tl.cost_pct||5}% or ${tl.cost_val||'N/A'} SAR | Schedule max ${tl.sched_days||30} days`;
 
-  const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia.
-${lang_instruction}
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR | Contract: ${CP.contract||'—'}
-Start: ${CP.start_date||'—'} | Completion: ${CP.end_date||'—'} | Description: ${CP.description||'—'}
+  const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia. IMPORTANT: Generate ALL content in ARABIC.
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Start: ${CP.start_date||'—'} | Description: ${CP.description||'—'}
 ${tolCtx}
-${hasSched?'Schedule uploaded — use activity names/dates.':'No schedule — set has_schedule:false.'}
+${hasSched?'Schedule uploaded.':'No schedule.'}
 
-Respond ONLY with valid JSON. Keep each field under 25 words.
-{"summary":"2-sentence summary","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"<25 words>","cause":"<15 words>","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"<25 words>","owner":"Role Title","activity_ref":"","expected_weeks":2}]}
-Types: threat/opportunity. Threat strategies: Avoid/Mitigate/Transfer/Accept/Escalate. Opportunity: Exploit/Enhance/Share/Accept/Escalate.
-Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
-Assess project complexity from files and value, generate risks accordingly. CRITICAL: Keep EVERY text field under 15 words. Be concise.
-- Simple project (<5M SAR or basic scope): generate exactly 10 items (8 threats + 2 opportunities)
-- Medium project (5-50M SAR or moderate scope): generate exactly 20 items (16 threats + 4 opportunities)
-- Large project (50-500M SAR or multi-phase): generate exactly 30 items (24 threats + 6 opportunities)
-- Mega/Complex project (>500M SAR or highly complex): generate exactly 40 items (32 threats + 8 opportunities)
-State complexity classification in summary.`}];
+Assess project complexity from files and value. CRITICAL: Keep EVERY field under 15 words.
+- Simple (<5M SAR): 8 threats + 2 opportunities = 10 total
+- Medium (5-50M SAR): 16 threats + 4 opportunities = 20 total  
+- Large (50-500M SAR): 24 threats + 6 opportunities = 30 total
+- Mega (>500M SAR): 32 threats + 8 opportunities = 40 total
+
+Respond ONLY with valid JSON:
+{"summary":"2-sentence summary in Arabic","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"وصف بالعربية","cause":"السبب","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"خطة بالعربية","owner":"مدير المشروع","activity_ref":"","expected_weeks":2}]}
+Types: threat/opportunity. Strategies: Avoid/Mitigate/Transfer/Accept/Escalate or Exploit/Enhance/Share/Accept/Escalate.
+Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial`}];
 
   for(const f of files){
-    if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});parts.push({type:'text',text:`[Drawing: ${f.name}]`});}
+    if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
     else if(f.extype==='pdf_raw'&&f.data){parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});}
     else if(f.text){parts.push({type:'text',text:f.text});}
   }
@@ -1032,13 +1290,13 @@ State complexity classification in summary.`}];
   try{
     const data=await api({model:'claude-opus-4-5',max_tokens:20000,messages:[{role:'user',content:parts}]});
     hideLoad();
-    if(data.error){alert('API Error: '+data.error.message);return;}
+    if(data.error){alert('خطأ: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}
-    catch(e){alert('Parse error: '+data.content[0].text.slice(0,300));return;}
+    catch(e){alert('خطأ في التحليل: '+data.content[0].text.slice(0,300));return;}
     CP.summary=parsed.summary||'';CP.has_schedule=parsed.has_schedule!==false;
     PR=parsed.risks||[];showVal(PR);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
 
 // ═══ VALIDATION ═══
@@ -1053,13 +1311,13 @@ function renderValList(risks){
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap">
             <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.id}</span>
-            <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
-            <span class="cb">${r.category}</span>
-            <span style="font-size:10.5px;color:${lc[r.level]||'var(--t2)'}">● ${(r.level||'').toUpperCase()}</span>
-            <span class="resp r-${(r.response_strategy||'').toLowerCase()}">${r.response_strategy||'—'}</span>
-            ${r.expected_weeks?`<span class="chip">Wk${r.expected_weeks}</span>`:''}
+            <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'فرصة':'تهديد'}</span>
+            <span class="cb">${CAT_AR[r.category]||r.category}</span>
+            <span style="font-size:10.5px;color:${lc[r.level]||'var(--t2)'}">● ${RL[r.level]||r.level}</span>
+            <span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span>
+            ${r.expected_weeks?`<span class="chip">أسبوع ${r.expected_weeks}</span>`:''}
           </div>
-          <div style="font-size:12.5px;font-weight:500;margin-bottom:2px">${r.description}</div>
+          <div style="font-size:12.5px;font-weight:500;margin-bottom:2px;color:var(--t1)">${r.description}</div>
           <div style="font-size:11px;color:var(--t3)">${r.cause||''}</div>
         </div>
         <div class="vca">
@@ -1068,13 +1326,12 @@ function renderValList(risks){
         </div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
-        <span class="chip">P:${r.probability} ${(L==='ar'?PL_AR:PL)[r.probability]||''}</span>
-        <span class="chip">C:${(L==='ar'?IL_AR:IL)[r.impact_cost]||r.impact_cost}</span>
-        <span class="chip">S:${(L==='ar'?IL_AR:IL)[r.impact_schedule]||r.impact_schedule}</span>
-        <span class="chip">Q:${(L==='ar'?IL_AR:IL)[r.impact_qhse]||r.impact_qhse}</span>
-        <span class="chip">R:${(L==='ar'?IL_AR:IL)[r.impact_reputation]||r.impact_reputation}</span>
+        <span class="chip">احتمالية: ${PL[r.probability]||r.probability}</span>
+        <span class="chip">تكلفة: ${IL[r.impact_cost]||r.impact_cost}</span>
+        <span class="chip">جدول: ${IL[r.impact_schedule]||r.impact_schedule}</span>
+        <span class="chip">سلامة: ${IL[r.impact_qhse]||r.impact_qhse}</span>
       </div>
-      <div style="font-size:11px;color:var(--t2);background:var(--s2);padding:6px 9px;border-radius:4px">${r.mitigation}</div>
+      <div style="font-size:11px;color:var(--t2);background:var(--s2);padding:7px 10px;border-radius:5px">${r.mitigation}</div>
     </div>`).join('');
 }
 function appR(i){PR[i]._a=true;renderValList(PR);}
@@ -1082,16 +1339,16 @@ function rejR(i){PR[i]._a=false;renderValList(PR);}
 function approveAll(){PR.forEach(r=>r._a=true);renderValList(PR);}
 async function confirmVal(){
   const app=PR.filter(r=>r._a!==false);
-  if(!app.length){alert('Approve at least one risk');return;}
-  showLoad(L==='ar'?'جاري الحفظ...':'Saving...');
+  if(!app.length){alert('اعتمد مخاطرة واحدة على الأقل');return;}
+  showLoad('جاري الحفظ...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
     const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
-    await selectProj(CID);showSync();
-  }catch(e){hideLoad();alert('Save error: '+e.message);}
+    await selectProj(CID);
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
 
 // ═══ EDIT RISK ═══
@@ -1112,308 +1369,211 @@ function openEdit(riskDbId){
 function closeEdit(){document.getElementById('editOv').classList.remove('on');editRiskId=null;}
 async function saveEdit(){
   if(!editRiskId)return;
-  showLoad(L==='ar'?'جاري الحفظ...':'Saving...');
+  showLoad('جاري الحفظ...');
   try{
     const updates={description:document.getElementById('e_desc').value,cause:document.getElementById('e_cause').value,type:document.getElementById('e_type').value,category:document.getElementById('e_cat').value,level:document.getElementById('e_level').value,response_strategy:document.getElementById('e_resp').value,probability:parseInt(document.getElementById('e_prob').value)||3,owner:document.getElementById('e_owner').value,mitigation:document.getElementById('e_mit').value};
     await sb('risks?id=eq.'+editRiskId,'PATCH',updates);
-    hideLoad();closeEdit();await selectProj(CID);showSync();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+    hideLoad();closeEdit();await selectProj(CID);
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
 
 // ═══ REGISTER ═══
 function renderReg(){
   const risks=CP?.risks||[];
-  if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="et">${t('T_regEmpty')}</div></div>`;return;}
+  if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="et">لا يوجد سجل مخاطر بعد</div></div>`;return;}
   const lc={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'};
-  const rc={Avoid:'r-avoid',Mitigate:'r-mitigate',Transfer:'r-transfer',Accept:'r-accept',Escalate:'r-escalate',Exploit:'r-exploit',Enhance:'r-enhance',Share:'r-share'};
   const buildRows=arr=>arr.map(r=>`
     <tr class="${r.type==='opportunity'?'opp':'thr'}">
       <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
-      <td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THR'}</span></td>
-      <td><span class="cb">${r.category}</span></td>
-      <td><div style="font-size:12px;max-width:210px">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:1px">${r.cause||''}</div></td>
+      <td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'فرصة':'تهديد'}</span></td>
+      <td><span class="cb">${CAT_AR[r.category]||r.category}</span></td>
+      <td><div style="font-size:12px;max-width:220px;color:var(--t1)">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
       <td style="text-align:center"><b style="font-size:13px">${r.probability}</b></td>
       <td><div class="ic">
-        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">C</span><div class="ib"><div class="ibf" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_cost}</span></div>
-        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">S</span><div class="ib"><div class="ibf" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_schedule}</span></div>
-        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">Q</span><div class="ib"><div class="ibf" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_qhse}</span></div>
-        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:12px">R</span><div class="ib"><div class="ibf" style="width:${r.impact_reputation*20}%;background:${lc[r.level]||'var(--acc)'}"></div></div><span style="font-size:9.5px">${r.impact_reputation}</span></div>
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">ت</span><div class="ib"><div class="ibf" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_cost}</span></div>
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">ج</span><div class="ib"><div class="ibf" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_schedule}</span></div>
+        <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">س</span><div class="ib"><div class="ibf" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_qhse}</span></div>
       </div></td>
-      <td><span class="bdg b-${r.level}">${L==='ar'?RL_AR[r.level]:RL_EN[r.level]}</span></td>
-      <td><span class="resp ${rc[r.response_strategy]||'r-accept'}">${L==='ar'?(RESP_AR[r.response_strategy]||r.response_strategy):r.response_strategy||'—'}</span></td>
-      <td><div style="font-size:11px;color:var(--t2);max-width:175px;line-height:1.5">${r.mitigation}</div></td>
+      <td><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span></td>
+      <td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>
+      <td><div style="font-size:11px;color:var(--t2);max-width:180px;line-height:1.5">${r.mitigation}</div></td>
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
-      <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">${L==='ar'?'تعديل':'Edit'}</button></td>
+      <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">تعديل</button></td>
     </tr>`).join('');
-
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
-  const hdr=`<tr><th>ID</th><th>${L==='ar'?'النوع':'Type'}</th><th>${L==='ar'?'الفئة':'Category'}</th><th>${L==='ar'?'المخاطرة':'Description'}</th><th>P</th><th>${L==='ar'?'التأثير':'Impact'}</th><th>${L==='ar'?'المستوى':'Level'}</th><th>${L==='ar'?'الاستجابة':'Response'}</th><th>${L==='ar'?'خطة التخفيف':'Action Plan'}</th><th>${L==='ar'?'المسؤول':'Owner'}</th><th></th></tr>`;
-
+  const hdr=`<tr><th>الرمز</th><th>النوع</th><th>الفئة</th><th>الوصف</th><th>الاحتمال</th><th>التأثير</th><th>المستوى</th><th>الاستجابة</th><th>الخطة</th><th>المسؤول</th><th></th></tr>`;
   document.getElementById('regContent').innerHTML=`
     ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
-    ${thr.length?`<div class="sep" style="color:var(--red)">${L==='ar'?'التهديدات':'Threats'} (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
-    ${opp.length?`<div class="sep" style="color:var(--teal)">${L==='ar'?'الفرص':'Opportunities'} (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
-    <div class="ebar">
-      <button class="btn btn-g" onclick="exportCSV()">${t('T_btnExport')}</button>
-      <button class="btn btn-warn" onclick="translateRegister()" style="font-size:11.5px">${L==='ar'?'ترجمة السجل للإنجليزي':'ترجمة السجل للعربي'}</button>
-      <span style="font-size:11px;color:var(--t3)">${risks.length} ${L==='ar'?'مخاطرة':'risks'} · ${CP.analyzed_at||'—'}</span>
-    </div>`;
+    ${thr.length?`<div class="sep" style="color:var(--red)">التهديدات (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
+    ${opp.length?`<div class="sep" style="color:var(--teal)">الفرص (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
+    <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">⬇ CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} مخاطرة · ${CP.analyzed_at||'—'}</span></div>`;
 }
 
 // ═══ DASHBOARD ═══
 function renderDash(){
   const risks=CP?.risks||[];
-  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="et">${t('T_dashEmpty')}</div></div>`;return;}
+  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="et">قم بالتحليل أولاً</div></div>`;return;}
 
   const high=risks.filter(r=>r.level==='high').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
   const thr=risks.filter(r=>r.type==='threat'||!r.type).length;
   const opp=risks.filter(r=>r.type==='opportunity').length;
-
-  // Risk Score (weighted: high=10, med=5, low=1)
   const riskScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
-  // Exposure estimate
   const val=parseFloat((CP.value||'0').replace(/[^0-9.]/g,''))||0;
   const exposure=val>0?Math.round(val*0.05*high+val*0.02*med):null;
-
-  // Category breakdown
-  const cats={};risks.forEach(r=>{const c=L==='ar'?(CAT_AR[r.category]||r.category):r.category;cats[c]=(cats[c]||0)+1;});
+  const cats={};risks.forEach(r=>{const c=CAT_AR[r.category]||r.category;cats[c]=(cats[c]||0)+1;});
   const catSorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
-
-  // Status counts
-  const byResp={};risks.forEach(r=>{const rs=L==='ar'?(RESP_AR[r.response_strategy]||r.response_strategy||'—'):(r.response_strategy||'—');byResp[rs]=(byResp[rs]||0)+1;});
+  const byResp={};risks.forEach(r=>{const rs=RESP_AR[r.response_strategy]||r.response_strategy||'—';byResp[rs]=(byResp[rs]||0)+1;});
 
   document.getElementById('dashContent').innerHTML=`
-    <!-- KPI Row -->
-    <div class="kpi-grid">
-      <div class="kpi"><div><div class="kpi-l">${L==='ar'?'مؤشر المخاطر':'Risk Score'}</div><div class="kpi-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'var(--yel)':'var(--grn)'}">${riskScore}</div></div><div style="font-size:20px;opacity:.3">●</div></div>
-      ${exposure?`<div class="kpi"><div><div class="kpi-l">${L==='ar'?'التعرض المالي':'Financial Exposure'}</div><div class="kpi-v" style="font-size:13px;padding-top:3px">${(exposure/1000000).toFixed(1)}M SAR</div></div><div style="font-size:20px;opacity:.3">＄</div></div>`:''}
-      <div class="kpi"><div><div class="kpi-l">${L==='ar'?'مرتفعة':'High'}</div><div class="kpi-v" style="color:var(--red)">${high}</div></div><div style="font-size:18px;opacity:.3">▲</div></div>
-      <div class="kpi"><div><div class="kpi-l">${L==='ar'?'فرص':'Opportunities'}</div><div class="kpi-v" style="color:var(--teal)">${opp}</div></div><div style="font-size:18px;opacity:.3">★</div></div>
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+      <div class="stat-card cyan"><div class="stat-icon">●</div><div class="stat-l">مؤشر المخاطر</div><div class="stat-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'var(--yel)':'var(--grn)'}">${riskScore}</div></div>
+      ${exposure?`<div class="stat-card green"><div class="stat-icon">＄</div><div class="stat-l">التعرض المالي</div><div class="stat-v" style="font-size:16px;padding-top:5px">${(exposure/1000000).toFixed(1)}M ر.س</div></div>`:''}
+      <div class="stat-card red"><div class="stat-icon">▲</div><div class="stat-l">عالية</div><div class="stat-v" style="color:var(--red)">${high}</div></div>
+      <div class="stat-card pink"><div class="stat-icon">★</div><div class="stat-l">فرص</div><div class="stat-v" style="color:var(--teal)">${opp}</div></div>
     </div>
 
-    <!-- Row 1: Risk Table + Level Chart -->
-    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="dcard">
-        <div class="dcard-t">${L==='ar'?'قائمة المخاطر حسب الفئة':'Risk Count by Category'}</div>
+    <div class="dash-row dash-21">
+      <div class="card"><div class="card-t">المخاطر حسب الفئة</div>
         <table class="exp-tbl">
-          <thead><tr><th>${L==='ar'?'الفئة':'Category'}</th><th>${L==='ar'?'عدد':'Count'}</th><th>${L==='ar'?'المستوى':'Distribution'}</th></tr></thead>
-          <tbody>${catSorted.map(([cat,cnt])=>{
-            const pct=Math.round(cnt/risks.length*100);
-            const catRisks=risks.filter(r=>(L==='ar'?(CAT_AR[r.category]||r.category):r.category)===cat);
-            const ch=catRisks.filter(r=>r.level==='high').length;
-            const cm=catRisks.filter(r=>r.level==='medium').length;
-            return`<tr><td>${cat}</td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar" style="background:var(--b1)"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'var(--yel)':'var(--grn)'}"></div></div></td></tr>`;
-          }).join('')}</tbody>
+          <thead><tr><th>الفئة</th><th>العدد</th><th>التوزيع</th></tr></thead>
+          <tbody>${catSorted.map(([cat,cnt])=>{const pct=Math.round(cnt/risks.length*100);const catRisks=risks.filter(r=>(CAT_AR[r.category]||r.category)===cat);const ch=catRisks.filter(r=>r.level==='high').length;const cm=catRisks.filter(r=>r.level==='medium').length;return`<tr><td>${cat}</td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'var(--yel)':'var(--grn)'}"></div></div></td></tr>`;}).join('')}</tbody>
         </table>
       </div>
-      <div class="dcard">
-        <div class="dcard-t">${L==='ar'?'توزيع المستويات':'Level Distribution'}</div>
-        <canvas id="lvlC" height="140"></canvas>
-      </div>
+      <div class="card"><div class="card-t">توزيع المستويات</div><canvas id="lvlC" height="140"></canvas></div>
     </div>
 
-    <!-- Row 2: Matrix + Response + Project Exposure -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="dcard">
-        <div class="dcard-t">${L==='ar'?'مصفوفة المخاطر':'Risk Matrix P × Impact'}</div>
-        <div id="matDiv"></div>
-      </div>
-      <div class="dcard">
-        <div class="dcard-t">${L==='ar'?'استراتيجيات الاستجابة':'Response Strategies'}</div>
-        <canvas id="respC" height="140"></canvas>
-      </div>
-      <div class="dcard">
-        <div class="dcard-t">${L==='ar'?'توزيع النوع':'Threats vs Opportunities'}</div>
-        <canvas id="typeC" height="140"></canvas>
-      </div>
+    <div class="dash-row dash-3">
+      <div class="card"><div class="card-t">مصفوفة المخاطر (احتمالية × تأثير)</div><div id="matDiv"></div></div>
+      <div class="card"><div class="card-t">استراتيجيات الاستجابة</div><canvas id="respC" height="140"></canvas></div>
+      <div class="card"><div class="card-t">تهديدات vs فرص</div><canvas id="typeC" height="140"></canvas></div>
     </div>
 
-    <!-- Row 3: Early Warning Summary + Trend Chart -->
     ${CP.trend_data?.length?(()=>{
       const latest=CP.trend_data[CP.trend_data.length-1];
       const al=latest.alert_level||'medium';
       const alColor={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'}[al];
-      const alBg={high:'rgba(224,82,82,.08)',medium:'rgba(201,160,32,.08)',low:'rgba(42,158,91,.08)'}[al];
+      const alBg={high:'rgba(239,68,68,.06)',medium:'rgba(234,179,8,.06)',low:'rgba(34,197,94,.06)'}[al];
       const alIcon={high:'⚠',medium:'◆',low:'✓'}[al];
       const r=latest.report||{};
-      return `
-      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="dcard" style="background:${alBg};border-color:${alColor}33">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${alColor}">${alIcon} ${L==='ar'?'تقرير الإنذار المبكر':'Early Warning Report'}</div>
+      return `<div class="dash-row dash-2">
+        <div class="card" style="background:${alBg};border-color:${alColor}33">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:8px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:${alColor}">${alIcon} تقرير الإنذار المبكر</div>
             <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</div>
           </div>
           <div style="display:flex;gap:14px;margin-bottom:9px;flex-wrap:wrap">
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">${L==='ar'?'مستوى التنبيه':'Alert Level'}</div><div style="font-size:14px;font-weight:700;color:${alColor};text-transform:uppercase">${al}</div></div>
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">${L==='ar'?'صحة المشروع':'Health Score'}</div><div style="font-size:14px;font-weight:700">${latest.health_score||'—'}/100</div></div>
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">التنبيه</div><div style="font-size:14px;font-weight:700;color:${alColor};text-transform:uppercase">${RL[al]||al}</div></div>
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">الصحة</div><div style="font-size:14px;font-weight:700">${latest.health_score||'—'}/100</div></div>
             <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">SV</div><div style="font-size:13px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">${L==='ar'?'الصرف':'Burn'}</div><div style="font-size:13px;font-weight:600">${latest.burn_rate||0}%</div></div>
+            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">الصرف</div><div style="font-size:13px;font-weight:600">${latest.burn_rate||0}%</div></div>
           </div>
-          <div style="font-size:11.5px;color:var(--t2);line-height:1.6;border-top:1px solid var(--b1);padding-top:8px">${r.executive_summary||(L==='ar'?'لا يوجد ملخص متاح':'No summary available')}</div>
-          ${r.warnings?.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b1)"><div style="font-size:10px;font-weight:700;color:var(--yel);text-transform:uppercase;margin-bottom:4px">${L==='ar'?'تحذيرات':'Warnings'}</div>${r.warnings.slice(0,2).map(w=>`<div style="font-size:11px;color:var(--t2);padding:2px 0">• ${w}</div>`).join('')}</div>`:''}
-          <div style="margin-top:10px;display:flex;gap:6px">
-            <button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="ST('warn')">${L==='ar'?'عرض التقرير الكامل':'View Full Report'}</button>
-          </div>
+          <div style="font-size:11.5px;color:var(--t2);line-height:1.6;border-top:1px solid var(--b1);padding-top:8px">${r.executive_summary||'لا يوجد ملخص'}</div>
+          <div style="margin-top:10px"><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="ST('warn')">عرض التقرير الكامل</button></div>
         </div>
-        <div class="dcard">
-          <div class="dcard-t">${L==='ar'?'اتجاه المخاطر عبر الوقت':'Risk Register Trend'}</div>
-          <canvas id="trendC" height="120"></canvas>
-        </div>
+        <div class="card"><div class="card-t">اتجاه المخاطر</div><canvas id="trendC" height="120"></canvas></div>
       </div>`;
-    })():`
-    <div class="dcard">
-      <div class="dcard-t">${L==='ar'?'اتجاه المخاطر عبر الوقت':'Risk Register Trend'}</div>
-      <canvas id="trendC" height="55"></canvas>
-    </div>
-    <div class="dcard" style="margin-top:10px;background:rgba(30,114,232,.04);border-color:rgba(30,114,232,.2)">
-      <div style="font-size:11.5px;color:var(--t2);text-align:center;padding:8px">
-        ${L==='ar'?'لم يتم إدخال مؤشرات أسبوعية بعد. ':'No weekly indicators entered yet. '}
-        <a onclick="ST('warn')" style="color:var(--acc);cursor:pointer;text-decoration:underline">${L==='ar'?'افتح الإنذار المبكر لإدخال المؤشرات':'Open Early Warning to enter indicators'}</a>
-      </div>
-    </div>`}`;
+    })():`<div class="card"><div class="card-t">اتجاه المخاطر عبر الوقت</div><canvas id="trendC" height="55"></canvas></div>`}
+  `;
 
   setTimeout(()=>{
-    // Level donut
-    new Chart(document.getElementById('lvlC'),{type:'doughnut',data:{labels:[L==='ar'?'عالية':'High',L==='ar'?'متوسطة':'Medium',L==='ar'?'منخفضة':'Low',L==='ar'?'فرص':'Opp'],datasets:[{data:[high,med,low,opp],backgroundColor:['#e05252','#c9a020','#2a9e5b','#0a8f8f'],borderWidth:0,hoverOffset:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}});
-
-    // Matrix
+    new Chart(document.getElementById('lvlC'),{type:'doughnut',data:{labels:['عالية','متوسطة','منخفضة','فرص'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,hoverOffset:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}});
+    
     const mc=Array.from({length:5},()=>Array(5).fill(0));
-    risks.forEach(r=>{
-      const p=Math.max(1,Math.min(5,r.probability||1))-1;
-      const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);
-      const ix=Math.max(1,Math.min(5,imp))-1;mc[4-p][ix]++;
-    });
-    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(224,82,82,.7)':s>=9?'rgba(201,160,32,.6)':s>=4?'rgba(201,160,32,.3)':'rgba(42,158,91,.4)';};
-    let mh='<div style="font-size:9px;color:var(--t3);text-align:center;margin-bottom:4px">← Impact →</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">';
-    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:2px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.85)">${v||''}</div>`;});});
-    mh+='</div><div style="font-size:9px;color:var(--t3);text-align:center;margin-top:3px">↑ Probability ↑</div>';
+    risks.forEach(r=>{const p=Math.max(1,Math.min(5,r.probability||1))-1;const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);const ix=Math.max(1,Math.min(5,imp))-1;mc[4-p][ix]++;});
+    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(239,68,68,.7)':s>=9?'rgba(234,179,8,.6)':s>=4?'rgba(234,179,8,.3)':'rgba(34,197,94,.4)';};
+    let mh='<div style="font-size:9px;color:var(--t3);text-align:center;margin-bottom:4px">← التأثير →</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">';
+    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:3px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.85)">${v||''}</div>`;});});
+    mh+='</div><div style="font-size:9px;color:var(--t3);text-align:center;margin-top:3px">↑ الاحتمالية ↑</div>';
     document.getElementById('matDiv').innerHTML=mh;
 
-    // Response
-    const respColors={'Avoid':'#e05252','Mitigate':'#c9a020','Transfer':'#1e72e8','Accept':'#7a91a8','Escalate':'#8855dd','Exploit':'#0a8f8f','Enhance':'#2a9e5b','Share':'#1e72e8','تجنب':'#e05252','تخفيف':'#c9a020','نقل':'#1e72e8','قبول':'#7a91a8','تصعيد':'#8855dd','استغلال':'#0a8f8f','تعزيز':'#2a9e5b','مشاركة':'#1e72e8'};
-    new Chart(document.getElementById('respC'),{type:'doughnut',data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#4a6070'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:10},padding:7}}},cutout:'62%',layout:{padding:2}}});
+    const respColors={'تجنب':'#ef4444','تخفيف':'#eab308','نقل':'#5b5cff','قبول':'#8a9ab8','تصعيد':'#a855f7','استغلال':'#14b8a6','تعزيز':'#22c55e','مشاركة':'#06b6d4'};
+    new Chart(document.getElementById('respC'),{type:'doughnut',data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#566480'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}});
+    new Chart(document.getElementById('typeC'),{type:'doughnut',data:{labels:['تهديدات','فرص'],datasets:[{data:[thr,opp],backgroundColor:['#ef4444','#14b8a6'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}});
 
-    // Type
-    new Chart(document.getElementById('typeC'),{type:'doughnut',data:{labels:[L==='ar'?'تهديدات':'Threats',L==='ar'?'فرص':'Opportunities'],datasets:[{data:[thr,opp],backgroundColor:['#e05252','#0a8f8f'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#7a91a8',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}});
-
-    // Trend
-    const upds=CP?.upds||[];const tl2=['Start'];const hd=[high];const md=[med];
+    const upds=CP?.upds||[];const tl2=['البداية'];const hd=[high];const md=[med];
     upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md.push(md[md.length-1]);}});
-    new Chart(document.getElementById('trendC'),{type:'line',data:{labels:tl2,datasets:[{label:L==='ar'?'مرتفعة':'High',data:hd,borderColor:'#e05252',backgroundColor:'rgba(224,82,82,.06)',tension:.4,fill:true,borderWidth:1.5},{label:L==='ar'?'متوسطة':'Medium',data:md,borderColor:'#c9a020',backgroundColor:'rgba(201,160,32,.05)',tension:.4,fill:true,borderWidth:1.5}]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a91a8',font:{size:10},stepSize:1},grid:{color:'rgba(26,45,66,.5)'}}},layout:{padding:{top:2}}}});
+    new Chart(document.getElementById('trendC'),{type:'line',data:{labels:tl2,datasets:[{label:'عالية',data:hd,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',tension:.4,fill:true,borderWidth:1.5},{label:'متوسطة',data:md,borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.05)',tension:.4,fill:true,borderWidth:1.5}]},options:{plugins:{legend:{position:'top',labels:{color:'#8a9ab8',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#8a9ab8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a9ab8',font:{size:10},stepSize:1},grid:{color:'rgba(28,42,68,.5)'}}},layout:{padding:{top:2}}}});
   },60);
 }
 
 // ═══ EARLY WARNING ═══
 function renderWarn(){
-  const risks=CP?.risks||[];const el=document.getElementById('warnContent');
-  if(!risks.length){el.innerHTML=`<div class="empty"><div class="et">${t('T_warnEmpty')}</div></div>`;return;}
-
+  const risks=CP?.risks||[];
+  const el=document.getElementById('warnContent');
+  if(!risks.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🚨</div><div class="et">قم بالتحليل أولاً</div></div>`;return;}
   const w1=risks.filter(r=>r.expected_weeks===1);
   const w2=risks.filter(r=>r.expected_weeks===2);
   const w34=risks.filter(r=>r.expected_weeks===3||r.expected_weeks===4);
   const noSched=!CP.has_schedule;
 
   el.innerHTML=`
-    <!-- Section 1: Schedule-based warnings -->
     <div class="ew-sec">
-      <div class="ew-sec-t">
-        <span style="background:rgba(224,82,82,.12);color:var(--red);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${L==='ar'?'الجدول الزمني':'SCHEDULE'}</span>
-        ${L==='ar'?'المخاطر المرتبطة بالجدول الزمني':'Schedule-Based Risk Warnings'}
-      </div>
-      ${noSched?`<div class="ai ai-w" style="margin-bottom:0">
-        <div>
-          <div style="font-weight:600;margin-bottom:3px">${L==='ar'?'لم يتم رفع الجدول الزمني':'No Schedule File Uploaded'}</div>
-          <div style="font-size:11.5px">${L==='ar'?'ارفع ملف الجدول الزمني (Excel أو برامفيرا) لتفعيل الإنذار المبكر المرتبط بالأنشطة':'Upload schedule file (Excel or Primavera export) to enable activity-linked early warnings'}</div>
-          <button class="btn btn-g" style="margin-top:8px;padding:4px 10px;font-size:11px" onclick="ST('files')">${L==='ar'?'رفع الجدول':'Upload Schedule'}</button>
-        </div>
-      </div>`:`
-      ${w1.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.06em;margin-bottom:7px">${L==='ar'?'هذا الأسبوع — إجراء فوري':'This Week — Immediate Action'} (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
-      ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--yel);letter-spacing:.06em;margin:12px 0 7px">${L==='ar'?'الأسبوع القادم':'Next Week — Prepare'} (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
-      ${w34.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:12px 0 7px">${L==='ar'?'3-4 أسابيع — مراقبة':'3–4 Weeks — Monitor'} (${w34.length})</div>${w34.map(r=>ewCard(r,3)).join('')}`:''}
-      ${!w1.length&&!w2.length&&!w34.length?`<div class="ai ai-ok" style="margin-bottom:0">${L==='ar'?'لا توجد مخاطر متوقعة خلال الأسبوعين القادمين بناءً على الجدول الزمني.':'No risks expected in the next 2 weeks based on current schedule.'}</div>`:''}`}
+      <div class="ew-sec-t"><span style="background:rgba(239,68,68,.12);color:var(--red);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">الجدول الزمني</span>المخاطر المرتبطة بالجدول</div>
+      ${noSched?`<div class="ai ai-w" style="margin-bottom:0"><div><div style="font-weight:600;margin-bottom:3px">لم يتم رفع الجدول الزمني</div><div style="font-size:11.5px">ارفع ملف الجدول لتفعيل الإنذار المبكر</div><button class="btn btn-g" style="margin-top:8px;padding:4px 10px;font-size:11px" onclick="ST('files')">رفع الجدول</button></div></div>`:`
+      ${w1.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.06em;margin-bottom:7px">هذا الأسبوع — إجراء فوري (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
+      ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--yel);letter-spacing:.06em;margin:12px 0 7px">الأسبوع القادم (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
+      ${w34.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:12px 0 7px">3-4 أسابيع (${w34.length})</div>${w34.map(r=>ewCard(r,3)).join('')}`:''}
+      ${!w1.length&&!w2.length&&!w34.length?`<div class="ai ai-ok" style="margin-bottom:0">لا توجد مخاطر متوقعة خلال الأسبوعين القادمين</div>`:''}`}
     </div>
 
-    <!-- Section 2: Trend Analysis -->
     <div class="ew-sec">
-      <div class="ew-sec-t">
-        <span style="background:rgba(30,114,232,.12);color:var(--acc);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${L==='ar'?'تحليل الاتجاه':'TREND ANALYSIS'}</span>
-        ${L==='ar'?'تحليل مؤشرات الأداء الأسبوعية':'Weekly Performance Indicator Analysis'}
-      </div>
+      <div class="ew-sec-t"><span style="background:rgba(91,92,255,.12);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">تحليل الاتجاه</span>تحليل المؤشرات الأسبوعية</div>
       <div class="trend-form">
-        <div style="font-size:12px;font-weight:600;margin-bottom:3px" id="T_trendTitle">${t('T_trendTitle')}</div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:10px" id="T_trendSub">${t('T_trendSub')}</div>
-        <div class="ind-grid" style="grid-template-columns:repeat(2,1fr)">
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'انحراف الجدول الزمني SV (%)':'Schedule Variance SV (%)'}</label><input type="number" class="ind-inp" id="ind_sv" placeholder="${L==='ar'?'مثال: -5 يعني متأخر':'e.g. -5 means behind'}"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'معدل صرف الميزانية (%)':'Budget Burn Rate (%)'}</label><input type="number" class="ind-inp" id="ind_br" placeholder="${L==='ar'?'مثال: 45':'e.g. 45'}"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'طلبات التغيير (Change Requests)':'Change Requests'}</label><input type="number" class="ind-inp" id="ind_cr" placeholder="${L==='ar'?'عدد الطلبات':'count'}"/></div>
-          <div class="ind-item"><label class="ind-lbl">${L==='ar'?'استغلال الموارد (%)':'Resource Utilization (%)'}</label><input type="number" class="ind-inp" id="ind_ru" placeholder="${L==='ar'?'مثال: 80':'e.g. 80'}" min="0" max="100"/></div>
-          <div class="ind-item full-width" style="grid-column:1/-1"><label class="ind-lbl">${L==='ar'?'تأخر التوريد / تبعيات (Vendor/Dependency Delay)':'Vendor / Dependency Delay'}</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="${L==='ar'?'مثال: تأخر تسليم الحديد 5 أيام، الموردX لم يلتزم بالموعد':'e.g. Steel delivery delayed 5 days, vendor X missed schedule'}"></textarea></div>
-          <div class="ind-item full-width" style="grid-column:1/-1"><label class="ind-lbl">${L==='ar'?'ملاحظات إضافية (اختياري)':'Additional Notes (optional)'}</label><textarea class="ind-inp" id="ind_notes" rows="2" style="min-height:50px;font-family:inherit" placeholder="${L==='ar'?'أي ملاحظات أو أحداث هذا الأسبوع':'Any additional notes or events this week'}"></textarea></div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px">مؤشرات الاتجاه الأسبوعية</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:11px">أدخل مؤشرات هذا الأسبوع لتحليل الاتجاه</div>
+        <div class="ind-grid">
+          <div class="ind-item"><label class="ind-lbl">انحراف الجدول SV (%)</label><input type="number" class="ind-inp" id="ind_sv" placeholder="مثال: -5 يعني متأخر"/></div>
+          <div class="ind-item"><label class="ind-lbl">معدل صرف الميزانية (%)</label><input type="number" class="ind-inp" id="ind_br" placeholder="مثال: 45"/></div>
+          <div class="ind-item"><label class="ind-lbl">طلبات التغيير</label><input type="number" class="ind-inp" id="ind_cr" placeholder="عدد الطلبات"/></div>
+          <div class="ind-item"><label class="ind-lbl">استغلال الموارد (%)</label><input type="number" class="ind-inp" id="ind_ru" placeholder="مثال: 80" min="0" max="100"/></div>
+          <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">تأخر التوريد / تبعيات</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="مثال: تأخر تسليم الحديد 5 أيام"></textarea></div>
+          <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">ملاحظات إضافية (اختياري)</label><textarea class="ind-inp" id="ind_notes" rows="2" style="min-height:50px;font-family:inherit" placeholder="أي ملاحظات هذا الأسبوع"></textarea></div>
         </div>
-        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-          <button class="btn btn-p" onclick="analyzeTrend()">${t('T_btnTrend')}</button>
-          <span style="font-size:11px;color:var(--t3)" id="trendWeekLbl">${CP.trend_data?.length?`${CP.trend_data.length} ${L==='ar'?'أسابيع مسجلة':'weeks recorded'}`:''}</span>
-        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center"><button class="btn btn-p" onclick="analyzeTrend()">تحليل الاتجاه</button><span style="font-size:11px;color:var(--t3)">${CP.trend_data?.length?CP.trend_data.length+' أسابيع مسجلة':''}</span></div>
       </div>
 
-      ${CP.trend_data?.length?`
-      <div class="trend-hist">
-        <div style="font-size:11.5px;font-weight:600;margin-bottom:8px">${L==='ar'?'سجل المؤشرات الأسبوعية':'Weekly Indicators History'}</div>
-        <table class="th-table">
-          <thead><tr><th>${L==='ar'?'الأسبوع':'Week'}</th><th>SV%</th><th>${L==='ar'?'الصرف':'Burn%'}</th><th>${L==='ar'?'تغيير':'Changes'}</th><th>${L==='ar'?'الموارد':'Resources'}</th><th>${L==='ar'?'الموردين':'Vendor'}</th><th>${L==='ar'?'صحة':'Score'}</th><th>${L==='ar'?'تحذير':'Alert'}</th></tr></thead>
-          <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr>
-            <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td>
-            <td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'var(--yel)':'var(--grn)'}">${w.sv||0}%</td>
-            <td>${w.burn_rate||0}%</td>
-            <td>${w.change_requests||0}</td>
-            <td>${w.resource_util||0}%</td>
-            <td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):(L==='ar'?'لا':'OK')}</td>
-            <td><b>${w.health_score||'—'}</b></td>
-            <td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${w.alert_level?.toUpperCase()||'OK'}</span></td>
-          </tr>`).join('')}</tbody>
-        </table>
-        <div style="margin-top:10px"><canvas id="trendIndC" height="70"></canvas></div>
-      </div>
-      `:''}
+      ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px"><div class="card-t">سجل المؤشرات الأسبوعية</div>
+        <table class="exp-tbl"><thead><tr><th>الأسبوع</th><th>SV%</th><th>الصرف</th><th>تغيير</th><th>الموارد</th><th>الموردين</th><th>الصحة</th><th>التنبيه</th></tr></thead>
+        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'var(--yel)':'var(--grn)'}">${w.sv||0}%</td><td>${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'لا'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table>
+        <div style="margin-top:10px"><canvas id="trendIndC" height="70"></canvas></div></div>`:''}
+
       <div id="trendAnalysis"></div>
     </div>`;
 
-  // Draw trend indicators chart if data exists
   if(CP.trend_data?.length>1){
     setTimeout(()=>{
-      const td=CP.trend_data.slice(-10);
-      const labels=td.map(w=>w.date);
+      const td=CP.trend_data.slice(-10);const labels=td.map(w=>w.date);
       new Chart(document.getElementById('trendIndC'),{type:'line',data:{labels,datasets:[
-        {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'#e05252',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Burn%',data:td.map(w=>w.burn_rate||0),borderColor:'#c9a020',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:L==='ar'?'تغيير':'Changes',data:td.map(w=>w.change_requests||0),borderColor:'#8855dd',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'RU%',data:td.map(w=>w.resource_util||0),borderColor:'#1e72e8',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:L==='ar'?'الصحة':'Health',data:td.map(w=>w.health_score||0),borderColor:'#2a9e5b',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
-      ]},options:{plugins:{legend:{position:'top',labels:{color:'#7a91a8',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#7a91a8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#7a91a8',font:{size:10}},grid:{color:'rgba(26,45,66,.4)'}}},layout:{padding:{top:2}}}});
+        {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'#ef4444',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'الصرف',data:td.map(w=>w.burn_rate||0),borderColor:'#eab308',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'تغيير',data:td.map(w=>w.change_requests||0),borderColor:'#a855f7',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'الموارد',data:td.map(w=>w.resource_util||0),borderColor:'#5b5cff',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'الصحة',data:td.map(w=>w.health_score||0),borderColor:'#22c55e',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
+      ]},options:{plugins:{legend:{position:'top',labels:{color:'#8a9ab8',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#8a9ab8',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a9ab8',font:{size:10}},grid:{color:'rgba(28,42,68,.4)'}}},layout:{padding:{top:2}}}});
     },60);
   }
 }
 
 function ewCard(r,week){
   const cls={high:'ew-h',medium:'ew-m',low:'ew-l'}[r.level]||'ew-l';
-  const wl=week===1?(L==='ar'?'هذا الأسبوع':'This Week'):week===2?(L==='ar'?'الأسبوع القادم':'Next Week'):`${L==='ar'?'أسبوع':'Week'} ${week}`;
+  const wl=week===1?'هذا الأسبوع':week===2?'الأسبوع القادم':`أسبوع ${week}`;
   const wc=week===1?'wb1':week===2?'wb2':'wb3';
   return`<div class="ew-card ${cls}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span>
-        <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
-        <span class="cb">${r.category}</span>
-        <span class="bdg b-${r.level}">${L==='ar'?RL_AR[r.level]:RL_EN[r.level]}</span>
+        <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'فرصة':'تهديد'}</span>
+        <span class="cb">${CAT_AR[r.category]||r.category}</span>
+        <span class="bdg b-${r.level}">${RL[r.level]||r.level}</span>
       </div>
       <span class="wbdg ${wc}">${wl}</span>
     </div>
-    <div style="font-size:12.5px;font-weight:500;margin-bottom:3px">${r.description}</div>
-    ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3);margin-bottom:3px">${L==='ar'?'النشاط:':'Activity:'} ${r.activity_ref}</div>`:''}
-    <div style="font-size:11.5px;color:var(--t2);font-style:italic">${L==='ar'?'الإجراء:':'Action:'} ${r.mitigation}</div>
+    <div style="font-size:12.5px;font-weight:500;margin-bottom:3px;color:var(--t1)">${r.description}</div>
+    ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3);margin-bottom:3px">النشاط: ${r.activity_ref}</div>`:''}
+    <div style="font-size:11.5px;color:var(--t2);font-style:italic">الإجراء: ${r.mitigation}</div>
   </div>`;
 }
 
@@ -1426,64 +1586,38 @@ async function analyzeTrend(){
   const notes=document.getElementById('ind_notes').value.trim()||'';
   const today=new Date();
   const weekDate=today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  const weekISO=today.toISOString().slice(0,10);
-
-  showLoad(L==='ar'?'جاري تحليل المؤشرات...':'Analyzing indicators...');
+  showLoad('جاري تحليل المؤشرات...');
 
   const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
-  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, Burn=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Vendor: ${w.vendor_delay||'none'}`).join('\n')||'No history';
-  const lang_inst=L==='ar'?'IMPORTANT: Generate ALL output in ARABIC language including all text fields, narrative, and explanations. Use professional construction risk management Arabic terminology.':'Generate output in ENGLISH.';
+  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, Burn=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%`).join('\n')||'No history';
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager analyzing weekly project performance. ${lang_inst}
-
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ARABIC.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
-Existing Risk Register:\n${existing}
-
-Historical Trend (last 4 weeks):\n${history}
-
-THIS WEEK INDICATORS (Week of ${weekDate}):
-- Schedule Variance (SV): ${sv}%  ${sv<0?'(behind schedule)':sv>0?'(ahead of schedule)':'(on track)'}
-- Budget Burn Rate: ${br}%
-- Change Requests this week: ${cr}
+Existing Risks:\n${existing}
+History (last 4 weeks):\n${history}
+THIS WEEK (${weekDate}):
+- SV: ${sv}% ${sv<0?'(behind)':sv>0?'(ahead)':'(on track)'}
+- Budget Burn: ${br}%
+- Change Requests: ${cr}
 - Resource Utilization: ${ru}%
-- Vendor/Dependency Delay: ${vd||'none reported'}
-- Additional Notes: ${notes||'none'}
+- Vendor/Dependency Delay: ${vd||'none'}
+- Notes: ${notes||'none'}
 
-Provide a COMPREHENSIVE WRITTEN REPORT in JSON format. Each indicator analysis must be 2-4 sentences explaining:
-1. What the number/text means in context
-2. The trend direction (compared to history if available)
-3. Specific risks this could trigger or amplify (reference risk IDs from register if relevant)
-4. Quantified impact (e.g., "could increase R005 probability from 3 to 4")
+Each indicator analysis must be 2-4 sentences explaining: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact.
 
-Respond ONLY with valid JSON:
-{
-  "alert_level": "high|medium|low",
-  "health_score": 75,
-  "executive_summary": "3-4 sentence overall narrative summary of project health this week",
-  "indicators_analysis": {
-    "schedule_variance": "Detailed 3-4 sentence analysis with risk linkage",
-    "budget_burn_rate": "Detailed 3-4 sentence analysis with risk linkage",
-    "change_requests": "Detailed 3-4 sentence analysis with risk linkage",
-    "resource_utilization": "Detailed 3-4 sentence analysis with risk linkage",
-    "vendor_delay": "Detailed 3-4 sentence analysis with risk linkage"
-  },
-  "warnings": ["Specific warning 1 with reasoning", "Warning 2", "Warning 3"],
-  "predicted_risks": ["Specific risk prediction with reasoning for next 2 weeks", "Risk 2", "Risk 3"],
-  "actions": ["Specific actionable step 1", "Action 2", "Action 3", "Action 4"]
-}`}]});
+Respond ONLY with valid JSON in Arabic:
+{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative summary","indicators_analysis":{"schedule_variance":"detailed analysis","budget_burn_rate":"detailed analysis","change_requests":"detailed analysis","resource_utilization":"detailed analysis","vendor_delay":"detailed analysis"},"warnings":["warning 1","warning 2","warning 3"],"predicted_risks":["prediction 1","prediction 2","prediction 3"],"actions":["action 1","action 2","action 3","action 4"]}`}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){alert('خطأ: '+data.error.message);return;}
     let parsed;
-    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Parse error');return;}
+    try{parsed=pJSON(data.content[0].text);}catch(e){alert('خطأ في التحليل');return;}
 
-    // Save to trend history
-    const entry={date:weekDate,date_iso:weekISO,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50,report:parsed};
+    const entry={date:weekDate,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50,report:parsed};
     if(!CP.trend_data)CP.trend_data=[];
     CP.trend_data.push(entry);
     await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});
 
-    // Render full written report
     const alertClass={high:'ta-r',medium:'ta-y',low:'ta-g'}[parsed.alert_level]||'ta-y';
     const alertIcon={high:'⚠️',medium:'◆',low:'✓'}[parsed.alert_level]||'◆';
     const ind=parsed.indicators_analysis||{};
@@ -1491,76 +1625,28 @@ Respond ONLY with valid JSON:
     document.getElementById('trendAnalysis').innerHTML=`
       <div class="trend-alert ${alertClass}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:8px">
-          <span style="font-weight:700;font-size:13px">${alertIcon} ${L==='ar'?'تقرير الإنذار المبكر — أسبوع':'Early Warning Report — Week of'} ${weekDate}</span>
-          <span style="font-size:11px">${L==='ar'?'درجة الصحة:':'Health Score:'} <b style="font-size:14px">${parsed.health_score}/100</b></span>
+          <span style="font-weight:700;font-size:13px">${alertIcon} تقرير الإنذار المبكر — أسبوع ${weekDate}</span>
+          <span style="font-size:11px">درجة الصحة: <b style="font-size:14px">${parsed.health_score}/100</b></span>
         </div>
         <div style="font-size:12.5px;line-height:1.6">${parsed.executive_summary||''}</div>
       </div>
-
-      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin-bottom:10px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:11px;color:var(--acc)">${L==='ar'?'تحليل المؤشرات التفصيلي':'Detailed Indicator Analysis'}</div>
-
-        <div style="margin-bottom:11px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <span style="background:${sv<0?'rgba(224,82,82,.15)':'rgba(42,158,91,.15)'};color:${sv<0?'var(--red)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">SV: ${sv}%</span>
-            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'انحراف الجدول الزمني':'Schedule Variance'}</span>
-          </div>
-          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.schedule_variance||'—'}</div>
-        </div>
-
-        <div style="margin-bottom:11px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <span style="background:${br>70?'rgba(224,82,82,.15)':br>50?'rgba(201,160,32,.15)':'rgba(42,158,91,.15)'};color:${br>70?'var(--red)':br>50?'var(--yel)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${br}%</span>
-            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'معدل صرف الميزانية':'Budget Burn Rate'}</span>
-          </div>
-          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.budget_burn_rate||'—'}</div>
-        </div>
-
-        <div style="margin-bottom:11px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <span style="background:${cr>3?'rgba(224,82,82,.15)':cr>0?'rgba(201,160,32,.15)':'rgba(42,158,91,.15)'};color:${cr>3?'var(--red)':cr>0?'var(--yel)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${cr}</span>
-            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'طلبات التغيير':'Change Requests'}</span>
-          </div>
-          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.change_requests||'—'}</div>
-        </div>
-
-        <div style="margin-bottom:11px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <span style="background:${ru>90||ru<50?'rgba(224,82,82,.15)':ru>80||ru<60?'rgba(201,160,32,.15)':'rgba(42,158,91,.15)'};color:${ru>90||ru<50?'var(--red)':ru>80||ru<60?'var(--yel)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${ru}%</span>
-            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'استغلال الموارد':'Resource Utilization'}</span>
-          </div>
-          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.resource_utilization||'—'}</div>
-        </div>
-
-        <div style="margin-bottom:5px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <span style="background:${vd?'rgba(224,82,82,.15)':'rgba(42,158,91,.15)'};color:${vd?'var(--red)':'var(--grn)'};padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:700">${vd?(L==='ar'?'يوجد':'Reported'):(L==='ar'?'لا يوجد':'None')}</span>
-            <span style="font-size:11.5px;font-weight:600">${L==='ar'?'تأخر الموردين والتبعيات':'Vendor/Dependency Delay'}</span>
-          </div>
-          ${vd?`<div style="font-size:11px;color:var(--t3);font-style:italic;padding-inline-start:8px;margin-bottom:4px">"${vd}"</div>`:''}
-          <div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind.vendor_delay||'—'}</div>
-        </div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-t" style="color:var(--primary)">تحليل المؤشرات التفصيلي</div>
+        ${[
+          {k:'schedule_variance',label:'انحراف الجدول الزمني',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
+          {k:'budget_burn_rate',label:'معدل صرف الميزانية',val:`${br}%`,color:br>70?'var(--red)':br>50?'var(--yel)':'var(--grn)'},
+          {k:'change_requests',label:'طلبات التغيير',val:cr,color:cr>3?'var(--red)':cr>0?'var(--yel)':'var(--grn)'},
+          {k:'resource_utilization',label:'استغلال الموارد',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'var(--yel)':'var(--grn)'},
+          {k:'vendor_delay',label:'تأخر الموردين',val:vd?'يوجد':'لا يوجد',color:vd?'var(--red)':'var(--grn)'}
+        ].map(item=>`<div style="margin-bottom:11px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="background:${item.color}22;color:${item.color};padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700">${item.val}</span><span style="font-size:11.5px;font-weight:600">${item.label}</span></div><div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind[item.k]||'—'}</div></div>`).join('')}
       </div>
+      ${parsed.warnings?.length?`<div class="card" style="background:rgba(234,179,8,.05);border-color:rgba(234,179,8,.2);margin-bottom:10px"><div class="card-t" style="color:var(--yel)">⚠ إشارات تحذيرية</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(234,179,8,.1);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
+      ${parsed.predicted_risks?.length?`<div class="card" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.2);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ مخاطر متوقعة خلال أسبوعين</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(239,68,68,.1);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
+      ${parsed.actions?.length?`<div class="card" style="background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2)"><div class="card-t" style="color:var(--grn)">✓ إجراءات موصى بها</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(34,197,94,.1);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}`;
 
-      ${parsed.warnings?.length?`<div style="background:rgba(201,160,32,.05);border:1px solid rgba(201,160,32,.2);border-radius:var(--r);padding:12px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--yel);margin-bottom:8px">⚠ ${L==='ar'?'إشارات تحذيرية':'Warning Signals'}</div>
-        ${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(201,160,32,.1);line-height:1.55">• ${w}</div>`).join('')}
-      </div>`:''}
-
-      ${parsed.predicted_risks?.length?`<div style="background:rgba(224,82,82,.05);border:1px solid rgba(224,82,82,.2);border-radius:var(--r);padding:12px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--red);margin-bottom:8px">▲ ${L==='ar'?'مخاطر متوقعة خلال أسبوعين':'Predicted Risks (Next 2 Weeks)'}</div>
-        ${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(224,82,82,.1);line-height:1.55">▸ ${r}</div>`).join('')}
-      </div>`:''}
-
-      ${parsed.actions?.length?`<div style="background:rgba(42,158,91,.05);border:1px solid rgba(42,158,91,.2);border-radius:var(--r);padding:12px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grn);margin-bottom:8px">✓ ${L==='ar'?'إجراءات موصى بها':'Recommended Actions'}</div>
-        ${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(42,158,91,.1);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}
-      </div>`:''}`;
-
-    // Clear inputs
     ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{document.getElementById(id).value='';});
-    renderWarn();renderDash();showSync();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+    renderWarn();renderDash();
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
 
 // ═══ UPDATES ═══
@@ -1568,19 +1654,18 @@ function setUT(btn,type){document.querySelectorAll('.pill').forEach(p=>p.classLi
 async function addUpdate(){
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
-  if(!text&&!UF.length){alert(L==='ar'?'يرجى كتابة تفاصيل أو رفع ملف':'Please add details or attach a file');return;}
-  const tl={change_order:L==='ar'?'أمر تغيير':'Change Order',delay:L==='ar'?'تأخير':'Delay',scope:L==='ar'?'تغيير نطاق':'Scope Change',site:L==='ar'?'مستجد ميداني':'Site Update',contract:L==='ar'?'تعديل عقدي':'Contract Amendment',meeting:L==='ar'?'محضر اجتماع':'Meeting Minutes',note:L==='ar'?'ملاحظة':'Note'};
+  if(!text&&!UF.length){alert('يرجى كتابة تفاصيل أو رفع ملف');return;}
+  const tl={change_order:'أمر تغيير',delay:'تأخير',scope:'تغيير نطاق',site:'مستجد ميداني',contract:'تعديل عقدي',meeting:'محضر اجتماع',note:'ملاحظة'};
   const existing=(CP.risks||[]).map(r=>`${r.risk_id||r.id}: ${r.description}`).join('\n');
-  const lang_inst=L==='ar'?'Generate ALL content in ARABIC.':'Generate in ENGLISH.';
-  showLoad(L==='ar'?'جاري تحليل التحديث...':'Analyzing update...');
+  showLoad('جاري تحليل التحديث...');
 
-  const parts=[{type:'text',text:`Construction risk manager. ${lang_inst}
+  const parts=[{type:'text',text:`Construction risk manager. Generate ALL content in ARABIC.
 Project: ${CP.name} | Type: ${CP.type}
 Existing risks:\n${existing||'None'}
 Update: ${tl[cUT]} — ${text}
 ${fdesc?'File: '+fdesc:''}
 Identify new risks. Respond ONLY with valid JSON (max 20 words per field):
-{"analysis":"impact summary","new_risks":[{"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"","owner":"","expected_weeks":2}]}`}];
+{"analysis":"impact summary in Arabic","new_risks":[{"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"","description":"","cause":"","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"","owner":"","expected_weeks":2}]}`}];
 
   for(const f of UF){
     if(f.extype==='image'&&f.data)parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
@@ -1590,40 +1675,36 @@ Identify new risks. Respond ONLY with valid JSON (max 20 words per field):
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:parts}]});
-    hideLoad();if(data.error){alert('Error: '+data.error.message);return;}
+    hideLoad();
+    if(data.error){alert('خطأ: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}
-    catch(e){
-      try{
-        const raw=data.content[0].text;
-        const s=raw.indexOf('{'),e2=raw.lastIndexOf('}');
-        if(s>=0&&e2>s)parsed=JSON.parse(raw.slice(s,e2+1));
-        else parsed={analysis:raw.slice(0,200),new_risks:[]};
-      }catch(e3){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[]};}
-    }
+    catch(e){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[]};}
     if(parsed.new_risks?.length){
       const ins=parsed.new_risks.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category||'Scope',description:r.description,cause:r.cause||'',probability:r.probability||3,impact_cost:r.impact_cost||2,impact_schedule:r.impact_schedule||2,impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation||'',owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
       await sb('risks','POST',ins);
     }
     await sb('updates','POST',{project_id:CID,type:cUT,type_label:tl[cUT],content:text,file_desc:fdesc,files_count:UF.length,analysis:parsed.analysis||'',new_risks_count:(parsed.new_risks||[]).length});
     document.getElementById('utext').value='';document.getElementById('ufdesc').value='';
-    UF=[];renderUFP();await selectProj(CID);showSync();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+    UF=[];renderUFP();await selectProj(CID);
+  }catch(e){hideLoad();alert('خطأ: '+e.message);}
 }
+
 function renderUpds(){
-  const upds=CP?.upds||[];const el=document.getElementById('tlEl');
-  if(!upds.length){el.innerHTML=`<div class="empty" style="padding:18px"><div class="et">${t('T_noUpd')}</div></div>`;return;}
-  const dc={change_order:'dc',delay:'dd',scope:'ds',site:'dsi',contract:'dco',meeting:'dco',note:'dn'};
-  const tl={change_order:L==='ar'?'أمر تغيير':'Change Order',delay:L==='ar'?'تأخير':'Delay',scope:L==='ar'?'تغيير نطاق':'Scope Change',site:L==='ar'?'مستجد ميداني':'Site Update',contract:L==='ar'?'تعديل عقدي':'Contract Amendment',meeting:L==='ar'?'محضر اجتماع':'Meeting Minutes',note:L==='ar'?'ملاحظة':'Note'};
+  const upds=CP?.upds||[];
+  const el=document.getElementById('tlEl');
+  if(!upds.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🔄</div><div class="et">لا توجد تحديثات</div></div>`;return;}
+  const dc={change_order:'#5b5cff',delay:'#ef4444',scope:'#eab308',site:'#22c55e',contract:'#14b8a6',meeting:'#a855f7',note:'#566480'};
+  const tl={change_order:'أمر تغيير',delay:'تأخير',scope:'تغيير نطاق',site:'مستجد ميداني',contract:'تعديل عقدي',meeting:'محضر اجتماع',note:'ملاحظة'};
   el.innerHTML=upds.map(u=>`
     <div class="tli">
-      <div class="tld ${dc[u.type]||'dn'}" style="background:${{change_order:'var(--acc)',delay:'var(--red)',scope:'var(--yel)',site:'var(--grn)',contract:'var(--teal)',meeting:'var(--teal)',note:'var(--t3)'}[u.type]||'var(--t3)'}"></div>
+      <div class="tld" style="background:${dc[u.type]||'#566480'}"></div>
       <div class="tlc">
-        <div class="tlh"><span class="tlt">${tl[u.type]||u.type_label||u.type}</span><span class="tld2">${new Date(u.created_at).toLocaleString()}</span></div>
+        <div class="tlh"><span class="tlt">${tl[u.type]||u.type}</span><span class="tld2">${new Date(u.created_at).toLocaleString('ar-SA')}</span></div>
         ${u.content?`<div class="tlb">${u.content}</div>`:''}
-        ${u.files_count?`<div style="font-size:10.5px;color:var(--t3);margin-top:3px">↑ ${u.files_count} ${L==='ar'?'ملف':'file'}${u.file_desc?' — '+u.file_desc:''}</div>`:''}
+        ${u.files_count?`<div style="font-size:10.5px;color:var(--t3);margin-top:3px">↑ ${u.files_count} ملف${u.file_desc?' — '+u.file_desc:''}</div>`:''}
         ${u.analysis?`<div style="margin-top:6px;font-size:11.5px;color:var(--t2);border-top:1px solid var(--b1);padding-top:6px">${u.analysis}</div>`:''}
-        ${u.new_risks_count>0?`<div class="nra">+ ${u.new_risks_count} ${L==='ar'?'مخاطر جديدة أضيفت للسجل':'new risks added to register'}</div>`:''}
+        ${u.new_risks_count>0?`<div class="nra">+ ${u.new_risks_count} مخاطر جديدة أضيفت للسجل</div>`:''}
       </div>
     </div>`).join('');
 }
@@ -1635,14 +1716,14 @@ function updateStats(){
   document.getElementById('svThr').textContent=r.filter(x=>x.type==='threat'||!x.type).length;
   document.getElementById('svOpp').textContent=r.filter(x=>x.type==='opportunity').length;
   document.getElementById('svHigh').textContent=r.filter(x=>x.level==='high').length;
-  document.getElementById('svDate').textContent=CP?.analyzed_at||'—';
 }
 
 // ═══ EXPORT ═══
 function exportCSV(){
-  const r=CP?.risks||[];if(!r.length){alert('No risks');return;}
-  const h=['ID','Type','Category','Description','Cause','Probability','Impact Cost','Impact Schedule','Impact QHSE','Impact Reputation','Level','Response Strategy','Action Plan','Owner','Activity Ref','Expected Week'];
-  const rows=r.map(x=>[x.risk_id||x.id,x.type||'threat',x.category,x.description,x.cause||'',(L==='ar'?PL_AR:PL)[x.probability]||x.probability,(L==='ar'?IL_AR:IL)[x.impact_cost]||x.impact_cost,(L==='ar'?IL_AR:IL)[x.impact_schedule]||x.impact_schedule,(L==='ar'?IL_AR:IL)[x.impact_qhse]||x.impact_qhse,(L==='ar'?IL_AR:IL)[x.impact_reputation]||x.impact_reputation,x.level,L==='ar'?(RESP_AR[x.response_strategy]||x.response_strategy||'—'):(x.response_strategy||'—'),x.mitigation,x.owner||'',x.activity_ref||'',x.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
+  const r=CP?.risks||[];
+  if(!r.length){alert('لا توجد مخاطر');return;}
+  const h=['ID','النوع','الفئة','الوصف','السبب','الاحتمالية','تأثير التكلفة','تأثير الجدول','تأثير السلامة','تأثير السمعة','المستوى','الاستجابة','خطة التخفيف','المسؤول','النشاط','الأسبوع المتوقع'];
+  const rows=r.map(x=>[x.risk_id||x.id,x.type==='opportunity'?'فرصة':'تهديد',CAT_AR[x.category]||x.category,x.description,x.cause||'',PL[x.probability]||x.probability,IL[x.impact_cost]||x.impact_cost,IL[x.impact_schedule]||x.impact_schedule,IL[x.impact_qhse]||x.impact_qhse,IL[x.impact_reputation]||x.impact_reputation,RL[x.level]||x.level,RESP_AR[x.response_strategy]||x.response_strategy||'—',x.mitigation,x.owner||'',x.activity_ref||'',x.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`RiskRegister_${CP.name}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.csv`;a.click();
@@ -1651,15 +1732,6 @@ function exportCSV(){
 // ═══ UTILS ═══
 function showLoad(txt){document.getElementById('loadT').textContent=txt;document.getElementById('loadOv').classList.add('on');}
 function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
-
-window.onload=async()=>{
-  L=localStorage.getItem('L')||'ar';
-  applyLang();
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const k=localStorage.getItem('aKey');
-  if(k){document.getElementById('apiKey').value=k;checkKey();}
-  await loadProjs();
-};
 </script>
 </body>
 </html>
