@@ -1100,77 +1100,181 @@ async function assignToPortfolio(projId){
 }
 
 // ═══ PORTFOLIO VIEW ═══
-async function renderPortfolio(filteredProjs){
-  if(!currentPF)return;
+async function renderPortfolio(pfId){
   const el=document.getElementById('portfolioContent');
-  const list=filteredProjs||projs.filter(p=>p.portfolio_id===currentPF.id);
-  
-  if(!list.length&&!filteredProjs){
-    el.innerHTML=`
-      <div class="greeting">
-        <div class="greet-line" style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:${currentPF.color||'#5b5cff'};display:inline-block"></span>${currentPF.name}</div>
-        <div class="greet-sub">${currentPF.description||'محفظة فارغة'}</div>
-      </div>
-      <div class="empty">
-        <div class="empty-icon">📁</div>
-        <div class="et">لا توجد مشاريع في هذه المحفظة</div>
-        <div class="es" style="margin-bottom:14px">أضف أول مشروع للبدء</div>
-        <button class="btn btn-p" onclick="openProjModal()">+ إضافة مشروع</button>
-      </div>`;
+  if(!el)return;
+
+  // Filter projects by portfolio if specified
+  const list=pfId?projs.filter(p=>p.portfolio_id===pfId):projs;
+  const portf=pfId?portfolios.find(p=>p.id===pfId):null;
+
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="et">${portf?'لا توجد مشاريع في هذه المحفظة':'لا توجد مشاريع'}</div><div class="es">اضغط "مشروع جديد" لإضافة مشروع</div></div>`;
     return;
   }
 
-  // Stats
+  // Build risk maps
   const projRisks={};
   list.forEach(p=>{projRisks[p.id]=allRisks.filter(r=>r.project_id===p.id);});
+
+  // Portfolio-level stats
   const totalRisks=Object.values(projRisks).reduce((s,r)=>s+r.length,0);
   const totalThreats=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='threat'||!x.type).length,0);
   const totalOpps=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='opportunity').length,0);
   const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='high').length,0);
   const totalValue=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
-  const totalExposure=list.reduce((s,p)=>{const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;const high=projRisks[p.id].filter(r=>r.level==='high').length;const med=projRisks[p.id].filter(r=>r.level==='medium').length;return s+(v*0.05*high+v*0.02*med);},0);
+  const totalExposure=list.reduce((s,p)=>{
+    const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
+    const h=projRisks[p.id].filter(r=>r.level==='high').length;
+    const m=projRisks[p.id].filter(r=>r.level==='medium').length;
+    return s+(v*0.05*h+v*0.02*m);
+  },0);
+  const analyzed=list.filter(p=>projRisks[p.id].length>0);
+  const pending=list.filter(p=>projRisks[p.id].length===0);
+
+  // ── Risk Score per project
+  const projScores=list.map(p=>{
+    const r=projRisks[p.id]||[];
+    if(!r.length)return{...p,score:null,high:0,med:0,low:0,opp:0};
+    const h=r.filter(x=>x.level==='high').length;
+    const m=r.filter(x=>x.level==='medium').length;
+    const l=r.filter(x=>x.level==='low').length;
+    const o=r.filter(x=>x.type==='opportunity').length;
+    const score=Math.min(100,Math.round((h*10+m*5+l*1)/(r.length*10)*100));
+    return{...p,score,high:h,med:m,low:l,opp:o,total:r.length};
+  });
+  const worstProj=projScores.filter(p=>p.score!==null).sort((a,b)=>b.score-a.score)[0];
+  const bestProj=projScores.filter(p=>p.score!==null).sort((a,b)=>a.score-b.score)[0];
+
+  // ── Most common categories across projects
+  const catCount={};
+  Object.values(projRisks).forEach(risks=>{
+    risks.forEach(r=>{
+      const c=CAT_AR[r.category]||r.category;
+      catCount[c]=(catCount[c]||0)+1;
+    });
+  });
+  const topCats=Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // ── Most common root causes
+  const causeWords={};
+  Object.values(projRisks).forEach(risks=>{
+    risks.filter(r=>r.level==='high').forEach(r=>{
+      const words=(r.cause||'').split(/\s+/).filter(w=>w.length>3);
+      words.forEach(w=>{causeWords[w]=(causeWords[w]||0)+1;});
+    });
+  });
+  const topCauses=Object.entries(causeWords).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // ── Exposure by project (for chart)
+  const exposureByProj=list.map(p=>{
+    const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
+    const h=projRisks[p.id].filter(r=>r.level==='high').length;
+    const m=projRisks[p.id].filter(r=>r.level==='medium').length;
+    return{name:p.name,exposure:Math.round(v*0.05*h+v*0.02*m)};
+  }).filter(p=>p.exposure>0).sort((a,b)=>b.exposure-a.exposure);
+
+  // ── Type distribution
   const typeDist={};list.forEach(p=>{const t=p.type||'أخرى';typeDist[t]=(typeDist[t]||0)+1;});
-  const statusDist={analyzed:0,pending:0};
-  list.forEach(p=>{if(projRisks[p.id].length>0)statusDist.analyzed++;else statusDist.pending++;});
 
   el.innerHTML=`
-    <div class="greeting">
-      <div class="greet-line" style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:${currentPF.color||'#5b5cff'};display:inline-block"></span>${currentPF.name}</div>
-      <div class="greet-sub">${currentPF.description||'نظرة شاملة على مخاطر المحفظة'}</div>
-    </div>
-
-    <div class="stat-grid">
+    <!-- KPIs -->
+    <div class="stat-grid" style="margin-bottom:14px">
       <div class="stat-card cyan">
         <div class="stat-icon">📁</div>
         <div class="stat-l">المشاريع</div>
         <div class="stat-v">${list.length}</div>
-        <div class="stat-sub">${statusDist.analyzed} محلل · ${statusDist.pending} معلق</div>
+        <div class="stat-sub">${analyzed.length} محلل · ${pending.length} في الانتظار</div>
       </div>
       <div class="stat-card red">
         <div class="stat-icon">⚠</div>
-        <div class="stat-l">المخاطر</div>
+        <div class="stat-l">إجمالي المخاطر</div>
         <div class="stat-v" style="color:var(--red)">${totalRisks}</div>
-        <div class="stat-sub">${totalThreats} تهديد · ${totalOpps} فرصة</div>
+        <div class="stat-sub">${totalHigh} عالية · ${totalOpps} فرصة</div>
       </div>
       <div class="stat-card pink">
-        <div class="stat-icon">▲</div>
-        <div class="stat-l">عالية الخطورة</div>
-        <div class="stat-v" style="color:var(--red)">${totalHigh}</div>
-        <div class="stat-sub">عبر المحفظة</div>
-      </div>
-      <div class="stat-card green">
         <div class="stat-icon">＄</div>
         <div class="stat-l">التعرض الكلي</div>
-        <div class="stat-v" style="font-size:18px;padding-top:5px">${(totalExposure/1000000).toFixed(1)}M</div>
-        <div class="stat-sub">من ${(totalValue/1000000).toFixed(0)}M ريال</div>
+        <div class="stat-v" style="font-size:17px;padding-top:4px">${(totalExposure/1000000).toFixed(1)}M</div>
+        <div class="stat-sub">من ${(totalValue/1000000).toFixed(0)}M ريال إجمالي</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">📊</div>
+        <div class="stat-l">متوسط التعرض/مشروع</div>
+        <div class="stat-v" style="font-size:17px;padding-top:4px">${analyzed.length?(totalExposure/analyzed.length/1000000).toFixed(1):0}M</div>
+        <div class="stat-sub">ريال سعودي</div>
       </div>
     </div>
 
-    ${list.some(p=>projRisks[p.id].length>0)?`
-    <div class="dash-row dash-21">
+    <!-- Row 1: Best/Worst + Category pattern -->
+    <div class="dash-row dash-3" style="margin-bottom:12px">
+      <div class="card" style="background:${worstProj&&worstProj.score>70?'rgba(239,68,68,.04)':'var(--s1)'};border-color:${worstProj&&worstProj.score>70?'rgba(239,68,68,.2)':'var(--b1)'}">
+        <div class="card-t" style="color:var(--red)">🔴 الأعلى خطورة</div>
+        ${worstProj?`
+          <div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px">${worstProj.name}</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:10px">${worstProj.type||'—'}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">مؤشر الخطر</div><div style="font-size:18px;font-weight:700;color:var(--red)">${worstProj.score}/100</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">عالية</div><div style="font-size:16px;font-weight:700;color:var(--red)">${worstProj.high}</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">إجمالي</div><div style="font-size:16px;font-weight:700">${worstProj.total}</div></div>
+          </div>
+          <button class="btn btn-del" style="margin-top:10px;padding:4px 12px;font-size:11px" onclick="selectProj('${worstProj.id}')">فتح المشروع</button>`
+          :`<div class="empty" style="padding:16px"><div class="et">لا يوجد بيانات</div></div>`}
+      </div>
+      <div class="card" style="background:${bestProj&&bestProj.score<=40?'rgba(34,197,94,.04)':'var(--s1)'};border-color:${bestProj&&bestProj.score<=40?'rgba(34,197,94,.2)':'var(--b1)'}">
+        <div class="card-t" style="color:var(--grn)">🟢 الأفضل أداءً</div>
+        ${bestProj?`
+          <div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px">${bestProj.name}</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:10px">${bestProj.type||'—'}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">مؤشر الخطر</div><div style="font-size:18px;font-weight:700;color:var(--grn)">${bestProj.score}/100</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">عالية</div><div style="font-size:16px;font-weight:700;color:var(--grn)">${bestProj.high}</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">إجمالي</div><div style="font-size:16px;font-weight:700">${bestProj.total}</div></div>
+          </div>
+          <button class="btn btn-ok" style="margin-top:10px;padding:4px 12px;font-size:11px" onclick="selectProj('${bestProj.id}')">فتح المشروع</button>`
+          :`<div class="empty" style="padding:16px"><div class="et">لا يوجد بيانات</div></div>`}
+      </div>
       <div class="card">
-        <div class="card-t">مقارنة المخاطر بين المشاريع</div>
+        <div class="card-t" style="color:var(--purple)">🔄 الأنماط المشتركة — أكثر الفئات تكراراً</div>
+        ${topCats.map(([cat,cnt],i)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;align-items:center;gap:7px">
+              <div style="width:18px;height:18px;border-radius:4px;background:${['#ef4444','#eab308','#5b5cff','#22c55e','#a855f7'][i]}22;color:${['#ef4444','#eab308','#5b5cff','#22c55e','#a855f7'][i]};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">${i+1}</div>
+              <span style="font-size:12px;color:var(--t1)">${cat}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:60px;height:4px;background:var(--b1);border-radius:2px;overflow:hidden"><div style="height:100%;background:${['#ef4444','#eab308','#5b5cff','#22c55e','#a855f7'][i]};width:${Math.round(cnt/topCats[0][1]*100)}%;border-radius:2px"></div></div>
+              <span style="font-size:11px;font-weight:600;color:var(--t2)">${cnt}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Row 2: Comparison chart + Exposure chart -->
+    <div class="dash-row dash-2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-t">مقارنة درجات المخاطر بين المشاريع</div>
         <canvas id="portfChart" height="120"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-t">التعرض المالي حسب المشروع</div>
+        <canvas id="expChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Row 3: Common root causes + Type distribution -->
+    <div class="dash-row dash-2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-t" style="color:var(--org)">🔍 الأسباب الجذرية الأكثر تكراراً (مخاطر عالية)</div>
+        ${topCauses.length?topCauses.map(([cause,cnt])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b1)">
+            <span style="font-size:12px;color:var(--t1)">${cause}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:50px;height:4px;background:var(--b1);border-radius:2px;overflow:hidden"><div style="height:100%;background:var(--org);width:${Math.round(cnt/topCauses[0][1]*100)}%;border-radius:2px"></div></div>
+              <span style="font-size:11px;font-weight:600;color:var(--org)">${cnt}×</span>
+            </div>
+          </div>`).join(''):
+          `<div style="font-size:12px;color:var(--t3);padding:10px 0">لا يوجد بيانات كافية</div>`}
       </div>
       <div class="card">
         <div class="card-t">توزيع أنواع المشاريع</div>
@@ -1178,57 +1282,49 @@ async function renderPortfolio(filteredProjs){
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,${currentPF.color||'#5b5cff'}15,${currentPF.color||'#5b5cff'}05);border-color:${currentPF.color||'#5b5cff'}40">
+    <!-- AI Report button -->
+    <div class="card" style="margin-bottom:12px;background:linear-gradient(135deg,rgba(91,92,255,.05),rgba(168,85,247,.03));border-color:rgba(91,92,255,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">📊 تقرير المحفظة بالذكاء الاصطناعي</div>
-          <div style="font-size:11.5px;color:var(--t3)">احصل على تحليل شامل من Claude لجميع مخاطر المحفظة</div>
+          <div style="font-size:11.5px;color:var(--t3)">تحليل شامل من Claude يربط المخاطر المشتركة ويعطي توصيات استراتيجية</div>
         </div>
-        <button class="btn btn-p" onclick="generatePortfolioReport()">توليد التقرير</button>
+        <button class="btn btn-p" onclick="generatePortfolioReport('${pfId||''}')">توليد التقرير</button>
       </div>
     </div>
     <div id="portfReport"></div>
-    `:''}
 
-    <div class="card" style="padding:0">
-      <div style="padding:14px 16px;border-bottom:1px solid var(--b1)">
-        <div style="font-size:13px;font-weight:700">المشاريع التفصيلية</div>
+    <!-- Projects table -->
+    <div class="card" style="padding:0;margin-bottom:12px">
+      <div style="padding:13px 16px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;font-weight:700">تفاصيل المشاريع</div>
+        <div style="font-size:11px;color:var(--t3)">${list.length} مشروع</div>
       </div>
       <div style="overflow-x:auto">
         <table class="rt" style="font-size:12px">
           <thead>
             <tr>
-              <th>المشروع</th>
-              <th>النوع</th>
-              <th>القيمة</th>
-              <th>المخاطر</th>
-              <th>عالية</th>
-              <th>متوسطة</th>
-              <th>منخفضة</th>
-              <th>فرص</th>
-              <th>درجة الصحة</th>
-              <th></th>
+              <th>المشروع</th><th>النوع</th><th>القيمة</th>
+              <th>التعرض</th><th>عالية</th><th>متوسطة</th><th>فرص</th>
+              <th>مؤشر الخطر</th><th>الحالة</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${list.map(p=>{
-              const r=projRisks[p.id]||[];
-              const h=r.filter(x=>x.level==='high').length;
-              const m=r.filter(x=>x.level==='medium').length;
-              const lo=r.filter(x=>x.level==='low').length;
-              const o=r.filter(x=>x.type==='opportunity').length;
-              const score=r.length?Math.max(0,100-Math.round((h*15+m*5+lo*1)/(r.length*15)*100)):null;
-              const hpc=score===null?'hp-none':score>=70?'hp-good':score>=40?'hp-warn':'hp-bad';
+            ${projScores.sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>{
+              const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
+              const exp=v>0?Math.round(v*0.05*(p.high||0)+v*0.02*(p.med||0)):0;
+              const hpc=p.score===null?'hp-none':p.score>=70?'hp-bad':p.score>=40?'hp-warn':'hp-good';
+              const hplbl=p.score===null?'لم يحلل':p.score>=70?'حرج':p.score>=40?'تحذير':'صحي';
               return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
-                <td><div style="font-weight:600">${p.name}</div></td>
+                <td><div style="font-weight:600;color:var(--t1)">${p.name}</div></td>
                 <td><span class="cb">${p.type||'—'}</span></td>
                 <td style="font-family:'IBM Plex Mono',monospace;color:var(--t2);font-size:11px">${p.value?p.value+' ر.س':'—'}</td>
-                <td><b>${r.length}</b></td>
-                <td>${h?`<span class="bdg b-h">${h}</span>`:'—'}</td>
-                <td>${m?`<span class="bdg b-m">${m}</span>`:'—'}</td>
-                <td>${lo?`<span class="bdg b-l">${lo}</span>`:'—'}</td>
-                <td>${o?`<span class="bdg b-opp">${o}</span>`:'—'}</td>
-                <td>${score===null?`<span class="health-pill hp-none">—</span>`:`<span class="health-pill ${hpc}">● ${score}/100</span>`}</td>
+                <td style="font-family:'IBM Plex Mono',monospace;color:${exp>0?'var(--red)':'var(--t3)'};font-size:11px">${exp>0?(exp/1000000).toFixed(1)+'M':'—'}</td>
+                <td>${p.high?`<span class="bdg b-h">${p.high}</span>`:'—'}</td>
+                <td>${p.med?`<span class="bdg b-m">${p.med}</span>`:'—'}</td>
+                <td>${p.opp?`<span class="bdg b-opp">${p.opp}</span>`:'—'}</td>
+                <td>${p.score!==null?`<div style="display:flex;align-items:center;gap:6px"><div style="width:50px;height:5px;background:var(--b1);border-radius:3px;overflow:hidden"><div style="height:100%;background:${p.score>=70?'var(--red)':p.score>=40?'var(--yel)':'var(--grn)'};width:${p.score}%;border-radius:3px"></div></div><span style="font-size:11.5px;font-weight:600">${p.score}</span></div>`:'—'}</td>
+                <td><span class="health-pill ${hpc}">● ${hplbl}</span></td>
                 <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();selectProj('${p.id}')">فتح</button></td>
               </tr>`;
             }).join('')}
@@ -1238,30 +1334,40 @@ async function renderPortfolio(filteredProjs){
     </div>
   `;
 
-  // Render charts
+  // Charts
   setTimeout(()=>{
-    const projWithRisks=list.filter(p=>projRisks[p.id].length>0);
-    if(projWithRisks.length>0&&document.getElementById('portfChart')){
+    // Projects comparison
+    const projWithRisks=projScores.filter(p=>p.score!==null);
+    if(projWithRisks.length&&document.getElementById('portfChart')){
       new Chart(document.getElementById('portfChart'),{
         type:'bar',
         data:{
-          labels:projWithRisks.map(p=>p.name.length>15?p.name.slice(0,15)+'...':p.name),
+          labels:projWithRisks.map(p=>p.name.length>14?p.name.slice(0,14)+'...':p.name),
           datasets:[
-            {label:'عالية',data:projWithRisks.map(p=>projRisks[p.id].filter(r=>r.level==='high').length),backgroundColor:'rgba(239,68,68,.7)',borderRadius:4},
-            {label:'متوسطة',data:projWithRisks.map(p=>projRisks[p.id].filter(r=>r.level==='medium').length),backgroundColor:'rgba(234,179,8,.7)',borderRadius:4},
-            {label:'منخفضة',data:projWithRisks.map(p=>projRisks[p.id].filter(r=>r.level==='low').length),backgroundColor:'rgba(34,197,94,.7)',borderRadius:4},
+            {label:'عالية',data:projWithRisks.map(p=>p.high),backgroundColor:'rgba(239,68,68,.75)',borderRadius:4},
+            {label:'متوسطة',data:projWithRisks.map(p=>p.med),backgroundColor:'rgba(234,179,8,.75)',borderRadius:4},
+            {label:'منخفضة',data:projWithRisks.map(p=>p.low),backgroundColor:'rgba(34,197,94,.75)',borderRadius:4},
           ]
         },
-        options:{
-          plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:8}}},
-          scales:{
-            x:{stacked:true,ticks:{color:'#525d7a',font:{size:10}},grid:{display:false}},
-            y:{stacked:true,ticks:{color:'#525d7a',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}
-          },
-          layout:{padding:{top:4}}
-        }
+        options:{plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:8}}},scales:{x:{stacked:true,ticks:{color:'#8a93ab',font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{color:'#8a93ab',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:4}}}
       });
     }
+
+    // Exposure by project
+    if(exposureByProj.length&&document.getElementById('expChart')){
+      new Chart(document.getElementById('expChart'),{
+        type:'bar',
+        data:{
+          labels:exposureByProj.map(p=>p.name.length>14?p.name.slice(0,14)+'...':p.name),
+          datasets:[{label:'التعرض المالي (ر.س)',data:exposureByProj.map(p=>p.exposure),backgroundColor:'rgba(91,92,255,.65)',borderRadius:4}]
+        },
+        options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8a93ab',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a93ab',font:{size:10},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:4}}}
+      });
+    } else if(document.getElementById('expChart')){
+      document.getElementById('expChart').parentElement.innerHTML+='<div style="text-align:center;padding:20px;font-size:12px;color:var(--t3)">أدخل قيم العقود لحساب التعرض المالي</div>';
+    }
+
+    // Type distribution
     if(document.getElementById('typeChart')){
       new Chart(document.getElementById('typeChart'),{
         type:'doughnut',
@@ -1270,13 +1376,6 @@ async function renderPortfolio(filteredProjs){
       });
     }
   },80);
-}
-
-function filterPortfolioProjs(q){
-  if(!currentPF)return;
-  q=q.toLowerCase();
-  const list=projs.filter(p=>p.portfolio_id===currentPF.id&&((p.name||'').toLowerCase().includes(q)||(p.type||'').toLowerCase().includes(q)));
-  renderPortfolio(list);
 }
 
 async function generatePortfolioReport(){
@@ -1712,7 +1811,10 @@ function renderReg(){
 // ═══ DASHBOARD ═══
 function renderDash(){
   const risks=CP?.risks||[];
-  if(!risks.length){document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="et">قم بالتحليل أولاً</div></div>`;return;}
+  if(!risks.length){
+    document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="et">قم بالتحليل أولاً لعرض لوحة التحكم</div></div>`;
+    return;
+  }
 
   const high=risks.filter(r=>r.level==='high').length;
   const med=risks.filter(r=>r.level==='medium').length;
@@ -1722,80 +1824,230 @@ function renderDash(){
   const riskScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
   const val=parseFloat((CP.value||'0').replace(/[^0-9.]/g,''))||0;
   const exposure=val>0?Math.round(val*0.05*high+val*0.02*med):null;
-  const cats={};risks.forEach(r=>{const c=CAT_AR[r.category]||r.category;cats[c]=(cats[c]||0)+1;});
+
+  // Category breakdown
+  const cats={};
+  risks.forEach(r=>{const c=CAT_AR[r.category]||r.category;cats[c]=(cats[c]||0)+1;});
   const catSorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
-  const byResp={};risks.forEach(r=>{const rs=RESP_AR[r.response_strategy]||r.response_strategy||'—';byResp[rs]=(byResp[rs]||0)+1;});
+
+  // Response strategies
+  const byResp={};
+  risks.forEach(r=>{const rs=RESP_AR[r.response_strategy]||r.response_strategy||'—';byResp[rs]=(byResp[rs]||0)+1;});
+
+  // ── TOP 5 URGENT ──
+  const urgent=risks
+    .filter(r=>r.type==='threat'||!r.type)
+    .sort((a,b)=>{
+      const sc=r=>({'high':3,'medium':2,'low':1}[r.level]||0)*5 + (r.probability||0);
+      return sc(b)-sc(a);
+    }).slice(0,5);
+
+  // ── NO OWNER ──
+  const noOwner=risks.filter(r=>!r.owner||r.owner.trim()==='—'||r.owner.trim()==='');
+
+  // ── HIGH RISKS WITH NO ACTION ──
+  const noAction=risks.filter(r=>r.level==='high'&&(!r.mitigation||r.mitigation.trim().length<10));
 
   document.getElementById('dashContent').innerHTML=`
-    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
-      <div class="stat-card cyan"><div class="stat-icon">●</div><div class="stat-l">مؤشر المخاطر</div><div class="stat-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'#a16207':'var(--grn)'}">${riskScore}</div></div>
-      ${exposure?`<div class="stat-card green"><div class="stat-icon">＄</div><div class="stat-l">التعرض المالي</div><div class="stat-v" style="font-size:16px;padding-top:5px">${(exposure/1000000).toFixed(1)}M ر.س</div></div>`:''}
-      <div class="stat-card red"><div class="stat-icon">▲</div><div class="stat-l">عالية</div><div class="stat-v" style="color:var(--red)">${high}</div></div>
-      <div class="stat-card pink"><div class="stat-icon">★</div><div class="stat-l">فرص</div><div class="stat-v" style="color:var(--teal)">${opp}</div></div>
+    <!-- KPIs -->
+    <div class="stat-grid" style="margin-bottom:14px">
+      <div class="stat-card cyan">
+        <div class="stat-icon">●</div>
+        <div class="stat-l">مؤشر المخاطر</div>
+        <div class="stat-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'var(--yel)':'var(--grn)'}">${riskScore}<span style="font-size:12px;font-weight:400;color:var(--t3)">/100</span></div>
+        <div class="stat-sub">${riskScore>70?'وضع حرج':riskScore>40?'يحتاج متابعة':'وضع مقبول'}</div>
+      </div>
+      ${exposure?`<div class="stat-card green">
+        <div class="stat-icon">＄</div>
+        <div class="stat-l">التعرض المالي</div>
+        <div class="stat-v" style="font-size:16px;padding-top:4px">${(exposure/1000000).toFixed(1)}M</div>
+        <div class="stat-sub">ريال سعودي</div>
+      </div>`:''}
+      <div class="stat-card red">
+        <div class="stat-icon">▲</div>
+        <div class="stat-l">عالية الخطورة</div>
+        <div class="stat-v" style="color:var(--red)">${high}</div>
+        <div class="stat-sub">من ${risks.length} مخاطرة</div>
+      </div>
+      <div class="stat-card pink">
+        <div class="stat-icon">★</div>
+        <div class="stat-l">الفرص</div>
+        <div class="stat-v" style="color:var(--teal)">${opp}</div>
+        <div class="stat-sub">من ${risks.length} إجمالاً</div>
+      </div>
     </div>
 
-    <div class="dash-row dash-21">
-      <div class="card"><div class="card-t">المخاطر حسب الفئة</div>
+    <!-- Row 1: Category table + Level donut -->
+    <div class="dash-row dash-2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-t">المخاطر حسب الفئة</div>
         <table class="exp-tbl">
-          <thead><tr><th>الفئة</th><th>العدد</th><th>التوزيع</th></tr></thead>
-          <tbody>${catSorted.map(([cat,cnt])=>{const pct=Math.round(cnt/risks.length*100);const catRisks=risks.filter(r=>(CAT_AR[r.category]||r.category)===cat);const ch=catRisks.filter(r=>r.level==='high').length;const cm=catRisks.filter(r=>r.level==='medium').length;return`<tr><td>${cat}</td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'#eab308':'var(--grn)'}"></div></div></td></tr>`;}).join('')}</tbody>
+          <thead><tr><th>الفئة</th><th>العدد</th><th>التوزيع</th><th>أعلى مستوى</th></tr></thead>
+          <tbody>${catSorted.map(([cat,cnt])=>{
+            const pct=Math.round(cnt/risks.length*100);
+            const catRisks=risks.filter(r=>(CAT_AR[r.category]||r.category)===cat);
+            const ch=catRisks.filter(r=>r.level==='high').length;
+            const cm=catRisks.filter(r=>r.level==='medium').length;
+            const topLvl=ch>0?'<span class="bdg b-h">عالي</span>':cm>0?'<span class="bdg b-m">متوسط</span>':'<span class="bdg b-l">منخفض</span>';
+            return`<tr><td><b>${cat}</b></td><td><b>${cnt}</b></td><td style="min-width:100px"><div class="rs-bar"><div class="rs-fill" style="width:${pct}%;background:${ch>0?'var(--red)':cm>0?'var(--yel)':'var(--grn)'}"></div></div></td><td>${topLvl}</td></tr>`;
+          }).join('')}</tbody>
         </table>
       </div>
-      <div class="card"><div class="card-t">توزيع المستويات</div><canvas id="lvlC" height="140"></canvas></div>
+      <div class="card">
+        <div class="card-t">توزيع مستويات المخاطر</div>
+        <canvas id="lvlC" height="140"></canvas>
+      </div>
     </div>
 
-    <div class="dash-row dash-3">
-      <div class="card"><div class="card-t">مصفوفة المخاطر</div><div id="matDiv"></div></div>
-      <div class="card"><div class="card-t">استراتيجيات الاستجابة</div><canvas id="respC" height="140"></canvas></div>
-      <div class="card"><div class="card-t">تهديدات vs فرص</div><canvas id="typeC" height="140"></canvas></div>
+    <!-- Row 2: Matrix + Response + Type -->
+    <div class="dash-row dash-3" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-t">مصفوفة المخاطر (احتمالية × تأثير)</div>
+        <div id="matDiv"></div>
+      </div>
+      <div class="card">
+        <div class="card-t">استراتيجيات الاستجابة</div>
+        <canvas id="respC" height="140"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-t">تهديدات مقابل فرص</div>
+        <canvas id="typeC" height="140"></canvas>
+      </div>
     </div>
 
+    <!-- Row 3: Top 5 urgent + Issues -->
+    <div class="dash-row dash-2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-t" style="color:var(--red)">⚠ أعلى 5 مخاطر تستحق اهتماماً فورياً</div>
+        ${urgent.length?urgent.map((r,i)=>`
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--b1)">
+            <div style="width:20px;height:20px;border-radius:50%;background:${i===0?'var(--red)':i===1?'rgba(239,68,68,.7)':i===2?'var(--yel)':'var(--s3)'};color:${i<3?'white':'var(--t3)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${i+1}</div>
+            <div style="flex:1">
+              <div style="display:flex;gap:5px;margin-bottom:3px;flex-wrap:wrap">
+                <span class="bdg b-${r.level}">${RL[r.level]||r.level}</span>
+                <span class="cb">${CAT_AR[r.category]||r.category}</span>
+                <span style="font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${r.risk_id||''}</span>
+              </div>
+              <div style="font-size:12px;color:var(--t1);font-weight:500;margin-bottom:2px">${r.description}</div>
+              <div style="font-size:11px;color:var(--t3)">المسؤول: ${r.owner||'غير محدد'}</div>
+            </div>
+            <div style="font-size:11.5px;font-weight:700;color:var(--red);flex-shrink:0">P:${r.probability}</div>
+          </div>`).join(''):`<div class="empty" style="padding:20px"><div class="et">لا توجد مخاطر عالية</div></div>`}
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:10px">
+          <div class="card-t" style="color:var(--org)">⚡ مخاطر بدون مسؤول (${noOwner.length})</div>
+          ${noOwner.length?noOwner.slice(0,4).map(r=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b1);gap:8px">
+              <div style="font-size:11.5px;color:var(--t1);flex:1">${r.description}</div>
+              <div style="display:flex;gap:4px">
+                <span class="bdg b-${r.level}">${RL[r.level]||r.level}</span>
+                <button class="btn btn-g" style="padding:2px 7px;font-size:10px" onclick="openEdit('${r.id}')">تعيين</button>
+              </div>
+            </div>`).join('')+
+            (noOwner.length>4?`<div style="font-size:11px;color:var(--t3);padding-top:7px">+ ${noOwner.length-4} مخاطر إضافية...</div>`:''):
+            `<div style="font-size:12px;color:var(--grn);padding:8px 0">✓ جميع المخاطر لها مسؤولون</div>`}
+        </div>
+        <div class="card">
+          <div class="card-t" style="color:var(--red)">⚠ مخاطر عالية بدون خطة تخفيف (${noAction.length})</div>
+          ${noAction.length?noAction.slice(0,3).map(r=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b1);gap:8px">
+              <div style="font-size:11.5px;color:var(--t1);flex:1">${r.description}</div>
+              <button class="btn btn-del" style="padding:2px 7px;font-size:10px;flex-shrink:0" onclick="openEdit('${r.id}')">إضافة خطة</button>
+            </div>`).join('')+
+            (noAction.length>3?`<div style="font-size:11px;color:var(--t3);padding-top:7px">+ ${noAction.length-3} مخاطر إضافية...</div>`:''):
+            `<div style="font-size:12px;color:var(--grn);padding:8px 0">✓ جميع المخاطر العالية لها خطط</div>`}
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: EW Summary + Trend -->
     ${CP.trend_data?.length?(()=>{
       const latest=CP.trend_data[CP.trend_data.length-1];
       const al=latest.alert_level||'medium';
-      const alColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[al];
-      const alBg={high:'var(--red-soft)',medium:'var(--yel-soft)',low:'var(--grn-soft)'}[al];
+      const alColor={high:'var(--red)',medium:'var(--yel)',low:'var(--grn)'}[al];
+      const alBg={high:'rgba(239,68,68,.06)',medium:'rgba(234,179,8,.06)',low:'rgba(34,197,94,.06)'}[al];
       const alIcon={high:'⚠',medium:'◆',low:'✓'}[al];
-      const r=latest.report||{};
-      return `<div class="dash-row dash-2">
-        <div class="card" style="background:${alBg};border-color:${alColor}40">
+      const rpt=latest.report||{};
+      return `<div class="dash-row dash-2" style="margin-bottom:12px">
+        <div class="card" style="background:${alBg};border-color:${alColor}33">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:8px">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:${alColor}">${alIcon} تقرير الإنذار المبكر</div>
             <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</div>
           </div>
-          <div style="display:flex;gap:14px;margin-bottom:9px;flex-wrap:wrap">
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">التنبيه</div><div style="font-size:14px;font-weight:700;color:${alColor};text-transform:uppercase">${RL[al]||al}</div></div>
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">الصحة</div><div style="font-size:14px;font-weight:700">${latest.health_score||'—'}/100</div></div>
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">SV</div><div style="font-size:13px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
-            <div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">الصرف</div><div style="font-size:13px;font-weight:600">${latest.burn_rate||0}%</div></div>
+          <div style="display:flex;gap:16px;margin-bottom:9px;flex-wrap:wrap">
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">مستوى التنبيه</div><div style="font-size:14px;font-weight:700;color:${alColor}">${RL[al]||al}</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">صحة المشروع</div><div style="font-size:14px;font-weight:700">${latest.health_score||'—'}/100</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">SV</div><div style="font-size:13px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">الصرف</div><div style="font-size:13px;font-weight:600">${latest.burn_rate||0}%</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">طلبات تغيير</div><div style="font-size:13px;font-weight:600">${latest.change_requests||0}</div></div>
           </div>
-          <div style="font-size:11.5px;color:var(--t1);line-height:1.6;border-top:1px solid var(--b1);padding-top:8px">${r.executive_summary||'لا يوجد ملخص'}</div>
-          <div style="margin-top:10px"><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="ST('warn')">عرض التقرير الكامل</button></div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.65;border-top:1px solid var(--b1);padding-top:8px">${rpt.executive_summary||'لا يوجد ملخص'}</div>
+          ${rpt.warnings?.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b1)"><div style="font-size:10px;font-weight:700;color:var(--yel);margin-bottom:5px">تحذيرات</div>${rpt.warnings.slice(0,2).map(w=>`<div style="font-size:11px;color:var(--t2);padding:2px 0">• ${w}</div>`).join('')}</div>`:''}
+          <div style="margin-top:10px"><button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="ST('warn')">التقرير الكامل</button></div>
         </div>
-        <div class="card"><div class="card-t">اتجاه المخاطر</div><canvas id="trendC" height="120"></canvas></div>
+        <div class="card">
+          <div class="card-t">اتجاه المخاطر عبر الوقت</div>
+          <canvas id="trendC" height="120"></canvas>
+        </div>
       </div>`;
-    })():`<div class="card"><div class="card-t">اتجاه المخاطر عبر الوقت</div><canvas id="trendC" height="55"></canvas></div>`}
+    })():`<div class="card" style="margin-bottom:12px">
+      <div class="card-t">اتجاه المخاطر عبر الوقت</div>
+      <canvas id="trendC" height="60"></canvas>
+      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">أدخل مؤشرات أسبوعية في <a onclick="ST('warn')" style="color:var(--primary);cursor:pointer">الإنذار المبكر</a> لعرض تقرير الأداء</div>
+    </div>`}
   `;
 
   setTimeout(()=>{
-    new Chart(document.getElementById('lvlC'),{type:'doughnut',data:{labels:['عالية','متوسطة','منخفضة','فرص'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,hoverOffset:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}});
-    
+    // Level donut
+    new Chart(document.getElementById('lvlC'),{
+      type:'doughnut',
+      data:{labels:['عالية','متوسطة','منخفضة','فرص'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,hoverOffset:3}]},
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}
+    });
+
+    // Risk matrix
     const mc=Array.from({length:5},()=>Array(5).fill(0));
-    risks.forEach(r=>{const p=Math.max(1,Math.min(5,r.probability||1))-1;const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);const ix=Math.max(1,Math.min(5,imp))-1;mc[4-p][ix]++;});
-    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(239,68,68,.85)':s>=9?'rgba(234,179,8,.75)':s>=4?'rgba(234,179,8,.4)':'rgba(34,197,94,.5)';};
+    risks.forEach(r=>{
+      const p=Math.max(1,Math.min(5,r.probability||1))-1;
+      const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);
+      const ix=Math.max(1,Math.min(5,imp))-1;
+      mc[4-p][ix]++;
+    });
+    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(239,68,68,.7)':s>=9?'rgba(234,179,8,.6)':s>=4?'rgba(234,179,8,.3)':'rgba(34,197,94,.4)';};
     let mh='<div style="font-size:9px;color:var(--t3);text-align:center;margin-bottom:4px">← التأثير →</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">';
-    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:3px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white">${v||''}</div>`;});});
+    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:26px;border-radius:3px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(0,0,0,.6)">${v||''}</div>`;});});
     mh+='</div><div style="font-size:9px;color:var(--t3);text-align:center;margin-top:3px">↑ الاحتمالية ↑</div>';
     document.getElementById('matDiv').innerHTML=mh;
 
-    const respColors={'تجنب':'#ef4444','تخفيف':'#eab308','نقل':'#5b5cff','قبول':'#8a93ab','تصعيد':'#a855f7','استغلال':'#14b8a6','تعزيز':'#22c55e','مشاركة':'#06b6d4'};
-    new Chart(document.getElementById('respC'),{type:'doughnut',data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#525d7a'),borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}});
-    new Chart(document.getElementById('typeC'),{type:'doughnut',data:{labels:['تهديدات','فرص'],datasets:[{data:[thr,opp],backgroundColor:['#ef4444','#14b8a6'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}});
+    // Response
+    const respColors={'تجنب':'#ef4444','تخفيف':'#eab308','نقل':'#5b5cff','قبول':'#8a9ab8','تصعيد':'#a855f7','استغلال':'#14b8a6','تعزيز':'#22c55e','مشاركة':'#06b6d4'};
+    new Chart(document.getElementById('respC'),{
+      type:'doughnut',
+      data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#8a9ab8'),borderWidth:0}]},
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}
+    });
 
-    const upds=CP?.upds||[];const tl2=['البداية'];const hd=[high];const md=[med];
-    upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md.push(md[md.length-1]);}});
-    if(document.getElementById('trendC')){
-      new Chart(document.getElementById('trendC'),{type:'line',data:{labels:tl2,datasets:[{label:'عالية',data:hd,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',tension:.4,fill:true,borderWidth:1.5},{label:'متوسطة',data:md,borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.06)',tension:.4,fill:true,borderWidth:1.5}]},options:{plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#525d7a',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#525d7a',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:2}}}});
+    // Type
+    new Chart(document.getElementById('typeC'),{
+      type:'doughnut',
+      data:{labels:['تهديدات','فرص'],datasets:[{data:[thr,opp],backgroundColor:['#ef4444','#14b8a6'],borderWidth:0}]},
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}
+    });
+
+    // Trend
+    const upds=CP?.upds||[];const tl2=['البداية'];const hd=[high];const md2=[med];
+    upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md2.push(md2[md2.length-1]);}});
+    const tEl=document.getElementById('trendC');
+    if(tEl){
+      new Chart(tEl,{
+        type:'line',
+        data:{labels:tl2,datasets:[
+          {label:'عالية',data:hd,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',tension:.4,fill:true,borderWidth:1.5},
+          {label:'متوسطة',data:md2,borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.05)',tension:.4,fill:true,borderWidth:1.5}
+        ]},
+        options:{plugins:{legend:{position:'top',labels:{color:'#525d7a',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#8a93ab',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8a93ab',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:2}}}
+      });
     }
   },60);
 }
