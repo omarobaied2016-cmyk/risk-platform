@@ -7,7 +7,6 @@ app.use(express.json({ limit: '50mb' }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Claude API proxy
 app.post('/api/claude', async (req, res) => {
   const apiKey = req.headers['x-api-key'];
   if (!apiKey || !apiKey.startsWith('sk-ant-')) {
@@ -30,7 +29,6 @@ app.post('/api/claude', async (req, res) => {
   }
 });
 
-// GNews API proxy
 app.get('/api/news', async (req, res) => {
   const newsKey = req.headers['x-news-key'];
   const query = req.query.q || 'construction';
