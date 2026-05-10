@@ -804,6 +804,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
         <div class="tab" onclick="ST('tol')" data-tab="tol">⚙ Risk Appetite</div>
         <div class="tab" onclick="ST('contacts')" data-tab="contacts">👥 Contacts</div>
         <div class="tab" onclick="ST('whatif')" data-tab="whatif">🎯 What-If</div>
+        <div class="tab" onclick="ST('insights')" data-tab="insights">🌍 Insights</div>
       </div>
 
       <div class="pane on" id="pane-files">
@@ -911,6 +912,16 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
           <div class="empty">
             <div class="empty-icon">🎯</div>
             <div class="et">Run analysis first to use the What-If Simulator</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INSIGHTS PANE -->
+      <div class="pane" id="pane-insights">
+        <div id="insightsContent">
+          <div class="empty">
+            <div class="empty-icon">🌍</div>
+            <div class="et">Loading market intelligence...</div>
           </div>
         </div>
       </div>
@@ -1531,6 +1542,21 @@ async function renderPortfolio(pfId){
     </div>
     <div id="portfReport"></div>
 
+    <!-- Portfolio Insights Section -->
+    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(234,179,8,.04),rgba(245,158,11,.02));border-color:rgba(234,179,8,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div class="kpi-icon-circle yellow" style="width:42px;height:42px;font-size:18px">🌍</div>
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">Market & World Insights</div>
+            <div style="font-size:11.5px;color:var(--t3)">Real-time intelligence affecting your portfolio</div>
+          </div>
+        </div>
+        <button class="btn btn-p" onclick="generatePortfolioInsights('${pfId||''}')">Generate Insights</button>
+      </div>
+    </div>
+    <div id="portfInsights"></div>
+
     <!-- Project Table -->
     <div class="dash-section" style="padding:0">
       <div style="padding:15px 18px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
@@ -1748,6 +1774,7 @@ function ST(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+name));
   if(name==='whatif')renderWhatIf();
+  if(name==='insights')loadInsights();
 }
 
 // ═══ FILE EXTRACTION ═══
@@ -3219,6 +3246,528 @@ function renderSimulationResults(sim,baselineScore){
           <div style="font-size:10.5px;font-weight:700;color:var(--red);margin-bottom:5px">⚠ Negative Impact / Trade-offs</div>
           ${sim.negative_impact.map(n=>`<div style="font-size:11.5px;color:var(--t2);padding:2px 0">• ${n}</div>`).join('')}
         </div>`:''}
+      </div>
+    </div>
+  `;
+}
+
+// ═══ INSIGHTS / MARKET INTELLIGENCE ═══
+let insightsData=null;
+let insightsLastFetch=null;
+
+function checkNewsKey(){
+  const k=localStorage.getItem('newsKey');
+  return k&&k.length>10;
+}
+
+function setNewsKey(){
+  const k=prompt('Enter your GNews API key (get free key at gnews.io):');
+  if(k&&k.length>10){
+    localStorage.setItem('newsKey',k);
+    return true;
+  }
+  return false;
+}
+
+async function fetchNews(query){
+  let key=localStorage.getItem('newsKey');
+  if(!key){
+    if(!setNewsKey())return null;
+    key=localStorage.getItem('newsKey');
+  }
+  try{
+    const r=await fetch(`/api/news?q=${encodeURIComponent(query)}`,{headers:{'x-news-key':key}});
+    return await r.json();
+  }catch(e){console.error(e);return null;}
+}
+
+async function loadInsights(){
+  const risks=CP?.risks||[];
+  if(!risks.length){
+    document.getElementById('insightsContent').innerHTML=`<div class="empty"><div class="empty-icon">🌍</div><div class="et">Run analysis first to view insights</div></div>`;
+    return;
+  }
+
+  if(!localStorage.getItem('newsKey')){
+    document.getElementById('insightsContent').innerHTML=`
+      <div class="dash-section" style="text-align:center;padding:40px 24px">
+        <div style="font-size:42px;margin-bottom:14px">🔑</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">News API Key Required</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:18px;max-width:480px;margin-inline:auto;line-height:1.6">
+          To fetch market & world insights, you need a free GNews API key.<br>
+          Get one at <a href="https://gnews.io" target="_blank" style="color:var(--primary)">gnews.io</a> (100 requests/day free)
+        </div>
+        <button class="btn btn-p" onclick="if(setNewsKey())loadInsights()">Add API Key</button>
+      </div>
+    `;
+    return;
+  }
+
+  document.getElementById('insightsContent').innerHTML=`
+    <div class="dash-hero">
+      <div>
+        <div class="dash-hero-l">🌍 Market & World Insights</div>
+        <div class="dash-hero-s">Real-time intelligence from news sources analyzed by AI</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="localStorage.removeItem('newsKey');loadInsights()">⚙ API Key</button>
+        <button class="btn btn-p" onclick="generateInsights()">↻ Refresh Insights</button>
+      </div>
+    </div>
+    <div id="insightsBody">
+      <div class="dash-section" style="text-align:center;padding:40px 24px">
+        <div style="font-size:42px;margin-bottom:14px">📊</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Ready to Analyze</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Click "Refresh Insights" to fetch latest news and AI analysis</div>
+      </div>
+    </div>
+  `;
+}
+
+async function generateInsights(){
+  const risks=CP?.risks||[];
+  if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
+
+  document.getElementById('insightsBody').innerHTML=`
+    <div class="dash-section" style="text-align:center;padding:50px 24px">
+      <div class="spin" style="margin:0 auto 14px"></div>
+      <div style="font-size:13px;color:var(--t2)">Fetching news from multiple sources...</div>
+    </div>
+  `;
+
+  // Build search queries based on project context
+  const queries=[
+    'Saudi Arabia construction industry',
+    'steel concrete prices',
+    'oil prices Saudi Arabia',
+    'supply chain Middle East',
+    'Saudi government infrastructure'
+  ];
+
+  // Fetch news from all queries
+  const allArticles=[];
+  for(const q of queries){
+    const data=await fetchNews(q);
+    if(data?.articles){
+      data.articles.slice(0,3).forEach(a=>allArticles.push({...a,query:q}));
+    }
+  }
+
+  if(!allArticles.length){
+    document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="text-align:center;padding:30px"><div style="font-size:13px;color:var(--red)">Failed to fetch news. Check your GNews API key.</div></div>`;
+    return;
+  }
+
+  // Send to Claude for analysis
+  const articlesText=allArticles.slice(0,15).map((a,i)=>`[${i+1}] ${a.title}\n${a.description||''}\nSource: ${a.source?.name||'Unknown'} | Topic: ${a.query}`).join('\n\n');
+  const risksContext=risks.slice(0,15).map(r=>`${r.risk_id}: ${r.description} | ${r.category} | ${r.level}`).join('\n');
+
+  document.getElementById('insightsBody').innerHTML=`
+    <div class="dash-section" style="text-align:center;padding:50px 24px">
+      <div class="spin" style="margin:0 auto 14px"></div>
+      <div style="font-size:13px;color:var(--t2)">AI analyzing ${allArticles.length} news articles...</div>
+    </div>
+  `;
+
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior risk intelligence analyst for a construction project in Saudi Arabia.
+
+PROJECT CONTEXT:
+Name: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Description: ${CP.description||'—'}
+
+CURRENT RISK REGISTER:
+${risksContext}
+
+LATEST NEWS ARTICLES (${allArticles.length} articles fetched today):
+${articlesText}
+
+Analyze the news and provide intelligence in JSON format. For each insight, link it to specific risk IDs in the register where relevant. Respond ONLY with valid JSON:
+{
+  "executive_summary": "3-4 sentence overview of how current world events affect this project",
+  "construction_news": [
+    {"headline": "Saudi construction news headline", "impact": "How this affects the project", "severity": "high|medium|low", "related_risks": ["R001", "R005"]}
+  ],
+  "material_prices": [
+    {"material": "Steel", "trend": "rising|falling|stable", "change": "+8%", "impact": "Description of impact", "severity": "high|medium|low"}
+  ],
+  "geopolitical": [
+    {"event": "Geopolitical event affecting supply chains", "region": "China/Europe/etc", "impact": "Project impact", "severity": "high|medium|low"}
+  ],
+  "currency": [
+    {"pair": "USD/SAR", "trend": "stable|rising|falling", "rate": "3.75", "impact": "Effect on imports/exports"}
+  ],
+  "regulatory": [
+    {"decision": "Saudi government decision", "agency": "Issuing body", "impact": "How it affects the project", "severity": "high|medium|low"}
+  ],
+  "risk_updates": [
+    {"risk_id": "R005", "current_level": "medium", "suggested_level": "high", "reason": "News-based justification"}
+  ],
+  "keep_eye_on": [
+    {"topic": "Topic to monitor", "why": "Why it matters", "watch_for": "What to watch for", "icon": "📊"}
+  ]
+}
+
+Be specific. Reference real data from the news. Connect global events to local project impact.`}]});
+
+    if(data.error){
+      document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${data.error.message}</div>`;
+      return;
+    }
+
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}
+    catch(e){
+      document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Parse error</div>`;
+      return;
+    }
+
+    insightsData=parsed;
+    insightsLastFetch=new Date();
+    renderInsights(parsed,allArticles);
+  }catch(e){
+    document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+function renderInsights(data,articles){
+  const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const sevBg={high:'#ffe8e8',medium:'#fef9c3',low:'#dcfce7'};
+  const sevIcon={high:'⚠',medium:'◆',low:'✓'};
+
+  const lastUpdate=insightsLastFetch?insightsLastFetch.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+
+  document.getElementById('insightsBody').innerHTML=`
+    <!-- Executive summary -->
+    <div class="dash-section" style="background:linear-gradient(135deg,rgba(91,92,255,.04),rgba(168,85,247,.02));border-color:rgba(91,92,255,.2);margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;flex-wrap:wrap;gap:8px">
+        <div class="dash-sec-title">
+          <span class="dash-sec-num" style="background:linear-gradient(135deg,var(--purple),var(--primary))">✦</span>
+          <span class="dash-sec-name">Executive Summary</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Updated ${lastUpdate} · ${articles.length} sources</div>
+      </div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${data.executive_summary||'—'}</div>
+    </div>
+
+    <!-- Risk Updates -->
+    ${data.risk_updates?.length?`
+    <div class="dash-section" style="margin-bottom:14px;background:#fef9c3;border-color:rgba(234,179,8,.3)">
+      <div class="dash-sec-head">
+        <div class="dash-sec-title">
+          <span class="dash-sec-num" style="background:linear-gradient(135deg,#a16207,var(--yel))">⚡</span>
+          <span class="dash-sec-name">Suggested Risk Updates Based on News</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--t3)">${data.risk_updates.length} risk(s) need review</div>
+      </div>
+      ${data.risk_updates.map(r=>`
+        <div style="background:rgba(255,255,255,.7);border:1px solid rgba(234,179,8,.25);border-radius:6px;padding:11px;margin-bottom:7px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id}</span>
+              <span class="bdg b-${r.current_level}">${(r.current_level||'').toUpperCase()}</span>
+              <span style="color:var(--t3);font-size:14px">→</span>
+              <span class="bdg b-${r.suggested_level}">${(r.suggested_level||'').toUpperCase()}</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--t2);line-height:1.6">${r.reason}</div>
+        </div>
+      `).join('')}
+    </div>`:''}
+
+    <!-- Construction news + Material prices -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="dash-section">
+        <div class="dash-sec-head">
+          <div class="dash-sec-title">
+            <span class="dash-sec-num" style="background:linear-gradient(135deg,#1d4ed8,var(--primary))">1</span>
+            <span class="dash-sec-name">Construction Industry News</span>
+          </div>
+        </div>
+        ${(data.construction_news||[]).map(n=>`
+          <div style="padding:10px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:5px">
+              <div style="font-size:12px;font-weight:600;color:var(--t1);flex:1;line-height:1.45">${n.headline}</div>
+              <span style="background:${sevBg[n.severity]};color:${sevColor[n.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${sevIcon[n.severity]} ${(n.severity||'').toUpperCase()}</span>
+            </div>
+            <div style="font-size:11px;color:var(--t2);line-height:1.55">${n.impact}</div>
+            ${n.related_risks?.length?`<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${n.related_risks.map(rid=>`<span style="background:var(--primary-soft);color:var(--primary);padding:1px 6px;border-radius:3px;font-size:10px;font-family:'IBM Plex Mono',monospace">→ ${rid}</span>`).join('')}</div>`:''}
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-sec-head">
+          <div class="dash-sec-title">
+            <span class="dash-sec-num" style="background:linear-gradient(135deg,#ea580c,#f97316)">2</span>
+            <span class="dash-sec-name">Material Prices</span>
+          </div>
+        </div>
+        ${(data.material_prices||[]).map(m=>{
+          const tIcon=m.trend==='rising'?'↑':m.trend==='falling'?'↓':'→';
+          const tColor=m.trend==='rising'?'var(--red)':m.trend==='falling'?'var(--grn)':'var(--t3)';
+          return `<div style="padding:11px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="metric-icon o" style="width:30px;height:30px;font-size:13px">📦</div>
+                <div>
+                  <div style="font-size:12.5px;font-weight:600;color:var(--t1)">${m.material}</div>
+                  <div style="font-size:10px;color:var(--t3);text-transform:capitalize">${m.trend||'—'}</div>
+                </div>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:${tColor}">${tIcon} ${m.change||'—'}</div>
+            </div>
+            <div style="font-size:11px;color:var(--t2);line-height:1.5">${m.impact||''}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Geopolitical + Currency -->
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="dash-section">
+        <div class="dash-sec-head">
+          <div class="dash-sec-title">
+            <span class="dash-sec-num" style="background:linear-gradient(135deg,var(--red),#dc2626)">3</span>
+            <span class="dash-sec-name">Geopolitical Events</span>
+          </div>
+        </div>
+        ${(data.geopolitical||[]).map(g=>`
+          <div style="padding:10px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:8px;flex:1">
+                <div class="metric-icon r" style="width:30px;height:30px;font-size:13px">🌍</div>
+                <div style="flex:1">
+                  <div style="font-size:12px;font-weight:600;color:var(--t1)">${g.event}</div>
+                  <div style="font-size:10.5px;color:var(--t3)">${g.region||''}</div>
+                </div>
+              </div>
+              <span style="background:${sevBg[g.severity]};color:${sevColor[g.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${(g.severity||'').toUpperCase()}</span>
+            </div>
+            <div style="font-size:11px;color:var(--t2);line-height:1.55;padding-inline-start:38px">${g.impact||''}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-sec-head">
+          <div class="dash-sec-title">
+            <span class="dash-sec-num" style="background:linear-gradient(135deg,var(--grn),#15803d)">4</span>
+            <span class="dash-sec-name">Currency Watch</span>
+          </div>
+        </div>
+        ${(data.currency||[]).map(c=>{
+          const tColor=c.trend==='rising'?'var(--red)':c.trend==='falling'?'var(--grn)':'var(--t3)';
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--t1)">${c.pair}</div>
+              <div style="font-size:13px;font-weight:700;color:${tColor}">${c.rate||'—'}</div>
+            </div>
+            <div style="font-size:10.5px;color:var(--t3);text-transform:capitalize;margin-bottom:3px">${c.trend||'—'}</div>
+            <div style="font-size:10.5px;color:var(--t2);line-height:1.5">${c.impact||''}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Regulatory -->
+    ${data.regulatory?.length?`
+    <div class="dash-section" style="margin-bottom:14px">
+      <div class="dash-sec-head">
+        <div class="dash-sec-title">
+          <span class="dash-sec-num" style="background:linear-gradient(135deg,var(--purple),#9333ea)">5</span>
+          <span class="dash-sec-name">Government & Regulatory Updates</span>
+        </div>
+      </div>
+      ${data.regulatory.map(r=>`
+        <div style="padding:10px 0;border-bottom:1px solid var(--b1)">
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
+            <div style="display:flex;align-items:center;gap:8px;flex:1">
+              <div class="metric-icon p" style="width:30px;height:30px;font-size:13px">⚖</div>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:600;color:var(--t1)">${r.decision}</div>
+                <div style="font-size:10.5px;color:var(--t3)">${r.agency||''}</div>
+              </div>
+            </div>
+            <span style="background:${sevBg[r.severity]};color:${sevColor[r.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${(r.severity||'').toUpperCase()}</span>
+          </div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.55;padding-inline-start:38px">${r.impact||''}</div>
+        </div>
+      `).join('')}
+    </div>`:''}
+
+    <!-- Keep an Eye On -->
+    <div class="dash-section" style="background:linear-gradient(135deg,rgba(234,179,8,.04),rgba(245,158,11,.02));border-color:rgba(234,179,8,.2);margin-bottom:14px">
+      <div class="dash-sec-head">
+        <div class="dash-sec-title">
+          <span class="dash-sec-num" style="background:linear-gradient(135deg,#a16207,var(--yel))">👁</span>
+          <span class="dash-sec-name">Keep an Eye On</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--t3)">Topics to actively monitor</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px">
+        ${(data.keep_eye_on||[]).map(k=>`
+          <div style="background:rgba(255,255,255,.6);border:1px solid var(--b1);border-radius:8px;padding:11px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="width:32px;height:32px;border-radius:50%;background:#fef9c3;color:#a16207;display:flex;align-items:center;justify-content:center;font-size:14px">${k.icon||'👁'}</div>
+              <div style="font-size:12.5px;font-weight:700;color:var(--t1)">${k.topic}</div>
+            </div>
+            <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:5px"><b>Why:</b> ${k.why}</div>
+            <div style="font-size:11px;color:var(--t3);line-height:1.55"><b>Watch for:</b> ${k.watch_for}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Source articles -->
+    <div class="dash-section">
+      <div class="dash-sec-head">
+        <div class="dash-sec-title">
+          <span class="dash-sec-num">📰</span>
+          <span class="dash-sec-name">Source Articles (${articles.length})</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px">
+        ${articles.slice(0,9).map(a=>`
+          <a href="${a.url}" target="_blank" style="text-decoration:none;color:inherit">
+            <div style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:10px;height:100%;transition:all .15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--b1)'">
+              <div style="font-size:11.5px;font-weight:600;color:var(--t1);line-height:1.4;margin-bottom:5px">${a.title}</div>
+              <div style="font-size:10px;color:var(--t3)">${a.source?.name||'Unknown'} · ${new Date(a.publishedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div>
+            </div>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+
+async function generatePortfolioInsights(pfId){
+  const list=pfId?projs.filter(p=>p.portfolio_id===pfId):projs;
+  if(!list.length){alert('No projects in portfolio');return;}
+  if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
+  
+  if(!localStorage.getItem('newsKey')){
+    if(!setNewsKey())return;
+  }
+
+  document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="text-align:center;padding:40px"><div class="spin" style="margin:0 auto 14px"></div><div style="font-size:13px;color:var(--t2)">Fetching news from multiple sources...</div></div>`;
+
+  const queries=['Saudi Arabia construction industry','steel concrete prices Saudi','oil prices Middle East','Saudi government infrastructure','supply chain construction'];
+  const allArticles=[];
+  for(const q of queries){
+    const data=await fetchNews(q);
+    if(data?.articles)data.articles.slice(0,3).forEach(a=>allArticles.push({...a,query:q}));
+  }
+
+  if(!allArticles.length){
+    document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Failed to fetch news</div>`;
+    return;
+  }
+
+  const projTypes=[...new Set(list.map(p=>p.type).filter(Boolean))].join(', ');
+  const projNames=list.map(p=>p.name).join(', ');
+  const articlesText=allArticles.slice(0,12).map((a,i)=>`[${i+1}] ${a.title}\n${a.description||''}\nSource: ${a.source?.name||'Unknown'}`).join('\n\n');
+
+  document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="text-align:center;padding:40px"><div class="spin" style="margin:0 auto 14px"></div><div style="font-size:13px;color:var(--t2)">AI analyzing ${allArticles.length} articles for portfolio impact...</div></div>`;
+
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3500,messages:[{role:'user',content:`Senior portfolio risk intelligence analyst.
+
+PORTFOLIO: ${list.length} construction projects in Saudi Arabia
+Projects: ${projNames}
+Types: ${projTypes}
+
+LATEST NEWS (${allArticles.length} articles):
+${articlesText}
+
+Analyze impact on the entire portfolio. Respond ONLY with valid JSON:
+{
+  "executive_summary": "3-4 sentences on portfolio-level impact of current events",
+  "construction_news": [
+    {"headline": "...", "impact": "How affects portfolio", "severity": "high|medium|low", "affected_projects": ["project name 1"]}
+  ],
+  "material_prices": [
+    {"material": "Steel", "trend": "rising|falling|stable", "change": "+8%", "impact": "...", "severity": "high|medium|low"}
+  ],
+  "geopolitical": [
+    {"event": "...", "region": "...", "impact": "...", "severity": "high|medium|low"}
+  ],
+  "currency": [
+    {"pair": "USD/SAR", "trend": "stable", "rate": "3.75", "impact": "..."}
+  ],
+  "regulatory": [
+    {"decision": "...", "agency": "...", "impact": "...", "severity": "high|medium|low"}
+  ],
+  "keep_eye_on": [
+    {"topic": "...", "why": "...", "watch_for": "...", "icon": "📊"}
+  ]
+}`}]});
+
+    if(data.error){
+      document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${data.error.message}</div>`;
+      return;
+    }
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}
+    catch(e){
+      document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Parse error</div>`;
+      return;
+    }
+
+    renderPortfolioInsights(parsed,allArticles);
+  }catch(e){
+    document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+function renderPortfolioInsights(data,articles){
+  const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const sevBg={high:'#ffe8e8',medium:'#fef9c3',low:'#dcfce7'};
+  const sevIcon={high:'⚠',medium:'◆',low:'✓'};
+
+  document.getElementById('portfInsights').innerHTML=`
+    <div class="dash-section" style="background:linear-gradient(135deg,rgba(234,179,8,.04),rgba(245,158,11,.02));border-color:rgba(234,179,8,.2);margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;flex-wrap:wrap;gap:8px">
+        <div class="dash-sec-title">
+          <span class="dash-sec-num" style="background:linear-gradient(135deg,#a16207,var(--yel))">✦</span>
+          <span class="dash-sec-name">Portfolio Intelligence Summary</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${articles.length} sources analyzed</div>
+      </div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${data.executive_summary||'—'}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="dash-section">
+        <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">1</span><span class="dash-sec-name">Construction News</span></div></div>
+        ${(data.construction_news||[]).map(n=>`<div style="padding:10px 0;border-bottom:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:5px"><div style="font-size:12px;font-weight:600;color:var(--t1);flex:1;line-height:1.45">${n.headline}</div><span style="background:${sevBg[n.severity]};color:${sevColor[n.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${(n.severity||'').toUpperCase()}</span></div><div style="font-size:11px;color:var(--t2);line-height:1.55">${n.impact}</div>${n.affected_projects?.length?`<div style="margin-top:5px;font-size:10px;color:var(--primary)">→ ${n.affected_projects.join(', ')}</div>`:''}</div>`).join('')}
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">2</span><span class="dash-sec-name">Material Prices</span></div></div>
+        ${(data.material_prices||[]).map(m=>{const tIcon=m.trend==='rising'?'↑':m.trend==='falling'?'↓':'→';const tColor=m.trend==='rising'?'var(--red)':m.trend==='falling'?'var(--grn)':'var(--t3)';return `<div style="padding:11px 0;border-bottom:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px"><div class="metric-icon o" style="width:30px;height:30px;font-size:13px">📦</div><div><div style="font-size:12.5px;font-weight:600;color:var(--t1)">${m.material}</div><div style="font-size:10px;color:var(--t3);text-transform:capitalize">${m.trend||'—'}</div></div></div><div style="font-size:14px;font-weight:700;color:${tColor}">${tIcon} ${m.change||'—'}</div></div><div style="font-size:11px;color:var(--t2);line-height:1.5">${m.impact||''}</div></div>`;}).join('')}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="dash-section">
+        <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">3</span><span class="dash-sec-name">Geopolitical Events</span></div></div>
+        ${(data.geopolitical||[]).map(g=>`<div style="padding:10px 0;border-bottom:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px;flex:1"><div class="metric-icon r" style="width:30px;height:30px;font-size:13px">🌍</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t1)">${g.event}</div><div style="font-size:10.5px;color:var(--t3)">${g.region||''}</div></div></div><span style="background:${sevBg[g.severity]};color:${sevColor[g.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${(g.severity||'').toUpperCase()}</span></div><div style="font-size:11px;color:var(--t2);line-height:1.55;padding-inline-start:38px">${g.impact||''}</div></div>`).join('')}
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Currency Watch</span></div></div>
+        ${(data.currency||[]).map(c=>{const tColor=c.trend==='rising'?'var(--red)':c.trend==='falling'?'var(--grn)':'var(--t3)';return `<div style="padding:10px 0;border-bottom:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--t1)">${c.pair}</div><div style="font-size:13px;font-weight:700;color:${tColor}">${c.rate||'—'}</div></div><div style="font-size:10.5px;color:var(--t3);text-transform:capitalize;margin-bottom:3px">${c.trend||'—'}</div><div style="font-size:10.5px;color:var(--t2);line-height:1.5">${c.impact||''}</div></div>`;}).join('')}
+      </div>
+    </div>
+
+    ${data.regulatory?.length?`<div class="dash-section" style="margin-bottom:14px"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Government & Regulatory</span></div></div>${data.regulatory.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px;flex:1"><div class="metric-icon p" style="width:30px;height:30px;font-size:13px">⚖</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t1)">${r.decision}</div><div style="font-size:10.5px;color:var(--t3)">${r.agency||''}</div></div></div><span style="background:${sevBg[r.severity]};color:${sevColor[r.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${(r.severity||'').toUpperCase()}</span></div><div style="font-size:11px;color:var(--t2);line-height:1.55;padding-inline-start:38px">${r.impact||''}</div></div>`).join('')}</div>`:''}
+
+    <div class="dash-section" style="background:linear-gradient(135deg,rgba(234,179,8,.04),rgba(245,158,11,.02));border-color:rgba(234,179,8,.2);margin-bottom:14px">
+      <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num" style="background:linear-gradient(135deg,#a16207,var(--yel))">👁</span><span class="dash-sec-name">Keep an Eye On</span></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px">
+        ${(data.keep_eye_on||[]).map(k=>`<div style="background:rgba(255,255,255,.6);border:1px solid var(--b1);border-radius:8px;padding:11px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:32px;height:32px;border-radius:50%;background:#fef9c3;color:#a16207;display:flex;align-items:center;justify-content:center;font-size:14px">${k.icon||'👁'}</div><div style="font-size:12.5px;font-weight:700;color:var(--t1)">${k.topic}</div></div><div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:5px"><b>Why:</b> ${k.why}</div><div style="font-size:11px;color:var(--t3);line-height:1.55"><b>Watch for:</b> ${k.watch_for}</div></div>`).join('')}
       </div>
     </div>
   `;
