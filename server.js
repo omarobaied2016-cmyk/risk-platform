@@ -7,6 +7,7 @@ app.use(express.json({ limit: '50mb' }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Claude API proxy
 app.post('/api/claude', async (req, res) => {
   const apiKey = req.headers['x-api-key'];
   if (!apiKey || !apiKey.startsWith('sk-ant-')) {
@@ -26,6 +27,27 @@ app.post('/api/claude', async (req, res) => {
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: { message: error.message } });
+  }
+});
+
+// GNews API proxy
+app.get('/api/news', async (req, res) => {
+  const newsKey = req.headers['x-news-key'];
+  const query = req.query.q || 'construction';
+  const lang = req.query.lang || 'en';
+  const country = req.query.country || 'sa';
+  
+  if (!newsKey) {
+    return res.status(401).json({ error: 'Missing news API key' });
+  }
+  
+  try {
+    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=${lang}&country=${country}&max=10&apikey=${newsKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
