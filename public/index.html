@@ -3271,14 +3271,13 @@ function setNewsKey(){
 
 async function fetchNews(query){
   let key=localStorage.getItem('newsKey');
-  if(!key){
-    if(!setNewsKey())return null;
-    key=localStorage.getItem('newsKey');
-  }
+  if(!key){if(!setNewsKey())return null;key=localStorage.getItem('newsKey');}
   try{
     const r=await fetch(`/api/news?q=${encodeURIComponent(query)}`,{headers:{'x-news-key':key}});
-    return await r.json();
-  }catch(e){console.error(e);return null;}
+    const data=await r.json();
+    if(data.errors){console.error('GNews error:',data.errors);return null;}
+    return data;
+  }catch(e){console.error('fetchNews error:',e);return null;}
 }
 
 async function loadInsights(){
@@ -3337,24 +3336,27 @@ async function generateInsights(){
 
   // Build search queries based on project context
   const queries=[
-    'Saudi Arabia construction industry',
-    'steel concrete prices',
-    'oil prices Saudi Arabia',
-    'supply chain Middle East',
-    'Saudi government infrastructure'
+    'construction Saudi Arabia',
+    'steel prices',
+    'oil prices',
+    'supply chain',
+    'Saudi infrastructure'
   ];
 
-  // Fetch news from all queries
   const allArticles=[];
   for(const q of queries){
     const data=await fetchNews(q);
-    if(data?.articles){
-      data.articles.slice(0,3).forEach(a=>allArticles.push({...a,query:q}));
+    if(data?.articles?.length){
+      data.articles.forEach(a=>allArticles.push({...a,query:q}));
     }
+    // Small delay to avoid rate limiting
+    await new Promise(res=>setTimeout(res,300));
   }
 
+  console.log('Articles fetched:',allArticles.length);
+
   if(!allArticles.length){
-    document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="text-align:center;padding:30px"><div style="font-size:13px;color:var(--red)">Failed to fetch news. Check your GNews API key.</div></div>`;
+    document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="text-align:center;padding:30px;color:var(--red)"><b>No articles found.</b><br><br>Check your GNews API key or try again later.<br><button class="btn btn-p" style="margin-top:12px" onclick="generateInsights()">Try Again</button></div>`;
     return;
   }
 
@@ -3653,15 +3655,18 @@ async function generatePortfolioInsights(pfId){
 
   document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="text-align:center;padding:40px"><div class="spin" style="margin:0 auto 14px"></div><div style="font-size:13px;color:var(--t2)">Fetching news from multiple sources...</div></div>`;
 
-  const queries=['Saudi Arabia construction industry','steel concrete prices Saudi','oil prices Middle East','Saudi government infrastructure','supply chain construction'];
+  const queries=['construction Saudi Arabia','steel prices','oil prices','supply chain','Saudi infrastructure'];
   const allArticles=[];
   for(const q of queries){
     const data=await fetchNews(q);
-    if(data?.articles)data.articles.slice(0,3).forEach(a=>allArticles.push({...a,query:q}));
+    if(data?.articles?.length)data.articles.forEach(a=>allArticles.push({...a,query:q}));
+    await new Promise(res=>setTimeout(res,300));
   }
 
+  console.log('Portfolio articles fetched:',allArticles.length);
+
   if(!allArticles.length){
-    document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Failed to fetch news</div>`;
+    document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Failed to fetch news. Try again later.</div>`;
     return;
   }
 
