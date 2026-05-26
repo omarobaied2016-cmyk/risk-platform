@@ -624,9 +624,30 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
           <label class="auth-fl">Password</label>
           <input type="password" class="auth-fi" id="auth_pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
         </div>
+        <div style="text-align:right;margin-bottom:.5rem"><a onclick="switchAuthTab('forgot')" style="font-size:.8rem;color:var(--primary);cursor:pointer;text-decoration:none;">Forgot password?</a></div>
         <button class="auth-submit" onclick="doLogin()">Sign In →</button>
         <div class="auth-divider">or</div>
         <div class="auth-switch">Don't have an account? <a onclick="switchAuthTab('signup')">Sign up free</a></div>
+      </div>
+      <div id="forgotForm" style="display:none">
+        <div class="auth-fg">
+          <label class="auth-fl">Email Address</label>
+          <input type="email" class="auth-fi" id="forgot_email" placeholder="you@company.com"/>
+        </div>
+        <button class="auth-submit" onclick="doForgotPassword()">Send Reset Link →</button>
+        <div class="auth-divider">or</div>
+        <div class="auth-switch"><a onclick="switchAuthTab('login')">← Back to Sign In</a></div>
+      </div>
+      <div id="resetForm" style="display:none">
+        <div class="auth-fg">
+          <label class="auth-fl">New Password</label>
+          <input type="password" class="auth-fi" id="reset_pass" placeholder="Min. 6 characters"/>
+        </div>
+        <div class="auth-fg">
+          <label class="auth-fl">Confirm Password</label>
+          <input type="password" class="auth-fi" id="reset_pass2" placeholder="Confirm new password" onkeydown="if(event.key==='Enter')doResetPassword()"/>
+        </div>
+        <button class="auth-submit" onclick="doResetPassword()">Update Password →</button>
       </div>
       <div id="signupForm" style="display:none">
         <div class="auth-fg">
@@ -1063,23 +1084,31 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 <script>
 // ═══ AUTH ═══
 let currentUser=null;
+let currentUserProfile=null;
 
 function switchAuthTab(tab){
   document.querySelectorAll('.auth-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('signupForm').style.display='none';
+  document.getElementById('forgotForm').style.display='none';
+  document.getElementById('resetForm').style.display='none';
+  document.getElementById('authError').style.display='none';
+  
   if(tab==='login'){
     document.getElementById('loginForm').style.display='block';
-    document.getElementById('signupForm').style.display='none';
     document.querySelectorAll('.auth-tab-btn')[0].classList.add('active');
     document.querySelector('.auth-box-title').textContent='Welcome back';
     document.querySelector('.auth-box-sub').textContent='Sign in to your RiskAtlas account';
-  }else{
-    document.getElementById('loginForm').style.display='none';
+  }else if(tab==='signup'){
     document.getElementById('signupForm').style.display='block';
     document.querySelectorAll('.auth-tab-btn')[1].classList.add('active');
     document.querySelector('.auth-box-title').textContent='Get started';
     document.querySelector('.auth-box-sub').textContent='Create your free RiskAtlas account';
+  }else if(tab==='forgot'){
+    document.getElementById('forgotForm').style.display='block';
+    document.querySelector('.auth-box-title').textContent='Reset password';
+    document.querySelector('.auth-box-sub').textContent='Enter your email to receive a reset link';
   }
-  document.getElementById('authError').style.display='none';
 }
 
 function showAuthError(msg){
@@ -1088,11 +1117,20 @@ function showAuthError(msg){
   el.style.background='#fef2f2';el.style.color='#ef4444';el.style.borderColor='rgba(239,68,68,.25)';
 }
 
-// Simple hash for password (not production-grade, but works without dependencies)
-async function hashPass(pass){
-  const enc=new TextEncoder();
-  const hash=await crypto.subtle.digest('SHA-256',enc.encode(pass+'_riskatlas_salt_2026'));
-  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+function showAuthSuccess(msg){
+  const el=document.getElementById('authError');
+  el.textContent=msg;el.style.display='block';
+  el.style.background='#dcfce7';el.style.color='#15803d';el.style.borderColor='rgba(34,197,94,.25)';
+}
+
+// Supabase Auth helper
+async function sbAuth(endpoint,body){
+  const res=await fetch(SB+'/auth/v1/'+endpoint,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SK},
+    body:JSON.stringify(body)
+  });
+  return {ok:res.ok,data:await res.json()};
 }
 
 async function doLogin(){
@@ -1102,14 +1140,16 @@ async function doLogin(){
   if(!email.includes('@')){showAuthError('Please enter a valid email address');return;}
   
   try{
-    const hashed=await hashPass(pass);
-    const users=await sb(`users?email=eq.${encodeURIComponent(email)}&password_hash=eq.${hashed}&select=*`);
-    if(!users||!users.length){
-      showAuthError('Invalid email or password');
+    const {ok,data}=await sbAuth('token?grant_type=password',{email,password:pass});
+    if(!ok||!data.access_token){
+      showAuthError(data.error_description||data.msg||'Invalid email or password');
       return;
     }
-    currentUser=users[0];
-    localStorage.setItem('ra_user',JSON.stringify(currentUser));
+    currentUser=data.user;
+    localStorage.setItem('sb_token',data.access_token);
+    localStorage.setItem('sb_refresh',data.refresh_token);
+    localStorage.setItem('sb_user',JSON.stringify(data.user));
+    await loadUserProfile();
     enterApp();
   }catch(e){showAuthError('Connection error: '+e.message);}
 }
@@ -1124,47 +1164,130 @@ async function doSignup(){
   if(pass.length<6){showAuthError('Password must be at least 6 characters');return;}
   
   try{
-    // Check if email already exists
-    const existing=await sb(`users?email=eq.${encodeURIComponent(email)}&select=id`);
-    if(existing&&existing.length>0){
-      showAuthError('An account with this email already exists');
+    const {ok,data}=await sbAuth('signup',{
+      email,password:pass,
+      data:{full_name:name,company:company}
+    });
+    if(!ok||data.error){
+      showAuthError(data.error_description||data.msg||data.error?.message||'Signup failed');
       return;
     }
-    const hashed=await hashPass(pass);
-    const newUser=await sb('users','POST',{
-      email:email,
-      password_hash:hashed,
-      full_name:name,
-      company:company,
-      role:'user',
-      plan:'free_trial',
-      plan_start:new Date().toISOString()
-    });
-    if(newUser&&newUser.length>0){
-      currentUser=newUser[0];
-      localStorage.setItem('ra_user',JSON.stringify(currentUser));
+    // Create profile in users table
+    try{
+      await sb('users','POST',{
+        id:data.user?.id||data.id,
+        email:email,
+        full_name:name,
+        company:company,
+        role:'user',
+        plan:'free_trial',
+        plan_start:new Date().toISOString()
+      });
+    }catch(e){console.log('Profile create:',e);}
+    
+    if(data.access_token){
+      // Auto-confirmed (confirm email disabled)
+      currentUser=data.user;
+      localStorage.setItem('sb_token',data.access_token);
+      localStorage.setItem('sb_refresh',data.refresh_token);
+      localStorage.setItem('sb_user',JSON.stringify(data.user));
+      await loadUserProfile();
       enterApp();
     }else{
-      showAuthError('Failed to create account. Please try again.');
+      // Needs email confirmation
+      switchAuthTab('login');
+      showAuthSuccess('Account created! Check your email to confirm, then sign in.');
+    }
+  }catch(e){showAuthError('Error: '+e.message);}
+}
+
+async function doForgotPassword(){
+  const email=document.getElementById('forgot_email').value.trim().toLowerCase();
+  if(!email||!email.includes('@')){showAuthError('Please enter a valid email address');return;}
+  
+  try{
+    const res=await fetch(SB+'/auth/v1/recover',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SK},
+      body:JSON.stringify({email})
+    });
+    if(res.ok){
+      showAuthSuccess('Password reset link sent! Check your email inbox.');
+    }else{
+      const data=await res.json();
+      showAuthError(data.error_description||data.msg||'Failed to send reset email');
+    }
+  }catch(e){showAuthError('Connection error: '+e.message);}
+}
+
+async function doResetPassword(){
+  const pass=document.getElementById('reset_pass').value;
+  const pass2=document.getElementById('reset_pass2').value;
+  if(!pass||pass.length<6){showAuthError('Password must be at least 6 characters');return;}
+  if(pass!==pass2){showAuthError('Passwords do not match');return;}
+  
+  try{
+    const token=new URLSearchParams(window.location.hash.substring(1)).get('access_token');
+    if(!token){showAuthError('Invalid reset link. Please request a new one.');return;}
+    const res=await fetch(SB+'/auth/v1/user',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+token},
+      body:JSON.stringify({password:pass})
+    });
+    if(res.ok){
+      showAuthSuccess('Password updated! You can now sign in.');
+      window.location.hash='';
+      setTimeout(()=>switchAuthTab('login'),2000);
+    }else{
+      const data=await res.json();
+      showAuthError(data.error_description||data.msg||'Failed to update password');
     }
   }catch(e){showAuthError('Error: '+e.message);}
 }
 
 function doLogout(){
   currentUser=null;
-  localStorage.removeItem('ra_user');
+  currentUserProfile=null;
+  localStorage.removeItem('sb_token');
+  localStorage.removeItem('sb_refresh');
+  localStorage.removeItem('sb_user');
   document.getElementById('authScreen').style.display='flex';
   document.querySelector('.app').style.display='none';
 }
 
+// Load user profile from users table (role, plan, etc.)
+async function loadUserProfile(){
+  if(!currentUser)return;
+  try{
+    const profiles=await sb(`users?id=eq.${currentUser.id}&select=*`);
+    if(profiles&&profiles.length>0){
+      currentUserProfile=profiles[0];
+    }else{
+      // Create profile if doesn't exist
+      try{
+        const newProfile=await sb('users','POST',{
+          id:currentUser.id,
+          email:currentUser.email,
+          full_name:currentUser.user_metadata?.full_name||currentUser.email.split('@')[0],
+          company:currentUser.user_metadata?.company||'',
+          role:'user',
+          plan:'free_trial',
+          plan_start:new Date().toISOString()
+        });
+        if(newProfile&&newProfile.length>0)currentUserProfile=newProfile[0];
+      }catch(e){console.log('Auto-create profile:',e);}
+    }
+  }catch(e){console.log('Load profile:',e);}
+}
+
 // ═══ ADMIN SYSTEM ═══
 function isAdmin(){
-  return currentUser&&currentUser.role==='admin';
+  return currentUserProfile&&currentUserProfile.role==='admin';
 }
 
 function getUserPlan(){
   if(isAdmin())return 'unlimited';
-  return currentUser?.plan||'free_trial';
+  return currentUserProfile?.plan||'free_trial';
 }
 
 function getPlanLimits(plan){
@@ -1206,7 +1329,7 @@ function checkPlanLimit(type){
 function enterApp(){
   document.getElementById('authScreen').style.display='none';
   document.querySelector('.app').style.display='grid';
-  const userName=currentUser?.full_name||currentUser?.email?.split('@')[0]||'User';
+  const userName=currentUserProfile?.full_name||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
   const plan=getUserPlan();
@@ -1223,20 +1346,37 @@ function enterApp(){
 }
 
 async function checkSession(){
-  const userStr=localStorage.getItem('ra_user');
-  if(userStr){
+  // Check if this is a password reset callback
+  const hash=window.location.hash;
+  if(hash&&hash.includes('type=recovery')){
+    document.getElementById('authScreen').style.display='flex';
+    document.querySelector('.app').style.display='none';
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('signupForm').style.display='none';
+    document.getElementById('forgotForm').style.display='none';
+    document.getElementById('resetForm').style.display='block';
+    document.querySelector('.auth-box-title').textContent='Set new password';
+    document.querySelector('.auth-box-sub').textContent='Enter your new password below';
+    return false;
+  }
+  
+  const token=localStorage.getItem('sb_token');
+  if(token){
     try{
-      const saved=JSON.parse(userStr);
-      // Verify user still exists in DB
-      const users=await sb(`users?id=eq.${saved.id}&select=*`);
-      if(users&&users.length>0){
-        currentUser=users[0];
-        localStorage.setItem('ra_user',JSON.stringify(currentUser));
+      const res=await fetch(SB+'/auth/v1/user',{
+        headers:{'Authorization':'Bearer '+token,'apikey':SK}
+      });
+      if(res.ok){
+        currentUser=await res.json();
+        localStorage.setItem('sb_user',JSON.stringify(currentUser));
+        await loadUserProfile();
         enterApp();
         return true;
       }
     }catch(e){console.error('Session check:',e);}
-    localStorage.removeItem('ra_user');
+    localStorage.removeItem('sb_token');
+    localStorage.removeItem('sb_refresh');
+    localStorage.removeItem('sb_user');
   }
   document.getElementById('authScreen').style.display='flex';
   document.querySelector('.app').style.display='none';
