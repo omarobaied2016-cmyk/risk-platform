@@ -3075,22 +3075,59 @@ async function refreshAll(){
 
 // ═══ AI PROJECT REPORT (#21) ═══
 async function generateProjectReport(){
-  if(!CP||!CP.risks?.length)return;
-  if(!GK().startsWith('sk-ant-'))return;
+  if(!CP||!CP.risks?.length){alert('Run analysis first');return;}
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
   const el=document.getElementById('projAIReport');
   if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Generating AI report...</div>';
+  showLoad('Generating AI project report...');
   const risks=CP.risks;
-  const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Category: ${r.category} | Response: ${r.response_strategy}`).join('\n');
+  const high=risks.filter(r=>r.level==='high').length;
+  const med=risks.filter(r=>r.level==='medium').length;
+  const low=risks.filter(r=>r.level==='low').length;
+  const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Cat: ${r.category} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation||'none'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior risk manager. Write a comprehensive AI project risk report for: ${CP.name} (${CP.type}, ${CP.value||'N/A'} SAR).
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Provide a comprehensive project risk report in English in JSON format only.
+
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} SAR
+Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
+Total Risks: ${risks.length} [${high} high, ${med} medium, ${low} low]
 
 RISK REGISTER:
 ${risksCtx}
 
-Write in English. Include: Executive Summary, Key Findings, Top Risk Areas, Strategic Recommendations, and Action Items. Format with clear sections using markdown-style headers. Be specific and actionable.`}]});
-    const text=data.content?.[0]?.text||'Report generation failed';
-    if(el)el.innerHTML=`<div class="dash-section" style="margin-bottom:14px"><div style="font-size:12.5px;color:var(--t2);line-height:1.8;white-space:pre-wrap">${text.replace(/##\s*(.*)/g,'<div style="font-size:14px;font-weight:700;color:var(--t1);margin:16px 0 8px">$1</div>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</div></div>`;
-  }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+Respond ONLY with valid JSON:
+{"executive_summary":"4-5 sentence executive summary about project risk health","project_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4","finding 5"],"top_concerns":["concern 1 with details","concern 2","concern 3","concern 4","concern 5"],"common_patterns":["pattern 1 with explanation","pattern 2","pattern 3","pattern 4","pattern 5"],"strategic_recommendations":["1. IMMEDIATE: recommendation","2. URGENT: recommendation","3. HIGH PRIORITY: recommendation","4. recommendation"],"areas_needing_attention":["area 1 with specific details","area 2"]}`}]});
+    hideLoad();
+    if(data.error){alert('Error: '+data.error.message);return;}
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
+    
+    const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.project_health]||'#a16207';
+    const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.project_health];
+    const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.project_health]||'◆';
+    const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.project_health]||'Warning';
+    
+    if(el) el.innerHTML=`
+      <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Overall Project Report — ${htext}</div>
+          <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${new Date().toLocaleDateString('ar-SA')}</div>
+        </div>
+        <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
+      </div>
+      
+      <div class="dash-row dash-3" style="margin-bottom:14px">
+        <div class="card"><div class="card-t" style="color:var(--primary)">🎯 Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--red)">⚠ Top Concerns</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--purple)">🔄 Common Patterns</div>${(parsed.common_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
+      </div>
+      
+      <div class="dash-row dash-21" style="margin-bottom:14px">
+        <div class="card"><div class="card-t" style="color:var(--grn)">✓ Strategic Recommendations</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--org)">🚨 Areas Needing Attention</div>${(parsed.areas_needing_attention||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
+      </div>`;
+    el?.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
 // ═══ PROJECT MARKET INSIGHTS (#21) ═══
@@ -3236,47 +3273,128 @@ function doExportPDF(){
   const high=risks.filter(r=>r.level==='high').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
+  const opp=risks.filter(r=>r.type==='opportunity').length;
   const incDash=document.getElementById('exp_dash')?.checked;
   const incReg=document.getElementById('exp_register')?.checked;
   const incAI=document.getElementById('exp_aireport')?.checked;
   const incMarket=document.getElementById('exp_market')?.checked;
+  const incTornado=document.getElementById('exp_tornado')?.checked;
   
-  let html=`<html><head><title>RiskAtlas Report - ${CP.name}</title><style>
-    body{font-family:Arial,sans-serif;padding:40px;color:#1a1a2e;font-size:12px;line-height:1.6}
-    h1{font-size:22px;color:#1a1a2e;border-bottom:3px solid #5b5cff;padding-bottom:8px}
-    h2{font-size:16px;color:#5b5cff;margin-top:24px}
-    .meta{color:#666;font-size:11px;margin-bottom:20px}
-    .kpi{display:inline-block;background:#f5f6fa;border:1px solid #e4e7ef;border-radius:8px;padding:12px 20px;margin:4px;text-align:center}
-    .kpi b{display:block;font-size:20px}
-    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
-    th{background:#1a1a2e;color:white;padding:6px 8px;text-align:left}
-    td{padding:5px 8px;border-bottom:1px solid #e4e7ef}
+  let html=`<html><head><title>RiskAtlas AI — ${CP.name}</title><style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1a1a2e;font-size:12px;line-height:1.6;background:white}
+    .page{max-width:1000px;margin:0 auto;padding:30px}
+    .header{background:linear-gradient(135deg,#1a1a2e,#2d2b55);color:white;padding:28px 32px;border-radius:10px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .logo-box{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#5b5cff,#a855f7);display:flex;align-items:center;justify-content:center}
+    .logo-box svg{width:28px;height:28px}
+    .header h1{font-size:20px;font-weight:700;letter-spacing:-.02em}
+    .header-sub{font-size:11px;opacity:.6;margin-top:2px}
+    .header-right{text-align:right;font-size:11px;opacity:.7}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .kpi{background:#f8f9fc;border:1px solid #e4e7ef;border-radius:10px;padding:16px;text-align:center}
+    .kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8a93ab;margin-bottom:4px}
+    .kpi-val{font-size:28px;font-weight:700}
+    .kpi-val.red{color:#ef4444}.kpi-val.yel{color:#eab308}.kpi-val.grn{color:#22c55e}.kpi-val.blue{color:#5b5cff}
+    .section{margin-bottom:20px}
+    .section-title{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #5b5cff;display:flex;align-items:center;gap:8px}
+    .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .card-grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:20px}
+    .rcard{background:#f8f9fc;border:1px solid #e4e7ef;border-radius:8px;padding:14px}
+    .rcard-t{font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e4e7ef}
+    .rcard-t.red{color:#ef4444}.rcard-t.purple{color:#a855f7}.rcard-t.blue{color:#5b5cff}.rcard-t.grn{color:#22c55e}.rcard-t.org{color:#ea580c}
+    .rcard-item{font-size:11.5px;color:#3a3f5c;padding:6px 0;border-bottom:1px solid #f0f1f5;line-height:1.6}
+    .summary-box{border-radius:10px;padding:18px;margin-bottom:20px;font-size:12.5px;line-height:1.7}
+    .summary-box.critical{background:#fef2f2;border:1px solid rgba(239,68,68,.3);color:#1a1a2e}
+    .summary-box.warning{background:#fffbeb;border:1px solid rgba(234,179,8,.3);color:#1a1a2e}
+    .summary-box.good{background:#f0fdf4;border:1px solid rgba(34,197,94,.3);color:#1a1a2e}
+    .summary-label{font-size:13px;font-weight:700;margin-bottom:6px}
+    .summary-label.critical{color:#ef4444}.summary-label.warning{color:#a16207}.summary-label.good{color:#15803d}
+    table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10.5px}
+    th{background:#1a1a2e;color:white;padding:7px 8px;text-align:left;font-weight:600;font-size:10px}
+    td{padding:6px 8px;border-bottom:1px solid #e4e7ef}
     tr:nth-child(even){background:#f9f9fb}
-    .high{color:#ef4444;font-weight:bold}.med{color:#eab308;font-weight:bold}.low{color:#22c55e;font-weight:bold}
-    @media print{body{padding:20px}}
-  </style></head><body>`;
-  html+=`<h1>🛡 RiskAtlas AI — Project Risk Report</h1>`;
-  html+=`<div class="meta">${CP.name} · ${CP.type} · ${CP.value||'N/A'} SAR · Generated: ${new Date().toLocaleDateString()}</div>`;
+    .high{color:#ef4444;font-weight:700}.medium{color:#eab308;font-weight:700}.low{color:#22c55e;font-weight:700}
+    .footer{text-align:center;color:#aaa;font-size:10px;margin-top:30px;padding-top:16px;border-top:1px solid #e4e7ef}
+    @media print{body{padding:0}.page{padding:15px}@page{margin:10mm}}
+  </style></head><body><div class="page">`;
+
+  // Header
+  html+=`<div class="header">
+    <div class="header-left">
+      <div class="logo-box"><svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="35" r="24" stroke="white" stroke-width="5" fill="none"/><path d="M38 56 C38 56 34 68 38 76 C40 80 46 82 50 80 C54 82 60 80 62 76 C66 68 62 56 62 56" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/></svg></div>
+      <div><h1>RiskAtlas AI</h1><div class="header-sub">${CP.name} · ${CP.type} · ${CP.value||'N/A'} SAR</div></div>
+    </div>
+    <div class="header-right">Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}<br>${CP.start_date||''} — ${CP.end_date||''}</div>
+  </div>`;
   
   if(incDash){
-    html+=`<h2>📊 Dashboard Summary</h2>`;
-    html+=`<div class="kpi"><b class="high">${high}</b>High</div><div class="kpi"><b class="med">${med}</b>Medium</div><div class="kpi"><b class="low">${low}</b>Low</div><div class="kpi"><b>${risks.length}</b>Total</div>`;
+    html+=`<div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total Risks</div><div class="kpi-val blue">${risks.length}</div></div>
+      <div class="kpi"><div class="kpi-label">High</div><div class="kpi-val red">${high}</div></div>
+      <div class="kpi"><div class="kpi-label">Medium</div><div class="kpi-val yel">${med}</div></div>
+      <div class="kpi"><div class="kpi-label">Low</div><div class="kpi-val grn">${low}</div></div>
+    </div>`;
   }
-  if(incReg&&risks.length){
-    html+=`<h2>📋 Risk Register</h2><table><tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Level</th><th>Response</th><th>Mitigation</th><th>Owner</th></tr>`;
-    risks.forEach(r=>{html+=`<tr><td>${r.risk_id||''}</td><td>${r.type||''}</td><td>${r.category||''}</td><td>${r.description||''}</td><td class="${r.level}">${r.level||''}</td><td>${r.response_strategy||''}</td><td>${r.mitigation||''}</td><td>${r.owner||''}</td></tr>`;});
-    html+=`</table>`;
-  }
+
   if(incAI){
     const aiEl=document.getElementById('projAIReport');
-    html+=`<h2>✦ AI Project Report</h2><div>${aiEl?.innerText||'Generate the AI report first'}</div>`;
+    if(aiEl&&aiEl.innerHTML.length>100){
+      // Extract report data from the rendered cards
+      const cards=aiEl.querySelectorAll('.card');
+      if(cards.length>0){
+        // Summary box
+        const summaryCard=cards[0];
+        const summaryTitle=summaryCard.querySelector('[style*="font-weight:700"]')?.textContent||'';
+        const summaryText=summaryCard.querySelector('[style*="line-height:1.7"]')?.textContent||'';
+        const healthClass=summaryTitle.includes('Critical')?'critical':summaryTitle.includes('Warning')?'warning':'good';
+        html+=`<div class="summary-box ${healthClass}"><div class="summary-label ${healthClass}">${summaryTitle}</div>${summaryText}</div>`;
+        
+        // 3 column cards
+        if(cards.length>=4){
+          html+=`<div class="card-grid">`;
+          for(let i=1;i<=3;i++){
+            const c=cards[i];if(!c)continue;
+            const title=c.querySelector('.card-t')?.textContent||'';
+            const items=[...c.querySelectorAll('[style*="border-bottom"]')].map(e=>e.textContent);
+            const colorClass=i===1?'blue':i===2?'red':'purple';
+            html+=`<div class="rcard"><div class="rcard-t ${colorClass}">${title}</div>${items.map(it=>`<div class="rcard-item">${it}</div>`).join('')}</div>`;
+          }
+          html+=`</div>`;
+        }
+        // 2 column cards (recommendations + areas)
+        if(cards.length>=6){
+          html+=`<div class="card-grid-2">`;
+          for(let i=4;i<=5;i++){
+            const c=cards[i];if(!c)continue;
+            const title=c.querySelector('.card-t')?.textContent||'';
+            const items=[...c.querySelectorAll('[style*="border-bottom"]')].map(e=>e.textContent);
+            const colorClass=i===4?'grn':'org';
+            html+=`<div class="rcard"><div class="rcard-t ${colorClass}">${title}</div>${items.map(it=>`<div class="rcard-item">${it}</div>`).join('')}</div>`;
+          }
+          html+=`</div>`;
+        }
+      }
+    }else{
+      html+=`<div class="section"><div class="section-title">✦ AI Project Report</div><p style="color:#888">Generate the AI report first before exporting</p></div>`;
+    }
   }
+
   if(incMarket){
     const mEl=document.getElementById('projMarketInsights');
-    html+=`<h2>🌍 Market Insights</h2><div>${mEl?.innerText||'Load market insights first'}</div>`;
+    if(mEl&&mEl.innerHTML.length>100){
+      html+=`<div class="section"><div class="section-title">🌍 Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
+    }
   }
-  html+=`<div style="margin-top:30px;text-align:center;color:#999;font-size:10px">Generated by RiskAtlas AI · ${new Date().toLocaleString()}</div>`;
-  html+=`</body></html>`;
+
+  if(incReg&&risks.length){
+    html+=`<div class="section"><div class="section-title">📋 Risk Register (${risks.length} risks)</div><table><tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Owner</th></tr>`;
+    risks.forEach(r=>{html+=`<tr><td>${r.risk_id||''}</td><td>${r.type||''}</td><td>${r.category||''}</td><td style="max-width:250px">${r.description||''}</td><td class="${r.level}">${r.level||''}</td><td>${r.response_strategy||''}</td><td style="max-width:180px;font-size:10px">${r.mitigation||''}</td><td>${r.owner||''}</td></tr>`;});
+    html+=`</table></div>`;
+  }
+
+  html+=`<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div>`;
+  html+=`</div></body></html>`;
   w.document.write(html);w.document.close();
   setTimeout(()=>w.print(),500);
   document.getElementById('exportModal')?.remove();
