@@ -1563,14 +1563,13 @@ function renderSidebar(){
     const isActive=currentPF&&currentPF.id===pf.id;
     return `
       <div class="portfolio-group">
-        <div class="pg-hdr ${isActive?'active':''}" onclick="togglePortfolio('${pf.id}')">
+        <div class="pg-hdr ${isActive?'active':''}" onclick="openPortfolio('${pf.id}')">
           <div class="pg-hdr-left">
-            <span class="pg-toggle ${isOpen?'open':''}">▶</span>
+            <span class="pg-toggle ${isOpen?'open':''}" onclick="event.stopPropagation();togglePortfolio('${pf.id}')">▶</span>
             <span class="pg-icon" style="background:${pf.color||'#5b5cff'}"></span>
             <span class="pg-name">${pf.name}</span>
           </div>
           <div class="pg-actions">
-            <button class="pg-act-btn" onclick="event.stopPropagation();openPortfolio('${pf.id}')" title="Open Portfolio">↗</button>
           </div>
           <span class="pg-count">${pfProjects.length}</span>
         </div>
@@ -2065,6 +2064,11 @@ async function renderPortfolio(pfId){
       </div>
     </div>
 
+    <!-- Refresh All Button for Portfolio -->
+    <div style="text-align:center;margin-bottom:14px">
+      <button class="btn btn-p" onclick="refreshAllPortfolio()" style="padding:10px 28px;font-size:13px">🔄 Refresh All — AI Report, Market Insights & Early Warning</button>
+    </div>
+
     <!-- AI Report -->
     <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(91,92,255,.04),rgba(168,85,247,.02));border-color:rgba(91,92,255,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
@@ -2340,8 +2344,8 @@ async function selectProj(id){
     document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' SAR':'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
     renderSidebar();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
-    if(risks.length)renderDash();
-    ST('files');
+    if(risks.length){renderDash();ST('dash');}
+    else ST('files');
   }catch(e){hideLoad();console.error(e);}
 }
 
@@ -3021,6 +3025,18 @@ function renderDash(){
       });
     }
   },60);
+}
+
+// ═══ REFRESH ALL PORTFOLIO ═══
+async function refreshAllPortfolio(){
+  if(!currentPF){alert('No portfolio selected');return;}
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Refreshing all portfolio data...');
+  try{
+    await generatePortfolioReport();
+    await generatePortfolioInsights();
+    hideLoad();
+  }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
 // ═══ PRICING PAGE (#23) ═══
