@@ -85,9 +85,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .auth-fg{margin-bottom:1.1rem;}
 .auth-fl{display:block;font-size:.78rem;font-weight:600;color:var(--t3);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;}
 .auth-fi{width:100%;padding:.7rem .9rem;border:1px solid var(--b1);border-radius:var(--r-sm);font-size:.9rem;font-family:inherit;color:var(--t1);background:var(--s1);outline:none;transition:border-color .2s;}
-.auth-fi:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.1);}
-.auth-submit{width:100%;padding:.85rem;background:linear-gradient(135deg,var(--primary),var(--purple));color:white;border:none;border-radius:var(--r-sm);font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 14px rgba(91,92,255,.3);margin-top:.5rem;}
-.auth-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(91,92,255,.4);}
+.auth-fi:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,252,.1);}
+.auth-submit{width:100%;padding:.85rem;background:linear-gradient(135deg,var(--primary),var(--purple));color:white;border:none;border-radius:var(--r-sm);font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 14px rgba(124,92,252,.3);margin-top:.5rem;}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,92,252,.4);}
 .auth-divider{text-align:center;color:var(--t3);font-size:.8rem;margin:1.25rem 0;position:relative;}
 .auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--b1);}
 .auth-divider::before{left:0;}
@@ -159,7 +159,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .main{padding:24px 28px;overflow-y:auto;background:var(--bg);}
 .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px;}
 .search-bar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:50px;padding:8px 16px;width:340px;box-shadow:var(--shadow-sm);}
-.search-bar:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.1);}
+.search-bar:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,252,.1);}
 .search-bar input{background:transparent;border:none;outline:none;color:var(--t1);font-family:inherit;font-size:12.5px;flex:1;}
 .search-bar input::placeholder{color:var(--t3);}
 .top-actions{display:flex;align-items:center;gap:10px;}
@@ -205,7 +205,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .tabs{display:flex;gap:3px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:4px;margin-bottom:18px;flex-wrap:wrap;box-shadow:var(--shadow-sm);}
 .tab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;border-radius:var(--r-sm);transition:all .15s;}
 .tab:hover{color:var(--t1);background:var(--s3);}
-.tab.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);color:white;box-shadow:0 2px 8px rgba(91,92,255,.3);}
+.tab.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);color:white;box-shadow:0 2px 8px rgba(124,92,252,.3);}
 .pane{display:none;}
 .pane.on{display:block;}
 
@@ -213,7 +213,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .fg{display:flex;flex-direction:column;gap:5px;}
 .fl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;}
 .fi,.fs,.fta{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:8px 11px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;transition:all .15s;}
-.fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,255,.1);}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,252,.1);}
 .fta{resize:vertical;min-height:70px;}
 .fs option{background:var(--s1);color:var(--t1);}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
@@ -574,15 +574,8 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 <div class="auth-screen" id="authScreen">
   <div class="auth-left">
     <div class="auth-logo">
-      <div class="auth-logo-icon" style="background:transparent;box-shadow:none;width:80px;height:80px">
-        <svg width="70" height="70" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="110" cy="65" r="45" stroke="white" stroke-width="5" fill="none"/>
-          <ellipse cx="110" cy="65" rx="12" ry="12" fill="white" opacity="0.15"/>
-          <path d="M85 105 C75 105 65 120 70 140 C73 150 82 158 95 155 C100 160 115 162 125 155 C138 158 147 150 150 140 C155 120 145 105 135 105" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M95 155 C90 165 88 180 92 190" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <path d="M125 155 C130 165 132 180 128 190" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <path d="M105 155 C103 170 105 185 105 195" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
-        </svg>
+      <div class="auth-logo-icon" style="background:transparent;box-shadow:none;width:120px;height:80px">
+        <img src="https://i.postimg.cc/BnWrp8LC/89f6c180-112e-4627-b132-e471e46a8d2b.jpg" style="width:120px;height:auto;filter:brightness(0) invert(1)" alt="RiskAtlas AI"/>
       </div>
       <div class="auth-logo-text">RiskAtlas <span>AI</span></div>
       <div class="auth-logo-sub">Project Risk Management</div>
@@ -879,13 +872,8 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
   <!-- SIDEBAR -->
   <aside class="sb">
     <div class="sb-brand">
-      <div class="sb-logo" style="background:transparent;box-shadow:none;padding:0">
-        <svg width="36" height="36" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="110" cy="65" r="40" stroke="white" stroke-width="5" fill="none"/>
-          <path d="M85 100 C75 100 67 115 72 132 C75 142 84 148 95 145 C100 150 115 152 125 145 C138 148 147 142 150 132 C155 115 145 100 135 100" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M95 145 C92 158 90 172 93 182" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <path d="M125 145 C128 158 130 172 127 182" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-        </svg>
+      <div class="sb-logo" style="background:transparent;box-shadow:none;padding:0;width:auto;height:auto">
+        <img src="https://i.postimg.cc/BnWrp8LC/89f6c180-112e-4627-b132-e471e46a8d2b.jpg" style="width:42px;height:auto;filter:brightness(0) invert(1);border-radius:6px" alt="RiskAtlas"/>
       </div>
       <div class="sb-name">RiskAtlas AI</div>
       <div class="sb-tag">Project Risk Management</div>
