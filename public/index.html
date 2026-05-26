@@ -782,7 +782,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 
 <!-- PROJECT MODAL -->
 <div class="modal-ov" id="projModal">
-  <div class="modal">
+  <div class="modal" style="max-width:600px">
     <div class="modal-t">New Project</div>
     <div class="fgrid">
       <div class="fg full"><label class="fl">Portfolio</label>
@@ -812,12 +812,64 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
       </div>
       <div class="fg"><label class="fl">Start Date</label><input type="date" class="fi" id="np_s"/></div>
       <div class="fg"><label class="fl">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
-      <div class="fg full"><label class="fl">Portfolio *</label><select class="fs" id="np_pf"></select></div>
       <div class="fg full"><label class="fl">Description</label><textarea class="fta" id="np_d"></textarea></div>
+      <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">🎯 Risk Appetite</div>
+      </div>
+      <div class="fg"><label class="fl">Cost Tolerance (%)</label><input type="number" class="fi" id="np_ra_cost" value="5" min="0" max="100" placeholder="e.g. 5"/></div>
+      <div class="fg"><label class="fl">Schedule Tolerance (Days)</label><input type="number" class="fi" id="np_ra_sched" value="30" min="0" placeholder="e.g. 30"/></div>
+      <div class="fg"><label class="fl">Risk Appetite Level</label>
+        <select class="fs" id="np_ra_level">
+          <option value="conservative">Conservative — Minimize all risk</option>
+          <option value="moderate" selected>Moderate — Accept calculated risks</option>
+          <option value="aggressive">Aggressive — Accept high risk for high reward</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Max Acceptable Risk Score</label><input type="number" class="fi" id="np_ra_max" value="60" min="0" max="100" placeholder="e.g. 60"/></div>
     </div>
     <div style="display:flex;gap:7px;justify-content:flex-end">
       <button class="btn btn-g" onclick="closeProjModal()">Cancel</button>
       <button class="btn btn-p" onclick="createProj()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT SETTINGS MODAL (#4) -->
+<div class="modal-ov" id="settingsModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-t">⚙ Project Settings</div>
+    <div class="fgrid">
+      <div class="fg"><label class="fl">Project Name *</label><input type="text" class="fi" id="set_n"/></div>
+      <div class="fg"><label class="fl">Contract No.</label><input type="text" class="fi" id="set_c"/></div>
+      <div class="fg"><label class="fl">Contract Value (SAR)</label><input type="text" class="fi" id="set_v"/></div>
+      <div class="fg"><label class="fl">Project Type</label>
+        <select class="fs" id="set_t">
+          <option>Residential</option><option>Commercial</option><option>Mixed-Use</option><option>Infrastructure</option>
+          <option>Roads & Highways</option><option>Industrial</option><option>Healthcare</option><option>Educational</option>
+          <option>Hospitality</option><option>Landscaping</option><option>Marine</option><option>MEP</option>
+          <option>Renovation</option><option>Government</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Start Date</label><input type="date" class="fi" id="set_s"/></div>
+      <div class="fg"><label class="fl">Completion Date</label><input type="date" class="fi" id="set_e"/></div>
+      <div class="fg full"><label class="fl">Description</label><textarea class="fta" id="set_d"></textarea></div>
+      <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">🎯 Risk Appetite</div>
+      </div>
+      <div class="fg"><label class="fl">Cost Tolerance (%)</label><input type="number" class="fi" id="set_ra_cost" min="0" max="100"/></div>
+      <div class="fg"><label class="fl">Schedule Tolerance (Days)</label><input type="number" class="fi" id="set_ra_sched" min="0"/></div>
+      <div class="fg"><label class="fl">Risk Appetite Level</label>
+        <select class="fs" id="set_ra_level">
+          <option value="conservative">Conservative</option>
+          <option value="moderate">Moderate</option>
+          <option value="aggressive">Aggressive</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Max Acceptable Risk Score</label><input type="number" class="fi" id="set_ra_max" min="0" max="100"/></div>
+    </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closeSettingsModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveSettings()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -827,9 +879,14 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
   <!-- SIDEBAR -->
   <aside class="sb">
     <div class="sb-brand">
-      <div class="sb-logo">⚡</div>
-      <div class="sb-name">Risk Intelligence</div>
-      <div class="sb-tag">AI-Powered</div>
+      <div class="sb-logo" style="background:linear-gradient(135deg,var(--primary),var(--purple));border-radius:10px;padding:2px">
+        <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="35" r="24" stroke="white" stroke-width="5" fill="none"/>
+          <path d="M38 56 C38 56 34 68 38 76 C40 80 46 82 50 80 C54 82 60 80 62 76 C66 68 62 56 62 56" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="sb-name">RiskAtlas AI</div>
+      <div class="sb-tag">Risk Management</div>
     </div>
 
     <div class="sb-nav">
@@ -918,6 +975,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
           <div class="ph-s" id="phSub">—</div>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-g" onclick="openSettingsModal()">⚙ Settings</button>
           <button class="btn btn-warn" onclick="showNotifModal()">🔔 Notifications</button>
           <button class="btn btn-g" onclick="exportCSV()">⬇ Export CSV</button>
           <button class="btn btn-del" onclick="delProj()">Delete</button>
@@ -1044,15 +1102,22 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
       <div class="pane" id="pane-contacts">
         <div style="max-width:720px">
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">Team Contacts</div>
-          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Add contacts to receive risk notifications</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Add contacts manually or upload a file</div>
           <div class="card" style="margin-bottom:13px">
-            <div class="card-t">Add Contact</div>
+            <div class="card-t">Add Contact Manually</div>
             <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:11px">
               <div class="fg"><label class="fl">Name</label><input type="text" class="fi" id="c_name" placeholder="Ahmed Al-Rashidi"/></div>
               <div class="fg"><label class="fl">Role</label><input type="text" class="fi" id="c_role" placeholder="Project Manager"/></div>
               <div class="fg"><label class="fl">Email / WhatsApp</label><input type="text" class="fi" id="c_contact" placeholder="ahmed@company.com"/></div>
             </div>
             <button class="btn btn-p" onclick="addContact()">Add Contact</button>
+          </div>
+          <div class="card" style="margin-bottom:13px">
+            <div class="card-t">Upload Contacts File</div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Upload CSV or Excel file with columns: Name, Role, Email/Phone</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="file" id="contactFileInput" accept=".csv,.xlsx,.xls" onchange="uploadContacts(event)" style="font-size:11px"/>
+            </div>
           </div>
           <div id="contactsList"></div>
         </div>
@@ -2166,9 +2231,9 @@ async function createProj(){
   if(!name){alert('Please enter project name');return;}
   showLoad('Creating...');
   try{
-    const tol={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
+    const tol={cost_pct:document.getElementById('np_ra_cost').value||5,cost_val:'',sched_days:document.getElementById('np_ra_sched').value||30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
     const pfId=document.getElementById('np_pf').value;
-    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[]};
+    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:document.getElementById('np_ra_level').value,max_score:parseInt(document.getElementById('np_ra_max').value)||60}};
     if(pfId)d.portfolio_id=pfId;
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
@@ -2176,6 +2241,44 @@ async function createProj(){
     if(pfId)openPortfolios.add(pfId);
     await loadAll();
     if(res&&res[0])selectProj(res[0].id);
+  }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+// ═══ PROJECT SETTINGS (#4) ═══
+function openSettingsModal(){
+  if(!CP)return;
+  document.getElementById('set_n').value=CP.name||'';
+  document.getElementById('set_c').value=CP.contract||'';
+  document.getElementById('set_v').value=CP.value||'';
+  document.getElementById('set_t').value=CP.type||'Residential';
+  document.getElementById('set_s').value=CP.start_date||'';
+  document.getElementById('set_e').value=CP.end_date||'';
+  document.getElementById('set_d').value=CP.description||'';
+  document.getElementById('set_ra_cost').value=CP.tolerance?.cost_pct||5;
+  document.getElementById('set_ra_sched').value=CP.tolerance?.sched_days||30;
+  document.getElementById('set_ra_level').value=CP.risk_appetite?.level||'moderate';
+  document.getElementById('set_ra_max').value=CP.risk_appetite?.max_score||60;
+  document.getElementById('settingsModal').classList.add('on');
+}
+function closeSettingsModal(){document.getElementById('settingsModal').classList.remove('on');}
+async function saveSettings(){
+  if(!CP)return;
+  showLoad('Saving...');
+  try{
+    const updates={
+      name:document.getElementById('set_n').value.trim(),
+      contract:document.getElementById('set_c').value,
+      value:document.getElementById('set_v').value,
+      type:document.getElementById('set_t').value,
+      start_date:document.getElementById('set_s').value,
+      end_date:document.getElementById('set_e').value,
+      description:document.getElementById('set_d').value,
+      tolerance:{...CP.tolerance,cost_pct:document.getElementById('set_ra_cost').value,sched_days:document.getElementById('set_ra_sched').value},
+      risk_appetite:{level:document.getElementById('set_ra_level').value,max_score:parseInt(document.getElementById('set_ra_max').value)||60}
+    };
+    await sb('projects?id=eq.'+CID,'PATCH',updates);
+    hideLoad();closeSettingsModal();
+    await loadAll();await selectProj(CID);
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
 
@@ -2334,6 +2437,33 @@ async function addContact(){
   await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
   ['c_name','c_role','c_contact'].forEach(id=>document.getElementById(id).value='');
   renderContacts();
+}
+
+async function uploadContacts(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    const text=await file.text();
+    const lines=text.split('\n').filter(l=>l.trim());
+    const header=lines[0].toLowerCase();
+    const startIdx=header.includes('name')?1:0;
+    if(!CP.contacts)CP.contacts=[];
+    let added=0;
+    for(let i=startIdx;i<lines.length;i++){
+      const cols=lines[i].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+      if(cols.length>=2&&cols[0]){
+        CP.contacts.push({name:cols[0],role:cols[1]||'Team Member',contact:cols[2]||''});
+        added++;
+      }
+    }
+    await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
+    renderContacts();
+    alert(`${added} contacts imported successfully!`);
+  }else{
+    alert('Please upload a CSV file. Excel files will be supported soon.');
+  }
+  event.target.value='';
 }
 async function removeContact(i){
   CP.contacts.splice(i,1);
@@ -2507,11 +2637,12 @@ function renderReg(){
       <td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>
       <td><div style="font-size:11px;color:var(--t2);max-width:180px;line-height:1.5">${r.mitigation}</div></td>
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
+      <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.response_owner||'—'}</td>
       <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">Edit</button></td>
     </tr>`).join('');
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
-  const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Plan</th><th>Owner</th><th></th></tr>`;
+  const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th></th></tr>`;
   document.getElementById('regContent').innerHTML=`
     ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
     ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
@@ -3308,77 +3439,52 @@ function renderWhatIf(){
       <!-- 1. ADJUST LEVERS -->
       <div class="wi-section">
         <div class="wi-section-t"><span class="wi-num">1</span>Adjust the Levers</div>
-        <div class="wi-section-s">Change the key drivers and simulate the impact</div>
+        <div class="wi-section-s">Describe your changes and simulate the impact</div>
 
-        <div class="lever">
-          <div class="lever-hdr">
+        <div class="lever" style="border:1px solid var(--b1);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div class="lever-hdr" style="margin-bottom:6px">
             <div class="lever-icon">👥</div>
-            <div class="lever-info"><div class="lever-name">Add Resources</div><div class="lever-sub">Team Size</div></div>
-            <div class="lever-val pos" id="lv_addResources">+0</div>
+            <div class="lever-info"><div class="lever-name">Add Resources</div><div class="lever-sub">Describe resources to add</div></div>
           </div>
-          <div class="lever-slider">
-            <span class="lever-mm">0</span>
-            <input type="range" id="lever_addResources" min="0" max="20" value="0" oninput="updLever('addResources',this.value)"/>
-            <span class="lever-mm">+20</span>
-          </div>
+          <textarea class="fi" id="lever_addResources" rows="2" style="width:100%;font-size:11.5px;min-height:42px;font-family:inherit;resize:vertical" placeholder="e.g. Add 1 civil engineer and 4 workers"></textarea>
         </div>
 
-        <div class="lever">
-          <div class="lever-hdr">
+        <div class="lever" style="border:1px solid var(--b1);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div class="lever-hdr" style="margin-bottom:6px">
             <div class="lever-icon b">📅</div>
-            <div class="lever-info"><div class="lever-name">Extend Schedule</div><div class="lever-sub">Duration (Months)</div></div>
-            <div class="lever-val pos" id="lv_extendSchedule">+0</div>
+            <div class="lever-info"><div class="lever-name">Extend Schedule</div><div class="lever-sub">Describe schedule changes</div></div>
           </div>
-          <div class="lever-slider">
-            <span class="lever-mm">0</span>
-            <input type="range" id="lever_extendSchedule" min="0" max="12" value="0" oninput="updLever('extendSchedule',this.value)"/>
-            <span class="lever-mm">+12</span>
-          </div>
+          <textarea class="fi" id="lever_extendSchedule" rows="2" style="width:100%;font-size:11.5px;min-height:42px;font-family:inherit;resize:vertical" placeholder="e.g. Extend by 3 months for foundation work"></textarea>
         </div>
 
-        <div class="lever">
-          <div class="lever-hdr">
+        <div class="lever" style="border:1px solid var(--b1);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div class="lever-hdr" style="margin-bottom:6px">
             <div class="lever-icon grn">＄</div>
-            <div class="lever-info"><div class="lever-name">Increase Budget</div><div class="lever-sub">Additional Budget</div></div>
-            <div class="lever-val pos" id="lv_increaseBudget">+0%</div>
+            <div class="lever-info"><div class="lever-name">Increase Budget</div><div class="lever-sub">Describe budget changes</div></div>
           </div>
-          <div class="lever-slider">
-            <span class="lever-mm">0%</span>
-            <input type="range" id="lever_increaseBudget" min="0" max="50" value="0" oninput="updLever('increaseBudget',this.value)"/>
-            <span class="lever-mm">+50%</span>
-          </div>
+          <textarea class="fi" id="lever_increaseBudget" rows="2" style="width:100%;font-size:11.5px;min-height:42px;font-family:inherit;resize:vertical" placeholder="e.g. Increase budget by 15% for safety equipment"></textarea>
         </div>
 
-        <div class="lever">
-          <div class="lever-hdr">
+        <div class="lever" style="border:1px solid var(--b1);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div class="lever-hdr" style="margin-bottom:6px">
             <div class="lever-icon org">⤧</div>
-            <div class="lever-info"><div class="lever-name">Reduce Scope</div><div class="lever-sub">Scope Reduction</div></div>
-            <div class="lever-val warn" id="lv_reduceScope">+0%</div>
+            <div class="lever-info"><div class="lever-name">Reduce Scope</div><div class="lever-sub">Describe scope changes</div></div>
           </div>
-          <div class="lever-slider">
-            <span class="lever-mm">0%</span>
-            <input type="range" id="lever_reduceScope" min="0" max="40" value="0" oninput="updLever('reduceScope',this.value)"/>
-            <span class="lever-mm">+40%</span>
-          </div>
+          <textarea class="fi" id="lever_reduceScope" rows="2" style="width:100%;font-size:11.5px;min-height:42px;font-family:inherit;resize:vertical" placeholder="e.g. Remove Phase 2 landscaping from scope"></textarea>
         </div>
 
-        <div class="lever">
-          <div class="lever-hdr">
+        <div class="lever" style="border:1px solid var(--b1);border-radius:8px;padding:10px;margin-bottom:8px">
+          <div class="lever-hdr" style="margin-bottom:6px">
             <div class="lever-icon cyan">📋</div>
-            <div class="lever-info"><div class="lever-name">Improve Communication</div><div class="lever-sub">Communication Index (1-5)</div></div>
-            <div class="lever-val pos" id="lv_improveCommunication">+0</div>
+            <div class="lever-info"><div class="lever-name">Other Actions</div><div class="lever-sub">Any additional actions or changes</div></div>
           </div>
-          <div class="lever-slider">
-            <span class="lever-mm">0</span>
-            <input type="range" id="lever_improveCommunication" min="0" max="4" value="0" oninput="updLever('improveCommunication',this.value)"/>
-            <span class="lever-mm">+4</span>
-          </div>
+          <textarea class="fi" id="lever_other" rows="2" style="width:100%;font-size:11.5px;min-height:42px;font-family:inherit;resize:vertical" placeholder="e.g. Switch to local supplier for steel, hire safety officer"></textarea>
         </div>
 
         <button class="btn btn-p" onclick="runSimulation()" style="width:100%;justify-content:center;margin-top:6px;padding:11px">▶ Run Simulation</button>
         <div style="font-size:10.5px;color:var(--t3);margin-top:8px;text-align:center;display:flex;align-items:center;gap:5px;justify-content:center">
           <span>ⓘ</span>
-          <span>Adjust one or more levers and click "Run Simulation"</span>
+          <span>Describe your changes and click "Run Simulation"</span>
         </div>
       </div>
 
@@ -3436,40 +3542,40 @@ function renderWhatIf(){
   `;
 }
 
-function updLever(key,val){
-  wifLevers[key]=parseInt(val);
-  // Update display
-  const el=document.getElementById('lv_'+key);
-  if(key==='reduceScope'||key==='increaseBudget')el.textContent='+'+val+'%';
-  else el.textContent='+'+val;
-}
+function updLever(key,val){wifLevers[key]=val;}
 
 async function runSimulation(){
   const risks=CP?.risks||[];
   if(!risks.length){alert('No risks to simulate');return;}
   if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
 
-  // Check if any lever is set
-  const totalChanges=Object.values(wifLevers).reduce((s,v)=>s+v,0);
-  if(totalChanges===0){alert('Adjust at least one lever before running simulation');return;}
+  // Collect text inputs
+  const leverTexts={
+    addResources:document.getElementById('lever_addResources')?.value?.trim()||'',
+    extendSchedule:document.getElementById('lever_extendSchedule')?.value?.trim()||'',
+    increaseBudget:document.getElementById('lever_increaseBudget')?.value?.trim()||'',
+    reduceScope:document.getElementById('lever_reduceScope')?.value?.trim()||'',
+    other:document.getElementById('lever_other')?.value?.trim()||''
+  };
+
+  const hasInput=Object.values(leverTexts).some(v=>v.length>0);
+  if(!hasInput){alert('Describe at least one change before running simulation');return;}
 
   showLoad('Running AI simulation...');
 
-  // Calculate baseline
   const high=risks.filter(r=>r.level==='high').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
   const baselineScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
 
-  // Build prompt for Claude
   const risksContext=risks.slice(0,15).map(r=>`${r.risk_id||'R?'}: ${r.description} | Cat: ${r.category} | Level: ${r.level} | Prob: ${r.probability} | Mitigation: ${r.mitigation||'none'}`).join('\n');
 
   const leverDesc=[];
-  if(wifLevers.addResources>0)leverDesc.push(`+${wifLevers.addResources} additional team members`);
-  if(wifLevers.extendSchedule>0)leverDesc.push(`+${wifLevers.extendSchedule} months schedule extension`);
-  if(wifLevers.increaseBudget>0)leverDesc.push(`+${wifLevers.increaseBudget}% budget increase`);
-  if(wifLevers.reduceScope>0)leverDesc.push(`-${wifLevers.reduceScope}% scope reduction`);
-  if(wifLevers.improveCommunication>0)leverDesc.push(`+${wifLevers.improveCommunication} communication improvement (1-5 scale)`);
+  if(leverTexts.addResources)leverDesc.push(`Add Resources: ${leverTexts.addResources}`);
+  if(leverTexts.extendSchedule)leverDesc.push(`Schedule Change: ${leverTexts.extendSchedule}`);
+  if(leverTexts.increaseBudget)leverDesc.push(`Budget Change: ${leverTexts.increaseBudget}`);
+  if(leverTexts.reduceScope)leverDesc.push(`Scope Change: ${leverTexts.reduceScope}`);
+  if(leverTexts.other)leverDesc.push(`Other Actions: ${leverTexts.other}`);
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior construction risk manager running a what-if scenario simulation.
