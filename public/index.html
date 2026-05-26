@@ -962,6 +962,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
           <input type="text" placeholder="Search portfolio projects..." id="searchProj" oninput="filterPortfolioProjs(this.value)"/>
         </div>
         <div class="top-actions">
+          <button class="btn btn-g" onclick="showPortfolioExportModal()">📥 Export</button>
           <button class="btn btn-g" onclick="editCurrentPortfolio()">⚙ Edit</button>
           <button class="btn btn-del" onclick="delCurrentPortfolio()">Delete Portfolio</button>
           <button class="btn btn-p" onclick="openProjModal()">+ Project</button>
@@ -3037,6 +3038,196 @@ async function refreshAllPortfolio(){
     await generatePortfolioInsights();
     hideLoad();
   }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+// ═══ PORTFOLIO EXPORT ═══
+function showPortfolioExportModal(){
+  if(!currentPF)return;
+  const list=projs.filter(p=>p.portfolio_id===currentPF.id);
+  const html=`<div class="modal-ov on" id="pfExportModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-t">📥 Export Portfolio Dashboard</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Select content to include</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="pfx_dash" checked/>
+          <div><div style="font-size:12px;font-weight:600">📊 Dashboard KPIs</div><div style="font-size:10.5px;color:var(--t3)">Summary stats, risk levels, exposure</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="pfx_projects" checked/>
+          <div><div style="font-size:12px;font-weight:600">📋 Project Details Table</div><div style="font-size:10.5px;color:var(--t3)">All projects with risk counts</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="pfx_aireport"/>
+          <div><div style="font-size:12px;font-weight:600">✦ AI Portfolio Report</div><div style="font-size:10.5px;color:var(--t3)">AI-generated portfolio analysis</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="pfx_market"/>
+          <div><div style="font-size:12px;font-weight:600">🌍 Market Insights</div><div style="font-size:10.5px;color:var(--t3)">Market conditions & warnings</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="pfx_allrisks"/>
+          <div><div style="font-size:12px;font-weight:600">📑 All Risks Register</div><div style="font-size:10.5px;color:var(--t3)">Combined risk register from all projects</div></div>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-g" onclick="document.getElementById('pfExportModal').remove()">Cancel</button>
+        <button class="btn btn-g" onclick="doPortfolioExportExcel()">📊 Export Excel</button>
+        <button class="btn btn-p" onclick="doPortfolioExportPDF()">📄 Export PDF</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+function doPortfolioExportExcel(){
+  if(!currentPF)return;
+  const list=projs.filter(p=>p.portfolio_id===currentPF.id);
+  const risks=allRisks.filter(r=>list.some(p=>p.id===r.project_id));
+  const header='Project,Risk ID,Type,Category,Description,Probability,Impact Cost,Impact Schedule,Level,Response,Mitigation,Owner';
+  const rows=risks.map(r=>{
+    const proj=list.find(p=>p.id===r.project_id);
+    return [proj?.name||'',r.risk_id||'',r.type||'',r.category||'',r.description||'',r.probability||'',r.impact_cost||'',r.impact_schedule||'',r.level||'',r.response_strategy||'',r.mitigation||'',r.owner||''].map(v=>`"${(v+'').replace(/"/g,'""')}"`).join(',');
+  });
+  const csv='\uFEFF'+header+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`RiskAtlas_${currentPF.name.replace(/\s/g,'_')}_Portfolio.csv`;a.click();
+  document.getElementById('pfExportModal')?.remove();
+}
+
+function doPortfolioExportPDF(){
+  if(!currentPF)return;
+  const w=window.open('','_blank');
+  const list=projs.filter(p=>p.portfolio_id===currentPF.id);
+  const pfRisks=allRisks.filter(r=>list.some(p=>p.id===r.project_id));
+  const totalH=pfRisks.filter(r=>r.level==='high').length;
+  const totalM=pfRisks.filter(r=>r.level==='medium').length;
+  const totalL=pfRisks.filter(r=>r.level==='low').length;
+  const totalVal=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
+
+  const incDash=document.getElementById('pfx_dash')?.checked;
+  const incProj=document.getElementById('pfx_projects')?.checked;
+  const incAI=document.getElementById('pfx_aireport')?.checked;
+  const incMarket=document.getElementById('pfx_market')?.checked;
+  const incAllRisks=document.getElementById('pfx_allrisks')?.checked;
+
+  let html=`<html><head><title>RiskAtlas AI — ${currentPF.name}</title><style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1a1a2e;font-size:12px;line-height:1.6;background:white}
+    .page{max-width:1000px;margin:0 auto;padding:30px}
+    .header{background:linear-gradient(135deg,#1a1a2e,#2d2b55);color:white;padding:28px 32px;border-radius:10px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .logo-box{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#5b5cff,#a855f7);display:flex;align-items:center;justify-content:center}
+    .logo-box svg{width:28px;height:28px}
+    .header h1{font-size:20px;font-weight:700}
+    .header-sub{font-size:11px;opacity:.6;margin-top:2px}
+    .header-right{text-align:right;font-size:11px;opacity:.7}
+    .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+    .kpi{background:#f8f9fc;border:1px solid #e4e7ef;border-radius:10px;padding:14px;text-align:center}
+    .kpi-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#8a93ab;margin-bottom:4px}
+    .kpi-val{font-size:24px;font-weight:700}
+    .kpi-val.red{color:#ef4444}.kpi-val.yel{color:#eab308}.kpi-val.grn{color:#22c55e}.kpi-val.blue{color:#5b5cff}.kpi-val.purple{color:#a855f7}
+    .section{margin-bottom:20px}
+    .section-title{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #5b5cff}
+    .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .card-grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:20px}
+    .rcard{background:#f8f9fc;border:1px solid #e4e7ef;border-radius:8px;padding:14px}
+    .rcard-t{font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e4e7ef}
+    .rcard-t.red{color:#ef4444}.rcard-t.purple{color:#a855f7}.rcard-t.blue{color:#5b5cff}.rcard-t.grn{color:#22c55e}.rcard-t.org{color:#ea580c}
+    .rcard-item{font-size:11.5px;color:#3a3f5c;padding:6px 0;border-bottom:1px solid #f0f1f5;line-height:1.6}
+    .summary-box{border-radius:10px;padding:18px;margin-bottom:20px;font-size:12.5px;line-height:1.7}
+    .summary-box.critical{background:#fef2f2;border:1px solid rgba(239,68,68,.3)}
+    .summary-box.warning{background:#fffbeb;border:1px solid rgba(234,179,8,.3)}
+    .summary-box.good{background:#f0fdf4;border:1px solid rgba(34,197,94,.3)}
+    .summary-label{font-size:13px;font-weight:700;margin-bottom:6px}
+    .summary-label.critical{color:#ef4444}.summary-label.warning{color:#a16207}.summary-label.good{color:#15803d}
+    table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10.5px}
+    th{background:#1a1a2e;color:white;padding:7px 8px;text-align:left;font-weight:600;font-size:10px}
+    td{padding:6px 8px;border-bottom:1px solid #e4e7ef}
+    tr:nth-child(even){background:#f9f9fb}
+    .high{color:#ef4444;font-weight:700}.medium{color:#eab308;font-weight:700}.low{color:#22c55e;font-weight:700}
+    .footer{text-align:center;color:#aaa;font-size:10px;margin-top:30px;padding-top:16px;border-top:1px solid #e4e7ef}
+    @media print{body{padding:0}.page{padding:15px}@page{margin:10mm}}
+  </style></head><body><div class="page">`;
+
+  html+=`<div class="header">
+    <div class="header-left">
+      <div class="logo-box"><svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="35" r="24" stroke="white" stroke-width="5" fill="none"/><path d="M38 56 C38 56 34 68 38 76 C40 80 46 82 50 80 C54 82 60 80 62 76 C66 68 62 56 62 56" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/></svg></div>
+      <div><h1>RiskAtlas AI — Portfolio Report</h1><div class="header-sub">${currentPF.name}${currentPF.description?' · '+currentPF.description:''}</div></div>
+    </div>
+    <div class="header-right">Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}<br>${list.length} Projects · ${pfRisks.length} Total Risks</div>
+  </div>`;
+
+  if(incDash){
+    html+=`<div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Projects</div><div class="kpi-val blue">${list.length}</div></div>
+      <div class="kpi"><div class="kpi-label">Total Risks</div><div class="kpi-val purple">${pfRisks.length}</div></div>
+      <div class="kpi"><div class="kpi-label">High</div><div class="kpi-val red">${totalH}</div></div>
+      <div class="kpi"><div class="kpi-label">Medium</div><div class="kpi-val yel">${totalM}</div></div>
+      <div class="kpi"><div class="kpi-label">Portfolio Value</div><div class="kpi-val grn">${totalVal?totalVal.toLocaleString()+' SAR':'N/A'}</div></div>
+    </div>`;
+  }
+
+  if(incAI){
+    const aiEl=document.getElementById('portfReport');
+    if(aiEl&&aiEl.innerHTML.length>100){
+      const cards=aiEl.querySelectorAll('.card');
+      if(cards.length>0){
+        const summaryCard=cards[0];
+        const summaryTitle=summaryCard.querySelector('[style*="font-weight:700"]')?.textContent||'';
+        const summaryText=summaryCard.querySelector('[style*="line-height:1.7"]')?.textContent||'';
+        const healthClass=summaryTitle.includes('Critical')?'critical':summaryTitle.includes('Warning')?'warning':'good';
+        html+=`<div class="summary-box ${healthClass}"><div class="summary-label ${healthClass}">${summaryTitle}</div>${summaryText}</div>`;
+        if(cards.length>=4){
+          html+=`<div class="card-grid">`;
+          for(let i=1;i<=3;i++){const c=cards[i];if(!c)continue;const title=c.querySelector('.card-t')?.textContent||'';const items=[...c.querySelectorAll('[style*="border-bottom"]')].map(e=>e.textContent);const cc=i===1?'blue':i===2?'red':'purple';html+=`<div class="rcard"><div class="rcard-t ${cc}">${title}</div>${items.map(it=>`<div class="rcard-item">${it}</div>`).join('')}</div>`;}
+          html+=`</div>`;
+        }
+        if(cards.length>=6){
+          html+=`<div class="card-grid-2">`;
+          for(let i=4;i<=5;i++){const c=cards[i];if(!c)continue;const title=c.querySelector('.card-t')?.textContent||'';const items=[...c.querySelectorAll('[style*="border-bottom"]')].map(e=>e.textContent);const cc=i===4?'grn':'org';html+=`<div class="rcard"><div class="rcard-t ${cc}">${title}</div>${items.map(it=>`<div class="rcard-item">${it}</div>`).join('')}</div>`;}
+          html+=`</div>`;
+        }
+      }
+    }else{
+      html+=`<div class="section"><div class="section-title">✦ AI Report</div><p style="color:#888">Generate the AI report first</p></div>`;
+    }
+  }
+
+  if(incMarket){
+    const mEl=document.getElementById('portfInsights');
+    if(mEl&&mEl.innerHTML.length>50){
+      html+=`<div class="section"><div class="section-title">🌍 Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
+    }
+  }
+
+  if(incProj){
+    html+=`<div class="section"><div class="section-title">📋 Project Details</div><table><tr><th>Project</th><th>Type</th><th>Value</th><th>Total</th><th>High</th><th>Medium</th><th>Low</th><th>Score</th></tr>`;
+    list.forEach(p=>{
+      const r=pfRisks.filter(x=>x.project_id===p.id);
+      const h=r.filter(x=>x.level==='high').length;
+      const m=r.filter(x=>x.level==='medium').length;
+      const lo=r.filter(x=>x.level==='low').length;
+      const score=r.length?Math.min(100,Math.round((h*10+m*5+lo*1)/(r.length*10)*100)):'-';
+      html+=`<tr><td><b>${p.name}</b></td><td>${p.type||''}</td><td>${p.value||'N/A'}</td><td>${r.length}</td><td class="high">${h}</td><td class="medium">${m}</td><td class="low">${lo}</td><td>${score}</td></tr>`;
+    });
+    html+=`</table></div>`;
+  }
+
+  if(incAllRisks&&pfRisks.length){
+    html+=`<div class="section"><div class="section-title">📑 All Risks (${pfRisks.length})</div><table><tr><th>Project</th><th>ID</th><th>Category</th><th>Description</th><th>Level</th><th>Response</th><th>Owner</th></tr>`;
+    pfRisks.forEach(r=>{
+      const proj=list.find(p=>p.id===r.project_id);
+      html+=`<tr><td>${proj?.name||''}</td><td>${r.risk_id||''}</td><td>${r.category||''}</td><td style="max-width:250px">${r.description||''}</td><td class="${r.level}">${r.level||''}</td><td>${r.response_strategy||''}</td><td>${r.owner||''}</td></tr>`;
+    });
+    html+=`</table></div>`;
+  }
+
+  html+=`<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div></div></body></html>`;
+  w.document.write(html);w.document.close();
+  setTimeout(()=>w.print(),500);
+  document.getElementById('pfExportModal')?.remove();
 }
 
 // ═══ PRICING PAGE (#23) ═══
