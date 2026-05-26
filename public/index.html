@@ -1085,29 +1085,31 @@ function switchAuthTab(tab){
 function showAuthError(msg){
   const el=document.getElementById('authError');
   el.textContent=msg;el.style.display='block';
+  el.style.background='#fef2f2';el.style.color='#ef4444';el.style.borderColor='rgba(239,68,68,.25)';
+}
+
+// Simple hash for password (not production-grade, but works without dependencies)
+async function hashPass(pass){
+  const enc=new TextEncoder();
+  const hash=await crypto.subtle.digest('SHA-256',enc.encode(pass+'_riskatlas_salt_2026'));
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
 async function doLogin(){
-  const email=document.getElementById('auth_email').value.trim();
+  const email=document.getElementById('auth_email').value.trim().toLowerCase();
   const pass=document.getElementById('auth_pass').value;
   if(!email||!pass){showAuthError('Please enter email and password');return;}
   if(!email.includes('@')){showAuthError('Please enter a valid email address');return;}
   
   try{
-    const res=await fetch(SB+'/auth/v1/token?grant_type=password',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SK},
-      body:JSON.stringify({email,password:pass})
-    });
-    const data=await res.json();
-    if(!res.ok||data.error||!data.access_token){
-      showAuthError(data.error_description||data.msg||data.error||'Invalid email or password');
+    const hashed=await hashPass(pass);
+    const users=await sb(`users?email=eq.${encodeURIComponent(email)}&password_hash=eq.${hashed}&select=*`);
+    if(!users||!users.length){
+      showAuthError('Invalid email or password');
       return;
     }
-    currentUser=data.user;
-    localStorage.setItem('sb_token',data.access_token);
-    localStorage.setItem('sb_refresh',data.refresh_token);
-    localStorage.setItem('sb_user',JSON.stringify(data.user));
+    currentUser=users[0];
+    localStorage.setItem('ra_user',JSON.stringify(currentUser));
     enterApp();
   }catch(e){showAuthError('Connection error: '+e.message);}
 }
@@ -1115,57 +1117,54 @@ async function doLogin(){
 async function doSignup(){
   const name=document.getElementById('reg_name').value.trim();
   const company=document.getElementById('reg_company').value.trim();
-  const email=document.getElementById('reg_email').value.trim();
+  const email=document.getElementById('reg_email').value.trim().toLowerCase();
   const pass=document.getElementById('reg_pass').value;
   if(!name||!email||!pass){showAuthError('Please fill all required fields');return;}
-  if(pass.length<8){showAuthError('Password must be at least 8 characters');return;}
+  if(!email.includes('@')){showAuthError('Please enter a valid email address');return;}
+  if(pass.length<6){showAuthError('Password must be at least 6 characters');return;}
   
   try{
-    const res=await fetch(SB+'/auth/v1/signup',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SK},
-      body:JSON.stringify({email,password:pass,data:{full_name:name,company:company,plan:'free_trial',plan_start:new Date().toISOString()}})
+    // Check if email already exists
+    const existing=await sb(`users?email=eq.${encodeURIComponent(email)}&select=id`);
+    if(existing&&existing.length>0){
+      showAuthError('An account with this email already exists');
+      return;
+    }
+    const hashed=await hashPass(pass);
+    const newUser=await sb('users','POST',{
+      email:email,
+      password_hash:hashed,
+      full_name:name,
+      company:company,
+      role:'user',
+      plan:'free_trial',
+      plan_start:new Date().toISOString()
     });
-    const data=await res.json();
-    if(data.error){showAuthError(data.error_description||data.msg||'Signup failed');return;}
-    if(data.access_token){
-      currentUser=data.user;
-      localStorage.setItem('sb_token',data.access_token);
-      localStorage.setItem('sb_refresh',data.refresh_token);
-      localStorage.setItem('sb_user',JSON.stringify(data.user));
+    if(newUser&&newUser.length>0){
+      currentUser=newUser[0];
+      localStorage.setItem('ra_user',JSON.stringify(currentUser));
       enterApp();
     }else{
-      switchAuthTab('login');
-      document.getElementById('authError').style.display='block';
-      document.getElementById('authError').style.background='#dcfce7';
-      document.getElementById('authError').style.color='#15803d';
-      document.getElementById('authError').style.borderColor='rgba(34,197,94,.25)';
-      document.getElementById('authError').textContent='Account created! Check your email to verify, then sign in.';
+      showAuthError('Failed to create account. Please try again.');
     }
-  }catch(e){showAuthError('Connection error: '+e.message);}
+  }catch(e){showAuthError('Error: '+e.message);}
 }
 
 function doLogout(){
   currentUser=null;
-  localStorage.removeItem('sb_token');
-  localStorage.removeItem('sb_refresh');
-  localStorage.removeItem('sb_user');
+  localStorage.removeItem('ra_user');
   document.getElementById('authScreen').style.display='flex';
   document.querySelector('.app').style.display='none';
 }
 
 // ═══ ADMIN SYSTEM ═══
-// Add your admin email(s) here
-const ADMIN_EMAILS=['omar.obaied2016@gmail.com'];
-
 function isAdmin(){
-  return currentUser&&ADMIN_EMAILS.includes(currentUser.email);
+  return currentUser&&currentUser.role==='admin';
 }
 
 function getUserPlan(){
-  const meta=currentUser?.user_metadata||{};
   if(isAdmin())return 'unlimited';
-  return meta.plan||'free_trial';
+  return currentUser?.plan||'free_trial';
 }
 
 function getPlanLimits(plan){
@@ -1207,19 +1206,16 @@ function checkPlanLimit(type){
 function enterApp(){
   document.getElementById('authScreen').style.display='none';
   document.querySelector('.app').style.display='grid';
-  // Update user display in sidebar
-  const userName=currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
+  const userName=currentUser?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
-  // Update plan display
   const plan=getUserPlan();
   const planLabel=getPlanLimits(plan).label;
   const planEl=document.getElementById('userPlanLabel');
   if(planEl){
-    planEl.textContent=planLabel+(isAdmin()?' (Admin)':'');
+    planEl.textContent=planLabel+(isAdmin()?' ★':'');
     planEl.style.color=isAdmin()?'#a855f7':plan==='pro'?'var(--primary)':plan==='organization'?'#06b6d4':'var(--sb-text-3)';
   }
-  // Show/hide admin-only elements
   document.querySelectorAll('.admin-only').forEach(el=>{
     el.style.display=isAdmin()?'':'none';
   });
@@ -1227,31 +1223,21 @@ function enterApp(){
 }
 
 async function checkSession(){
-  const token=localStorage.getItem('sb_token');
-  const userStr=localStorage.getItem('sb_user');
-  if(token&&userStr){
+  const userStr=localStorage.getItem('ra_user');
+  if(userStr){
     try{
-      // Verify token is still valid
-      const res=await fetch(SB+'/auth/v1/user',{
-        headers:{'Authorization':'Bearer '+token,'apikey':SK}
-      });
-      if(res.ok){
-        const user=await res.json();
-        currentUser=user;
-        localStorage.setItem('sb_user',JSON.stringify(user));
+      const saved=JSON.parse(userStr);
+      // Verify user still exists in DB
+      const users=await sb(`users?id=eq.${saved.id}&select=*`);
+      if(users&&users.length>0){
+        currentUser=users[0];
+        localStorage.setItem('ra_user',JSON.stringify(currentUser));
         enterApp();
         return true;
-      }else{
-        // Token expired, clear session
-        localStorage.removeItem('sb_token');
-        localStorage.removeItem('sb_refresh');
-        localStorage.removeItem('sb_user');
       }
-    }catch(e){
-      console.error('Session check failed:',e);
-    }
+    }catch(e){console.error('Session check:',e);}
+    localStorage.removeItem('ra_user');
   }
-  // Show auth screen, hide app
   document.getElementById('authScreen').style.display='flex';
   document.querySelector('.app').style.display='none';
   return false;
