@@ -3,41 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Risk Intelligence Platform</title>
+<title>RiskAtlas AI — Project Risk Management</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
-  /* Sidebar - DARK theme */
-  --sb-bg:#0f1424;
-  --sb-card:#1a2138;
-  --sb-border:#252d4a;
-  --sb-text:#e8ecf5;
-  --sb-text-2:#9aa3c0;
-  --sb-text-3:#6b7593;
-  --sb-hover:#1e2640;
-  --sb-active:#2a3356;
+  /* Sidebar - Clean dark */
+  --sb-bg:#1a1a2e;
+  --sb-card:#22223b;
+  --sb-border:#2d2d44;
+  --sb-text:#f0f0f5;
+  --sb-text-2:#b0b0c8;
+  --sb-text-3:#6e6e8a;
+  --sb-hover:#28283e;
+  --sb-active:#333352;
   
-  /* Main - LIGHT theme */
-  --bg:#f5f6fa;
+  /* Main - Clean white theme */
+  --bg:#f7f8fc;
   --s1:#ffffff;
-  --s2:#f8f9fc;
-  --s3:#eef0f7;
-  --b1:#e4e7ef;
-  --b2:#d1d6e3;
-  --b3:#aab2c5;
-  --t1:#1a2138;
-  --t2:#525d7a;
-  --t3:#8a93ab;
+  --s2:#fafbfe;
+  --s3:#f0f1f7;
+  --b1:#e8eaf0;
+  --b2:#d4d7e2;
+  --b3:#b0b5c7;
+  --t1:#1a1a2e;
+  --t2:#4a4a6a;
+  --t3:#8888a8;
   
-  /* Accents */
-  --primary:#5b5cff;
-  --primary-2:#4948d6;
-  --primary-soft:#eef0ff;
-  --purple:#a855f7;
-  --cyan:#06b6d4;
+  /* Accents — soft purple/teal like dashboard image */
+  --primary:#7c5cfc;
+  --primary-2:#6a4ce0;
+  --primary-soft:#f0ecff;
+  --purple:#9b6dff;
+  --cyan:#4ecdc4;
   --pink:#ec4899;
   --red:#ef4444;
   --red-soft:#fef2f2;
@@ -46,23 +46,23 @@
   --yel-soft:#fefce8;
   --grn:#22c55e;
   --grn-soft:#f0fdf4;
-  --teal:#14b8a6;
+  --teal:#4ecdc4;
   
-  --r:8px;
-  --r-sm:6px;
+  --r:10px;
+  --r-sm:8px;
 
-  --shadow-sm:0 1px 2px rgba(15,20,36,.04);
-  --shadow:0 2px 8px rgba(15,20,36,.06);
-  --shadow-lg:0 8px 24px rgba(15,20,36,.08);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.04);
+  --shadow:0 2px 10px rgba(0,0,0,.05);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.07);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.6;min-height:100vh;}
 
 /* ═══ AUTH SCREEN ═══ */
-.auth-screen{display:flex;min-height:100vh;background:#f5f6fa;}
-.auth-left{flex:1;background:linear-gradient(145deg,#0f1424 0%,#1a2138 50%,#252d4a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;position:relative;overflow:hidden;}
-.auth-left::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(91,92,255,.12) 0%,transparent 70%);top:-100px;right:-100px;}
-.auth-left::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.1) 0%,transparent 70%);bottom:-80px;left:-80px;}
+.auth-screen{display:flex;min-height:100vh;background:#f7f8fc;}
+.auth-left{flex:1;background:linear-gradient(145deg,#1a1a2e 0%,#22223b 50%,#2d2d44 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;position:relative;overflow:hidden;}
+.auth-left::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,252,.12) 0%,transparent 70%);top:-100px;right:-100px;}
+.auth-left::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(78,205,196,.1) 0%,transparent 70%);bottom:-80px;left:-80px;}
 .auth-logo{position:relative;z-index:1;margin-bottom:2rem;text-align:center;}
 .auth-logo-icon{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 8px 32px rgba(91,92,255,.4);}
 .auth-logo-icon img{width:48px;height:48px;filter:brightness(0) invert(1);}
@@ -171,8 +171,8 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 /* ═══ BUTTONS ═══ */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 15px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b1);background:var(--s1);color:var(--t1);transition:all .15s;font-family:inherit;white-space:nowrap;}
 .btn:hover{border-color:var(--b3);}
-.btn-p{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);border-color:transparent;color:white;box-shadow:0 4px 12px rgba(91,92,255,.25);}
-.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(91,92,255,.35);}
+.btn-p{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);border-color:transparent;color:white;box-shadow:0 4px 12px rgba(124,92,252,.25);}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(124,92,252,.35);}
 .btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
 .btn-g{background:transparent;color:var(--t2);border-color:var(--b1);}
 .btn-g:hover{background:var(--s2);color:var(--t1);}
@@ -183,26 +183,23 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .btn-warn{background:var(--yel-soft);border-color:rgba(234,179,8,.25);color:#a16207;}
 
 /* ═══ CARDS ═══ */
-.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;box-shadow:var(--shadow-sm);}
-.card-t{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:12px;}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;box-shadow:var(--shadow);}
+.card-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:12px;}
 
 /* ═══ STATS ═══ */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
-.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:15px 17px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;}
-.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--purple));}
-.stat-card.red::before{background:linear-gradient(90deg,var(--red),var(--org));}
-.stat-card.green::before{background:linear-gradient(90deg,var(--grn),var(--teal));}
-.stat-card.cyan::before{background:linear-gradient(90deg,var(--cyan),var(--primary));}
-.stat-card.pink::before{background:linear-gradient(90deg,var(--pink),var(--purple));}
-.stat-icon{width:36px;height:36px;border-radius:var(--r-sm);background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:all .2s;}
+.stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:0;background:none;}
+.stat-card.red::before,.stat-card.green::before,.stat-card.cyan::before,.stat-card.pink::before{height:0;}
+.stat-icon{width:40px;height:40px;border-radius:10px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;}
 .stat-card.red .stat-icon{background:var(--red-soft);color:var(--red);}
 .stat-card.green .stat-icon{background:var(--grn-soft);color:var(--grn);}
 .stat-card.cyan .stat-icon{background:#ecfeff;color:var(--cyan);}
 .stat-card.pink .stat-icon{background:#fdf2f8;color:var(--pink);}
-.stat-l{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;}
-.stat-v{font-size:24px;font-weight:700;color:var(--t1);line-height:1.1;}
-.stat-sub{font-size:10.5px;color:var(--t3);margin-top:4px;}
+.stat-l{font-size:11px;font-weight:500;color:var(--t3);margin-bottom:6px;}
+.stat-v{font-size:28px;font-weight:700;color:var(--t1);line-height:1.1;}
+.stat-sub{font-size:10.5px;color:var(--t3);margin-top:5px;display:flex;align-items:center;gap:4px;}
 
 /* ═══ TABS ═══ */
 .tabs{display:flex;gap:3px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:4px;margin-bottom:18px;flex-wrap:wrap;box-shadow:var(--shadow-sm);}
@@ -447,7 +444,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .kpi-icon-circle.pink{background:#fce7f3;color:#be185d;}
 .kpi-icon-circle.yellow{background:#fef9c3;color:#a16207;}
 
-.dash-section{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+.dash-section{background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:var(--shadow);}
 .dash-sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .dash-sec-title{display:flex;align-items:center;gap:9px;}
 .dash-sec-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--purple));color:white;font-size:11.5px;font-weight:700;}
@@ -577,11 +574,14 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 <div class="auth-screen" id="authScreen">
   <div class="auth-left">
     <div class="auth-logo">
-      <div class="auth-logo-icon">
-        <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="35" r="28" stroke="white" stroke-width="4" fill="none"/>
-          <path d="M35 60 C35 60 30 75 35 85 C38 90 45 92 50 90 C55 92 62 90 65 85 C70 75 65 60 65 60" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <circle cx="50" cy="35" r="8" fill="white" opacity="0.3"/>
+      <div class="auth-logo-icon" style="background:transparent;box-shadow:none;width:80px;height:80px">
+        <svg width="70" height="70" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="110" cy="65" r="45" stroke="white" stroke-width="5" fill="none"/>
+          <ellipse cx="110" cy="65" rx="12" ry="12" fill="white" opacity="0.15"/>
+          <path d="M85 105 C75 105 65 120 70 140 C73 150 82 158 95 155 C100 160 115 162 125 155 C138 158 147 150 150 140 C155 120 145 105 135 105" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M95 155 C90 165 88 180 92 190" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M125 155 C130 165 132 180 128 190" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M105 155 C103 170 105 185 105 195" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
         </svg>
       </div>
       <div class="auth-logo-text">RiskAtlas <span>AI</span></div>
@@ -879,14 +879,16 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
   <!-- SIDEBAR -->
   <aside class="sb">
     <div class="sb-brand">
-      <div class="sb-logo" style="background:linear-gradient(135deg,var(--primary),var(--purple));border-radius:10px;padding:2px">
-        <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="35" r="24" stroke="white" stroke-width="5" fill="none"/>
-          <path d="M38 56 C38 56 34 68 38 76 C40 80 46 82 50 80 C54 82 60 80 62 76 C66 68 62 56 62 56" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <div class="sb-logo" style="background:transparent;box-shadow:none;padding:0">
+        <svg width="36" height="36" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="110" cy="65" r="40" stroke="white" stroke-width="5" fill="none"/>
+          <path d="M85 100 C75 100 67 115 72 132 C75 142 84 148 95 145 C100 150 115 152 125 145 C138 148 147 142 150 132 C155 115 145 100 135 100" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M95 145 C92 158 90 172 93 182" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M125 145 C128 158 130 172 127 182" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
         </svg>
       </div>
       <div class="sb-name">RiskAtlas AI</div>
-      <div class="sb-tag">Risk Management</div>
+      <div class="sb-tag">Project Risk Management</div>
     </div>
 
     <div class="sb-nav">
