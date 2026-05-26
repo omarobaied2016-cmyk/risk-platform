@@ -917,6 +917,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
         </div>
         <button onclick="doLogout()" style="background:transparent;border:1px solid var(--sb-border);color:var(--sb-text-3);padding:3px 8px;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit" title="Sign out">↩</button>
       </div>
+      <div style="margin-bottom:8px">
+        <button onclick="showPricingPage()" style="width:100%;padding:8px;background:linear-gradient(135deg,var(--primary),var(--purple));color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">⬆ Upgrade Your Plan</button>
+      </div>
       <div class="fg admin-only" style="margin-bottom:8px;display:none">
         <label style="font-size:10px;color:var(--sb-text-3);font-weight:600">Claude API Key</label>
         <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()" style="background:var(--sb-bg);border:1px solid var(--sb-border);border-radius:5px;padding:7px 10px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%"/>
@@ -977,7 +980,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn btn-g" onclick="openSettingsModal()">⚙ Settings</button>
           <button class="btn btn-warn" onclick="showNotifModal()">🔔 Notifications</button>
-          <button class="btn btn-g" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="btn btn-g" onclick="showExportModal()">📥 Export</button>
           <button class="btn btn-del" onclick="delProj()">Delete</button>
         </div>
       </div>
@@ -2027,15 +2030,31 @@ async function renderPortfolio(pfId){
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">6</span><span class="dash-sec-name">Common Root Causes</span></div>
         </div>
-        <div class="dash-sec-sub">High-risk recurring causes</div>
-        ${topCauses.length?topCauses.map(([cause,cnt])=>`
-          <div class="metric-row">
+        <div class="dash-sec-sub">High-risk recurring causes across portfolio</div>
+        ${topCauses.length?topCauses.map(([cause,cnt])=>{
+          const desc={
+            'Delay':'Recurring delays across multiple projects impacting schedule and cost targets',
+            'Weather':'Weather-related disruptions causing work stoppages and material damage',
+            'Labor':'Labor shortage or skill gaps affecting project execution quality',
+            'Material':'Material supply chain issues leading to procurement delays and cost overruns',
+            'Design':'Design changes and errors requiring rework and additional resources',
+            'Communication':'Poor communication between stakeholders causing misalignment',
+            'Regulatory':'Regulatory compliance issues and permitting delays',
+            'Financial':'Financial constraints and cash flow problems affecting project progress',
+            'Safety':'Safety incidents and near-misses affecting workforce and timeline',
+            'Subcontractor':'Subcontractor performance issues impacting deliverables'
+          };
+          const matchedDesc=Object.entries(desc).find(([k])=>cause.toLowerCase().includes(k.toLowerCase()));
+          const causeDesc=matchedDesc?matchedDesc[1]:`This root cause has been identified in ${cnt} risks across the portfolio and requires systematic mitigation`;
+          return `<div class="metric-row">
             <div class="metric-icon o">🔍</div>
             <div class="metric-info">
               <div class="metric-name">${cause}</div>
+              <div class="metric-meta" style="font-size:10.5px;color:var(--t3);line-height:1.5;margin-top:2px">${causeDesc}</div>
             </div>
             <div class="metric-val" style="color:#ea580c">${cnt}×</div>
-          </div>`).join(''):
+          </div>`;
+        }).join(''):
           `<div style="padding:30px 14px;text-align:center;color:var(--t3);font-size:12px">Insufficient data for analysis</div>`}
       </div>
       <div class="dash-section">
@@ -2906,6 +2925,41 @@ function renderDash(){
       <canvas id="trendC" height="60"></canvas>
       <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter weekly indicators in <a onclick="ST('warn')" style="color:var(--primary);cursor:pointer">Early Warning</a> for trend report</div>
     </div>`}
+
+    <!-- #20 Refresh All Button -->
+    <div style="text-align:center;margin-bottom:14px">
+      <button class="btn btn-p" onclick="refreshAll()" style="padding:10px 28px;font-size:13px">🔄 Refresh All — AI Report, Market Insights & Early Warning</button>
+    </div>
+
+    <!-- #21 Market & World Insights for Project -->
+    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(234,179,8,.04),rgba(245,158,11,.02));border-color:rgba(234,179,8,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div class="kpi-icon-circle yellow" style="width:42px;height:42px;font-size:18px">🌍</div>
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">Market & World Insights</div>
+            <div style="font-size:11.5px;color:var(--t3)">Current market conditions affecting this project</div>
+          </div>
+        </div>
+        <button class="btn btn-g" onclick="loadProjectInsights()" style="border-color:rgba(234,179,8,.4);color:#a16207">Load Insights</button>
+      </div>
+    </div>
+    <div id="projMarketInsights"></div>
+
+    <!-- #21 AI Project Report -->
+    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(91,92,255,.04),rgba(168,85,247,.02));border-color:rgba(91,92,255,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div class="kpi-icon-circle purple" style="width:42px;height:42px;font-size:18px">✦</div>
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">AI Project Report</div>
+            <div style="font-size:11.5px;color:var(--t3)">Comprehensive AI analysis with strategic recommendations</div>
+          </div>
+        </div>
+        <button class="btn btn-p" onclick="generateProjectReport()">Generate Report</button>
+      </div>
+    </div>
+    <div id="projAIReport"></div>
   `;
 
   // Charts
@@ -2967,6 +3021,265 @@ function renderDash(){
       });
     }
   },60);
+}
+
+// ═══ PRICING PAGE (#23) ═══
+function showPricingPage(){
+  const html=`<div class="modal-ov on" id="pricingModal">
+    <div class="modal" style="max-width:800px">
+      <div class="modal-t">⬆ Upgrade Your Plan</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--t3);letter-spacing:.08em;margin-bottom:4px">Free Trial</div>
+          <div style="font-size:28px;font-weight:700;color:var(--t1)">$0</div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:12px">7 days</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ 1 project<br>✓ Basic dashboard<br>✗ What-If Analysis<br>✗ Market Insights</div>
+        </div>
+        <div style="border:2px solid var(--primary);border-radius:8px;padding:16px;text-align:center;background:rgba(91,92,255,.03)">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--primary);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Pro</div>
+          <div style="font-size:28px;font-weight:700;color:var(--primary)">$49</div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:12px">/month</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ 6 projects<br>✓ 1 portfolio<br>✓ What-If Analysis<br>✓ Market Insights<br>✓ All features</div>
+        </div>
+        <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:#06b6d4;letter-spacing:.08em;margin-bottom:4px;font-weight:700">Organization</div>
+          <div style="font-size:28px;font-weight:700;color:#06b6d4">$199</div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:12px">/month</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ 6 portfolios<br>✓ 6 projects each<br>✓ All Pro features<br>✓ Priority support</div>
+        </div>
+        <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--purple);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Unlimited</div>
+          <div style="font-size:28px;font-weight:700;color:var(--purple)">Custom</div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:12px">contact us</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ Unlimited everything<br>✓ Dedicated support<br>✓ Custom integrations<br>✓ SLA guarantee</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11.5px;color:var(--t3);margin-bottom:12px">Contact us at <b>support@riskatlas.ai</b> to upgrade your plan</div>
+      <div style="text-align:right"><button class="btn btn-g" onclick="document.getElementById('pricingModal').remove()">Close</button></div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+// ═══ REFRESH ALL (#20) ═══
+async function refreshAll(){
+  if(!CP||!CP.risks?.length){alert('Run analysis first');return;}
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Refreshing all — this may take a moment...');
+  try{
+    await generateProjectReport();
+    await loadProjectInsights();
+    hideLoad();
+  }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+// ═══ AI PROJECT REPORT (#21) ═══
+async function generateProjectReport(){
+  if(!CP||!CP.risks?.length)return;
+  if(!GK().startsWith('sk-ant-'))return;
+  const el=document.getElementById('projAIReport');
+  if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Generating AI report...</div>';
+  const risks=CP.risks;
+  const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Category: ${r.category} | Response: ${r.response_strategy}`).join('\n');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior risk manager. Write a comprehensive AI project risk report for: ${CP.name} (${CP.type}, ${CP.value||'N/A'} SAR).
+
+RISK REGISTER:
+${risksCtx}
+
+Write in English. Include: Executive Summary, Key Findings, Top Risk Areas, Strategic Recommendations, and Action Items. Format with clear sections using markdown-style headers. Be specific and actionable.`}]});
+    const text=data.content?.[0]?.text||'Report generation failed';
+    if(el)el.innerHTML=`<div class="dash-section" style="margin-bottom:14px"><div style="font-size:12.5px;color:var(--t2);line-height:1.8;white-space:pre-wrap">${text.replace(/##\s*(.*)/g,'<div style="font-size:14px;font-weight:700;color:var(--t1);margin:16px 0 8px">$1</div>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</div></div>`;
+  }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+}
+
+// ═══ PROJECT MARKET INSIGHTS (#21) ═══
+async function loadProjectInsights(){
+  if(!CP)return;
+  if(!GK().startsWith('sk-ant-'))return;
+  const el=document.getElementById('projMarketInsights');
+  if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Loading market insights...</div>';
+  const risks=CP.risks||[];
+  const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market analyst for construction in Saudi Arabia. Project: ${CP.name} (${CP.type}).
+Current project risks: ${riskList}
+
+Provide market insights in JSON:
+{"insights":[{"title":"insight title","description":"2 sentences about the market condition","affected_risks":["which project risks could be affected"],"impact_probability":"high|medium|low","recommendation":"1 sentence action"}],"keep_eye_on":[{"event":"market event to watch","risk_connection":"which risks it connects to","probability":"high|medium|low"}]}
+
+Include 3-4 insights and 3-4 keep_eye_on items. Be specific to Saudi construction market.`}]});
+    const text=data.content?.[0]?.text||'';
+    const parsed=pJSON(text);
+    if(parsed&&el){
+      let html='<div class="dash-section" style="margin-bottom:14px">';
+      html+='<div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Market Conditions</span></div></div>';
+      (parsed.insights||[]).forEach(ins=>{
+        html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
+          <div class="metric-icon o">📈</div>
+          <div class="metric-info" style="flex:1">
+            <div class="metric-name">${ins.title}</div>
+            <div style="font-size:11px;color:var(--t3);line-height:1.6;margin-top:3px">${ins.description}</div>
+            ${ins.affected_risks?.length?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${ins.affected_risks.map(r=>`<span class="chip" style="font-size:9.5px">⚠ ${r}</span>`).join('')}</div>`:''}
+            <div style="font-size:10.5px;color:var(--primary);margin-top:4px">💡 ${ins.recommendation||''}</div>
+          </div>
+          <span class="bdg ${ins.impact_probability==='high'?'b-h':ins.impact_probability==='medium'?'b-m':'b-l'}">${ins.impact_probability||'medium'}</span>
+        </div>`;
+      });
+      html+='</div>';
+      // Keep Eye On (#19)
+      if(parsed.keep_eye_on?.length){
+        html+='<div class="dash-section" style="margin-bottom:14px"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">🔍 Keep Eye On</span></div></div>';
+        parsed.keep_eye_on.forEach(item=>{
+          html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
+            <div class="metric-icon" style="background:#fef9c3;color:#a16207">👁</div>
+            <div class="metric-info" style="flex:1">
+              <div class="metric-name">${item.event}</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:3px">Risk Connection: ${item.risk_connection||'General'}</div>
+            </div>
+            <span class="bdg ${item.probability==='high'?'b-h':item.probability==='medium'?'b-m':'b-l'}">${item.probability||'medium'} probability</span>
+          </div>`;
+        });
+        html+='</div>';
+      }
+      el.innerHTML=html;
+    }
+  }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+}
+
+// ═══ EXPORT WITH CHECKLIST (#22 #25 #26) ═══
+function showExportModal(){
+  const hasRisks=CP?.risks?.length>0;
+  const hasDash=hasRisks;
+  const html=`<div class="modal-ov on" id="exportModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-t">📥 Export Dashboard</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Select content to include in your export</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_dash" checked ${hasDash?'':'disabled'}/>
+          <div><div style="font-size:12px;font-weight:600">📊 Dashboard Summary</div><div style="font-size:10.5px;color:var(--t3)">KPIs, charts, risk levels</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_register" checked ${hasRisks?'':'disabled'}/>
+          <div><div style="font-size:12px;font-weight:600">📋 Risk Register</div><div style="font-size:10.5px;color:var(--t3)">All risks with details</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_aireport"/>
+          <div><div style="font-size:12px;font-weight:600">✦ AI Project Report</div><div style="font-size:10.5px;color:var(--t3)">AI-generated analysis</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_market"/>
+          <div><div style="font-size:12px;font-weight:600">🌍 Market Insights</div><div style="font-size:10.5px;color:var(--t3)">Market conditions & warnings</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_tornado"/>
+          <div><div style="font-size:12px;font-weight:600">🌪 Tornado Diagram</div><div style="font-size:10.5px;color:var(--t3)">Top risks by impact</div></div>
+        </label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase">Risk Register Fields</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_id" checked/> ID</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_type" checked/> Type</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_cat" checked/> Category</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_desc" checked/> Description</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_cause" checked/> Cause</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_prob" checked/> Probability</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_impact" checked/> Impact</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_level" checked/> Level</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_resp" checked/> Response</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_mit" checked/> Mitigation</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_owner" checked/> Owner</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_respowner"/> Resp. Owner</label>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-g" onclick="document.getElementById('exportModal').remove()">Cancel</button>
+        <button class="btn btn-g" onclick="doExportExcel()">📊 Export Excel</button>
+        <button class="btn btn-p" onclick="doExportPDF()">📄 Export PDF</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+function doExportExcel(){
+  const risks=CP?.risks||[];
+  if(!risks.length){alert('No risks to export');return;}
+  const fields=[];
+  if(document.getElementById('exp_f_id')?.checked)fields.push({key:'risk_id',label:'ID'});
+  if(document.getElementById('exp_f_type')?.checked)fields.push({key:'type',label:'Type'});
+  if(document.getElementById('exp_f_cat')?.checked)fields.push({key:'category',label:'Category'});
+  if(document.getElementById('exp_f_desc')?.checked)fields.push({key:'description',label:'Description'});
+  if(document.getElementById('exp_f_cause')?.checked)fields.push({key:'cause',label:'Cause'});
+  if(document.getElementById('exp_f_prob')?.checked)fields.push({key:'probability',label:'Probability'});
+  if(document.getElementById('exp_f_impact')?.checked)fields.push({key:'impact_cost',label:'Impact Cost'},{key:'impact_schedule',label:'Impact Schedule'},{key:'impact_qhse',label:'Impact QHSE'});
+  if(document.getElementById('exp_f_level')?.checked)fields.push({key:'level',label:'Level'});
+  if(document.getElementById('exp_f_resp')?.checked)fields.push({key:'response_strategy',label:'Response'});
+  if(document.getElementById('exp_f_mit')?.checked)fields.push({key:'mitigation',label:'Mitigation'});
+  if(document.getElementById('exp_f_owner')?.checked)fields.push({key:'owner',label:'Risk Owner'});
+  if(document.getElementById('exp_f_respowner')?.checked)fields.push({key:'response_owner',label:'Response Owner'});
+  
+  const header=fields.map(f=>f.label).join(',');
+  const rows=risks.map(r=>fields.map(f=>`"${(r[f.key]||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv='\uFEFF'+header+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`RiskAtlas_${CP.name.replace(/\s/g,'_')}_Register.csv`;a.click();
+  document.getElementById('exportModal')?.remove();
+}
+
+function doExportPDF(){
+  const w=window.open('','_blank');
+  const risks=CP?.risks||[];
+  const high=risks.filter(r=>r.level==='high').length;
+  const med=risks.filter(r=>r.level==='medium').length;
+  const low=risks.filter(r=>r.level==='low').length;
+  const incDash=document.getElementById('exp_dash')?.checked;
+  const incReg=document.getElementById('exp_register')?.checked;
+  const incAI=document.getElementById('exp_aireport')?.checked;
+  const incMarket=document.getElementById('exp_market')?.checked;
+  
+  let html=`<html><head><title>RiskAtlas Report - ${CP.name}</title><style>
+    body{font-family:Arial,sans-serif;padding:40px;color:#1a1a2e;font-size:12px;line-height:1.6}
+    h1{font-size:22px;color:#1a1a2e;border-bottom:3px solid #5b5cff;padding-bottom:8px}
+    h2{font-size:16px;color:#5b5cff;margin-top:24px}
+    .meta{color:#666;font-size:11px;margin-bottom:20px}
+    .kpi{display:inline-block;background:#f5f6fa;border:1px solid #e4e7ef;border-radius:8px;padding:12px 20px;margin:4px;text-align:center}
+    .kpi b{display:block;font-size:20px}
+    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
+    th{background:#1a1a2e;color:white;padding:6px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #e4e7ef}
+    tr:nth-child(even){background:#f9f9fb}
+    .high{color:#ef4444;font-weight:bold}.med{color:#eab308;font-weight:bold}.low{color:#22c55e;font-weight:bold}
+    @media print{body{padding:20px}}
+  </style></head><body>`;
+  html+=`<h1>🛡 RiskAtlas AI — Project Risk Report</h1>`;
+  html+=`<div class="meta">${CP.name} · ${CP.type} · ${CP.value||'N/A'} SAR · Generated: ${new Date().toLocaleDateString()}</div>`;
+  
+  if(incDash){
+    html+=`<h2>📊 Dashboard Summary</h2>`;
+    html+=`<div class="kpi"><b class="high">${high}</b>High</div><div class="kpi"><b class="med">${med}</b>Medium</div><div class="kpi"><b class="low">${low}</b>Low</div><div class="kpi"><b>${risks.length}</b>Total</div>`;
+  }
+  if(incReg&&risks.length){
+    html+=`<h2>📋 Risk Register</h2><table><tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Level</th><th>Response</th><th>Mitigation</th><th>Owner</th></tr>`;
+    risks.forEach(r=>{html+=`<tr><td>${r.risk_id||''}</td><td>${r.type||''}</td><td>${r.category||''}</td><td>${r.description||''}</td><td class="${r.level}">${r.level||''}</td><td>${r.response_strategy||''}</td><td>${r.mitigation||''}</td><td>${r.owner||''}</td></tr>`;});
+    html+=`</table>`;
+  }
+  if(incAI){
+    const aiEl=document.getElementById('projAIReport');
+    html+=`<h2>✦ AI Project Report</h2><div>${aiEl?.innerText||'Generate the AI report first'}</div>`;
+  }
+  if(incMarket){
+    const mEl=document.getElementById('projMarketInsights');
+    html+=`<h2>🌍 Market Insights</h2><div>${mEl?.innerText||'Load market insights first'}</div>`;
+  }
+  html+=`<div style="margin-top:30px;text-align:center;color:#999;font-size:10px">Generated by RiskAtlas AI · ${new Date().toLocaleString()}</div>`;
+  html+=`</body></html>`;
+  w.document.write(html);w.document.close();
+  setTimeout(()=>w.print(),500);
+  document.getElementById('exportModal')?.remove();
 }
 
 // ═══ EARLY WARNING ═══
