@@ -2654,28 +2654,21 @@ function renderDash(){
       </div>
     </div>
 
-    <!-- Section 3: Matrix + Response + Type -->
-    <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-bottom:14px">
+    <!-- Section 3: Response + Tornado -->
+    <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">3</span><span class="dash-sec-name">Risk Matrix</span></div>
-        </div>
-        <div class="dash-sec-sub">Probability × Impact heatmap</div>
-        <div id="matDiv"></div>
-      </div>
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Response Strategies</span></div>
+          <div class="dash-sec-title"><span class="dash-sec-num">3</span><span class="dash-sec-name">Response Strategies</span></div>
         </div>
         <div class="dash-sec-sub">How risks are being handled</div>
         <canvas id="respC" height="170"></canvas>
       </div>
       <div class="dash-section">
         <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Type Split</span></div>
+          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Tornado Diagram</span></div>
         </div>
-        <div class="dash-sec-sub">Threats vs Opportunities</div>
-        <canvas id="typeC" height="170"></canvas>
+        <div class="dash-sec-sub">Top risks by impact magnitude</div>
+        <canvas id="tornadoC" height="200"></canvas>
       </div>
     </div>
 
@@ -2683,7 +2676,7 @@ function renderDash(){
     <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">6</span><span class="dash-sec-name">Top 5 Critical Risks</span></div>
+          <div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Top 5 Critical Risks</span></div>
         </div>
         <div class="dash-sec-sub">Risks requiring immediate attention</div>
         ${urgent.length?urgent.map((r,i)=>`
@@ -2707,7 +2700,7 @@ function renderDash(){
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="dash-section" style="padding:14px">
           <div class="dash-sec-head">
-            <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Action Items</span></div>
+            <div class="dash-sec-title"><span class="dash-sec-num">6</span><span class="dash-sec-name">Action Items</span></div>
           </div>
           ${noOwner.length?`
           <div class="metric-row">
@@ -2755,7 +2748,7 @@ function renderDash(){
       return `<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:14px">
         <div class="dash-section" style="background:${alBg};border-color:${alColor}33">
           <div class="dash-sec-head">
-            <div class="dash-sec-title"><span class="dash-sec-num">8</span><span class="dash-sec-name">Early Warning Report</span><span class="scenario-tag ${al==='high'?'st-bad':al==='medium'?'st-warn':'st-good'}">${alIcon} ${(RL[al]||al).toUpperCase()}</span></div>
+            <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Early Warning Report</span><span class="scenario-tag ${al==='high'?'st-bad':al==='medium'?'st-warn':'st-good'}">${alIcon} ${(RL[al]||al).toUpperCase()}</span></div>
             <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:11px">
@@ -2770,14 +2763,14 @@ function renderDash(){
         </div>
         <div class="dash-section">
           <div class="dash-sec-head">
-            <div class="dash-sec-title"><span class="dash-sec-num">9</span><span class="dash-sec-name">Trend</span></div>
+            <div class="dash-sec-title"><span class="dash-sec-num">8</span><span class="dash-sec-name">Trend</span></div>
           </div>
           <canvas id="trendC" height="120"></canvas>
         </div>
       </div>`;
     })():`<div class="dash-section" style="margin-bottom:14px">
       <div class="dash-sec-head">
-        <div class="dash-sec-title"><span class="dash-sec-num">8</span><span class="dash-sec-name">Risk Trend</span></div>
+        <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Risk Trend</span></div>
       </div>
       <canvas id="trendC" height="60"></canvas>
       <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter weekly indicators in <a onclick="ST('warn')" style="color:var(--primary);cursor:pointer">Early Warning</a> for trend report</div>
@@ -2786,25 +2779,14 @@ function renderDash(){
 
   // Charts
   setTimeout(()=>{
+    // Risk Levels - Bar Chart
     new Chart(document.getElementById('lvlC'),{
-      type:'doughnut',
-      data:{labels:['High','Medium','Low','Opportunities'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,hoverOffset:4}]},
-      options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'68%',layout:{padding:2}}
+      type:'bar',
+      data:{labels:['High','Medium','Low','Opportunities'],datasets:[{data:[high,med,low,opp],backgroundColor:['#ef4444','#eab308','#22c55e','#14b8a6'],borderWidth:0,borderRadius:6,barPercentage:0.6}]},
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#525d7a',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#8a93ab',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.6)'}}},layout:{padding:2}}
     });
 
-    const mc=Array.from({length:5},()=>Array(5).fill(0));
-    risks.forEach(r=>{
-      const p=Math.max(1,Math.min(5,r.probability||1))-1;
-      const imp=Math.round(((r.impact_cost||1)+(r.impact_schedule||1))/2);
-      const ix=Math.max(1,Math.min(5,imp))-1;
-      mc[4-p][ix]++;
-    });
-    const mc2=(p,i)=>{const s=(p+1)*(i+1);return s>=16?'rgba(239,68,68,.7)':s>=9?'rgba(234,179,8,.6)':s>=4?'rgba(234,179,8,.3)':'rgba(34,197,94,.4)';};
-    let mh='<div style="font-size:9px;color:var(--t3);text-align:center;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">← Impact →</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px">';
-    mc.forEach((row,pi)=>{row.forEach((v,ii)=>{mh+=`<div style="height:30px;border-radius:5px;background:${mc2(4-pi,ii)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:rgba(0,0,0,.65)">${v||''}</div>`;});});
-    mh+='</div><div style="font-size:9px;color:var(--t3);text-align:center;margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">↑ Probability ↑</div>';
-    document.getElementById('matDiv').innerHTML=mh;
-
+    // Response Strategies
     const respColors={'Avoid':'#ef4444','Mitigate':'#eab308','Transfer':'#5b5cff','Accept':'#8a9ab8','Escalate':'#a855f7','Exploit':'#14b8a6','Enhance':'#22c55e','Share':'#06b6d4'};
     new Chart(document.getElementById('respC'),{
       type:'doughnut',
@@ -2812,10 +2794,32 @@ function renderDash(){
       options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}
     });
 
-    new Chart(document.getElementById('typeC'),{
-      type:'doughnut',
-      data:{labels:['Threats','Opportunities'],datasets:[{data:[thr,opp],backgroundColor:['#ef4444','#14b8a6'],borderWidth:0}]},
-      options:{plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},cutout:'65%',layout:{padding:2}}
+    // Tornado Diagram - Top risks by combined impact
+    const tornadoRisks=risks
+      .map(r=>({...r,totalImpact:(r.impact_cost||0)+(r.impact_schedule||0)+(r.impact_qhse||0)+(r.impact_reputation||0)}))
+      .sort((a,b)=>b.totalImpact-a.totalImpact)
+      .slice(0,8);
+    const tornadoLabels=tornadoRisks.map(r=>(r.description||'').slice(0,30)+(r.description?.length>30?'...':''));
+    const tornadoCost=tornadoRisks.map(r=>r.impact_cost||0);
+    const tornadoSched=tornadoRisks.map(r=>-(r.impact_schedule||0));
+    new Chart(document.getElementById('tornadoC'),{
+      type:'bar',
+      data:{
+        labels:tornadoLabels,
+        datasets:[
+          {label:'Cost Impact',data:tornadoCost,backgroundColor:'rgba(91,92,255,0.75)',borderRadius:4,barPercentage:0.7},
+          {label:'Schedule Impact',data:tornadoSched,backgroundColor:'rgba(168,85,247,0.75)',borderRadius:4,barPercentage:0.7}
+        ]
+      },
+      options:{
+        indexAxis:'y',
+        plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},
+        scales:{
+          x:{ticks:{color:'#8a93ab',font:{size:10},callback:v=>Math.abs(v)},grid:{color:'rgba(228,231,239,.6)'}},
+          y:{ticks:{color:'#525d7a',font:{size:9}},grid:{display:false}}
+        },
+        layout:{padding:2}
+      }
     });
 
     const upds=CP?.upds||[];const tl2=['Start'];const hd=[high];const md2=[med];
