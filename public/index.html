@@ -1857,14 +1857,19 @@ async function renderPortfolio(pfId){
   });
   const topCats=Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  const causeWords={};
+  const causeFull={};
   Object.values(projRisks).forEach(risks=>{
-    risks.filter(r=>r.level==='high').forEach(r=>{
-      const words=(r.cause||'').split(/\s+/).filter(w=>w.length>3);
-      words.forEach(w=>{causeWords[w]=(causeWords[w]||0)+1;});
+    risks.filter(r=>r.level==='high'||r.level==='medium').forEach(r=>{
+      const cause=(r.cause||'').trim();
+      if(cause.length>5){
+        // Group similar causes by normalizing
+        const key=cause.toLowerCase().replace(/[^\w\s]/g,'').substring(0,60);
+        if(!causeFull[key])causeFull[key]={text:cause,count:0};
+        causeFull[key].count++;
+      }
     });
   });
-  const topCauses=Object.entries(causeWords).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topCauses=Object.values(causeFull).sort((a,b)=>b.count-a.count).slice(0,5).map(c=>[c.text,c.count]);
 
   const exposureByProj=list.map(p=>{
     const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
@@ -2032,25 +2037,10 @@ async function renderPortfolio(pfId){
         </div>
         <div class="dash-sec-sub">High-risk recurring causes across portfolio</div>
         ${topCauses.length?topCauses.map(([cause,cnt])=>{
-          const desc={
-            'Delay':'Recurring delays across multiple projects impacting schedule and cost targets',
-            'Weather':'Weather-related disruptions causing work stoppages and material damage',
-            'Labor':'Labor shortage or skill gaps affecting project execution quality',
-            'Material':'Material supply chain issues leading to procurement delays and cost overruns',
-            'Design':'Design changes and errors requiring rework and additional resources',
-            'Communication':'Poor communication between stakeholders causing misalignment',
-            'Regulatory':'Regulatory compliance issues and permitting delays',
-            'Financial':'Financial constraints and cash flow problems affecting project progress',
-            'Safety':'Safety incidents and near-misses affecting workforce and timeline',
-            'Subcontractor':'Subcontractor performance issues impacting deliverables'
-          };
-          const matchedDesc=Object.entries(desc).find(([k])=>cause.toLowerCase().includes(k.toLowerCase()));
-          const causeDesc=matchedDesc?matchedDesc[1]:`This root cause has been identified in ${cnt} risks across the portfolio and requires systematic mitigation`;
-          return `<div class="metric-row">
+          return `<div class="metric-row" style="align-items:flex-start">
             <div class="metric-icon o">🔍</div>
             <div class="metric-info">
-              <div class="metric-name">${cause}</div>
-              <div class="metric-meta" style="font-size:10.5px;color:var(--t3);line-height:1.5;margin-top:2px">${causeDesc}</div>
+              <div class="metric-name" style="line-height:1.5">${cause}</div>
             </div>
             <div class="metric-val" style="color:#ea580c">${cnt}×</div>
           </div>`;
