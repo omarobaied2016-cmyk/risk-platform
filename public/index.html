@@ -834,12 +834,12 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
           <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;flex-shrink:0">👤</div>
           <div>
             <div id="userDisplayName" style="font-size:11px;font-weight:600;color:var(--sb-text)">User</div>
-            <div style="font-size:9.5px;color:var(--sb-text-3)">Free Trial</div>
+            <div id="userPlanLabel" style="font-size:9.5px;color:var(--sb-text-3)">Free Trial</div>
           </div>
         </div>
         <button onclick="doLogout()" style="background:transparent;border:1px solid var(--sb-border);color:var(--sb-text-3);padding:3px 8px;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit" title="Sign out">↩</button>
       </div>
-      <div class="fg" style="margin-bottom:8px">
+      <div class="fg admin-only" style="margin-bottom:8px;display:none">
         <label style="font-size:10px;color:var(--sb-text-3);font-weight:600">Claude API Key</label>
         <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()" style="background:var(--sb-bg);border:1px solid var(--sb-border);border-radius:5px;padding:7px 10px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%"/>
       </div>
@@ -1091,6 +1091,7 @@ async function doLogin(){
   const email=document.getElementById('auth_email').value.trim();
   const pass=document.getElementById('auth_pass').value;
   if(!email||!pass){showAuthError('Please enter email and password');return;}
+  if(!email.includes('@')){showAuthError('Please enter a valid email address');return;}
   
   try{
     const res=await fetch(SB+'/auth/v1/token?grant_type=password',{
@@ -1099,7 +1100,10 @@ async function doLogin(){
       body:JSON.stringify({email,password:pass})
     });
     const data=await res.json();
-    if(data.error){showAuthError(data.error_description||data.msg||'Invalid credentials');return;}
+    if(!res.ok||data.error||!data.access_token){
+      showAuthError(data.error_description||data.msg||data.error||'Invalid email or password');
+      return;
+    }
     currentUser=data.user;
     localStorage.setItem('sb_token',data.access_token);
     localStorage.setItem('sb_refresh',data.refresh_token);
@@ -1150,6 +1154,56 @@ function doLogout(){
   document.querySelector('.app').style.display='none';
 }
 
+// ═══ ADMIN SYSTEM ═══
+// Add your admin email(s) here
+const ADMIN_EMAILS=['omar.obaied2016@gmail.com'];
+
+function isAdmin(){
+  return currentUser&&ADMIN_EMAILS.includes(currentUser.email);
+}
+
+function getUserPlan(){
+  const meta=currentUser?.user_metadata||{};
+  if(isAdmin())return 'unlimited';
+  return meta.plan||'free_trial';
+}
+
+function getPlanLimits(plan){
+  const limits={
+    free_trial:{label:'Free Trial',projects:1,portfolios:0,whatif:false,insights:false,days:7},
+    pro:{label:'Pro',projects:6,portfolios:1,whatif:true,insights:true,days:null},
+    organization:{label:'Organization',projects:36,portfolios:6,whatif:true,insights:true,days:null},
+    unlimited:{label:'Unlimited',projects:999,portfolios:999,whatif:true,insights:true,days:null}
+  };
+  return limits[plan]||limits.free_trial;
+}
+
+function checkPlanLimit(type){
+  const plan=getUserPlan();
+  const limits=getPlanLimits(plan);
+  if(type==='project'&&projs.length>=limits.projects){
+    alert(`Your ${limits.label} plan allows up to ${limits.projects} project(s). Upgrade to add more.`);
+    return false;
+  }
+  if(type==='portfolio'&&portfolios.length>=limits.portfolios&&plan==='free_trial'){
+    alert('Free Trial does not include portfolios. Upgrade to Pro or higher.');
+    return false;
+  }
+  if(type==='portfolio'&&portfolios.length>=limits.portfolios){
+    alert(`Your ${limits.label} plan allows up to ${limits.portfolios} portfolio(s). Upgrade to add more.`);
+    return false;
+  }
+  if(type==='whatif'&&!limits.whatif){
+    alert('What-If Analysis is not available on Free Trial. Upgrade to Pro or higher.');
+    return false;
+  }
+  if(type==='insights'&&!limits.insights){
+    alert('Market Insights is not available on Free Trial. Upgrade to Pro or higher.');
+    return false;
+  }
+  return true;
+}
+
 function enterApp(){
   document.getElementById('authScreen').style.display='none';
   document.querySelector('.app').style.display='grid';
@@ -1157,18 +1211,45 @@ function enterApp(){
   const userName=currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
+  // Update plan display
+  const plan=getUserPlan();
+  const planLabel=getPlanLimits(plan).label;
+  const planEl=document.getElementById('userPlanLabel');
+  if(planEl){
+    planEl.textContent=planLabel+(isAdmin()?' (Admin)':'');
+    planEl.style.color=isAdmin()?'#a855f7':plan==='pro'?'var(--primary)':plan==='organization'?'#06b6d4':'var(--sb-text-3)';
+  }
+  // Show/hide admin-only elements
+  document.querySelectorAll('.admin-only').forEach(el=>{
+    el.style.display=isAdmin()?'':'none';
+  });
   loadAll();
 }
 
-function checkSession(){
+async function checkSession(){
   const token=localStorage.getItem('sb_token');
   const userStr=localStorage.getItem('sb_user');
   if(token&&userStr){
     try{
-      currentUser=JSON.parse(userStr);
-      enterApp();
-      return true;
-    }catch(e){}
+      // Verify token is still valid
+      const res=await fetch(SB+'/auth/v1/user',{
+        headers:{'Authorization':'Bearer '+token,'apikey':SK}
+      });
+      if(res.ok){
+        const user=await res.json();
+        currentUser=user;
+        localStorage.setItem('sb_user',JSON.stringify(user));
+        enterApp();
+        return true;
+      }else{
+        // Token expired, clear session
+        localStorage.removeItem('sb_token');
+        localStorage.removeItem('sb_refresh');
+        localStorage.removeItem('sb_user');
+      }
+    }catch(e){
+      console.error('Session check failed:',e);
+    }
   }
   // Show auth screen, hide app
   document.getElementById('authScreen').style.display='flex';
