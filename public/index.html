@@ -1527,15 +1527,29 @@ function pJSON(text){
 
 // ═══ LOAD ALL ═══
 async function loadAll(){
+  const uid=currentUser?.id;
+  const admin=isAdmin();
   try{
-    portfolios=await sb('portfolios?order=created_at.asc&select=*')||[];
-  }catch(e){
-    // Table may not exist yet
-    portfolios=[];
-  }
+    if(admin){
+      portfolios=await sb('portfolios?order=created_at.asc&select=*')||[];
+    }else{
+      portfolios=await sb(`portfolios?user_id=eq.${uid}&order=created_at.asc&select=*`)||[];
+    }
+  }catch(e){portfolios=[];}
   try{
-    projs=await sb('projects?order=created_at.desc&select=*')||[];
-    if(projs.length){try{allRisks=await sb('risks?select=*')||[];}catch(e){allRisks=[];}}
+    if(admin){
+      projs=await sb('projects?order=created_at.desc&select=*')||[];
+    }else{
+      projs=await sb(`projects?user_id=eq.${uid}&order=created_at.desc&select=*`)||[];
+    }
+    if(projs.length){
+      const projIds=projs.map(p=>p.id);
+      if(admin){
+        try{allRisks=await sb('risks?select=*')||[];}catch(e){allRisks=[];}
+      }else{
+        try{allRisks=await sb(`risks?project_id=in.(${projIds.join(',')})&select=*`)||[];}catch(e){allRisks=[];}
+      }
+    }
     renderSidebar();
     renderHome();
   }catch(e){console.error(e);}
@@ -1745,6 +1759,7 @@ async function savePortfolio(){
     if(editingPortfolio){
       await sb('portfolios?id=eq.'+editingPortfolio.id,'PATCH',data);
     }else{
+      data.user_id=currentUser?.id;
       const res=await sb('portfolios','POST',data);
       if(res&&res[0])openPortfolios.add(res[0].id);
       localStorage.setItem('openPF',JSON.stringify([...openPortfolios]));
@@ -2237,7 +2252,7 @@ async function createProj(){
   try{
     const tol={cost_pct:document.getElementById('np_ra_cost').value||5,cost_val:'',sched_days:document.getElementById('np_ra_sched').value||30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
     const pfId=document.getElementById('np_pf').value;
-    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:document.getElementById('np_ra_level').value,max_score:parseInt(document.getElementById('np_ra_max').value)||60}};
+    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:document.getElementById('np_ra_level').value,max_score:parseInt(document.getElementById('np_ra_max').value)||60},user_id:currentUser?.id};
     if(pfId)d.portfolio_id=pfId;
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
@@ -2753,8 +2768,8 @@ function renderDash(){
       </div>
     </div>
 
-    <!-- Section 1: Categories + Levels -->
-    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:14px">
+    <!-- Row 1: Categories + Levels + Response (3 items) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">1</span><span class="dash-sec-name">Risks by Category</span></div>
@@ -2785,30 +2800,27 @@ function renderDash(){
           <div class="dash-sec-title"><span class="dash-sec-num">2</span><span class="dash-sec-name">Risk Levels</span></div>
         </div>
         <div class="dash-sec-sub">Distribution by severity</div>
-        <canvas id="lvlC" height="160"></canvas>
+        <canvas id="lvlC" height="140"></canvas>
       </div>
-    </div>
 
-    <!-- Section 3: Response + Tornado -->
-    <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">3</span><span class="dash-sec-name">Response Strategies</span></div>
         </div>
         <div class="dash-sec-sub">How risks are being handled</div>
-        <canvas id="respC" height="170"></canvas>
+        <canvas id="respC" height="140"></canvas>
       </div>
+    </div>
+
+    <!-- Row 2: Tornado + Top 5 + Action Items (3 items) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Tornado Diagram</span></div>
         </div>
         <div class="dash-sec-sub">Top risks by impact magnitude</div>
-        <canvas id="tornadoC" height="200"></canvas>
+        <canvas id="tornadoC" height="160"></canvas>
       </div>
-    </div>
-
-    <!-- Section 6 + 7: Urgent + Action items -->
-    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Top 5 Critical Risks</span></div>
