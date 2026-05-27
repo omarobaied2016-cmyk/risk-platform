@@ -2819,7 +2819,8 @@ function renderDash(){
           <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Tornado Diagram</span></div>
         </div>
         <div class="dash-sec-sub">Top risks by impact magnitude</div>
-        <canvas id="tornadoC" height="160"></canvas>
+        <canvas id="tornadoC" height="130"></canvas>
+        <div id="tornadoLegend" style="margin-top:8px;border-top:1px solid var(--b1);padding-top:8px"></div>
       </div>
       <div class="dash-section">
         <div class="dash-sec-head">
@@ -2969,7 +2970,7 @@ function renderDash(){
     });
 
     // Response Strategies
-    const respColors={'Avoid':'#f64e60','Mitigate':'#ffa800','Transfer':'#7239ea','Accept':'#b5b7c8','Escalate':'#8950fc','Exploit':'#50cd89','Enhance':'#50cd89','Share':'#4fc9da'};
+    const respColors={'Avoid':'#f64e60','Mitigate':'#ffa800','Transfer':'#7239ea','Accept':'#b5b7c8','Escalate':'#8950fc','Exploit':'#4fc9da','Enhance':'#50cd89','Share':'#4fc9da'};
     new Chart(document.getElementById('respC'),{
       type:'doughnut',
       data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#b5b7c8'),borderWidth:0}]},
@@ -3003,6 +3004,14 @@ function renderDash(){
         layout:{padding:{left:2,right:2}}
       }
     });
+    // Tornado Legend - show risk descriptions
+    const tLegEl=document.getElementById('tornadoLegend');
+    if(tLegEl){
+      tLegEl.innerHTML=tornadoRisks.map(r=>`<div style="display:flex;gap:6px;padding:3px 0;font-size:10.5px;line-height:1.4">
+        <span style="font-weight:700;color:var(--primary);white-space:nowrap;min-width:36px">${r.risk_id||'R?'}</span>
+        <span style="color:var(--t2)">${(r.description||'').slice(0,60)}${(r.description||'').length>60?'...':''}</span>
+      </div>`).join('');
+    }
 
     const upds=CP?.upds||[];const tl2=['Start'];const hd=[high];const md2=[med];
     upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md2.push(md2[md2.length-1]);}});
