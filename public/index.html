@@ -2018,24 +2018,20 @@ async function renderPortfolio(pfId){
       </div>
     </div>
 
-    <!-- Section 4: Comparisons -->
-    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px">
+    <!-- Section 4-5-6: Comparison + Exposure + Root Causes (3 columns) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="dash-section">
         <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Risk Comparison Across Projects</span></div>
+          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Risk Comparison</span></div>
         </div>
-        <canvas id="portfChart" height="120"></canvas>
+        <canvas id="portfChart" height="140"></canvas>
       </div>
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Financial Exposure</span></div>
         </div>
-        <canvas id="expChart" height="120"></canvas>
+        <canvas id="expChart" height="140"></canvas>
       </div>
-    </div>
-
-    <!-- Section 6 + 7: Causes + Types -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">6</span><span class="dash-sec-name">Common Root Causes</span></div>
@@ -2052,11 +2048,15 @@ async function renderPortfolio(pfId){
         }).join(''):
           `<div style="padding:30px 14px;text-align:center;color:var(--t3);font-size:12px">Insufficient data for analysis</div>`}
       </div>
+    </div>
+
+    <!-- Section 7: Project Types -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Project Types</span></div>
         </div>
-        <canvas id="typeChart" height="170"></canvas>
+        <canvas id="typeChart" height="140"></canvas>
       </div>
     </div>
 
@@ -2980,8 +2980,8 @@ function renderDash(){
     const tornadoRisks=risks
       .map(r=>({...r,totalImpact:(r.impact_cost||0)+(r.impact_schedule||0)+(r.impact_qhse||0)+(r.impact_reputation||0)}))
       .sort((a,b)=>b.totalImpact-a.totalImpact)
-      .slice(0,8);
-    const tornadoLabels=tornadoRisks.map(r=>(r.description||'').slice(0,30)+(r.description?.length>30?'...':''));
+      .slice(0,6);
+    const tornadoLabels=tornadoRisks.map(r=>r.risk_id||'R?');
     const tornadoCost=tornadoRisks.map(r=>r.impact_cost||0);
     const tornadoSched=tornadoRisks.map(r=>-(r.impact_schedule||0));
     new Chart(document.getElementById('tornadoC'),{
@@ -2989,18 +2989,18 @@ function renderDash(){
       data:{
         labels:tornadoLabels,
         datasets:[
-          {label:'Cost Impact',data:tornadoCost,backgroundColor:'rgba(91,92,255,0.75)',borderRadius:4,barPercentage:0.7},
-          {label:'Schedule Impact',data:tornadoSched,backgroundColor:'rgba(168,85,247,0.75)',borderRadius:4,barPercentage:0.7}
+          {label:'Cost',data:tornadoCost,backgroundColor:'rgba(124,92,252,0.8)',borderRadius:3,barPercentage:0.65},
+          {label:'Schedule',data:tornadoSched,backgroundColor:'rgba(78,205,196,0.8)',borderRadius:3,barPercentage:0.65}
         ]
       },
       options:{
         indexAxis:'y',
-        plugins:{legend:{position:'bottom',labels:{color:'#525d7a',font:{size:10},padding:8}}},
+        plugins:{legend:{position:'bottom',labels:{color:'#8888a8',font:{size:9},padding:6,boxWidth:12}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${Math.abs(ctx.raw)}`}}},
         scales:{
-          x:{ticks:{color:'#8a93ab',font:{size:10},callback:v=>Math.abs(v)},grid:{color:'rgba(228,231,239,.6)'}},
-          y:{ticks:{color:'#525d7a',font:{size:9}},grid:{display:false}}
+          x:{ticks:{color:'#8888a8',font:{size:9},callback:v=>Math.abs(v)},grid:{color:'rgba(228,231,239,.5)'}},
+          y:{ticks:{color:'#4a4a6a',font:{size:10,weight:'bold'}},grid:{display:false}}
         },
-        layout:{padding:2}
+        layout:{padding:{left:2,right:2}}
       }
     });
 
