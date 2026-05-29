@@ -2884,7 +2884,7 @@ function renderReg(){
           <option value="closed" ${r.status==='closed'?'selected':''}>Closed</option>
         </select>
       </td>
-      <td><div style="font-size:11px;color:var(--t2);max-width:140px;line-height:1.5">${r.notes||'<span style="color:var(--t3);font-style:italic">—</span>'}</div></td>
+      <td><textarea onblur="updateRiskNotes('${r.id}',this.value)" placeholder="Add notes..." style="font-size:11px;color:var(--t2);width:140px;min-height:38px;border:1px solid var(--b1);border-radius:6px;padding:5px 7px;font-family:inherit;resize:vertical;background:var(--s1);outline:none">${r.notes||''}</textarea></td>
       <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">Edit</button></td>
     </tr>`).join('');
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
@@ -2895,6 +2895,14 @@ function renderReg(){
     ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
     <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
+}
+
+// Update risk notes inline
+async function updateRiskNotes(riskId,notes){
+  const risk=CP.risks.find(r=>r.id===riskId);
+  if(!risk||risk.notes===notes)return;
+  risk.notes=notes;
+  try{await sb('risks?id=eq.'+riskId,'PATCH',{notes:notes});}catch(e){}
 }
 
 // Change risk status — closed risks move to Risk Log
