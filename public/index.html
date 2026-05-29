@@ -954,7 +954,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
       <div class="fg"><label class="fl">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
       <div class="fg full"><label class="fl">Description</label><textarea class="fta" id="np_d"></textarea></div>
       <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
-        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">🎯 Risk Appetite</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Risk Appetite</div>
       </div>
       <div class="fg"><label class="fl">Cost Tolerance (%)</label><input type="number" class="fi" id="np_ra_cost" value="5" min="0" max="100" placeholder="e.g. 5"/></div>
       <div class="fg"><label class="fl">Schedule Tolerance (Days)</label><input type="number" class="fi" id="np_ra_sched" value="30" min="0" placeholder="e.g. 30"/></div>
@@ -994,7 +994,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
       <div class="fg"><label class="fl">Completion Date</label><input type="date" class="fi" id="set_e"/></div>
       <div class="fg full"><label class="fl">Description</label><textarea class="fta" id="set_d"></textarea></div>
       <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
-        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">🎯 Risk Appetite</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Risk Appetite</div>
       </div>
       <div class="fg"><label class="fl">Cost Tolerance (%)</label><input type="number" class="fi" id="set_ra_cost" min="0" max="100"/></div>
       <div class="fg"><label class="fl">Schedule Tolerance (Days)</label><input type="number" class="fi" id="set_ra_sched" min="0"/></div>
@@ -1097,8 +1097,8 @@ tr:hover td{background:rgba(114,57,234,.015);}
           <input type="text" placeholder="Search portfolio projects..." id="searchProj" oninput="filterPortfolioProjs(this.value)"/>
         </div>
         <div class="top-actions">
-          <button class="btn btn-g" onclick="showPortfolioExportModal()">📥 Export</button>
-          <button class="btn btn-g" onclick="editCurrentPortfolio()">⚙ Edit</button>
+          <button class="btn btn-g" onclick="showPortfolioExportModal()">Export</button>
+          <button class="btn btn-g" onclick="editCurrentPortfolio()">Edit</button>
           <button class="btn btn-del" onclick="delCurrentPortfolio()">Delete Portfolio</button>
           <button class="btn btn-p" onclick="openProjModal()">+ Project</button>
         </div>
@@ -1114,9 +1114,9 @@ tr:hover td{background:rgba(114,57,234,.015);}
           <div class="ph-s" id="phSub">—</div>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
-          <button class="btn btn-g" onclick="openSettingsModal()">⚙ Settings</button>
-          <button class="btn btn-warn" onclick="showNotifModal()">🔔 Notifications</button>
-          <button class="btn btn-g" onclick="showExportModal()">📥 Export</button>
+          <button class="btn btn-g" onclick="openSettingsModal()">Settings</button>
+          <button class="btn btn-warn" onclick="showNotifModal()">Notifications</button>
+          <button class="btn btn-g" onclick="showExportModal()">Export</button>
           <button class="btn btn-del" onclick="delProj()">Delete</button>
         </div>
       </div>
@@ -1145,21 +1145,22 @@ tr:hover td{background:rgba(114,57,234,.015);}
       </div>
 
       <div class="tabs">
-        <div class="tab on" onclick="ST('files')" data-tab="files">📁 Files</div>
-        <div class="tab" onclick="ST('dash')" data-tab="dash">📊 Dashboard</div>
-        <div class="tab" onclick="ST('reg')" data-tab="reg">📋 Risk Register</div>
-        <div class="tab" onclick="ST('warn')" data-tab="warn">🚨 Early Warning</div>
-        <div class="tab" onclick="ST('upd')" data-tab="upd">🔄 Updates</div>
-        <div class="tab" onclick="ST('tol')" data-tab="tol">⚙ Risk Appetite</div>
-        <div class="tab" onclick="ST('contacts')" data-tab="contacts">👥 Contacts</div>
-        <div class="tab" onclick="ST('whatif')" data-tab="whatif">🎯 What-If</div>
-        <div class="tab" onclick="ST('insights')" data-tab="insights">🌍 Insights</div>
+        <div class="tab on" onclick="ST('files')" data-tab="files"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Files</div>
+        <div class="tab" onclick="ST('dash')" data-tab="dash"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Dashboard</div>
+        <div class="tab" onclick="ST('reg')" data-tab="reg"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg> Risk Register</div>
+        <div class="tab" onclick="ST('risklog')" data-tab="risklog"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Risk Log</div>
+        <div class="tab" onclick="ST('warn')" data-tab="warn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg> Early Warning</div>
+        <div class="tab" onclick="ST('upd')" data-tab="upd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Updates</div>
+        <div class="tab" onclick="ST('tol')" data-tab="tol"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Risk Appetite</div>
+        <div class="tab" onclick="ST('contacts')" data-tab="contacts"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</div>
+        <div class="tab" onclick="ST('whatif')" data-tab="whatif"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> What-If</div>
+        <div class="tab" onclick="ST('insights')" data-tab="insights"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Insights</div>
       </div>
 
       <div class="pane on" id="pane-files">
         <div class="drop">
           <input type="file" id="fi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv,.mpp" onchange="handleFiles(event)"/>
-          <div class="drop-icon">⬆</div>
+          <div class="drop-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
           <div class="drop-t">Drag files here or click to browse</div>
           <div class="drop-s">PDF · Excel · Word · Drawings · CSV · Primavera</div>
         </div>
@@ -1170,9 +1171,10 @@ tr:hover td{background:rgba(114,57,234,.015);}
         </div>
       </div>
 
-      <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="empty-icon">📊</div><div class="et">Run analysis to view dashboard</div></div></div></div>
-      <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="empty-icon">📋</div><div class="et">No risk register yet</div></div></div></div>
-      <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="empty-icon">🚨</div><div class="et">Run analysis to view warnings</div></div></div></div>
+      <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><div class="et">Run analysis to view dashboard</div></div></div></div>
+      <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><div class="et">No risk register yet</div></div></div></div>
+      <div class="pane" id="pane-risklog"><div id="riskLogContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="et">No closed risks yet</div></div></div></div>
+      <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div><div class="et">Run analysis to view warnings</div></div></div></div>
 
       <div class="pane" id="pane-upd">
         <div class="card" style="margin-bottom:15px">
@@ -1188,7 +1190,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
           </div>
           <div style="border:1px dashed var(--b2);border-radius:var(--r-sm);padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2)">
             <input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer"/>
-            <div style="font-size:18px;color:var(--t3)">⬆</div>
+            <div style="font-size:18px;color:var(--t3)"></div>
             <div>
               <div style="font-size:12.5px;font-weight:500">Attach file (optional)</div>
               <div style="font-size:11px;color:var(--t3)">Meeting minutes · Change order · Correspondence</div>
@@ -1202,7 +1204,8 @@ tr:hover td{background:rgba(114,57,234,.015);}
           <textarea class="fta" id="utext" style="width:100%;margin-bottom:11px" placeholder="Describe the update..."></textarea>
           <button class="btn btn-p" onclick="addUpdate()">Analyze & Add to Register</button>
         </div>
-        <div class="tl" id="tlEl"><div class="empty"><div class="empty-icon">🔄</div><div class="et">No updates yet</div></div></div>
+        <div class="tl" id="tlEl"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div><div class="et">No updates yet</div></div></div>
+        <div id="weeklyIndContent" style="margin-top:18px"></div>
       </div>
 
       <div class="pane" id="pane-tol">
@@ -1266,7 +1269,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
       <div class="pane" id="pane-whatif">
         <div id="whatifContent">
           <div class="empty">
-            <div class="empty-icon">🎯</div>
+            <div class="empty-icon">○</div>
             <div class="et">Run analysis first to use the What-If Simulator</div>
           </div>
         </div>
@@ -1276,7 +1279,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
       <div class="pane" id="pane-insights">
         <div id="insightsContent">
           <div class="empty">
-            <div class="empty-icon">🌍</div>
+            <div class="empty-icon">○</div>
             <div class="et">Loading market intelligence...</div>
           </div>
         </div>
@@ -1773,7 +1776,7 @@ function renderHome(){
   if(!portfolios.length&&!projs.length){
     el.innerHTML=`
       <div class="empty">
-        <div class="empty-icon">📊</div>
+        <div class="empty-icon">○</div>
         <div class="et">Create your first portfolio</div>
         <div class="es" style="margin-bottom:14px">Portfolios help you organize similar projects together</div>
         <button class="btn btn-p" onclick="openPortfModal()">+ Create Portfolio</button>
@@ -1964,7 +1967,7 @@ async function renderPortfolio(pfId){
   const portf=pfId?portfolios.find(p=>p.id===pfId):null;
 
   if(!list.length){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="et">${portf?'No projects in this portfolio':'No projects'}</div><div class="es">Click "New Project" to add</div></div>`;
+    el.innerHTML=`<div class="empty"><div class="empty-icon">○</div><div class="et">${portf?'No projects in this portfolio':'No projects'}</div><div class="es">Click "New Project" to add</div></div>`;
     return;
   }
 
@@ -2030,7 +2033,7 @@ async function renderPortfolio(pfId){
 
   const typeDist={};list.forEach(p=>{const t=p.type||'Other';typeDist[t]=(typeDist[t]||0)+1;});
 
-  const catIcons={'Schedule':'📅','Cost':'＄','Scope':'📋','Contract':'📄','Design':'✏','Execution':'🔨','Suppliers':'🚚','QHSE':'⛑','Quality':'✓','Regulatory':'⚖','Financial':'💰'};
+  const catIcons={};
 
   el.innerHTML=`
     <!-- Hero -->
@@ -2207,7 +2210,7 @@ async function renderPortfolio(pfId){
 
     <!-- Refresh All Button for Portfolio -->
     <div style="text-align:center;margin-bottom:14px">
-      <button class="btn btn-p" onclick="refreshAllPortfolio()" style="padding:10px 28px;font-size:13px">🔄 Refresh All — AI Report, Market Insights & Early Warning</button>
+      <button class="btn btn-p" onclick="refreshAllPortfolio()" style="padding:10px 28px;font-size:13px">Refresh All — AI Report, Market Insights & Early Warning</button>
     </div>
 
     <!-- AI Report -->
@@ -2367,7 +2370,7 @@ Provide a comprehensive report in the following format only:
       </div>
       
       <div class="dash-row dash-3" style="margin-bottom:14px">
-        <div class="card"><div class="card-t" style="color:var(--primary)">🎯 Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--primary)">Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
         <div class="card"><div class="card-t" style="color:var(--red)">⚠ Top Concerns</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
         <div class="card"><div class="card-t" style="color:var(--purple)">🔄 Common Patterns</div>${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
       </div>
@@ -2484,7 +2487,7 @@ async function selectProj(id){
     document.getElementById('phName').textContent=CP.name;
     document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' SAR':'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-    renderSidebar();renderFiles();renderReg();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
+    renderSidebar();renderFiles();renderReg();renderRiskLog();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
     if(risks.length){renderDash();ST('dash');}
     else ST('files');
   }catch(e){hideLoad();console.error(e);}
@@ -2496,6 +2499,78 @@ function ST(name){
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+name));
   if(name==='whatif')renderWhatIf();
   if(name==='insights')loadInsights();
+  if(name==='risklog')renderRiskLog();
+}
+
+// ═══ RISK LOG (Closed Risks + AI Lessons Learned) ═══
+function renderRiskLog(){
+  const closed=(CP?.risks||[]).filter(r=>r.status==='closed');
+  const el=document.getElementById('riskLogContent');
+  if(!el)return;
+  if(!closed.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="et">No closed risks yet</div><div style="font-size:11.5px;color:var(--t3);margin-top:6px">Closed risks from the register will appear here</div></div>`;
+    return;
+  }
+  const rows=closed.map(r=>`
+    <tr>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
+      <td><span class="cb">${CAT_AR[r.category]||r.category}</span></td>
+      <td><div style="font-size:12px;max-width:240px;color:var(--t1)">${r.description}</div></td>
+      <td><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span></td>
+      <td><div style="font-size:11px;color:var(--t2);max-width:240px;line-height:1.5">${r.notes||'—'}</div></td>
+      <td style="font-size:10.5px;color:var(--t3);white-space:nowrap">${r.closed_at?new Date(r.closed_at).toLocaleDateString('en-GB'):'—'}</td>
+      <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="changeRiskStatus('${r.id}','open')">Reopen</button></td>
+    </tr>`).join('');
+  el.innerHTML=`
+    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(114,57,234,.03),rgba(137,80,252,.02));border-color:rgba(114,57,234,.15)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--t1)">AI Lessons Learned</div>
+          <div style="font-size:11.5px;color:var(--t3)">Generate insights from ${closed.length} closed risk${closed.length>1?'s':''}</div>
+        </div>
+        <button class="btn btn-p" onclick="generateLessonsLearned()">Generate Lessons Learned</button>
+      </div>
+    </div>
+    <div id="lessonsContent" style="margin-bottom:14px"></div>
+    <div class="sep" style="color:var(--grn)">Closed Risks (${closed.length})</div>
+    <div class="tw"><table class="rt"><thead><tr><th>ID</th><th>Category</th><th>Description</th><th>Level</th><th>Closure Notes</th><th>Closed Date</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+async function generateLessonsLearned(){
+  const closed=(CP?.risks||[]).filter(r=>r.status==='closed');
+  if(!closed.length){alert('No closed risks to analyze');return;}
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  const el=document.getElementById('lessonsContent');
+  if(el)el.innerHTML='<div class="dash-section" style="text-align:center;color:var(--t3);padding:24px">Generating lessons learned...</div>';
+  showLoad('Analyzing closed risks...');
+  const ctx=closed.map(r=>`Risk: ${r.description} | Category: ${r.category} | Level: ${r.level} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation} | Closure Notes: ${r.notes||'none'}`).join('\n');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a senior risk manager analyzing closed risks from a construction project to extract lessons learned. Project: ${CP.name} (${CP.type}).
+
+CLOSED RISKS:
+${ctx}
+
+Respond ONLY with valid JSON:
+{"summary":"2-3 sentence overview of key patterns from closed risks","lessons":[{"title":"lesson title","insight":"what was learned","recommendation":"how to apply this in future projects"}],"what_worked":["effective approach 1","effective approach 2"],"what_to_improve":["improvement area 1","improvement area 2"]}
+
+Provide 4-6 lessons. Be specific and actionable.`}]});
+    hideLoad();
+    const parsed=pJSON(data.content[0].text);
+    if(parsed&&el){
+      el.innerHTML=`
+        <div class="card" style="margin-bottom:12px;background:var(--primary-soft);border-color:rgba(114,57,234,.2)">
+          <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px">Summary</div>
+          <div style="font-size:12.5px;color:var(--t1);line-height:1.7">${parsed.summary}</div>
+        </div>
+        <div class="dash-row dash-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+          ${(parsed.lessons||[]).map(l=>`<div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--t1);margin-bottom:6px">${l.title}</div><div style="font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:8px">${l.insight}</div><div style="font-size:11px;color:var(--primary);line-height:1.5;padding-top:8px;border-top:1px solid var(--b1)">→ ${l.recommendation}</div></div>`).join('')}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--grn);margin-bottom:10px">What Worked</div>${(parsed.what_worked||[]).map(w=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.5">+ ${w}</div>`).join('')}</div>
+          <div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--org);margin-bottom:10px">What to Improve</div>${(parsed.what_to_improve||[]).map(w=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.5">→ ${w}</div>`).join('')}</div>
+        </div>`;
+    }
+  }catch(e){hideLoad();if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
 }
 
 // ═══ FILE EXTRACTION ═══
@@ -2588,7 +2663,7 @@ async function saveTol(){
 function renderContacts(){
   if(!CP)return;
   const el=document.getElementById('contactsList');
-  if(!CP.contacts?.length){el.innerHTML=`<div class="empty"><div class="empty-icon">👥</div><div class="et">No contacts</div></div>`;return;}
+  if(!CP.contacts?.length){el.innerHTML=`<div class="empty"><div class="empty-icon">○</div><div class="et">No contacts</div></div>`;return;}
   el.innerHTML=CP.contacts.map((c,i)=>`<div class="contact-card"><div><div class="contact-name">${c.name}</div><div class="contact-det">${c.role}${c.contact?' · '+c.contact:''}</div></div><button class="btn btn-del" onclick="removeContact(${i})">×</button></div>`).join('');
 }
 async function addContact(){
@@ -2782,15 +2857,16 @@ async function saveEdit(){
 
 // ═══ REGISTER ═══
 function renderReg(){
-  const risks=CP?.risks||[];
-  if(!risks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="et">No risk register yet</div></div>`;return;}
+  const allRisks=CP?.risks||[];
+  const risks=allRisks.filter(r=>r.status!=='closed');
+  if(!allRisks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></div><div class="et">No risk register yet</div></div>`;return;}
   const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const buildRows=arr=>arr.map(r=>`
     <tr class="${r.type==='opportunity'?'opp':'thr'}">
       <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
       <td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'opportunity':'threat'}</span></td>
       <td><span class="cb">${CAT_AR[r.category]||r.category}</span></td>
-      <td><div style="font-size:12px;max-width:220px;color:var(--t1)">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
+      <td><div style="font-size:12px;max-width:200px;color:var(--t1)">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
       <td style="text-align:center"><b style="font-size:13px">${r.probability}</b></td>
       <td><div class="ic">
         <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">C</span><div class="ib"><div class="ibf" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_cost}</span></div>
@@ -2799,26 +2875,52 @@ function renderReg(){
       </div></td>
       <td><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span></td>
       <td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>
-      <td><div style="font-size:11px;color:var(--t2);max-width:180px;line-height:1.5">${r.mitigation}</div></td>
+      <td><div style="font-size:11px;color:var(--t2);max-width:160px;line-height:1.5">${r.mitigation}</div></td>
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.response_owner||'—'}</td>
+      <td>
+        <select onchange="changeRiskStatus('${r.id}',this.value)" style="font-size:10.5px;padding:3px 6px;border-radius:6px;border:1px solid var(--b1);background:${r.status==='closed'?'var(--grn-soft)':'var(--s1)'};color:var(--t1);cursor:pointer">
+          <option value="open" ${r.status!=='closed'?'selected':''}>Open</option>
+          <option value="closed" ${r.status==='closed'?'selected':''}>Closed</option>
+        </select>
+      </td>
+      <td><div style="font-size:11px;color:var(--t2);max-width:140px;line-height:1.5">${r.notes||'<span style="color:var(--t3);font-style:italic">—</span>'}</div></td>
       <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">Edit</button></td>
     </tr>`).join('');
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
-  const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th></th></tr>`;
+  const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th>Status</th><th>Notes</th><th></th></tr>`;
   document.getElementById('regContent').innerHTML=`
     ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
     ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
-    <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">⬇ Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} risks · ${CP.analyzed_at||'—'}</span></div>`;
+    <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
+}
+
+// Change risk status — closed risks move to Risk Log
+async function changeRiskStatus(riskId,status){
+  const risk=CP.risks.find(r=>r.id===riskId);
+  if(!risk)return;
+  if(status==='closed'){
+    const notes=prompt('Add closure notes (lessons learned, resolution details):',risk.notes||'');
+    if(notes===null)return; // cancelled
+    risk.status='closed';
+    risk.notes=notes;
+    risk.closed_at=new Date().toISOString();
+    try{await sb('risks?id=eq.'+riskId,'PATCH',{status:'closed',notes:notes,closed_at:risk.closed_at});}catch(e){}
+  }else{
+    risk.status='open';
+    risk.closed_at=null;
+    try{await sb('risks?id=eq.'+riskId,'PATCH',{status:'open',closed_at:null});}catch(e){}
+  }
+  renderReg();renderRiskLog();updateStats();
 }
 
 // ═══ DASHBOARD ═══
 function renderDash(){
   const risks=CP?.risks||[];
   if(!risks.length){
-    document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="et">Run analysis to view dashboard</div></div>`;
+    document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-icon">○</div><div class="et">Run analysis to view dashboard</div></div>`;
     return;
   }
 
@@ -2849,7 +2951,7 @@ function renderDash(){
   const noAction=risks.filter(r=>r.level==='high'&&(!r.mitigation||r.mitigation.trim().length<10));
 
   // Category icons
-  const catIcons={'Schedule':'📅','Cost':'＄','Scope':'📋','Contract':'📄','Design':'✏','Execution':'🔨','Suppliers':'🚚','QHSE':'⛑','Quality':'✓','Regulatory':'⚖','Financial':'💰'};
+  const catIcons={};
   const catColors=['purple','blue','cyan','orange','pink','green','red','yellow'];
 
   document.getElementById('dashContent').innerHTML=`
@@ -3047,7 +3149,7 @@ function renderDash(){
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:11px">
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Health</div><div style="font-size:16px;font-weight:700;color:${alColor}">${latest.health_score||'—'}</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">SV</div><div style="font-size:14px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
-            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Burn</div><div style="font-size:14px;font-weight:600">${latest.burn_rate||0}%</div></div>
+            <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">CV</div><div style="font-size:14px;font-weight:600">${latest.burn_rate||0}%</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Changes</div><div style="font-size:14px;font-weight:600">${latest.change_requests||0}</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Resources</div><div style="font-size:14px;font-weight:600">${latest.resource_util||0}%</div></div>
           </div>
@@ -3071,7 +3173,7 @@ function renderDash(){
 
     <!-- #20 Refresh All Button -->
     <div style="text-align:center;margin-bottom:14px">
-      <button class="btn btn-p" onclick="refreshAll()" style="padding:10px 28px;font-size:13px">🔄 Refresh All — AI Report, Market Insights & Early Warning</button>
+      <button class="btn btn-p" onclick="refreshAll()" style="padding:10px 28px;font-size:13px">Refresh All — AI Report, Market Insights & Early Warning</button>
     </div>
 
     <!-- #21 Market & World Insights for Project -->
@@ -3192,7 +3294,7 @@ function showPortfolioExportModal(){
   const list=projs.filter(p=>p.portfolio_id===currentPF.id);
   const html=`<div class="modal-ov on" id="pfExportModal">
     <div class="modal" style="max-width:480px">
-      <div class="modal-t">📥 Export Portfolio Dashboard</div>
+      <div class="modal-t">Export Portfolio Dashboard</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Select content to include</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
@@ -3205,11 +3307,11 @@ function showPortfolioExportModal(){
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
           <input type="checkbox" id="pfx_aireport"/>
-          <div><div style="font-size:12px;font-weight:600">✦ AI Portfolio Report</div><div style="font-size:10.5px;color:var(--t3)">AI-generated portfolio analysis</div></div>
+          <div><div style="font-size:12px;font-weight:600">AI Portfolio Report</div><div style="font-size:10.5px;color:var(--t3)">AI-generated portfolio analysis</div></div>
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
           <input type="checkbox" id="pfx_market"/>
-          <div><div style="font-size:12px;font-weight:600">🌍 Market Insights</div><div style="font-size:10.5px;color:var(--t3)">Market conditions & warnings</div></div>
+          <div><div style="font-size:12px;font-weight:600">Market Insights</div><div style="font-size:10.5px;color:var(--t3)">Market conditions & warnings</div></div>
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
           <input type="checkbox" id="pfx_allrisks"/>
@@ -3337,14 +3439,14 @@ function doPortfolioExportPDF(){
         }
       }
     }else{
-      html+=`<div class="section"><div class="section-title">✦ AI Report</div><p style="color:#888">Generate the AI report first</p></div>`;
+      html+=`<div class="section"><div class="section-title">AI Report</div><p style="color:#888">Generate the AI report first</p></div>`;
     }
   }
 
   if(incMarket){
     const mEl=document.getElementById('portfInsights');
     if(mEl&&mEl.innerHTML.length>50){
-      html+=`<div class="section"><div class="section-title">🌍 Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
+      html+=`<div class="section"><div class="section-title">Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
     }
   }
 
@@ -3380,7 +3482,7 @@ function doPortfolioExportPDF(){
 function showPricingPage(){
   const html=`<div class="modal-ov on" id="pricingModal">
     <div class="modal" style="max-width:800px">
-      <div class="modal-t">⬆ Upgrade Your Plan</div>
+      <div class="modal-t">Upgrade Your Plan</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
         <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
           <div style="font-size:10px;text-transform:uppercase;color:var(--t3);letter-spacing:.08em;margin-bottom:4px">Free Trial</div>
@@ -3470,7 +3572,7 @@ Respond ONLY with valid JSON:
       </div>
       
       <div class="dash-row dash-3" style="margin-bottom:14px">
-        <div class="card"><div class="card-t" style="color:var(--primary)">🎯 Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
+        <div class="card"><div class="card-t" style="color:var(--primary)">Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
         <div class="card"><div class="card-t" style="color:var(--red)">⚠ Top Concerns</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
         <div class="card"><div class="card-t" style="color:var(--purple)">🔄 Common Patterns</div>${(parsed.common_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
       </div>
@@ -3511,7 +3613,7 @@ Include 3-4 insights and 3-4 keep_eye_on items. Be specific to Saudi constructio
             <div class="metric-name">${ins.title}</div>
             <div style="font-size:11px;color:var(--t3);line-height:1.6;margin-top:3px">${ins.description}</div>
             ${ins.affected_risks?.length?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${ins.affected_risks.map(r=>`<span class="chip" style="font-size:9.5px">⚠ ${r}</span>`).join('')}</div>`:''}
-            <div style="font-size:10.5px;color:var(--primary);margin-top:4px">💡 ${ins.recommendation||''}</div>
+            <div style="font-size:10.5px;color:var(--primary);margin-top:4px">${ins.recommendation||''}</div>
           </div>
           <span class="bdg ${ins.impact_probability==='high'?'b-h':ins.impact_probability==='medium'?'b-m':'b-l'}">${ins.impact_probability||'medium'}</span>
         </div>`;
@@ -3519,7 +3621,7 @@ Include 3-4 insights and 3-4 keep_eye_on items. Be specific to Saudi constructio
       html+='</div>';
       // Keep Eye On (#19)
       if(parsed.keep_eye_on?.length){
-        html+='<div class="dash-section" style="margin-bottom:14px"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">🔍 Keep Eye On</span></div></div>';
+        html+='<div class="dash-section" style="margin-bottom:14px"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Keep Eye On</span></div></div>';
         parsed.keep_eye_on.forEach(item=>{
           html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
             <div class="metric-icon" style="background:#fef9c3;color:#ffa800">👁</div>
@@ -3543,7 +3645,7 @@ function showExportModal(){
   const hasDash=hasRisks;
   const html=`<div class="modal-ov on" id="exportModal">
     <div class="modal" style="max-width:480px">
-      <div class="modal-t">📥 Export Dashboard</div>
+      <div class="modal-t">Export Dashboard</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Select content to include in your export</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
@@ -3556,15 +3658,15 @@ function showExportModal(){
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
           <input type="checkbox" id="exp_aireport"/>
-          <div><div style="font-size:12px;font-weight:600">✦ AI Project Report</div><div style="font-size:10.5px;color:var(--t3)">AI-generated analysis</div></div>
+          <div><div style="font-size:12px;font-weight:600">AI Project Report</div><div style="font-size:10.5px;color:var(--t3)">AI-generated analysis</div></div>
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
           <input type="checkbox" id="exp_market"/>
-          <div><div style="font-size:12px;font-weight:600">🌍 Market Insights</div><div style="font-size:10.5px;color:var(--t3)">Market conditions & warnings</div></div>
+          <div><div style="font-size:12px;font-weight:600">Market Insights</div><div style="font-size:10.5px;color:var(--t3)">Market conditions & warnings</div></div>
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
           <input type="checkbox" id="exp_tornado"/>
-          <div><div style="font-size:12px;font-weight:600">🌪 Tornado Diagram</div><div style="font-size:10.5px;color:var(--t3)">Top risks by impact</div></div>
+          <div><div style="font-size:12px;font-weight:600">Tornado Diagram</div><div style="font-size:10.5px;color:var(--t3)">Top risks by impact</div></div>
         </label>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
@@ -3729,14 +3831,14 @@ function doExportPDF(){
         }
       }
     }else{
-      html+=`<div class="section"><div class="section-title">✦ AI Project Report</div><p style="color:#888">Generate the AI report first before exporting</p></div>`;
+      html+=`<div class="section"><div class="section-title">AI Project Report</div><p style="color:#888">Generate the AI report first before exporting</p></div>`;
     }
   }
 
   if(incMarket){
     const mEl=document.getElementById('projMarketInsights');
     if(mEl&&mEl.innerHTML.length>100){
-      html+=`<div class="section"><div class="section-title">🌍 Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
+      html+=`<div class="section"><div class="section-title">Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
     }
   }
 
@@ -3757,7 +3859,7 @@ function doExportPDF(){
 function renderWarn(){
   const risks=CP?.risks||[];
   const el=document.getElementById('warnContent');
-  if(!risks.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🚨</div><div class="et">Run analysis first</div></div>`;return;}
+  if(!risks.length){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div><div class="et">Run analysis first</div></div>`;return;}
   const w1=risks.filter(r=>r.expected_weeks===1);
   const w2=risks.filter(r=>r.expected_weeks===2);
   const w34=risks.filter(r=>r.expected_weeks===3||r.expected_weeks===4);
@@ -3771,16 +3873,22 @@ function renderWarn(){
       ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:#ffa800;letter-spacing:.06em;margin:12px 0 7px">Next Week (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
       ${w34.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:12px 0 7px">3-4 Weeks (${w34.length})</div>${w34.map(r=>ewCard(r,3)).join('')}`:''}
       ${!w1.length&&!w2.length&&!w34.length?`<div class="ai ai-ok" style="margin-bottom:0">No risks expected in the next 2 weeks</div>`:''}`}
-    </div>
+    </div>`;
+}
 
-    <div class="ew-sec">
+// ═══ WEEKLY INDICATOR ANALYSIS (moved to Updates) ═══
+function renderWeeklyIndicators(){
+  const el=document.getElementById('weeklyIndContent');
+  if(!el||!CP)return;
+  el.innerHTML=`
+    <div class="ew-sec" style="margin-top:0">
       <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Trend Analysis</span> Weekly Indicator Analysis</div>
       <div class="trend-form">
         <div style="font-size:12px;font-weight:600;margin-bottom:3px">Weekly Trend Indicators</div>
         <div style="font-size:11px;color:var(--t3);margin-bottom:11px">Enter this week's indicators for trend analysis</div>
         <div class="ind-grid">
           <div class="ind-item"><label class="ind-lbl">Schedule Variance SV (%)</label><input type="number" class="ind-inp" id="ind_sv" placeholder="e.g. -5 means behind"/></div>
-          <div class="ind-item"><label class="ind-lbl">Budget Burn Rate (%)</label><input type="number" class="ind-inp" id="ind_br" placeholder="e.g. 45"/></div>
+          <div class="ind-item"><label class="ind-lbl">Cost Variance CV (%)</label><input type="number" class="ind-inp" id="ind_br" placeholder="e.g. -3 means over budget"/></div>
           <div class="ind-item"><label class="ind-lbl">Change Requests</label><input type="number" class="ind-inp" id="ind_cr" placeholder="count"/></div>
           <div class="ind-item"><label class="ind-lbl">Resource Utilization (%)</label><input type="number" class="ind-inp" id="ind_ru" placeholder="e.g. 80" min="0" max="100"/></div>
           <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Vendor / Dependency Delays</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="e.g. Steel delivery delayed 5 days"></textarea></div>
@@ -3789,9 +3897,9 @@ function renderWarn(){
         <div style="margin-top:10px;display:flex;gap:8px;align-items:center"><button class="btn btn-p" onclick="analyzeTrend()">Analyze Trend</button><span style="font-size:11px;color:var(--t3)">${CP.trend_data?.length?CP.trend_data.length+' weeks recorded':''}</span></div>
       </div>
 
-      ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px"><div class="card-t">Weekly Indicators History</div>
-        <table class="exp-tbl"><thead><tr><th>Week</th><th>SV%</th><th>Burn</th><th>Changes</th><th>Resources</th><th>Vendor</th><th>Health</th><th>Alert</th></tr></thead>
-        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'#a16207':'var(--grn)'}">${w.sv||0}%</td><td>${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'OK'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table>
+      ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px;margin-top:12px"><div class="card-t">Weekly Indicators History</div>
+        <table class="exp-tbl"><thead><tr><th>Week</th><th>SV%</th><th>CV%</th><th>Changes</th><th>Resources</th><th>Vendor</th><th>Health</th><th>Alert</th></tr></thead>
+        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'#a16207':'var(--grn)'}">${w.sv||0}%</td><td style="color:${(w.burn_rate||0)<-5?'var(--red)':(w.burn_rate||0)<0?'#a16207':'var(--grn)'}">${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'OK'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table>
         <div style="margin-top:10px"><canvas id="trendIndC" height="70"></canvas></div></div>`:''}
 
       <div id="trendAnalysis"></div>
@@ -3801,11 +3909,11 @@ function renderWarn(){
     setTimeout(()=>{
       const td=CP.trend_data.slice(-10);const labels=td.map(w=>w.date);
       new Chart(document.getElementById('trendIndC'),{type:'line',data:{labels,datasets:[
-        {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'var(--red)',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Burn',data:td.map(w=>w.burn_rate||0),borderColor:'var(--yel)',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Changes',data:td.map(w=>w.change_requests||0),borderColor:'var(--purple)',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Resources',data:td.map(w=>w.resource_util||0),borderColor:'var(--primary)',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Health',data:td.map(w=>w.health_score||0),borderColor:'var(--grn)',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
+        {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'#f64e60',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'CV%',data:td.map(w=>w.burn_rate||0),borderColor:'#ffa800',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'Changes',data:td.map(w=>w.change_requests||0),borderColor:'#8950fc',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'Resources',data:td.map(w=>w.resource_util||0),borderColor:'#7239ea',tension:.4,borderWidth:1.5,pointRadius:3},
+        {label:'Health',data:td.map(w=>w.health_score||0),borderColor:'#50cd89',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
       ]},options:{plugins:{legend:{position:'top',labels:{color:'#5e6278',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#5e6278',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#5e6278',font:{size:10}},grid:{color:'rgba(228,231,239,.6)'}}},layout:{padding:{top:2}}}});
     },60);
   }
@@ -3843,7 +3951,7 @@ async function analyzeTrend(){
   showLoad('Analyzing indicators...');
 
   const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
-  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, Burn=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%`).join('\n')||'No history';
+  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%`).join('\n')||'No history';
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ARABIC.
@@ -3851,8 +3959,8 @@ Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
 Existing Risks:\n${existing}
 History (last 4 weeks):\n${history}
 THIS WEEK (${weekDate}):
-- SV: ${sv}% ${sv<0?'(behind)':sv>0?'(ahead)':'(on track)'}
-- Budget Burn: ${br}%
+- SV (Schedule Variance): ${sv}% ${sv<0?'(behind schedule)':sv>0?'(ahead)':'(on track)'}
+- CV (Cost Variance): ${br}% ${br<0?'(over budget)':br>0?'(under budget)':'(on budget)'}
 - Change Requests: ${cr}
 - Resource Utilization: ${ru}%
 - Vendor/Dependency Delay: ${vd||'none'}
@@ -3861,7 +3969,7 @@ THIS WEEK (${weekDate}):
 Each indicator analysis must be 2-4 sentences explaining: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact.
 
 Respond ONLY with valid JSON in Arabic:
-{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative summary","indicators_analysis":{"schedule_variance":"detailed analysis","budget_burn_rate":"detailed analysis","change_requests":"detailed analysis","resource_utilization":"detailed analysis","vendor_delay":"detailed analysis"},"warnings":["warning 1","warning 2","warning 3"],"predicted_risks":["prediction 1","prediction 2","prediction 3"],"actions":["action 1","action 2","action 3","action 4"]}`}]});
+{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative summary","indicators_analysis":{"schedule_variance":"detailed analysis","cost_variance":"detailed analysis","change_requests":"detailed analysis","resource_utilization":"detailed analysis","vendor_delay":"detailed analysis"},"warnings":["warning 1","warning 2","warning 3"],"predicted_risks":["prediction 1","prediction 2","prediction 3"],"actions":["action 1","action 2","action 3","action 4"]}`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
@@ -3887,8 +3995,8 @@ Respond ONLY with valid JSON in Arabic:
       <div class="card" style="margin-bottom:10px">
         <div class="card-t" style="color:var(--primary)">Detailed Indicator Analysis</div>
         ${[
-          {k:'schedule_variance',label:'Schedule Variance',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
-          {k:'budget_burn_rate',label:'Budget Burn Rate',val:`${br}%`,color:br>70?'var(--red)':br>50?'#a16207':'var(--grn)'},
+          {k:'schedule_variance',label:'Schedule Variance (SV)',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
+          {k:'cost_variance',label:'Cost Variance (CV)',val:`${br}%`,color:br<-5?'var(--red)':br<0?'#a16207':'var(--grn)'},
           {k:'change_requests',label:'Change Requests',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
           {k:'resource_utilization',label:'Resource Utilization',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
           {k:'vendor_delay',label:'Vendor Delays',val:vd?'Reported':'None',color:vd?'var(--red)':'var(--grn)'}
@@ -4147,9 +4255,10 @@ function closeChangesModal(){
 
 
 function renderUpds(){
+  renderWeeklyIndicators();
   const upds=CP?.upds||[];
   const el=document.getElementById('tlEl');
-  if(!upds.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🔄</div><div class="et">No updates yet</div></div>`;return;}
+  if(!upds.length){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div><div class="et">No updates yet</div></div>`;return;}
   const dc={change_order:'var(--primary)',delay:'var(--red)',scope:'var(--yel)',site:'var(--grn)',contract:'var(--grn)',meeting:'var(--purple)',note:'#a1a5b7'};
   const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
   el.innerHTML=upds.map(u=>`
@@ -4172,7 +4281,7 @@ let wifSimulated=null;
 function renderWhatIf(){
   const risks=CP?.risks||[];
   if(!risks.length){
-    document.getElementById('whatifContent').innerHTML=`<div class="empty"><div class="empty-icon">🎯</div><div class="et">Run analysis first to use the What-If Simulator</div></div>`;
+    document.getElementById('whatifContent').innerHTML=`<div class="empty"><div class="empty-icon">○</div><div class="et">Run analysis first to use the What-If Simulator</div></div>`;
     return;
   }
 
@@ -4631,7 +4740,7 @@ async function fetchNews(query){
 async function loadInsights(){
   const risks=CP?.risks||[];
   if(!risks.length){
-    document.getElementById('insightsContent').innerHTML=`<div class="empty"><div class="empty-icon">🌍</div><div class="et">Run analysis first to view insights</div></div>`;
+    document.getElementById('insightsContent').innerHTML=`<div class="empty"><div class="empty-icon">○</div><div class="et">Run analysis first to view insights</div></div>`;
     return;
   }
 
@@ -4653,7 +4762,7 @@ async function loadInsights(){
   document.getElementById('insightsContent').innerHTML=`
     <div class="dash-hero">
       <div>
-        <div class="dash-hero-l">🌍 Market & World Insights</div>
+        <div class="dash-hero-l">Market & World Insights</div>
         <div class="dash-hero-s">Real-time intelligence from news sources analyzed by AI</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
