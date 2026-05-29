@@ -1589,7 +1589,29 @@ function enterApp(){
   document.querySelectorAll('.admin-only').forEach(el=>{
     el.style.display=isAdmin()?'':'none';
   });
+  // Load API key from DB for all users
+  loadApiKeyFromDB();
   loadAll();
+}
+
+// Load Claude API key from app_settings table (set by admin)
+async function loadApiKeyFromDB(){
+  try{
+    const rows=await sb('app_settings?key=eq.claude_api_key&select=value');
+    if(rows&&rows.length&&rows[0].value){
+      const k=rows[0].value;
+      document.getElementById('apiKey').value=k;
+      localStorage.setItem('aKey',k);
+      checkKey();
+    } else {
+      // fallback to localStorage
+      const k=localStorage.getItem('aKey');
+      if(k){document.getElementById('apiKey').value=k;checkKey();}
+    }
+  }catch(e){
+    const k=localStorage.getItem('aKey');
+    if(k){document.getElementById('apiKey').value=k;checkKey();}
+  }
 }
 
 // ═══ ACCOUNT SETTINGS ═══
@@ -1744,7 +1766,15 @@ function checkKey(){
   const k=document.getElementById('apiKey').value.trim();
   const dot=document.getElementById('cdot'),lbl=document.getElementById('clbl');
   if(k.startsWith('sk-ant-')&&k.length>20){
-    dot.classList.add('on');lbl.classList.add('on');lbl.textContent='Connected';localStorage.setItem('aKey',k);
+    dot.classList.add('on');lbl.classList.add('on');lbl.textContent='Connected';
+    localStorage.setItem('aKey',k);
+    // Save to DB if admin so all users benefit
+    if(isAdmin()){
+      sb('app_settings?key=eq.claude_api_key','PATCH',{value:k}).catch(()=>{
+        // If record doesn't exist, insert it
+        sb('app_settings','POST',{key:'claude_api_key',value:k}).catch(()=>{});
+      });
+    }
   }else{
     dot.classList.remove('on');lbl.classList.remove('on');lbl.textContent='Not connected';
   }
