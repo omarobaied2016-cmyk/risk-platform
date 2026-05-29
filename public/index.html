@@ -645,7 +645,8 @@ tr:hover td{background:rgba(114,57,234,.015);}
 .fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(114,57,234,.08);}
 .tabs{border-radius:12px;padding:5px;gap:2px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.02);}
 .tab{padding:9px 16px;font-size:13px;border-radius:10px;}
-.tab.on{box-shadow:var(--shadow);background:white;}
+.tab.on{box-shadow:var(--shadow);background:white;color:var(--primary);}
+.tab.on svg{stroke:var(--primary);}
 .ph{border-radius:16px;padding:20px 22px;border:1px solid rgba(0,0,0,.06);box-shadow:var(--shadow);}
 .ph-n{font-size:20px;font-weight:800;letter-spacing:-.02em;}
 .portfolio-card{border-radius:14px;border:1px solid rgba(0,0,0,.05);box-shadow:var(--shadow);padding:18px;}
@@ -810,6 +811,37 @@ tr:hover td{background:rgba(114,57,234,.015);}
         <div class="auth-divider">or</div>
         <div class="auth-switch">Already have an account? <a onclick="switchAuthTab('login')">Sign in</a></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNT SETTINGS MODAL -->
+<div class="modal-ov" id="accountModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-t">Account Settings</div>
+    <div id="accountMsg" style="display:none;padding:.6rem .9rem;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Profile</div>
+      <div class="fg" style="margin-bottom:11px"><label class="fl">Full Name</label><input type="text" class="fi" id="acc_name"/></div>
+      <div class="fg" style="margin-bottom:11px"><label class="fl">Company</label><input type="text" class="fi" id="acc_company"/></div>
+      <div class="fg" style="margin-bottom:11px"><label class="fl">Email</label><input type="email" class="fi" id="acc_email" disabled style="opacity:.6;cursor:not-allowed"/></div>
+      <button class="btn btn-p" onclick="saveAccountProfile()">Save Profile</button>
+    </div>
+    <div style="border-top:1px solid var(--b1);padding-top:18px;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Change Password</div>
+      <div class="fg" style="margin-bottom:11px"><label class="fl">New Password</label><input type="password" class="fi" id="acc_pass" placeholder="Min. 6 characters"/></div>
+      <div class="fg" style="margin-bottom:11px"><label class="fl">Confirm New Password</label><input type="password" class="fi" id="acc_pass2" placeholder="Re-enter password"/></div>
+      <button class="btn btn-p" onclick="changeAccountPassword()">Update Password</button>
+    </div>
+    <div style="border-top:1px solid var(--b1);padding-top:18px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--t1)">Current Plan</div>
+        <div id="acc_plan" style="font-size:11px;color:var(--t3)">—</div>
+      </div>
+      <button class="btn btn-g" onclick="document.getElementById('accountModal').classList.remove('on');showPricingPage()">Upgrade</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="document.getElementById('accountModal').classList.remove('on')">Close</button>
     </div>
   </div>
 </div>
@@ -1043,14 +1075,14 @@ tr:hover td{background:rgba(114,57,234,.015);}
 
     <div class="sb-footer">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:7px">
-          <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:11px;font-weight:700;flex-shrink:0">👤</div>
+        <div onclick="openAccountSettings()" style="display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;padding:4px;border-radius:8px;transition:background .15s" onmouseover="this.style.background='var(--sb-hover)'" onmouseout="this.style.background='transparent'" title="Account settings">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
           <div>
             <div id="userDisplayName" style="font-size:11px;font-weight:600;color:var(--sb-text)">User</div>
             <div id="userPlanLabel" style="font-size:9.5px;color:var(--sb-text-3)">Free Trial</div>
           </div>
         </div>
-        <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b1);color:var(--sb-text-3);padding:3px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Sign out">↩</button>
+        <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b1);color:var(--sb-text-3);padding:3px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Sign out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
       <div style="margin-bottom:8px">
         <button onclick="showPricingPage()" style="width:100%;padding:9px;background:white;color:var(--t1);border:1px solid var(--b1);border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">Upgrade Plan</button>
@@ -1082,7 +1114,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
       </div>
 
       <div class="greeting">
-        <div class="greet-line">Welcome 👋</div>
+        <div class="greet-line" id="greetLine">Welcome back</div>
         <div class="greet-sub">Comprehensive view of all project portfolios</div>
       </div>
 
@@ -1539,6 +1571,14 @@ function enterApp(){
   const userName=currentUserProfile?.full_name||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
+  // Time-based professional greeting
+  const greetEl=document.getElementById('greetLine');
+  if(greetEl){
+    const hr=new Date().getHours();
+    const part=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+    const firstName=userName.split(' ')[0];
+    greetEl.textContent=`${part}, ${firstName}`;
+  }
   const plan=getUserPlan();
   const planLabel=getPlanLimits(plan).label;
   const planEl=document.getElementById('userPlanLabel');
@@ -1550,6 +1590,61 @@ function enterApp(){
     el.style.display=isAdmin()?'':'none';
   });
   loadAll();
+}
+
+// ═══ ACCOUNT SETTINGS ═══
+function openAccountSettings(){
+  document.getElementById('acc_name').value=currentUserProfile?.full_name||currentUser?.user_metadata?.full_name||'';
+  document.getElementById('acc_company').value=currentUserProfile?.company||currentUser?.user_metadata?.company||'';
+  document.getElementById('acc_email').value=currentUser?.email||'';
+  document.getElementById('acc_pass').value='';
+  document.getElementById('acc_pass2').value='';
+  document.getElementById('accountMsg').style.display='none';
+  const plan=getUserPlan();
+  document.getElementById('acc_plan').textContent=getPlanLimits(plan).label+(isAdmin()?' (Admin)':'');
+  document.getElementById('accountModal').classList.add('on');
+}
+
+function accMsg(text,ok){
+  const el=document.getElementById('accountMsg');
+  el.textContent=text;el.style.display='block';
+  el.style.background=ok?'var(--grn-soft)':'var(--red-soft)';
+  el.style.color=ok?'#15803d':'var(--red)';
+}
+
+async function saveAccountProfile(){
+  const name=document.getElementById('acc_name').value.trim();
+  const company=document.getElementById('acc_company').value.trim();
+  if(!name){accMsg('Name is required',false);return;}
+  try{
+    await sb('users?id=eq.'+currentUser.id,'PATCH',{full_name:name,company:company});
+    const token=localStorage.getItem('sb_token');
+    await fetch(SB+'/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+token},body:JSON.stringify({data:{full_name:name,company:company}})});
+    if(currentUserProfile){currentUserProfile.full_name=name;currentUserProfile.company=company;}
+    document.getElementById('userDisplayName').textContent=name;
+    const greetEl=document.getElementById('greetLine');
+    if(greetEl){const hr=new Date().getHours();const part=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';greetEl.textContent=`${part}, ${name.split(' ')[0]}`;}
+    accMsg('Profile updated successfully',true);
+  }catch(e){accMsg('Error: '+e.message,false);}
+}
+
+async function changeAccountPassword(){
+  const pass=document.getElementById('acc_pass').value;
+  const pass2=document.getElementById('acc_pass2').value;
+  if(!pass||pass.length<6){accMsg('Password must be at least 6 characters',false);return;}
+  if(pass!==pass2){accMsg('Passwords do not match',false);return;}
+  try{
+    const token=localStorage.getItem('sb_token');
+    const res=await fetch(SB+'/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+token},body:JSON.stringify({password:pass})});
+    if(res.ok){
+      accMsg('Password updated successfully',true);
+      document.getElementById('acc_pass').value='';
+      document.getElementById('acc_pass2').value='';
+    }else{
+      const d=await res.json();
+      accMsg(d.error_description||d.msg||'Failed to update password',false);
+    }
+  }catch(e){accMsg('Error: '+e.message,false);}
 }
 
 async function checkSession(){
