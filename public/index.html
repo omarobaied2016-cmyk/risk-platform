@@ -988,16 +988,14 @@ tr:hover td{background:rgba(114,57,234,.015);}
       <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
         <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Risk Appetite</div>
       </div>
-      <div class="fg"><label class="fl">Cost Tolerance (%)</label><input type="number" class="fi" id="np_ra_cost" value="5" min="0" max="100" placeholder="e.g. 5"/></div>
-      <div class="fg"><label class="fl">Schedule Tolerance (Days)</label><input type="number" class="fi" id="np_ra_sched" value="30" min="0" placeholder="e.g. 30"/></div>
-      <div class="fg"><label class="fl">Risk Appetite Level</label>
+      <div class="fg full"><label class="fl">Risk Appetite Level</label>
         <select class="fs" id="np_ra_level">
-          <option value="conservative">Conservative — Minimize all risk</option>
+          <option value="conservative">Conservative — Minimize all risk (tight tolerances)</option>
           <option value="moderate" selected>Moderate — Accept calculated risks</option>
-          <option value="aggressive">Aggressive — Accept high risk for high reward</option>
+          <option value="aggressive">Aggressive — Accept high risk for high reward (wide tolerances)</option>
         </select>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:5px">This sets the default Cost, Schedule, QHSE and Reputation tolerance levels. You can fine-tune them later in the Risk Appetite tab.</div>
       </div>
-      <div class="fg"><label class="fl">Max Acceptable Risk Score</label><input type="number" class="fi" id="np_ra_max" value="60" min="0" max="100" placeholder="e.g. 60"/></div>
     </div>
     <div style="display:flex;gap:7px;justify-content:flex-end">
       <button class="btn btn-g" onclick="closeProjModal()">Cancel</button>
@@ -1028,16 +1026,14 @@ tr:hover td{background:rgba(114,57,234,.015);}
       <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
         <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">Risk Appetite</div>
       </div>
-      <div class="fg"><label class="fl">Cost Tolerance (%)</label><input type="number" class="fi" id="set_ra_cost" min="0" max="100"/></div>
-      <div class="fg"><label class="fl">Schedule Tolerance (Days)</label><input type="number" class="fi" id="set_ra_sched" min="0"/></div>
-      <div class="fg"><label class="fl">Risk Appetite Level</label>
+      <div class="fg full"><label class="fl">Risk Appetite Level</label>
         <select class="fs" id="set_ra_level">
-          <option value="conservative">Conservative</option>
-          <option value="moderate">Moderate</option>
-          <option value="aggressive">Aggressive</option>
+          <option value="conservative">Conservative — Minimize all risk</option>
+          <option value="moderate">Moderate — Accept calculated risks</option>
+          <option value="aggressive">Aggressive — Accept high risk for high reward</option>
         </select>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:5px">Changing this resets the default tolerance levels. Fine-tune them in the Risk Appetite tab.</div>
       </div>
-      <div class="fg"><label class="fl">Max Acceptable Risk Score</label><input type="number" class="fi" id="set_ra_max" min="0" max="100"/></div>
     </div>
     <div style="display:flex;gap:7px;justify-content:flex-end">
       <button class="btn btn-g" onclick="closeSettingsModal()">Cancel</button>
@@ -1198,7 +1194,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
         </div>
         <div class="fg2" id="fgrid"></div>
         <div style="margin-top:14px;display:flex;gap:9px;align-items:center">
-          <button class="btn btn-p" id="anaBtn" onclick="analyze()" disabled>Analyze & Generate Risk Register</button>
+          <button class="btn btn-p" id="anaBtn" onclick="openAnalyzeOptions()" disabled>Analyze & Generate Risk Register</button>
           <span style="font-size:11px;color:var(--t3)" id="fcLbl">No files</span>
         </div>
       </div>
@@ -1245,22 +1241,8 @@ tr:hover td{background:rgba(114,57,234,.015);}
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">Risk Appetite & Tolerance</div>
           <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Define acceptable thresholds — Claude uses these to classify risks accurately</div>
           
-          <div class="tol-sec">
-            <div class="tol-t">Cost & Schedule</div>
-            <div class="tg">
-              <div>
-                <label class="fl" style="margin-bottom:6px;display:block">Max cost overrun</label>
-                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px"><input type="number" class="fi" id="tc_pct" placeholder="5" style="width:65px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">% of contract</span></div>
-                <div style="display:flex;gap:7px;align-items:center"><input type="number" class="fi" id="tc_val" placeholder="500000" style="width:120px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">SAR max</span></div>
-              </div>
-              <div>
-                <label class="fl" style="margin-bottom:6px;display:block">Max delay</label>
-                <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px"><input type="number" class="fi" id="ts_days" placeholder="30" style="width:65px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">days</span></div>
-                <div style="display:flex;gap:7px;align-items:center"><input type="number" class="fi" id="ts_pct" placeholder="10" style="width:65px" oninput="dbTol()"/><span style="font-size:11.5px;color:var(--t3)">% of duration</span></div>
-              </div>
-            </div>
-          </div>
-
+          <div class="tol-sec"><div class="tol-t">Cost Levels</div><div id="cost_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t">Schedule Levels</div><div id="sched_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">QHSE Levels</div><div id="qhse_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">Reputation Levels</div><div id="rep_lvl"></div></div>
           <div class="tol-sec">
@@ -1722,6 +1704,29 @@ async function sb(path,method='GET',body=null){
 const DQ=[{l:'1 — Zero Tolerance',d:'Fatality or permanent disability'},{l:'2 — Critical',d:'Serious injury requiring hospitalization'},{l:'3 — High',d:'Injury requiring medical treatment'},{l:'4 — Medium',d:'First aid only'},{l:'5 — Low',d:'Near miss only'}];
 const DR=[{l:'1 — Zero Tolerance',d:'Company image impact'},{l:'2 — National',d:'National media coverage'},{l:'3 — Regional',d:'Regional impact'},{l:'4 — Local',d:'City-level impact'},{l:'5 — Internal',d:'Project team only'}];
 const DP=[{l:'1 — Rare',d:'Less than 10%'},{l:'2 — Unlikely',d:'10-30%'},{l:'3 — Possible',d:'30-50%'},{l:'4 — Likely',d:'50-70%'},{l:'5 — Almost Certain',d:'More than 70%'}];
+// Cost & Schedule 5-level scales that adapt to appetite
+function costLevels(appetite){
+  const base={conservative:[1,3,5,8,12],moderate:[2,5,10,15,20],aggressive:[5,10,18,28,40]};
+  const v=base[appetite]||base.moderate;
+  return [
+    {l:'1 — Very Low',d:`Up to ${v[0]}% of contract value`},
+    {l:'2 — Low',d:`${v[0]}-${v[1]}% of contract value`},
+    {l:'3 — Medium',d:`${v[1]}-${v[2]}% of contract value`},
+    {l:'4 — High',d:`${v[2]}-${v[3]}% of contract value`},
+    {l:'5 — Critical',d:`More than ${v[3]}% of contract value`}
+  ];
+}
+function schedLevels(appetite){
+  const base={conservative:[3,7,14,21,30],moderate:[7,15,30,45,60],aggressive:[15,30,60,90,120]};
+  const v=base[appetite]||base.moderate;
+  return [
+    {l:'1 — Very Low',d:`Up to ${v[0]} days delay`},
+    {l:'2 — Low',d:`${v[0]}-${v[1]} days delay`},
+    {l:'3 — Medium',d:`${v[1]}-${v[2]} days delay`},
+    {l:'4 — High',d:`${v[2]}-${v[3]} days delay`},
+    {l:'5 — Critical',d:`More than ${v[3]} days delay`}
+  ];
+}
 const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Minor manageable effect'},{l:'3 — Moderate',d:'Requires corrective action'},{l:'4 — Major',d:'Significant project impact'},{l:'5 — Critical',d:'May halt project'}];
 const LC=['var(--red)','var(--org)','var(--yel)','var(--grn)','var(--cyan)'];
 const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
@@ -2523,9 +2528,10 @@ async function createProj(){
   if(!name){alert('Please enter project name');return;}
   showLoad('Creating...');
   try{
-    const tol={cost_pct:document.getElementById('np_ra_cost').value||5,cost_val:'',sched_days:document.getElementById('np_ra_sched').value||30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
+    const appetite=document.getElementById('np_ra_level').value;
+    const tol={appetite:appetite,cost_levels:costLevels(appetite),sched_levels:schedLevels(appetite),qhse:DQ,rep:DR,prob:DP,imp:DI};
     const pfId=document.getElementById('np_pf').value;
-    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:document.getElementById('np_ra_level').value,max_score:parseInt(document.getElementById('np_ra_max').value)||60},user_id:currentUser?.id};
+    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
     if(pfId)d.portfolio_id=pfId;
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
@@ -2546,10 +2552,7 @@ function openSettingsModal(){
   document.getElementById('set_s').value=CP.start_date||'';
   document.getElementById('set_e').value=CP.end_date||'';
   document.getElementById('set_d').value=CP.description||'';
-  document.getElementById('set_ra_cost').value=CP.tolerance?.cost_pct||5;
-  document.getElementById('set_ra_sched').value=CP.tolerance?.sched_days||30;
-  document.getElementById('set_ra_level').value=CP.risk_appetite?.level||'moderate';
-  document.getElementById('set_ra_max').value=CP.risk_appetite?.max_score||60;
+  document.getElementById('set_ra_level').value=CP.risk_appetite?.level||CP.tolerance?.appetite||'moderate';
   document.getElementById('settingsModal').classList.add('on');
 }
 function closeSettingsModal(){document.getElementById('settingsModal').classList.remove('on');}
@@ -2557,6 +2560,14 @@ async function saveSettings(){
   if(!CP)return;
   showLoad('Saving...');
   try{
+    const newAppetite=document.getElementById('set_ra_level').value;
+    const oldAppetite=CP.risk_appetite?.level||CP.tolerance?.appetite||'moderate';
+    const tol={...CP.tolerance,appetite:newAppetite};
+    // If appetite changed, regenerate cost/sched default levels
+    if(newAppetite!==oldAppetite){
+      tol.cost_levels=costLevels(newAppetite);
+      tol.sched_levels=schedLevels(newAppetite);
+    }
     const updates={
       name:document.getElementById('set_n').value.trim(),
       contract:document.getElementById('set_c').value,
@@ -2565,8 +2576,8 @@ async function saveSettings(){
       start_date:document.getElementById('set_s').value,
       end_date:document.getElementById('set_e').value,
       description:document.getElementById('set_d').value,
-      tolerance:{...CP.tolerance,cost_pct:document.getElementById('set_ra_cost').value,sched_days:document.getElementById('set_ra_sched').value},
-      risk_appetite:{level:document.getElementById('set_ra_level').value,max_score:parseInt(document.getElementById('set_ra_max').value)||60}
+      tolerance:tol,
+      risk_appetite:{level:newAppetite}
     };
     await sb('projects?id=eq.'+CID,'PATCH',updates);
     hideLoad();closeSettingsModal();
@@ -2760,27 +2771,24 @@ function remUF(i){UF.splice(i,1);renderUFP();}
 function renderTol(){
   if(!CP)return;
   const tl=CP.tolerance;
-  document.getElementById('tc_pct').value=tl.cost_pct||'';
-  document.getElementById('tc_val').value=tl.cost_val||'';
-  document.getElementById('ts_days').value=tl.sched_days||'';
-  document.getElementById('ts_pct').value=tl.sched_pct||'';
+  const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
+  renderLvls('cost_lvl',tl.cost_levels||costLevels(appetite),'cost_levels');
+  renderLvls('sched_lvl',tl.sched_levels||schedLevels(appetite),'sched_levels');
   renderLvls('qhse_lvl',tl.qhse||DQ,'qhse');
   renderLvls('rep_lvl',tl.rep||DR,'rep');
   renderLvls('prob_lvl',tl.prob||DP,'prob');
   renderLvls('imp_lvl',tl.imp||DI,'imp');
 }
 function renderLvls(cid,lvs,key){
-  document.getElementById(cid).innerHTML=lvs.map((lv,i)=>`<div class="tlv" style="border-inline-start:3px solid ${LC[i]}"><span class="tlv-l" style="color:${LC[i]}">${lv.l}</span><input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/></div>`).join('');
+  const el=document.getElementById(cid);
+  if(!el)return;
+  el.innerHTML=lvs.map((lv,i)=>`<div class="tlv" style="border-inline-start:3px solid ${LC[i]}"><span class="tlv-l" style="color:${LC[i]}">${lv.l}</span><input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/></div>`).join('');
 }
-function updLvl(key,idx,val){if(!CP)return;CP.tolerance[key][idx].d=val;dbTol();}
+function updLvl(key,idx,val){if(!CP)return;if(!CP.tolerance[key])CP.tolerance[key]=[];CP.tolerance[key][idx].d=val;dbTol();}
 let tolT=null;
 function dbTol(){clearTimeout(tolT);tolT=setTimeout(saveTol,1200);}
 async function saveTol(){
   if(!CP)return;
-  CP.tolerance.cost_pct=document.getElementById('tc_pct').value;
-  CP.tolerance.cost_val=document.getElementById('tc_val').value;
-  CP.tolerance.sched_days=document.getElementById('ts_days').value;
-  CP.tolerance.sched_pct=document.getElementById('ts_pct').value;
   try{await sb('projects?id=eq.'+CID,'PATCH',{tolerance:CP.tolerance});}catch(e){console.error(e);}
 }
 
@@ -2861,13 +2869,68 @@ function copyMsg(btn,id){
 }
 
 // ═══ ANALYZE ═══
-async function analyze(){
+// Analyze options modal — choose which impact dimensions to consider
+function openAnalyzeOptions(){
+  const html=`<div class="modal-ov on" id="analyzeOptModal">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-t">Analysis Scope</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px">Select which impact dimensions to consider when identifying risks. Unchecked dimensions will be ignored.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+        <label style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--b1);border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="opt_cost" checked/>
+          <div><div style="font-size:13px;font-weight:600;color:var(--t1)">Cost Impact</div><div style="font-size:11px;color:var(--t3)">Budget overruns, financial exposure</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--b1);border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="opt_schedule" checked/>
+          <div><div style="font-size:13px;font-weight:600;color:var(--t1)">Schedule Impact</div><div style="font-size:11px;color:var(--t3)">Delays, timeline disruptions</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--b1);border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="opt_qhse" checked/>
+          <div><div style="font-size:13px;font-weight:600;color:var(--t1)">QHSE Impact</div><div style="font-size:11px;color:var(--t3)">Quality, Health, Safety, Environment</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--b1);border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="opt_reputation" checked/>
+          <div><div style="font-size:13px;font-weight:600;color:var(--t1)">Reputation Impact</div><div style="font-size:11px;color:var(--t3)">Stakeholder, media, brand</div></div>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-g" onclick="document.getElementById('analyzeOptModal').remove()">Cancel</button>
+        <button class="btn btn-p" onclick="startAnalyze()">Start Analysis</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+function startAnalyze(){
+  const dims={
+    cost:document.getElementById('opt_cost').checked,
+    schedule:document.getElementById('opt_schedule').checked,
+    qhse:document.getElementById('opt_qhse').checked,
+    reputation:document.getElementById('opt_reputation').checked
+  };
+  if(!dims.cost&&!dims.schedule&&!dims.qhse&&!dims.reputation){alert('Select at least one impact dimension');return;}
+  document.getElementById('analyzeOptModal').remove();
+  analyze(dims);
+}
+
+async function analyze(dims){
+  dims=dims||{cost:true,schedule:true,qhse:true,reputation:true};
+  const activeDims=[];
+  if(dims.cost)activeDims.push('Cost');
+  if(dims.schedule)activeDims.push('Schedule');
+  if(dims.qhse)activeDims.push('QHSE');
+  if(dims.reputation)activeDims.push('Reputation');
   const files=PF[CID]||[];
   const tl=CP.tolerance||{};
   const hasSched=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
   showLoad('Analyzing project files...');
 
-  const tolCtx=`Risk Appetite: Cost max ${tl.cost_pct||5}% or ${tl.cost_val||'N/A'} SAR | Schedule max ${tl.sched_days||30} days`;
+  const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
+  const tolCtx=`Risk Appetite: ${appetite}.
+Cost levels: ${(tl.cost_levels||costLevels(appetite)).map(l=>l.l+'='+l.d).join('; ')}
+Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).join('; ')}
+ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
   const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia. IMPORTANT: Generate ALL content in ARABIC.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
@@ -2875,14 +2938,25 @@ Start: ${CP.start_date||'—'} | Description: ${CP.description||'—'}
 ${tolCtx}
 ${hasSched?'Schedule uploaded.':'No schedule.'}
 
-Assess project complexity from files and value. CRITICAL: Keep EVERY field under 15 words.
+Assess project complexity from files and value:
 - Simple (<5M SAR): 8 threats + 2 opportunities = 10 total
 - Medium (5-50M SAR): 16 threats + 4 opportunities = 20 total  
 - Large (50-500M SAR): 24 threats + 6 opportunities = 30 total
 - Mega (>500M SAR): 32 threats + 8 opportunities = 40 total
 
+CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
+1. DESCRIPTION must follow ONE of these two formats:
+   a) CAUSE & EFFECT — for threats: "Due to [cause], [event] may occur, leading to [negative effect]"; for opportunities: "Due to [enabler/source], [favorable event] may occur, leading to [benefit/gain]" — e.g. "بسبب توفر مورد محلي للصلب، يمكن خفض تكلفة التوريد، مما يؤدي إلى توفير 8% من الميزانية"
+   b) SMART: Specific, Measurable, Achievable, Relevant, Time-bound — clear and quantified
+2. CAUSE field: for threats identify the ROOT CAUSE (underlying driver); for opportunities identify the ROOT SOURCE/ENABLER (what makes this opportunity possible)
+3. RESPONSE STRATEGY:
+   THREATS: Avoid (eliminate root cause) / Mitigate (reduce probability or impact) / Transfer (shift burden to another party) / Accept (contingency plan) / Escalate (raise to higher authority)
+   OPPORTUNITIES: Exploit (make the root source certain to happen) / Enhance (increase probability or benefit of the source) / Share (partner to capture the benefit) / Accept (take it if it comes) / Escalate (raise to higher authority)
+4. The RESPONSE PLAN must be CONSISTENT with the chosen strategy AND target the root cause (threats) or root source/enabler (opportunities). E.g. Exploit = how to guarantee the enabler; Enhance = how to amplify the source; Transfer = to whom; Accept = the contingency.
+5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
+
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"description in English","cause":"Cause","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"action plan in English","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in Arabic","cause":"root cause in Arabic","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in Arabic","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -4190,7 +4264,13 @@ Respond ONLY with valid JSON. Keep all text fields under 25 words:
 Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
 Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate
 Strategies (opportunities): Exploit/Enhance/Share/Accept/Escalate
-Levels: high/medium/low`}];
+Levels: high/medium/low
+
+RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
+- DESCRIPTION uses CAUSE & EFFECT format (threats: "Due to [cause], [event], leading to [negative effect]"; opportunities: "Due to [enabler], [favorable event], leading to [benefit]") OR SMART format
+- CAUSE field: root cause (threats) or root source/enabler (opportunities)
+- RESPONSE STRATEGY: threats = Avoid/Mitigate/Transfer/Accept/Escalate; opportunities = Exploit/Enhance/Share/Accept/Escalate
+- Response plan consistent with strategy and targeting the root cause/source (Avoid=eliminate, Mitigate=reduce, Transfer=shift, Accept=contingency, Exploit=guarantee enabler, Enhance=amplify source, Share=partner)`}];
 
   for(const f of UF){
     if(f.extype==='image'&&f.data)parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
