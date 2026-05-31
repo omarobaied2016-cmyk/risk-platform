@@ -49,8 +49,18 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
-app.get('*', (req, res) => {
+// Serve the platform app at /app (and /app/*)
+app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve landing page at root, platform for /app paths
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/app')) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  }
 });
 
 const PORT = process.env.PORT || 3000;
