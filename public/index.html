@@ -3051,10 +3051,25 @@ async function saveEdit(){
 }
 
 // ═══ REGISTER ═══
+let regFilters={category:'',level:'',response:''};
+function applyRegFilter(key,val){regFilters[key]=val;renderReg();}
+function clearRegFilters(){regFilters={category:'',level:'',response:''};renderReg();}
+
 function renderReg(){
   const allRisks=CP?.risks||[];
-  const risks=allRisks.filter(r=>r.status!=='closed');
+  let risks=allRisks.filter(r=>r.status!=='closed');
   if(!allRisks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></div><div class="et">No risk register yet</div></div>`;return;}
+
+  // Build filter options from the unfiltered active set
+  const cats=[...new Set(risks.map(r=>r.category).filter(Boolean))];
+  const resps=[...new Set(risks.map(r=>r.response_strategy).filter(Boolean))];
+
+  // Apply filters
+  if(regFilters.category)risks=risks.filter(r=>r.category===regFilters.category);
+  if(regFilters.level)risks=risks.filter(r=>r.level===regFilters.level);
+  if(regFilters.response)risks=risks.filter(r=>r.response_strategy===regFilters.response);
+  const hasFilter=regFilters.category||regFilters.level||regFilters.response;
+
   const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const buildRows=arr=>arr.map(r=>`
     <tr class="${r.type==='opportunity'?'opp':'thr'}">
@@ -3085,10 +3100,32 @@ function renderReg(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
   const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th>Status</th><th>Notes</th><th></th></tr>`;
+
+  const opt=(arr,sel,map)=>arr.map(v=>`<option value="${v}" ${sel===v?'selected':''}>${map?map(v):v}</option>`).join('');
+  const filterBar=`
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;background:var(--s1);border:1px solid var(--b1);border-radius:12px;box-shadow:var(--shadow-sm)">
+      <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Filter</span>
+      <select onchange="applyRegFilter('category',this.value)" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+        <option value="">All Categories</option>${opt(cats,regFilters.category,c=>CAT_AR[c]||c)}
+      </select>
+      <select onchange="applyRegFilter('level',this.value)" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+        <option value="">All Levels</option>
+        <option value="high" ${regFilters.level==='high'?'selected':''}>High</option>
+        <option value="medium" ${regFilters.level==='medium'?'selected':''}>Medium</option>
+        <option value="low" ${regFilters.level==='low'?'selected':''}>Low</option>
+      </select>
+      <select onchange="applyRegFilter('response',this.value)" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+        <option value="">All Responses</option>${opt(resps,regFilters.response,rr=>RESP_AR[rr]||rr)}
+      </select>
+      ${hasFilter?`<button class="btn btn-g" style="padding:6px 12px;font-size:11.5px" onclick="clearRegFilters()">Clear Filters</button><span style="font-size:11px;color:var(--t3)">${risks.length} of ${allRisks.filter(r=>r.status!=='closed').length} shown</span>`:''}
+    </div>`;
+
   document.getElementById('regContent').innerHTML=`
     ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
+    ${filterBar}
     ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
+    ${!thr.length&&!opp.length?`<div class="empty"><div class="empty-icon">○</div><div class="et">No risks match the selected filters</div></div>`:''}
     <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
 }
 
