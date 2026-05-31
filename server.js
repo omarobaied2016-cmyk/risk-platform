@@ -5,7 +5,7 @@ const path = require('path');
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 app.post('/api/claude', async (req, res) => {
   const apiKey = req.headers['x-api-key'];
