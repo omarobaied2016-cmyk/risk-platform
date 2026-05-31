@@ -2905,7 +2905,7 @@ Cost levels: ${(tl.cost_levels||costLevels(appetite)).map(l=>l.l+'='+l.d).join('
 Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).join('; ')}
 ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
-  const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia. IMPORTANT: Generate ALL content in ARABIC.
+  const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia. IMPORTANT: Detect the primary language of the uploaded project files and generate ALL content (descriptions, causes, mitigations, summary) in THAT SAME language. If files are in Arabic, respond in Arabic; if in English, respond in English; match whatever language dominates the source documents.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
 Start: ${CP.start_date||'—'} | Description: ${CP.description||'—'}
 ${tolCtx}
@@ -2929,7 +2929,7 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in Arabic","cause":"root cause in Arabic","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in Arabic","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
+{"summary":"2-sentence summary in the detected language","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in the detected file language","cause":"root cause in the detected file language","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in the detected file language","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -3095,6 +3095,16 @@ function renderReg(){
         <option value="">All Responses</option>${opt(resps,regFilters.response,rr=>RESP_AR[rr]||rr)}
       </select>
       ${hasFilter?`<button class="btn btn-g" style="padding:6px 12px;font-size:11.5px" onclick="clearRegFilters()">Clear Filters</button><span style="font-size:11px;color:var(--t3)">${risks.length} of ${allRisks.filter(r=>r.status!=='closed').length} shown</span>`:''}
+      <div style="margin-inline-start:auto;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg> Translate</span>
+        <select id="translateLang" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+          <option value="English">English</option>
+          <option value="Arabic">العربية</option>
+          <option value="Spanish">Español</option>
+          <option value="French">Français</option>
+        </select>
+        <button class="btn btn-p" style="padding:6px 14px;font-size:11.5px" onclick="translateRegister()">Translate Register</button>
+      </div>
     </div>`;
 
   document.getElementById('regContent').innerHTML=`
@@ -3112,6 +3122,43 @@ async function updateRiskNotes(riskId,notes){
   if(!risk||risk.notes===notes)return;
   risk.notes=notes;
   try{await sb('risks?id=eq.'+riskId,'PATCH',{notes:notes});}catch(e){}
+}
+
+// Translate the entire risk register to a chosen language
+async function translateRegister(){
+  const lang=document.getElementById('translateLang')?.value||'English';
+  const risks=(CP?.risks||[]);
+  if(!risks.length){alert('No risks to translate');return;}
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!confirm(`Translate all ${risks.length} risks (descriptions, causes, response plans, notes) to ${lang}? This updates the saved register.`))return;
+  showLoad(`Translating register to ${lang}...`);
+  try{
+    // Translate in batches of 15 to stay within limits
+    const batchSize=15;
+    for(let i=0;i<risks.length;i+=batchSize){
+      const batch=risks.slice(i,i+batchSize);
+      const payload=batch.map(r=>({id:r.id,description:r.description||'',cause:r.cause||'',mitigation:r.mitigation||'',notes:r.notes||''}));
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate the text fields of these construction risk records to ${lang}. Keep technical accuracy. Do NOT translate field names or IDs. Return ONLY valid JSON array with same structure (id, description, cause, mitigation, notes). If a field is empty keep it empty.
+
+${JSON.stringify(payload)}`}]});
+      const translated=pJSON(data.content[0].text);
+      // Apply translations
+      for(const t of translated){
+        const risk=risks.find(r=>r.id===t.id);
+        if(risk){
+          risk.description=t.description||risk.description;
+          risk.cause=t.cause||risk.cause;
+          risk.mitigation=t.mitigation||risk.mitigation;
+          risk.notes=t.notes||risk.notes;
+          await sb('risks?id=eq.'+risk.id,'PATCH',{description:risk.description,cause:risk.cause,mitigation:risk.mitigation,notes:risk.notes});
+        }
+      }
+      showLoad(`Translating... ${Math.min(i+batchSize,risks.length)}/${risks.length}`);
+    }
+    hideLoad();
+    renderReg();renderRiskLog();
+    alert(`Register translated to ${lang} successfully.`);
+  }catch(e){hideLoad();alert('Translation error: '+e.message);}
 }
 
 // Change risk status — closed risks move to Risk Log
@@ -4171,7 +4218,7 @@ async function analyzeTrend(){
   const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%`).join('\n')||'No history';
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ARABIC.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Detect the language of the existing risks below and generate ALL output in THAT SAME language (match the risk register's language).
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
 Existing Risks:\n${existing}
 History (last 4 weeks):\n${history}
@@ -4185,7 +4232,7 @@ THIS WEEK (${weekDate}):
 
 Each indicator analysis must be 2-4 sentences explaining: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact.
 
-Respond ONLY with valid JSON in Arabic:
+Respond ONLY with valid JSON (text values in the detected register language):
 {"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative summary","indicators_analysis":{"schedule_variance":"detailed analysis","cost_variance":"detailed analysis","change_requests":"detailed analysis","resource_utilization":"detailed analysis","vendor_delay":"detailed analysis"},"warnings":["warning 1","warning 2","warning 3"],"predicted_risks":["prediction 1","prediction 2","prediction 3"],"actions":["action 1","action 2","action 3","action 4"]}`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
