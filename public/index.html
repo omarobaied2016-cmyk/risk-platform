@@ -1149,29 +1149,6 @@ tr:hover td{background:rgba(114,57,234,.015);}
         </div>
       </div>
 
-      <div class="stat-grid">
-        <div class="stat-card cyan">
-          <div class="stat-icon">📋</div>
-          <div class="stat-l">Total</div>
-          <div class="stat-v" id="svTotal">0</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-icon">⚠</div>
-          <div class="stat-l">Threats</div>
-          <div class="stat-v" style="color:var(--red)" id="svThr">0</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-icon">★</div>
-          <div class="stat-l">Opportunities</div>
-          <div class="stat-v" style="color:var(--teal)" id="svOpp">0</div>
-        </div>
-        <div class="stat-card pink">
-          <div class="stat-icon">▲</div>
-          <div class="stat-l">High</div>
-          <div class="stat-v" style="color:var(--red)" id="svHigh">0</div>
-        </div>
-      </div>
-
       <div class="tabs">
         <div class="tab on" onclick="ST('files')" data-tab="files"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Files</div>
         <div class="tab" onclick="ST('dash')" data-tab="dash"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Dashboard</div>
@@ -5484,10 +5461,11 @@ function renderPortfolioInsights(data,articles){
 // ═══ STATS ═══
 function updateStats(){
   const r=CP?.risks||[];
-  document.getElementById('svTotal').textContent=r.length;
-  document.getElementById('svThr').textContent=r.filter(x=>x.type==='threat'||!x.type).length;
-  document.getElementById('svOpp').textContent=r.filter(x=>x.type==='opportunity').length;
-  document.getElementById('svHigh').textContent=r.filter(x=>x.level==='high').length;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('svTotal',r.length);
+  set('svThr',r.filter(x=>x.type==='threat'||!x.type).length);
+  set('svOpp',r.filter(x=>x.type==='opportunity').length);
+  set('svHigh',r.filter(x=>x.level==='high').length);
 }
 
 // ═══ EXPORT ═══
