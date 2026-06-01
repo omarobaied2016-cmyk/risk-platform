@@ -1583,6 +1583,35 @@ function getPlanLimits(plan){
   return limits[plan]||limits.free_trial;
 }
 
+// ═══ TRIAL EXPIRY ═══
+// Returns number of days left in free trial (null if not on trial)
+function trialDaysLeft(){
+  if(isAdmin())return null;
+  const plan=currentUserProfile?.plan||'free_trial';
+  if(plan!=='free_trial')return null;
+  const start=currentUserProfile?.plan_start;
+  if(!start)return 7;
+  const elapsed=(Date.now()-new Date(start).getTime())/(1000*60*60*24);
+  return Math.max(0,Math.ceil(7-elapsed));
+}
+function isTrialExpired(){
+  if(isAdmin())return false;
+  const plan=currentUserProfile?.plan||'free_trial';
+  if(plan!=='free_trial')return false;
+  const left=trialDaysLeft();
+  return left!==null&&left<=0;
+}
+// Guard for any action that creates/modifies/analyzes data
+function requireActiveAccess(){
+  if(isTrialExpired()){
+    if(confirm('Your 7-day free trial has ended. Upgrade to continue creating and analyzing risks. View plans now?')){
+      showPricingPage();
+    }
+    return false;
+  }
+  return true;
+}
+
 function checkPlanLimit(type){
   const plan=getUserPlan();
   const limits=getPlanLimits(plan);
@@ -1627,8 +1656,13 @@ function enterApp(){
   const planLabel=getPlanLimits(plan).label;
   const planEl=document.getElementById('userPlanLabel');
   if(planEl){
-    planEl.textContent=planLabel+(isAdmin()?' ★':'');
-    planEl.style.color=isAdmin()?'var(--purple)':plan==='pro'?'var(--primary)':plan==='organization'?'var(--cyan)':'var(--sb-text-3)';
+    const tdl=trialDaysLeft();
+    let label=planLabel+(isAdmin()?' ★':'');
+    if(tdl!==null){
+      label=isTrialExpired()?'Free Trial — Expired':`Free Trial — ${tdl} day${tdl===1?'':'s'} left`;
+    }
+    planEl.textContent=label;
+    planEl.style.color=isTrialExpired()?'var(--red)':isAdmin()?'var(--purple)':plan==='pro'?'var(--primary)':plan==='organization'?'var(--cyan)':'var(--sb-text-3)';
   }
   document.querySelectorAll('.admin-only').forEach(el=>{
     el.style.display=isAdmin()?'':'none';
@@ -2119,6 +2153,8 @@ function closePortfModal(){document.getElementById('portfModal').classList.remov
 async function savePortfolio(){
   const name=document.getElementById('pf_name').value.trim();
   if(!name){alert('Please enter portfolio name');return;}
+  if(!editingPortfolio&&!requireActiveAccess())return;
+  if(!editingPortfolio&&!checkPlanLimit('portfolio'))return;
   const data={
     name,
     description:document.getElementById('pf_desc').value.trim(),
@@ -2618,6 +2654,8 @@ function closeProjModal(){document.getElementById('projModal').classList.remove(
 async function createProj(){
   const name=document.getElementById('np_n').value.trim();
   if(!name){alert('Please enter project name');return;}
+  if(!requireActiveAccess())return;
+  if(!checkPlanLimit('project'))return;
   showLoad('Creating...');
   try{
     const appetite=document.getElementById('np_ra_level').value;
@@ -3006,6 +3044,7 @@ function startAnalyze(){
 }
 
 async function analyze(dims){
+  if(!requireActiveAccess())return;
   dims=dims||{cost:true,schedule:true,qhse:true,reputation:true};
   const activeDims=[];
   if(dims.cost)activeDims.push('Cost');
@@ -3276,6 +3315,7 @@ function nextRiskId(){
 async function submitAddRisk(){
   const desc=document.getElementById('ar_description').value.trim();
   if(!desc){arMsg('Risk description is required',false);return;}
+  if(!requireActiveAccess())return;
 
   let risk={
     type:document.getElementById('ar_type').value,
@@ -4564,6 +4604,7 @@ function ewCard(r,week){
 }
 
 async function analyzeTrend(){
+  if(!requireActiveAccess())return;
   const sv=parseFloat(document.getElementById('ind_sv').value)||0;
   const br=parseFloat(document.getElementById('ind_br').value)||0;
   const cr=parseInt(document.getElementById('ind_cr').value)||0;
@@ -4638,6 +4679,7 @@ Respond ONLY with valid JSON (text values in the detected register language):
 // ═══ UPDATES ═══
 function setUT(btn,type){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');cUT=type;}
 async function addUpdate(){
+  if(!requireActiveAccess())return;
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
   if(!text&&!UF.length){alert('Please add details or attach a file');return;}
@@ -5068,6 +5110,7 @@ function renderWhatIf(){
 function updLever(key,val){wifLevers[key]=val;}
 
 async function runSimulation(){
+  if(!requireActiveAccess())return;
   const risks=CP?.risks||[];
   if(!risks.length){alert('No risks to simulate');return;}
   if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
