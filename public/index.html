@@ -1366,6 +1366,7 @@ function switchAuthTab(tab){
   document.getElementById('signupForm').style.display='none';
   document.getElementById('forgotForm').style.display='none';
   document.getElementById('resetForm').style.display='none';
+  const vf=document.getElementById('verifyForm');if(vf)vf.style.display='none';
   document.getElementById('authError').style.display='none';
   
   if(tab==='login'){
@@ -1428,6 +1429,9 @@ async function doLogin(){
   }catch(e){showAuthError('Connection error: '+e.message);}
 }
 
+let pendingSignup=null; // {email,name,company,pass}
+function genCode(){return String(Math.floor(100000+Math.random()*900000));}
+
 async function doSignup(){
   const name=document.getElementById('reg_name').value.trim();
   const company=document.getElementById('reg_company').value.trim();
@@ -1436,43 +1440,124 @@ async function doSignup(){
   if(!name||!email||!pass){showAuthError('Please fill all required fields');return;}
   if(!email.includes('@')){showAuthError('Please enter a valid email address');return;}
   if(pass.length<6){showAuthError('Password must be at least 6 characters');return;}
-  
+
+  // Check if email-verification is available on backend
+  let emailReady=false;
+  try{const r=await fetch('/api/email/status');const d=await r.json();emailReady=!!d.configured;}catch(e){}
+
+  if(!emailReady){
+    // Fallback: original direct signup (no email verification configured)
+    return doSignupDirect(name,company,email,pass);
+  }
+
+  // Generate + store code, send email, show verify screen
+  const code=genCode();
+  const expires=Date.now()+15*60*1000;
+  pendingSignup={email,name,company,pass,code,expires};
   try{
-    const {ok,data}=await sbAuth('signup',{
-      email,password:pass,
-      data:{full_name:name,company:company}
-    });
-    if(!ok||data.error){
-      showAuthError(data.error_description||data.msg||data.error?.message||'Signup failed');
-      return;
-    }
-    // Create profile in users table
+    const r=await fetch('/api/email/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:email,code})});
+    if(!r.ok){const d=await r.json();showAuthError('Could not send code: '+(d.error||'try again'));return;}
+    showVerifyScreen(email);
+  }catch(e){showAuthError('Error sending code: '+e.message);}
+}
+
+// Original signup (used as fallback if email not configured)
+async function doSignupDirect(name,company,email,pass){
+  try{
+    const {ok,data}=await sbAuth('signup',{email,password:pass,data:{full_name:name,company:company}});
+    if(!ok||data.error){showAuthError(data.error_description||data.msg||data.error?.message||'Signup failed');return;}
     try{
-      await sb('users','POST',{
-        id:data.user?.id||data.id,
-        email:email,
-        full_name:name,
-        company:company,
-        role:'user',
-        plan:'free_trial',
-        plan_start:new Date().toISOString()
-      });
-    }catch(e){console.log('Profile create:',e);}
-    
+      await sb('users','POST',{id:data.user?.id||data.id,email:email,full_name:name,company:company,role:'user',plan:'free_trial',plan_start:new Date().toISOString()});
+    }catch(e){}
     if(data.access_token){
-      // Auto-confirmed (confirm email disabled)
+      currentUser=data.user;
+      localStorage.setItem('sb_token',data.access_token);
+      localStorage.setItem('sb_refresh',data.refresh_token);
+      localStorage.setItem('sb_user',JSON.stringify(data.user));
+      await loadUserProfile();enterApp();
+    }else{switchAuthTab('login');showAuthSuccess('Account created! Sign in to continue.');}
+  }catch(e){showAuthError('Error: '+e.message);}
+}
+
+function showVerifyScreen(email){
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('signupForm').style.display='none';
+  document.getElementById('forgotForm').style.display='none';
+  const rf=document.getElementById('resetForm');if(rf)rf.style.display='none';
+  document.getElementById('authError').style.display='none';
+  let vf=document.getElementById('verifyForm');
+  if(!vf){
+    vf=document.createElement('div');
+    vf.id='verifyForm';
+    vf.innerHTML=`
+      <div style="text-align:center;margin-bottom:8px">
+        <div style="width:52px;height:52px;border-radius:15px;background:var(--primary-soft);display:inline-grid;place-items:center;margin-bottom:14px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg></div>
+      </div>
+      <div class="auth-box-title" style="text-align:center">Check your email</div>
+      <div class="auth-box-sub" style="text-align:center;margin-bottom:20px">We sent a 6-digit code to <b id="verifyEmail"></b></div>
+      <div id="verifyError" style="display:none;background:var(--red-soft);color:var(--red);padding:.6rem .9rem;border-radius:8px;font-size:12.5px;margin-bottom:12px"></div>
+      <div class="fg" style="margin-bottom:14px">
+        <input type="text" id="verifyCode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;text-align:center;font-size:26px;font-weight:700;letter-spacing:10px;padding:14px;border:1px solid var(--b1);border-radius:12px;font-family:'IBM Plex Mono',monospace;outline:none"/>
+      </div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-bottom:12px" onclick="verifyCode()">Verify & Create Account</button>
+      <div style="text-align:center;font-size:12.5px;color:var(--t3)">Didn't get it? <span style="color:var(--primary);cursor:pointer;font-weight:600" onclick="resendCode()">Resend code</span></div>
+      <div style="text-align:center;font-size:12.5px;color:var(--t3);margin-top:8px"><span style="cursor:pointer" onclick="switchAuthTab('signup')">← Back</span></div>`;
+    document.querySelector('.auth-box').appendChild(vf);
+  }
+  vf.style.display='block';
+  document.getElementById('verifyEmail').textContent=email;
+  document.getElementById('verifyCode').value='';
+  setTimeout(()=>document.getElementById('verifyCode').focus(),100);
+}
+
+function showVerifyError(msg){
+  const e=document.getElementById('verifyError');
+  if(e){e.textContent=msg;e.style.display='block';}
+}
+
+async function verifyCode(){
+  if(!pendingSignup){showVerifyError('Session expired, please sign up again');return;}
+  const entered=document.getElementById('verifyCode').value.trim();
+  if(entered.length!==6){showVerifyError('Enter the 6-digit code');return;}
+  if(Date.now()>pendingSignup.expires){showVerifyError('Code expired. Please resend.');return;}
+  if(entered!==pendingSignup.code){showVerifyError('Incorrect code. Try again.');return;}
+
+  // Code correct → create the account
+  const {email,name,company,pass}=pendingSignup;
+  try{
+    const {ok,data}=await sbAuth('signup',{email,password:pass,data:{full_name:name,company:company}});
+    if(!ok||data.error){showVerifyError(data.error_description||data.msg||'Signup failed');return;}
+    try{
+      await sb('users','POST',{id:data.user?.id||data.id,email:email,full_name:name,company:company,role:'user',plan:'free_trial',plan_start:new Date().toISOString(),email_verified:true});
+    }catch(e){}
+    // Welcome email (fire and forget)
+    fetch('/api/email/welcome',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:email,name:name.split(' ')[0]})}).catch(()=>{});
+    pendingSignup=null;
+    if(data.access_token){
       currentUser=data.user;
       localStorage.setItem('sb_token',data.access_token);
       localStorage.setItem('sb_refresh',data.refresh_token);
       localStorage.setItem('sb_user',JSON.stringify(data.user));
       await loadUserProfile();
+      document.getElementById('verifyForm').style.display='none';
       enterApp();
     }else{
-      // Needs email confirmation
       switchAuthTab('login');
-      showAuthSuccess('Account created! Check your email to confirm, then sign in.');
+      showAuthSuccess('Email confirmed! Sign in to continue.');
     }
-  }catch(e){showAuthError('Error: '+e.message);}
+  }catch(e){showVerifyError('Error: '+e.message);}
+}
+
+async function resendCode(){
+  if(!pendingSignup)return;
+  pendingSignup.code=genCode();
+  pendingSignup.expires=Date.now()+15*60*1000;
+  try{
+    await fetch('/api/email/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:pendingSignup.email,code:pendingSignup.code})});
+    showVerifyError('');
+    const e=document.getElementById('verifyError');if(e)e.style.display='none';
+    const sub=document.querySelector('#verifyForm .auth-box-sub');if(sub)sub.innerHTML=`New code sent to <b>${pendingSignup.email}</b>`;
+  }catch(e){showVerifyError('Could not resend: '+e.message);}
 }
 
 async function doForgotPassword(){
