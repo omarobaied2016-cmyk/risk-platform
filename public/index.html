@@ -1162,6 +1162,10 @@ tr:hover td{background:rgba(114,57,234,.015);}
         <label style="font-size:10px;color:var(--sb-text-3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Claude API Key</label>
         <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkKey()" style="background:var(--sb-card);border:1px solid var(--sb-border);border-radius:8px;padding:7px 10px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%;margin-top:4px"/>
       </div>
+      <div class="fg admin-only" style="margin-bottom:8px;display:none">
+        <label style="font-size:10px;color:var(--sb-text-3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">News API Key (GNews)</label>
+        <input type="password" id="newsApiKey" placeholder="GNews key..." oninput="checkNewsKeyInput()" style="background:var(--sb-card);border:1px solid var(--sb-border);border-radius:8px;padding:7px 10px;color:var(--sb-text);font-family:'IBM Plex Mono',monospace;font-size:10.5px;outline:none;width:100%;margin-top:4px"/>
+      </div>
       <div class="api-row">
         <div class="cdot" id="cdot"></div>
         <span class="api-stat" id="clbl">Not connected</span>
@@ -1642,7 +1646,6 @@ async function loadApiKeyFromDB(){
       localStorage.setItem('aKey',k);
       checkKey();
     } else {
-      // fallback to localStorage
       const k=localStorage.getItem('aKey');
       if(k){document.getElementById('apiKey').value=k;checkKey();}
     }
@@ -1650,6 +1653,14 @@ async function loadApiKeyFromDB(){
     const k=localStorage.getItem('aKey');
     if(k){document.getElementById('apiKey').value=k;checkKey();}
   }
+  // Load GNews key from DB for all users
+  try{
+    const rows=await sb('app_settings?key=eq.gnews_api_key&select=value');
+    if(rows&&rows.length&&rows[0].value){
+      localStorage.setItem('newsKey',rows[0].value);
+      const f=document.getElementById('newsApiKey');if(f)f.value=rows[0].value;
+    }
+  }catch(e){}
 }
 
 // ═══ ACCOUNT SETTINGS ═══
@@ -3613,7 +3624,7 @@ function renderDash(){
         <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Risk Trend</span></div>
       </div>
       <canvas id="trendC" height="60"></canvas>
-      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter weekly indicators in <a onclick="ST('warn')" style="color:var(--primary);cursor:pointer">Early Warning</a> for trend report</div>
+      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter weekly indicators in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Updates</a> for trend report</div>
     </div>`}
 
     <!-- #20 Refresh All Button -->
@@ -5311,10 +5322,28 @@ function checkNewsKey(){
   return k&&k.length>10;
 }
 
+// Admin types GNews key in sidebar -> save to DB for everyone
+function checkNewsKeyInput(){
+  const k=document.getElementById('newsApiKey').value.trim();
+  if(k&&k.length>10){
+    localStorage.setItem('newsKey',k);
+    if(isAdmin()){
+      sb('app_settings?key=eq.gnews_api_key','PATCH',{value:k}).then(r=>{
+        if(!r||!r.length)sb('app_settings','POST',{key:'gnews_api_key',value:k}).catch(()=>{});
+      }).catch(()=>{sb('app_settings','POST',{key:'gnews_api_key',value:k}).catch(()=>{});});
+    }
+  }
+}
+
 function setNewsKey(){
   const k=prompt('Enter your GNews API key (get free key at gnews.io):');
   if(k&&k.length>10){
     localStorage.setItem('newsKey',k);
+    if(isAdmin()){
+      sb('app_settings?key=eq.gnews_api_key','PATCH',{value:k}).then(r=>{
+        if(!r||!r.length)sb('app_settings','POST',{key:'gnews_api_key',value:k}).catch(()=>{});
+      }).catch(()=>{});
+    }
     return true;
   }
   return false;
@@ -5322,7 +5351,7 @@ function setNewsKey(){
 
 async function fetchNews(query){
   let key=localStorage.getItem('newsKey');
-  if(!key){if(!setNewsKey())return null;key=localStorage.getItem('newsKey');}
+  if(!key)return null;
   try{
     const r=await fetch(`/api/news?q=${encodeURIComponent(query)}`,{headers:{'x-news-key':key}});
     const data=await r.json();
@@ -5339,15 +5368,21 @@ async function loadInsights(){
   }
 
   if(!localStorage.getItem('newsKey')){
-    document.getElementById('insightsContent').innerHTML=`
+    document.getElementById('insightsContent').innerHTML=isAdmin()?`
       <div class="dash-section" style="text-align:center;padding:40px 24px">
-        <div style="font-size:42px;margin-bottom:14px">🔑</div>
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--primary-soft);display:grid;place-items:center;margin:0 auto 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 1 1-7.1 7.1 5 5 0 0 1 7.1-7.1zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg></div>
         <div style="font-size:15px;font-weight:700;margin-bottom:6px">News API Key Required</div>
         <div style="font-size:12px;color:var(--t3);margin-bottom:18px;max-width:480px;margin-inline:auto;line-height:1.6">
-          To fetch market & world insights, you need a free GNews API key.<br>
-          Get one at <a href="https://gnews.io" target="_blank" style="color:var(--primary)">gnews.io</a> (100 requests/day free)
+          To fetch market & world insights, add a free GNews API key.<br>
+          Get one at <a href="https://gnews.io" target="_blank" style="color:var(--primary)">gnews.io</a> (100 requests/day free). It will be saved for all users.
         </div>
         <button class="btn btn-p" onclick="if(setNewsKey())loadInsights()">Add API Key</button>
+      </div>
+    `:`
+      <div class="dash-section" style="text-align:center;padding:40px 24px">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--primary-soft);display:grid;place-items:center;margin:0 auto 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg></div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">Market Insights</div>
+        <div style="font-size:12px;color:var(--t3);max-width:420px;margin-inline:auto;line-height:1.6">Market & world insights are being configured by your administrator and will be available soon.</div>
       </div>
     `;
     return;
