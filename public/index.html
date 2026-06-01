@@ -1667,6 +1667,8 @@ function enterApp(){
   document.querySelectorAll('.admin-only').forEach(el=>{
     el.style.display=isAdmin()?'':'none';
   });
+  // Check if backend has AI key configured (secure mode)
+  checkBackendAI();
   // Load API key from DB for all users
   loadApiKeyFromDB();
   loadAll();
@@ -1890,10 +1892,33 @@ function checkKey(){
   }
   refreshBtn();
 }
-const GK=()=>document.getElementById('apiKey').value.trim();
+let aiReady=false;
+const GK=()=>{
+  const field=document.getElementById('apiKey');
+  const v=field?field.value.trim():'';
+  if(v)return v;
+  return aiReady?'sk-ant-backend-managed':'';
+};
+async function checkBackendAI(){
+  try{
+    const r=await fetch('/api/claude/status');
+    const d=await r.json();
+    aiReady=!!d.configured;
+  }catch(e){aiReady=false;}
+  const dot=document.getElementById('cdot'),lbl=document.getElementById('clbl');
+  const hasKey=aiReady||(document.getElementById('apiKey')?.value||'').startsWith('sk-ant-');
+  if(dot&&lbl){
+    if(hasKey){dot.classList.add('on');lbl.classList.add('on');lbl.textContent='Connected';}
+    else{dot.classList.remove('on');lbl.classList.remove('on');lbl.textContent='Not connected';}
+  }
+  refreshBtn();
+}
 
 async function api(payload){
-  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':GK()},body:JSON.stringify(payload)});
+  const key=GK();
+  const headers={'Content-Type':'application/json'};
+  if(key&&key!=='sk-ant-backend-managed')headers['x-api-key']=key;
+  const r=await fetch('/api/claude',{method:'POST',headers,body:JSON.stringify(payload)});
   return r.json();
 }
 
