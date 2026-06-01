@@ -292,6 +292,12 @@ h2.sec-h{font-size:clamp(30px,4.2vw,46px);font-weight:800;letter-spacing:-.035em
 .switch.annual::after{left:27px;}
 .save-badge{font-size:11.5px;font-weight:700;color:var(--grn);background:rgba(80,205,137,.12);padding:3px 9px;border-radius:6px;}
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start;}
+.plans.plans-4{grid-template-columns:repeat(4,1fr);gap:18px;}
+.plans-4 .plan{padding:28px 24px;}
+.plans-4 .plan-price .amt{font-size:38px;}
+.custom-note{text-align:center;margin-top:32px;font-size:15px;color:var(--t2);}
+.custom-note a{color:var(--primary);font-weight:600;}
+.custom-note a:hover{text-decoration:underline;}
 .plan{background:var(--surface);border:1px solid var(--border-2);border-radius:var(--r-lg);padding:34px 30px;transition:all .3s;}
 .plan:hover{box-shadow:var(--shadow-lg);}
 .plan.featured{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary),var(--shadow-lg);position:relative;transform:scale(1.03);}
@@ -352,12 +358,16 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:72px 0 
   .shot.big,.shot.wide,.shot.sm{grid-column:span 2;grid-row:span 1;}
   .tcards{grid-template-columns:1fr;}
   .plans{grid-template-columns:1fr;max-width:440px;margin:0 auto;}
+  .plans.plans-4{grid-template-columns:1fr;max-width:440px;}
   .plan.featured{transform:none;}
   .mock-body{grid-template-columns:1fr;}
   .mock-side{display:none;}
   .float{display:none;}
   .foot-grid{grid-template-columns:1fr 1fr;gap:32px;}
   .metrics{gap:16px;}
+}
+@media(max-width:980px){
+  .plans.plans-4{grid-template-columns:1fr 1fr;max-width:560px;margin:0 auto;}
 }
 @media(max-width:560px){
   .hero{padding:130px 0 50px;}
@@ -386,7 +396,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:72px 0 
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
-      <a href="#testimonials">Customers</a>
     </div>
     <div class="nav-actions">
       <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
@@ -483,14 +492,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:72px 0 
 <!-- TRUST -->
 <section class="trust">
   <div class="wrap">
-    <p class="trust-label reveal">Trusted by leading project organizations & PMOs</p>
-    <div class="logos reveal">
-      <div class="cust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>Vanguard</div>
-      <div class="cust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Meridian</div>
-      <div class="cust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9-9 9z"/></svg>Apex PMO</div>
-      <div class="cust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V8l8-5 8 5v12"/></svg>Cornerstone</div>
-      <div class="cust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>Helix Group</div>
-    </div>
     <div class="metrics">
       <div class="metric reveal"><div class="metric-v" data-count="10000" data-suffix="+">0</div><div class="metric-l">Risks Managed</div></div>
       <div class="metric reveal"><div class="metric-v" data-count="500" data-suffix="+">0</div><div class="metric-l">Projects Monitored</div></div>
@@ -703,34 +704,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:72px 0 
   </div>
 </section>
 
-<!-- TESTIMONIALS -->
-<section class="sec" id="testimonials">
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="eyebrow">Customers</span>
-      <h2 class="sec-h">Trusted by risk leaders</h2>
-      <p class="sec-sub">See why PMOs and enterprise teams choose RiskAtlas AI.</p>
-    </div>
-    <div class="tcards">
-      <div class="tcard reveal">
-        <div class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg></div>
-        <q>RiskAtlas AI cut our risk register preparation from days to minutes. The AI catches things our analysts used to miss entirely.</q>
-        <div class="tperson"><div class="tavatar">SА</div><div><div class="tn">Sara Al-Otaibi</div><div class="tr">Head of PMO, Vanguard Construction</div></div></div>
-      </div>
-      <div class="tcard reveal">
-        <div class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg></div>
-        <q>The portfolio view finally gives our executives a single source of truth. We spot troubled projects weeks earlier now.</q>
-        <div class="tperson"><div class="tavatar">MK</div><div><div class="tn">Mohammed Khalid</div><div class="tr">Program Director, Meridian Group</div></div></div>
-      </div>
-      <div class="tcard reveal">
-        <div class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.3 2.3 7.3-6.3-4.6L5.7 21 8 13.7 2 9.4h7.6z"/></svg></div>
-        <q>Aligned with ISO 31000 out of the box. Our audit and governance reviews have never been smoother.</q>
-        <div class="tperson"><div class="tavatar">LF</div><div><div class="tn">Layla Faisal</div><div class="tr">Risk & Compliance Lead, Apex PMO</div></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- PRICING -->
 <section class="sec" id="pricing" style="background:var(--bg-2)">
   <div class="wrap">
@@ -743,19 +716,32 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:72px 0 
       <span class="on" id="lblM">Monthly</span>
       <button class="switch" id="billSwitch" aria-label="Toggle billing"></button>
       <span id="lblA">Annual</span>
-      <span class="save-badge">Save 20%</span>
+      <span class="save-badge">2 months free</span>
     </div>
-    <div class="plans">
+    <div class="plans plans-4">
       <div class="plan reveal">
-        <div class="plan-name">Starter</div>
-        <div class="plan-desc">For individuals and small teams getting started with risk management.</div>
-        <div class="plan-price"><span class="amt" data-m="49" data-a="39">$49</span><span class="per">/mo</span></div>
-        <div class="plan-bill" id="bill0">billed monthly</div>
+        <div class="plan-name">Free Trial</div>
+        <div class="plan-desc">Try the full platform on a single project, no commitment.</div>
+        <div class="plan-price"><span class="amt">$0</span><span class="per">/7 days</span></div>
+        <div class="plan-bill">no credit card required</div>
         <a href="/app" class="btn btn-ghost">Start Free Trial</a>
         <ul class="plan-feats">
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Up to 6 projects</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>1 project</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>7-day access</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Core AI risk identification</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Executive dashboard</li>
+        </ul>
+      </div>
+      <div class="plan reveal">
+        <div class="plan-name">Starter</div>
+        <div class="plan-desc">For small teams managing a focused set of projects.</div>
+        <div class="plan-price"><span class="amt" data-m="49" data-a="490">$49</span><span class="per" data-permo="/mo" data-peryr="/yr">/mo</span></div>
+        <div class="plan-bill">billed monthly</div>
+        <a href="/app" class="btn btn-ghost">Start Free Trial</a>
+        <ul class="plan-feats">
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>3 projects</li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>1 portfolio</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>AI risk identification</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>All AI features</li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Executive dashboards</li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Email support</li>
         </ul>
@@ -763,33 +749,34 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:72px 0 
       <div class="plan featured reveal">
         <div class="plan-badge">Most Popular</div>
         <div class="plan-name">Professional</div>
-        <div class="plan-desc">For growing PMOs that need full portfolio visibility and AI insights.</div>
-        <div class="plan-price"><span class="amt" data-m="199" data-a="159">$199</span><span class="per">/mo</span></div>
-        <div class="plan-bill" id="bill1">billed monthly</div>
+        <div class="plan-desc">For growing PMOs needing full portfolio visibility.</div>
+        <div class="plan-price"><span class="amt" data-m="199" data-a="1990">$199</span><span class="per" data-permo="/mo" data-peryr="/yr">/mo</span></div>
+        <div class="plan-bill">billed monthly</div>
         <a href="/app" class="btn btn-primary">Start Free Trial</a>
         <ul class="plan-feats">
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Up to 6 portfolios</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>What-If analysis & predictions</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Market & world insights</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Early-warning indicators</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>20 projects</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>5 portfolios</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>All AI features</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Advanced analytics</li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Priority support</li>
         </ul>
       </div>
       <div class="plan reveal">
         <div class="plan-name">Enterprise</div>
-        <div class="plan-desc">For large organizations with custom governance and security needs.</div>
-        <div class="plan-price"><span class="amt">Custom</span></div>
-        <div class="plan-bill">tailored to your organization</div>
+        <div class="plan-desc">For large organizations with governance and security needs.</div>
+        <div class="plan-price"><span class="amt" data-m="499" data-a="4990">$499</span><span class="per" data-permo="/mo" data-peryr="/yr">/mo</span></div>
+        <div class="plan-bill">billed monthly</div>
         <a href="#contact" class="btn btn-ghost">Contact Sales</a>
         <ul class="plan-feats">
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Unlimited projects & portfolios</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>100 projects</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>25 portfolios</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>API access</li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>SSO & role-based access</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Custom integrations & API</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Dedicated success manager</li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>SLA & onboarding</li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Priority support</li>
         </ul>
       </div>
     </div>
+    <p class="custom-note reveal">Need more than 100 projects? <a href="#contact">Contact us for custom plans.</a></p>
   </div>
 </section>
 
@@ -896,10 +883,13 @@ billSwitch.addEventListener('click',()=>{
   lblM.classList.toggle('on',!annual);
   lblA.classList.toggle('on',annual);
   document.querySelectorAll('.amt[data-m]').forEach(el=>{
-    el.textContent='$'+(annual?el.dataset.a:el.dataset.m);
+    el.textContent='$'+(annual?(+el.dataset.a).toLocaleString():el.dataset.m);
+  });
+  document.querySelectorAll('.per[data-permo]').forEach(el=>{
+    el.textContent=annual?el.dataset.peryr:el.dataset.permo;
   });
   document.querySelectorAll('.plan-bill').forEach(el=>{
-    if(el.textContent.includes('billed'))el.textContent=annual?'billed annually':'billed monthly';
+    if(el.textContent.includes('billed'))el.textContent=annual?'billed annually · 2 months free':'billed monthly';
   });
 });
 
