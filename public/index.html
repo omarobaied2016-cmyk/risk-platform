@@ -1551,8 +1551,13 @@ async function loadUserProfile(){
 }
 
 // ═══ ADMIN SYSTEM ═══
+const ADMIN_IDS=['a94791dd-2b34-4c11-b552-020a89ca311d'];
+const ADMIN_EMAILS=['omar.obaied2016@gmail.com'];
 function isAdmin(){
-  return currentUserProfile&&currentUserProfile.role==='admin';
+  if(currentUserProfile&&currentUserProfile.role==='admin')return true;
+  if(currentUser&&ADMIN_IDS.includes(currentUser.id))return true;
+  if(currentUser&&ADMIN_EMAILS.includes((currentUser.email||'').toLowerCase()))return true;
+  return false;
 }
 
 function getUserPlan(){
@@ -1627,6 +1632,8 @@ function enterApp(){
 
 // Load Claude API key from app_settings table (set by admin)
 async function loadApiKeyFromDB(){
+  // Re-apply admin visibility in case profile loaded late
+  document.querySelectorAll('.admin-only').forEach(el=>{el.style.display=isAdmin()?'':'none';});
   try{
     const rows=await sb('app_settings?key=eq.claude_api_key&select=value');
     if(rows&&rows.length&&rows[0].value){
