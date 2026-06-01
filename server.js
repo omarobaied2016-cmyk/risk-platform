@@ -103,6 +103,108 @@ app.get('/api/news/status', (req, res) => {
 });
 
 // ─────────────────────────────────────────────
+//  EMAIL via Resend
+//  Set in Railway → Variables:
+//    RESEND_API_KEY = re_...
+//    EMAIL_FROM     = RiskAtlas AI <noreply@riskatlas.pro>  (optional)
+// ─────────────────────────────────────────────
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'RiskAtlas AI <noreply@riskatlas.pro>';
+const emailLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, key: 'email' });
+
+function emailShell(title, bodyHtml) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:32px 0;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(20,20,50,.06);">
+<tr><td style="background:linear-gradient(135deg,#7239ea,#8950fc);padding:28px 32px;text-align:center;">
+<div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-.02em;">RiskAtlas <span style="opacity:.85;">AI</span></div>
+</td></tr>
+<tr><td style="padding:36px 32px;color:#15152b;">
+<h1 style="margin:0 0 16px;font-size:20px;font-weight:800;letter-spacing:-.02em;color:#15152b;">${title}</h1>
+${bodyHtml}
+</td></tr>
+<tr><td style="padding:20px 32px;border-top:1px solid #eef0f7;color:#8888a8;font-size:12px;line-height:1.6;text-align:center;">
+RiskAtlas AI · AI-Powered Risk Management<br>
+<a href="https://riskatlas.pro" style="color:#7239ea;text-decoration:none;">riskatlas.pro</a>
+</td></tr>
+</table>
+<div style="max-width:480px;color:#b5b7c8;font-size:11px;margin-top:16px;text-align:center;line-height:1.5;">
+You received this email because an account action was requested at riskatlas.pro.
+</div>
+</td></tr></table></body></html>`;
+}
+
+function tplVerify(code) {
+  return emailShell('Confirm your email', `
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#4a4a68;">Welcome to RiskAtlas AI. Use the code below to confirm your email and activate your account:</p>
+    <div style="background:#f3efff;border:1px solid rgba(114,57,234,.18);border-radius:12px;padding:22px;text-align:center;margin:0 0 20px;">
+      <div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#7239ea;font-family:'SF Mono',Menlo,monospace;">${code}</div>
+    </div>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#8888a8;">This code expires in 15 minutes. If you didn't create an account, you can safely ignore this email.</p>`);
+}
+function tplWelcome(name) {
+  return emailShell(`Welcome aboard, ${name}!`, `
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#4a4a68;">Your RiskAtlas AI account is active. You're ready to identify, analyze, and monitor project risks with AI.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px;"><tr><td style="border-radius:10px;background:#7239ea;">
+      <a href="https://riskatlas.pro/app" style="display:inline-block;padding:13px 26px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">Open the Platform</a>
+    </td></tr></table>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#8888a8;">Need help getting started? Just reply to this email.</p>`);
+}
+function tplReset(code) {
+  return emailShell('Reset your password', `
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#4a4a68;">We received a request to reset your password. Use the code below:</p>
+    <div style="background:#f3efff;border:1px solid rgba(114,57,234,.18);border-radius:12px;padding:22px;text-align:center;margin:0 0 20px;">
+      <div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#7239ea;font-family:'SF Mono',Menlo,monospace;">${code}</div>
+    </div>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#8888a8;">This code expires in 15 minutes. If you didn't request this, your password is still safe.</p>`);
+}
+
+async function sendEmail(to, subject, html) {
+  if (!RESEND_API_KEY) throw new Error('Email service not configured');
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + RESEND_API_KEY },
+    body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || 'Email send failed');
+  return data;
+}
+
+app.post('/api/email/verify', emailLimiter, async (req, res) => {
+  const { to, code } = req.body || {};
+  if (!to || !code) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    await sendEmail(to, 'Confirm your RiskAtlas AI email', tplVerify(code));
+    res.json({ sent: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/email/welcome', emailLimiter, async (req, res) => {
+  const { to, name } = req.body || {};
+  if (!to) return res.status(400).json({ error: 'Missing recipient' });
+  try {
+    await sendEmail(to, 'Welcome to RiskAtlas AI', tplWelcome(name || 'there'));
+    res.json({ sent: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/email/reset', emailLimiter, async (req, res) => {
+  const { to, code } = req.body || {};
+  if (!to || !code) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    await sendEmail(to, 'Reset your RiskAtlas AI password', tplReset(code));
+    res.json({ sent: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/email/status', (req, res) => {
+  res.json({ configured: !!RESEND_API_KEY });
+});
+
+// ─────────────────────────────────────────────
 //  Routing: landing at /, platform at /app
 // ─────────────────────────────────────────────
 app.get('/app', (req, res) => {
