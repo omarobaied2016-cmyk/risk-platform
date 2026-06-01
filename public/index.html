@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   /* Sidebar - LIGHT */
@@ -3757,8 +3758,8 @@ function showPortfolioExportModal(){
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn btn-g" onclick="document.getElementById('pfExportModal').remove()">Cancel</button>
-        <button class="btn btn-g" onclick="doPortfolioExportExcel()">📊 Export Excel</button>
-        <button class="btn btn-p" onclick="doPortfolioExportPDF()">📄 Export PDF</button>
+        <button class="btn btn-g" onclick="doPortfolioExportExcel()">Export Excel</button>
+        <button class="btn btn-p" onclick="doPortfolioExportPDF()">Export PDF</button>
       </div>
     </div>
   </div>`;
@@ -4121,12 +4122,14 @@ function showExportModal(){
           <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_mit" checked/> Mitigation</label>
           <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_owner" checked/> Owner</label>
           <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_respowner"/> Resp. Owner</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_status"/> Status</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="exp_f_notes"/> Notes</label>
         </div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn btn-g" onclick="document.getElementById('exportModal').remove()">Cancel</button>
-        <button class="btn btn-g" onclick="doExportExcel()">📊 Export Excel</button>
-        <button class="btn btn-p" onclick="doExportPDF()">📄 Export PDF</button>
+        <button class="btn btn-g" onclick="doExportExcel()">Export Excel</button>
+        <button class="btn btn-p" onclick="doExportPDF()">Export PDF</button>
       </div>
     </div>
   </div>`;
@@ -4136,26 +4139,167 @@ function showExportModal(){
 function doExportExcel(){
   const risks=CP?.risks||[];
   if(!risks.length){alert('No risks to export');return;}
+  if(typeof XLSX==='undefined'){alert('Excel library still loading, please try again in a moment.');return;}
+
   const fields=[];
-  if(document.getElementById('exp_f_id')?.checked)fields.push({key:'risk_id',label:'ID'});
-  if(document.getElementById('exp_f_type')?.checked)fields.push({key:'type',label:'Type'});
-  if(document.getElementById('exp_f_cat')?.checked)fields.push({key:'category',label:'Category'});
-  if(document.getElementById('exp_f_desc')?.checked)fields.push({key:'description',label:'Description'});
-  if(document.getElementById('exp_f_cause')?.checked)fields.push({key:'cause',label:'Cause'});
-  if(document.getElementById('exp_f_prob')?.checked)fields.push({key:'probability',label:'Probability'});
-  if(document.getElementById('exp_f_impact')?.checked)fields.push({key:'impact_cost',label:'Impact Cost'},{key:'impact_schedule',label:'Impact Schedule'},{key:'impact_qhse',label:'Impact QHSE'});
-  if(document.getElementById('exp_f_level')?.checked)fields.push({key:'level',label:'Level'});
-  if(document.getElementById('exp_f_resp')?.checked)fields.push({key:'response_strategy',label:'Response'});
-  if(document.getElementById('exp_f_mit')?.checked)fields.push({key:'mitigation',label:'Mitigation'});
-  if(document.getElementById('exp_f_owner')?.checked)fields.push({key:'owner',label:'Risk Owner'});
-  if(document.getElementById('exp_f_respowner')?.checked)fields.push({key:'response_owner',label:'Response Owner'});
-  
-  const header=fields.map(f=>f.label).join(',');
-  const rows=risks.map(r=>fields.map(f=>`"${(r[f.key]||'').toString().replace(/"/g,'""')}"`).join(','));
-  const csv='\uFEFF'+header+'\n'+rows.join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download=`RiskAtlas_${CP.name.replace(/\s/g,'_')}_Register.csv`;a.click();
+  if(document.getElementById('exp_f_id')?.checked)fields.push({key:'risk_id',label:'ID',w:9});
+  if(document.getElementById('exp_f_type')?.checked)fields.push({key:'type',label:'Type',w:13});
+  if(document.getElementById('exp_f_cat')?.checked)fields.push({key:'category',label:'Category',w:14});
+  if(document.getElementById('exp_f_desc')?.checked)fields.push({key:'description',label:'Risk Description',w:48});
+  if(document.getElementById('exp_f_cause')?.checked)fields.push({key:'cause',label:'Root Cause',w:32});
+  if(document.getElementById('exp_f_prob')?.checked)fields.push({key:'probability',label:'Prob',w:7});
+  if(document.getElementById('exp_f_impact')?.checked)fields.push({key:'impact_cost',label:'Cost',w:7},{key:'impact_schedule',label:'Sched',w:7},{key:'impact_qhse',label:'QHSE',w:7},{key:'impact_reputation',label:'Rep',w:7});
+  if(document.getElementById('exp_f_level')?.checked)fields.push({key:'level',label:'Level',w:11});
+  if(document.getElementById('exp_f_resp')?.checked)fields.push({key:'response_strategy',label:'Response',w:13});
+  if(document.getElementById('exp_f_mit')?.checked)fields.push({key:'mitigation',label:'Response Plan',w:42});
+  if(document.getElementById('exp_f_owner')?.checked)fields.push({key:'owner',label:'Risk Owner',w:18});
+  if(document.getElementById('exp_f_respowner')?.checked)fields.push({key:'response_owner',label:'Response Owner',w:18});
+  if(document.getElementById('exp_f_status')?.checked)fields.push({key:'status',label:'Status',w:11});
+  if(document.getElementById('exp_f_notes')?.checked)fields.push({key:'notes',label:'Notes',w:30});
+  if(!fields.length){alert('Select at least one column');return;}
+
+  const ncol=fields.length;
+  const thr=risks.filter(r=>r.type==='threat'||!r.type);
+  const opp=risks.filter(r=>r.type==='opportunity');
+  const high=risks.filter(r=>r.level==='high').length;
+  const med=risks.filter(r=>r.level==='medium').length;
+  const low=risks.filter(r=>r.level==='low').length;
+
+  // Brand colors
+  const C={primary:'7239EA',primaryDk:'5D28C4',head:'4A2B8C',white:'FFFFFF',
+    light:'F3EFFF',grey:'F7F8FC',border:'D9D9E3',t1:'15152B',t2:'4A4A68',
+    high:'F64E60',highBg:'FDE7EA',med:'FFA800',medBg:'FFF4DD',low:'50CD89',lowBg:'E6F8EE',
+    threatBg:'FDECEC',oppBg:'E9F8F1',threat:'E63950',opp:'1C9E8F'};
+
+  const aoa=[];
+  // Title rows
+  aoa.push(['RiskAtlas AI — Risk Register']);
+  aoa.push([CP.name+(CP.type?(' · '+CP.type):'')]);
+  aoa.push(['Generated: '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+(CP.value?('  ·  Contract Value: '+Number(CP.value).toLocaleString()+' SAR'):'')]);
+  aoa.push([]);
+  // Summary
+  aoa.push(['SUMMARY']);
+  aoa.push(['Total Risks',risks.length,'','High',high,'','Threats',thr.length]);
+  aoa.push(['Medium',med,'','Low',low,'','Opportunities',opp.length]);
+  aoa.push([]);
+
+  const headerRowIdx=aoa.length; // 0-based row of column headers
+  const buildRow=r=>fields.map(f=>{
+    let v=r[f.key];
+    if(f.key==='type')v=(r.type==='opportunity')?'Opportunity':'Threat';
+    else if(f.key==='category')v=CAT_AR[r.category]||r.category;
+    else if(f.key==='level')v=(RL[r.level]||r.level);
+    else if(f.key==='response_strategy')v=(RESP_AR[r.response_strategy]||r.response_strategy||'—');
+    else if(f.key==='status')v=(r.status==='closed'?'Closed':'Open');
+    else if(['probability','impact_cost','impact_schedule','impact_qhse','impact_reputation'].includes(f.key))v=(v===0||v)?v:'';
+    return (v===undefined||v===null)?'':v;
+  });
+
+  // Threats section
+  aoa.push(['THREATS ('+thr.length+')']);
+  const thrHeadIdx=aoa.length;
+  aoa.push(fields.map(f=>f.label));
+  const thrStart=aoa.length;
+  thr.forEach(r=>aoa.push(buildRow(r)));
+  const thrEnd=aoa.length-1;
+  aoa.push([]);
+  // Opportunities section
+  aoa.push(['OPPORTUNITIES ('+opp.length+')']);
+  const oppHeadIdx=aoa.length;
+  aoa.push(fields.map(f=>f.label));
+  const oppStart=aoa.length;
+  opp.forEach(r=>aoa.push(buildRow(r)));
+  const oppEnd=aoa.length-1;
+
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+
+  // Column widths
+  ws['!cols']=fields.map(f=>({wch:f.w}));
+  // ensure at least 8 cols for summary spacing
+  while(ws['!cols'].length<8)ws['!cols'].push({wch:12});
+
+  // Row heights
+  ws['!rows']=[];
+  ws['!rows'][0]={hpt:30};ws['!rows'][1]={hpt:20};
+
+  // Merges
+  const merges=[];
+  const lastCol=Math.max(ncol-1,7);
+  merges.push({s:{r:0,c:0},e:{r:0,c:lastCol}});
+  merges.push({s:{r:1,c:0},e:{r:1,c:lastCol}});
+  merges.push({s:{r:2,c:0},e:{r:2,c:lastCol}});
+  merges.push({s:{r:4,c:0},e:{r:4,c:lastCol}}); // SUMMARY label
+  merges.push({s:{r:headerRowIdx+2,c:0},e:{r:headerRowIdx+2,c:lastCol}}); // THREATS banner (row 8)
+  // find banner rows dynamically
+  merges.push({s:{r:thrHeadIdx-1,c:0},e:{r:thrHeadIdx-1,c:ncol-1}});
+  merges.push({s:{r:oppHeadIdx-1,c:0},e:{r:oppHeadIdx-1,c:ncol-1}});
+  ws['!merges']=merges;
+
+  const setStyle=(addr,style)=>{if(ws[addr])ws[addr].s=style;};
+  const border=(c)=>({top:{style:'thin',color:{rgb:c||C.border}},bottom:{style:'thin',color:{rgb:c||C.border}},left:{style:'thin',color:{rgb:c||C.border}},right:{style:'thin',color:{rgb:c||C.border}}});
+
+  // Title styling
+  setStyle('A1',{font:{name:'Calibri',sz:20,bold:true,color:{rgb:C.primary}},alignment:{horizontal:'left',vertical:'center'}});
+  setStyle('A2',{font:{name:'Calibri',sz:13,bold:true,color:{rgb:C.t1}}});
+  setStyle('A3',{font:{name:'Calibri',sz:10,color:{rgb:C.t2}}});
+  // Summary label
+  setStyle('A5',{font:{name:'Calibri',sz:11,bold:true,color:{rgb:C.white}},fill:{fgColor:{rgb:C.head}},alignment:{horizontal:'left',vertical:'center'}});
+  // Summary KPI cells (rows 6-7 => index 5-6)
+  [5,6].forEach(rr=>{
+    [0,3,6].forEach(cc=>{
+      const a=XLSX.utils.encode_cell({r:rr,c:cc});
+      setStyle(a,{font:{name:'Calibri',sz:10,bold:true,color:{rgb:C.t2}},fill:{fgColor:{rgb:C.grey}}});
+    });
+    [1,4,7].forEach(cc=>{
+      const a=XLSX.utils.encode_cell({r:rr,c:cc});
+      setStyle(a,{font:{name:'Calibri',sz:12,bold:true,color:{rgb:C.primary}},fill:{fgColor:{rgb:C.grey}},alignment:{horizontal:'center'}});
+    });
+  });
+
+  // Section banners + headers + rows
+  const styleSection=(bannerIdx,headIdx,start,end,isOpp)=>{
+    // banner
+    const ba=XLSX.utils.encode_cell({r:bannerIdx,c:0});
+    setStyle(ba,{font:{name:'Calibri',sz:11,bold:true,color:{rgb:C.white}},fill:{fgColor:{rgb:isOpp?C.opp:C.threat}},alignment:{horizontal:'left',vertical:'center'}});
+    if(ws['!rows'])ws['!rows'][bannerIdx]={hpt:20};
+    // header row
+    for(let c=0;c<ncol;c++){
+      const a=XLSX.utils.encode_cell({r:headIdx,c});
+      setStyle(a,{font:{name:'Calibri',sz:10,bold:true,color:{rgb:C.white}},fill:{fgColor:{rgb:C.primary}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:border(C.primaryDk)});
+    }
+    if(ws['!rows'])ws['!rows'][headIdx]={hpt:26};
+    // data rows
+    for(let r=start;r<=end;r++){
+      const zebra=((r-start)%2===1);
+      for(let c=0;c<ncol;c++){
+        const a=XLSX.utils.encode_cell({r,c});
+        const f=fields[c];
+        let fill=zebra?C.grey:C.white;
+        let fontColor=C.t1;let bold=false;let halign='left';
+        if(f.key==='level'){
+          const lv=(ws[a]&&ws[a].v||'').toString().toUpperCase();
+          if(lv==='HIGH'){fill=C.highBg;fontColor=C.high;bold=true;}
+          else if(lv==='MEDIUM'){fill=C.medBg;fontColor='B27A00';bold=true;}
+          else if(lv==='LOW'){fill=C.lowBg;fontColor='2E9C63';bold=true;}
+          halign='center';
+        } else if(['probability','impact_cost','impact_schedule','impact_qhse','impact_reputation','risk_id','type','status','response_strategy','category'].includes(f.key)){
+          halign='center';
+        }
+        if(f.key==='risk_id'){bold=true;fontColor=C.primary;}
+        setStyle(a,{font:{name:'Calibri',sz:10,bold:bold,color:{rgb:fontColor}},fill:{fgColor:{rgb:fill}},alignment:{horizontal:halign,vertical:'top',wrapText:true},border:border()});
+      }
+      if(ws['!rows'])ws['!rows'][r]={hpt:30};
+    }
+  };
+  styleSection(thrHeadIdx-1,thrHeadIdx,thrStart,thrEnd,false);
+  styleSection(oppHeadIdx-1,oppHeadIdx,oppStart,oppEnd,true);
+
+  // Freeze panes below threat header
+  ws['!freeze']={xSplit:0,ySplit:thrHeadIdx+1};
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Risk Register');
+  XLSX.writeFile(wb,`RiskAtlas_${CP.name.replace(/[^\w]+/g,'_')}_Register.xlsx`);
   document.getElementById('exportModal')?.remove();
 }
 
