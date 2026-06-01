@@ -1572,9 +1572,13 @@ function getUserPlan(){
 function getPlanLimits(plan){
   const limits={
     free_trial:{label:'Free Trial',projects:1,portfolios:0,whatif:false,insights:false,days:7},
-    pro:{label:'Pro',projects:6,portfolios:1,whatif:true,insights:true,days:null},
-    organization:{label:'Organization',projects:36,portfolios:6,whatif:true,insights:true,days:null},
-    unlimited:{label:'Unlimited',projects:999,portfolios:999,whatif:true,insights:true,days:null}
+    starter:{label:'Starter',projects:3,portfolios:1,whatif:true,insights:true,days:null},
+    professional:{label:'Professional',projects:20,portfolios:5,whatif:true,insights:true,days:null},
+    enterprise:{label:'Enterprise',projects:100,portfolios:25,whatif:true,insights:true,days:null},
+    unlimited:{label:'Unlimited',projects:99999,portfolios:99999,whatif:true,insights:true,days:null},
+    // legacy aliases (old plan names still in DB)
+    pro:{label:'Starter',projects:3,portfolios:1,whatif:true,insights:true,days:null},
+    organization:{label:'Professional',projects:20,portfolios:5,whatif:true,insights:true,days:null}
   };
   return limits[plan]||limits.free_trial;
 }
@@ -1903,11 +1907,12 @@ async function loadAll(){
 // ═══ SIDEBAR ═══
 function renderSidebar(){
   const el=document.getElementById('portfolioList');
-  if(!portfolios.length){
+  const standalone=projs.filter(p=>!p.portfolio_id);
+  if(!portfolios.length&&!standalone.length){
     el.innerHTML=`<div class="empty-portfolio">No portfolios yet<br><span style="color:var(--primary);cursor:pointer;font-weight:600" onclick="openPortfModal()">Create your first portfolio</span></div>`;
     return;
   }
-  el.innerHTML=portfolios.map(pf=>{
+  let html=portfolios.map(pf=>{
     const pfProjects=projs.filter(p=>p.portfolio_id===pf.id);
     const isOpen=openPortfolios.has(pf.id);
     const isActive=currentPF&&currentPF.id===pf.id;
@@ -1919,8 +1924,7 @@ function renderSidebar(){
             <span class="pg-icon" style="background:${pf.color||'var(--primary)'}"></span>
             <span class="pg-name">${pf.name}</span>
           </div>
-          <div class="pg-actions">
-          </div>
+          <div class="pg-actions"></div>
           <span class="pg-count">${pfProjects.length}</span>
         </div>
         <div class="proj-list ${isOpen?'open':''}">
@@ -1928,6 +1932,27 @@ function renderSidebar(){
         </div>
       </div>`;
   }).join('');
+
+  // Standalone projects (no portfolio)
+  if(standalone.length){
+    const isOpen=openPortfolios.has('__standalone__');
+    html+=`
+      <div class="portfolio-group">
+        <div class="pg-hdr" onclick="event.stopPropagation();togglePortfolio('__standalone__')">
+          <div class="pg-hdr-left">
+            <span class="pg-toggle ${isOpen?'open':''}">▶</span>
+            <span class="pg-icon" style="background:var(--sb-text-3)"></span>
+            <span class="pg-name">Individual Projects</span>
+          </div>
+          <div class="pg-actions"></div>
+          <span class="pg-count">${standalone.length}</span>
+        </div>
+        <div class="proj-list ${isOpen?'open':''}">
+          ${standalone.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join('')}
+        </div>
+      </div>`;
+  }
+  el.innerHTML=html;
 }
 
 function togglePortfolio(pfId){
