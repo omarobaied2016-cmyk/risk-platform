@@ -846,6 +846,80 @@ tr:hover td{background:rgba(114,57,234,.015);}
   </div>
 </div>
 
+<!-- ADD RISK MANUALLY MODAL -->
+<div class="modal-ov" id="addRiskModal">
+  <div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto">
+    <div class="modal-t">Add Risk Manually</div>
+    <div id="addRiskMsg" style="display:none;padding:.6rem .9rem;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="fg"><label class="fl">Type</label>
+        <select class="fs" id="ar_type"><option value="threat">Threat</option><option value="opportunity">Opportunity</option></select>
+      </div>
+      <div class="fg"><label class="fl">Category</label>
+        <select class="fs" id="ar_category">
+          <option>Schedule</option><option>Cost</option><option>Scope</option><option>Contract</option><option>Design</option><option>Execution</option><option>Suppliers</option><option>QHSE</option><option>Quality</option><option>Regulatory</option><option>Financial</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:12px"><label class="fl">Risk Description</label>
+      <textarea class="fta" id="ar_description" rows="2" placeholder="Describe the risk event..."></textarea>
+    </div>
+    <div class="fg" style="margin-bottom:12px"><label class="fl">Root Cause</label>
+      <textarea class="fta" id="ar_cause" rows="2" placeholder="Underlying cause / source..."></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px">
+      <div class="fg"><label class="fl">Prob</label><input type="number" class="fi" id="ar_prob" min="1" max="5" value="3"/></div>
+      <div class="fg"><label class="fl">Cost</label><input type="number" class="fi" id="ar_ic" min="0" max="5" value="3"/></div>
+      <div class="fg"><label class="fl">Sched</label><input type="number" class="fi" id="ar_is" min="0" max="5" value="3"/></div>
+      <div class="fg"><label class="fl">QHSE</label><input type="number" class="fi" id="ar_iq" min="0" max="5" value="1"/></div>
+      <div class="fg"><label class="fl">Rep</label><input type="number" class="fi" id="ar_ir" min="0" max="5" value="1"/></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="fg"><label class="fl">Level</label>
+        <select class="fs" id="ar_level"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+      </div>
+      <div class="fg"><label class="fl">Response Strategy</label>
+        <select class="fs" id="ar_response">
+          <option value="">— (let AI decide)</option>
+          <optgroup label="Threats"><option>Avoid</option><option>Mitigate</option><option>Transfer</option><option>Accept</option><option>Escalate</option></optgroup>
+          <optgroup label="Opportunities"><option>Exploit</option><option>Enhance</option><option>Share</option></optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:12px"><label class="fl">Response Plan</label>
+      <textarea class="fta" id="ar_mitigation" rows="2" placeholder="Action plan (optional — AI can complete)"></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="fg"><label class="fl">Risk Owner</label><input type="text" class="fi" id="ar_owner" placeholder="optional"/></div>
+      <div class="fg"><label class="fl">Response Owner</label><input type="text" class="fi" id="ar_respowner" placeholder="optional"/></div>
+    </div>
+
+    <!-- AI options -->
+    <div style="border-top:1px solid var(--b1);padding-top:16px;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:12px">AI Assistance</div>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--b1);border-radius:10px;cursor:pointer;margin-bottom:8px">
+        <input type="checkbox" id="ar_ai_smart" style="margin-top:2px"/>
+        <div><div style="font-size:13px;font-weight:600;color:var(--t1)">Rewrite description as SMART / cause-effect</div><div style="font-size:11px;color:var(--t3)">AI rephrases your description into a clear, structured format</div></div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--b1);border-radius:10px;cursor:pointer">
+        <input type="checkbox" id="ar_ai_complete" style="margin-top:2px"/>
+        <div><div style="font-size:13px;font-weight:600;color:var(--t1)">Complete missing information</div><div style="font-size:11px;color:var(--t3)">AI fills empty fields: response strategy, response plan, owners, cause</div></div>
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="document.getElementById('addRiskModal').classList.remove('on')">Cancel</button>
+      <button class="btn btn-p" onclick="submitAddRisk()">Add Risk</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div class="load-ov" id="loadOv"><div class="spin"></div><div class="load-t" id="loadT">Processing...</div></div>
 
@@ -3109,6 +3183,9 @@ function renderReg(){
 
   document.getElementById('regContent').innerHTML=`
     ${CP.summary?`<div class="ai ai-i">${CP.summary}</div>`:''}
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-p" onclick="openAddRisk()" style="padding:9px 18px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Risk Manually</button>
+    </div>
     ${filterBar}
     ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
@@ -3122,6 +3199,102 @@ async function updateRiskNotes(riskId,notes){
   if(!risk||risk.notes===notes)return;
   risk.notes=notes;
   try{await sb('risks?id=eq.'+riskId,'PATCH',{notes:notes});}catch(e){}
+}
+
+// ═══ ADD RISK MANUALLY ═══
+function openAddRisk(){
+  ['ar_description','ar_cause','ar_mitigation','ar_owner','ar_respowner'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ar_type').value='threat';
+  document.getElementById('ar_category').value='Schedule';
+  document.getElementById('ar_prob').value=3;
+  document.getElementById('ar_ic').value=3;document.getElementById('ar_is').value=3;document.getElementById('ar_iq').value=1;document.getElementById('ar_ir').value=1;
+  document.getElementById('ar_level').value='medium';
+  document.getElementById('ar_response').value='';
+  document.getElementById('ar_ai_smart').checked=false;
+  document.getElementById('ar_ai_complete').checked=false;
+  document.getElementById('addRiskMsg').style.display='none';
+  document.getElementById('addRiskModal').classList.add('on');
+}
+
+function arMsg(text,ok){
+  const el=document.getElementById('addRiskMsg');
+  el.textContent=text;el.style.display='block';
+  el.style.background=ok?'var(--grn-soft)':'var(--red-soft)';
+  el.style.color=ok?'#15803d':'var(--red)';
+}
+
+function nextRiskId(){
+  const nums=(CP.risks||[]).map(r=>{const m=(r.risk_id||'').match(/R(\d+)/);return m?parseInt(m[1]):0;});
+  const max=nums.length?Math.max(...nums):0;
+  return 'R'+String(max+1).padStart(3,'0');
+}
+
+async function submitAddRisk(){
+  const desc=document.getElementById('ar_description').value.trim();
+  if(!desc){arMsg('Risk description is required',false);return;}
+
+  let risk={
+    type:document.getElementById('ar_type').value,
+    category:document.getElementById('ar_category').value,
+    description:desc,
+    cause:document.getElementById('ar_cause').value.trim(),
+    probability:parseInt(document.getElementById('ar_prob').value)||3,
+    impact_cost:parseInt(document.getElementById('ar_ic').value)||0,
+    impact_schedule:parseInt(document.getElementById('ar_is').value)||0,
+    impact_qhse:parseInt(document.getElementById('ar_iq').value)||0,
+    impact_reputation:parseInt(document.getElementById('ar_ir').value)||0,
+    level:document.getElementById('ar_level').value,
+    response_strategy:document.getElementById('ar_response').value,
+    mitigation:document.getElementById('ar_mitigation').value.trim(),
+    owner:document.getElementById('ar_owner').value.trim(),
+    response_owner:document.getElementById('ar_respowner').value.trim()
+  };
+
+  const useSmart=document.getElementById('ar_ai_smart').checked;
+  const useComplete=document.getElementById('ar_ai_complete').checked;
+
+  if((useSmart||useComplete)){
+    if(!GK().startsWith('sk-ant-')){arMsg('API key required for AI assistance',false);return;}
+    showLoad('AI is enhancing the risk...');
+    try{
+      const tasks=[];
+      if(useSmart)tasks.push('Rewrite the "description" into a clear SMART or cause-and-effect format (threats: "Due to [cause], [event], leading to [effect]"; opportunities: "Due to [enabler], [favorable event], leading to [benefit]"). Match the language of the input.');
+      if(useComplete)tasks.push('Fill any EMPTY fields: cause (root cause/source), response_strategy (threats: Avoid/Mitigate/Transfer/Accept/Escalate; opportunities: Exploit/Enhance/Share/Accept/Escalate — must target the root cause), mitigation (response plan consistent with the strategy), owner (suitable role), response_owner (suitable role). Do NOT overwrite fields that already have a value.');
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:`You are a construction risk manager. Given this risk record for project "${CP.name}" (${CP.type}), perform these tasks:
+${tasks.map((t,i)=>(i+1)+'. '+t).join('\n')}
+
+Current record:
+${JSON.stringify(risk,null,2)}
+
+Return ONLY a valid JSON object with the same fields (type, category, description, cause, probability, impact_cost, impact_schedule, impact_qhse, impact_reputation, level, response_strategy, mitigation, owner, response_owner). Keep numeric fields and any already-filled text fields unchanged unless rewriting the description was requested.`}]});
+      const enhanced=pJSON(data.content[0].text);
+      // Merge — keep numbers from user, take AI text improvements
+      risk={...risk,...enhanced};
+      risk.probability=parseInt(risk.probability)||3;
+      ['impact_cost','impact_schedule','impact_qhse','impact_reputation'].forEach(k=>risk[k]=parseInt(risk[k])||0);
+      hideLoad();
+    }catch(e){hideLoad();arMsg('AI error: '+e.message,false);return;}
+  }
+
+  if(!risk.response_strategy)risk.response_strategy='Mitigate';
+
+  // Save to DB
+  const rid=nextRiskId();
+  const ins={project_id:CID,risk_id:rid,type:risk.type,category:risk.category,description:risk.description,cause:risk.cause||'',probability:risk.probability,impact_cost:risk.impact_cost,impact_schedule:risk.impact_schedule,impact_qhse:risk.impact_qhse,impact_reputation:risk.impact_reputation,level:risk.level,response_strategy:risk.response_strategy,mitigation:risk.mitigation||'',owner:risk.owner||'',response_owner:risk.response_owner||'',status:'open'};
+  showLoad('Saving risk...');
+  try{
+    const saved=await sb('risks','POST',ins);
+    const newRisk=Array.isArray(saved)?saved[0]:saved;
+    if(newRisk&&newRisk.id){
+      CP.risks.push(newRisk);
+    }else{
+      // fallback: reload
+      await selectProj(CID);
+    }
+    hideLoad();
+    document.getElementById('addRiskModal').classList.remove('on');
+    renderReg();updateStats();
+  }catch(e){hideLoad();arMsg('Save error: '+e.message,false);}
 }
 
 // Translate the entire risk register to a chosen language
