@@ -6127,6 +6127,7 @@ function renderInsights(data,articles){
     </div>
 
     <!-- Source articles -->
+    ${Array.isArray(articles)&&articles.length?`
     <div class="dash-section">
       <div class="dash-sec-head">
         <div class="dash-sec-title">
@@ -6139,12 +6140,12 @@ function renderInsights(data,articles){
           <a href="${a.url}" target="_blank" style="text-decoration:none;color:inherit">
             <div style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:10px;height:100%;transition:all .15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--b1)'">
               <div style="font-size:11.5px;font-weight:600;color:var(--t1);line-height:1.4;margin-bottom:5px">${a.title}</div>
-              <div style="font-size:10px;color:var(--t3)">${a.source?.name||'Unknown'} · ${new Date(a.publishedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div>
+              <div style="font-size:10px;color:var(--t3)">${a.source?.name||'Unknown'} · ${a.publishedAt?new Date(a.publishedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):''}</div>
             </div>
           </a>
         `).join('')}
       </div>
-    </div>
+    </div>`:''}
   `;
 }
 
