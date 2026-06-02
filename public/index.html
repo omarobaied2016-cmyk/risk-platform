@@ -3249,7 +3249,8 @@ ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', '
 
   const parts=[{type:'text',text:`Senior construction risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
-Start: ${CP.start_date||'—'} | Description: ${CP.description||'—'}
+Project Start Date: ${CP.start_date||'unknown'} | Project End Date: ${CP.end_date||'unknown'} | Today: ${new Date().toISOString().slice(0,10)}
+Description: ${CP.description||'—'}
 ${tolCtx}
 ${hasSched?'Schedule uploaded.':'No schedule.'}
 
@@ -3270,8 +3271,13 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 4. The RESPONSE PLAN must be CONSISTENT with the chosen strategy AND target the root cause (threats) or root source/enabler (opportunities). E.g. Exploit = how to guarantee the enabler; Enhance = how to amplify the source; Transfer = to whom; Accept = the contingency.
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
 
+TIMING CLASSIFICATION (critical for early warning):
+- "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. foundation pouring, excavation, steel erection, testing, commissioning) that occurs at a defined point in the timeline. Use "ongoing" for continuous/market risks with no single date (e.g. price inflation, labor shortage, currency fluctuation, regulatory climate).
+- "activity_ref": for scheduled risks, name the specific schedule activity it is linked to (from the uploaded schedule if available). Empty for ongoing risks.
+- "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
+
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","activity_ref":"Foundation Excavation Zone A","timing_type":"scheduled","expected_date":"2026-09-12"}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -3335,7 +3341,7 @@ async function confirmVal(){
   showLoad('Saving...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
-    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null}));
+    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null}));
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
@@ -3549,7 +3555,7 @@ Return ONLY a valid JSON object with the same fields (type, category, descriptio
 
   // Save to DB
   const rid=nextRiskId();
-  const ins={project_id:CID,risk_id:rid,type:risk.type,category:risk.category,description:risk.description,cause:risk.cause||'',probability:risk.probability,impact_cost:risk.impact_cost,impact_schedule:risk.impact_schedule,impact_qhse:risk.impact_qhse,impact_reputation:risk.impact_reputation,level:risk.level,response_strategy:risk.response_strategy,mitigation:risk.mitigation||'',owner:risk.owner||'',response_owner:risk.response_owner||'',status:'open'};
+  const ins={project_id:CID,risk_id:rid,type:risk.type,category:risk.category,description:risk.description,cause:risk.cause||'',probability:risk.probability,impact_cost:risk.impact_cost,impact_schedule:risk.impact_schedule,impact_qhse:risk.impact_qhse,impact_reputation:risk.impact_reputation,level:risk.level,response_strategy:risk.response_strategy,mitigation:risk.mitigation||'',owner:risk.owner||'',response_owner:risk.response_owner||'',status:'open',timing_type:'ongoing',expected_date:null};
   showLoad('Saving risk...');
   try{
     const saved=await sb('risks','POST',ins);
@@ -4837,19 +4843,42 @@ function renderWarn(){
   const risks=CP?.risks||[];
   const el=document.getElementById('warnContent');
   if(!risks.length){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div><div class="et">Run analysis first</div></div>`;return;}
-  const w1=risks.filter(r=>r.expected_weeks===1);
-  const w2=risks.filter(r=>r.expected_weeks===2);
-  const w34=risks.filter(r=>r.expected_weeks===3||r.expected_weeks===4);
+
+  const today=new Date();today.setHours(0,0,0,0);
+  const dayMs=86400000;
+  const daysUntil=d=>{if(!d)return null;const dt=new Date(d);if(isNaN(dt))return null;dt.setHours(0,0,0,0);return Math.round((dt-today)/dayMs);};
+
+  // Split scheduled (with date) vs ongoing
+  const scheduled=risks.filter(r=>r.timing_type!=='ongoing'&&r.expected_date&&!isNaN(new Date(r.expected_date)));
+  const noDateScheduled=risks.filter(r=>r.timing_type!=='ongoing'&&(!r.expected_date||isNaN(new Date(r.expected_date))));
+
+  // Bucket scheduled by days-until
+  const overdue=[],thisWeek=[],nextWeek=[],thisMonth=[],upcoming=[];
+  scheduled.forEach(r=>{
+    const d=daysUntil(r.expected_date);
+    if(d<0)overdue.push({r,d});
+    else if(d<=7)thisWeek.push({r,d});
+    else if(d<=14)nextWeek.push({r,d});
+    else if(d<=30)thisMonth.push({r,d});
+    else upcoming.push({r,d});
+  });
+  const sortByDate=(a,b)=>a.d-b.d;
+  [overdue,thisWeek,nextWeek,thisMonth,upcoming].forEach(arr=>arr.sort(sortByDate));
+
   const noSched=!CP.has_schedule;
+  const bucket=(title,color,items)=>items.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:${color};letter-spacing:.06em;margin:14px 0 7px">${title} (${items.length})</div>${items.map(x=>ewCard(x.r,x.d)).join('')}`:'';
 
   el.innerHTML=`
     <div class="ew-sec">
-      <div class="ew-sec-t"><span style="background:var(--red-soft);color:var(--red);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Schedule</span> Schedule-Linked Risks</div>
-      ${noSched?`<div class="ai ai-w" style="margin-bottom:0"><div><div style="font-weight:600;margin-bottom:3px">Schedule file not uploaded</div><div style="font-size:11.5px">Upload schedule file to enable early warning</div><button class="btn btn-g" style="margin-top:8px;padding:4px 10px;font-size:11px" onclick="ST('files')">Upload Schedule</button></div></div>`:`
-      ${w1.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.06em;margin-bottom:7px">This Week — Immediate Action (${w1.length})</div>${w1.map(r=>ewCard(r,1)).join('')}`:''}
-      ${w2.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:#ffa800;letter-spacing:.06em;margin:12px 0 7px">Next Week (${w2.length})</div>${w2.map(r=>ewCard(r,2)).join('')}`:''}
-      ${w34.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:12px 0 7px">3-4 Weeks (${w34.length})</div>${w34.map(r=>ewCard(r,3)).join('')}`:''}
-      ${!w1.length&&!w2.length&&!w34.length?`<div class="ai ai-ok" style="margin-bottom:0">No risks expected in the next 2 weeks</div>`:''}`}
+      <div class="ew-sec-t"><span style="background:var(--red-soft);color:var(--red);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Schedule</span> Schedule-Linked Risks <span style="font-size:10px;font-weight:600;color:var(--t3);margin-inline-start:8px">Today: ${today.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span></div>
+      ${noSched&&!scheduled.length?`<div class="ai ai-w" style="margin-bottom:0"><div><div style="font-weight:600;margin-bottom:3px">Schedule file not uploaded</div><div style="font-size:11.5px">Upload a schedule file so the AI can date each risk and enable live countdown.</div><button class="btn btn-g" style="margin-top:8px;padding:4px 10px;font-size:11px" onclick="ST('files')">Upload Schedule</button></div></div>`:`
+      ${bucket('Overdue — Should Have Occurred','var(--red)',overdue)}
+      ${bucket('This Week — Immediate Action','var(--red)',thisWeek)}
+      ${bucket('Next Week','#ffa800',nextWeek)}
+      ${bucket('This Month','var(--primary)',thisMonth)}
+      ${bucket('Upcoming','var(--t3)',upcoming)}
+      ${noDateScheduled.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:14px 0 7px">Scheduled — Date Not Determined (${noDateScheduled.length})</div>${noDateScheduled.map(r=>ewCard(r,null)).join('')}`:''}
+      ${!scheduled.length&&!noDateScheduled.length?`<div class="ai ai-ok" style="margin-bottom:0">No schedule-linked risks identified</div>`:''}`}
     </div>`;
 }
 
@@ -4896,10 +4925,16 @@ function renderWeeklyIndicators(){
   }
 }
 
-function ewCard(r,week){
+function ewCard(r,days){
   const cls={high:'ew-h',medium:'ew-m',low:'ew-l'}[r.level]||'ew-l';
-  const wl=week===1?'This Week':week===2?'Next Week':`Week ${week}`;
-  const wc=week===1?'wb1':week===2?'wb2':'wb3';
+  let wl,wc;
+  if(days===null||days===undefined){wl='No date';wc='wb3';}
+  else if(days<0){wl=`${Math.abs(days)}d overdue`;wc='wb1';}
+  else if(days===0){wl='Today';wc='wb1';}
+  else if(days<=7){wl=`In ${days}d`;wc='wb1';}
+  else if(days<=14){wl=`In ${days}d`;wc='wb2';}
+  else{wl=`In ${days}d`;wc='wb3';}
+  const dateStr=r.expected_date&&!isNaN(new Date(r.expected_date))?new Date(r.expected_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):null;
   return`<div class="ew-card ${cls}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
@@ -4911,7 +4946,10 @@ function ewCard(r,week){
       <span class="wbdg ${wc}">${wl}</span>
     </div>
     <div style="font-size:12.5px;font-weight:500;margin-bottom:3px;color:var(--t1)">${r.description}</div>
-    ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3);margin-bottom:3px">Activity: ${r.activity_ref}</div>`:''}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:3px">
+      ${r.activity_ref?`<div style="font-size:10.5px;color:var(--t3)"><b>Activity:</b> ${r.activity_ref}</div>`:''}
+      ${dateStr?`<div style="font-size:10.5px;color:var(--primary)"><b>Expected:</b> ${dateStr}</div>`:''}
+    </div>
     <div style="font-size:11.5px;color:var(--t2);font-style:italic">Action: ${r.mitigation}</div>
   </div>`;
 }
