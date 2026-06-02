@@ -3821,7 +3821,6 @@ function renderDash(){
       </div>
     </div>
     <div id="projMarketInsights"></div>
-
     <!-- #21 AI Project Report -->
     <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(114,57,234,.04),rgba(137,80,252,.02));border-color:rgba(114,57,234,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
@@ -3838,6 +3837,9 @@ function renderDash(){
     <div id="projAIReport"></div>
   `;
 
+  // Restore saved AI report if exists
+  if(CP.ai_report){renderProjectReport(CP.ai_report,CP.ai_report_date);}
+  if(CP.market_insights){renderProjectInsights(CP.market_insights,CP.market_insights_date);}
   // Charts
   setTimeout(()=>{
     // Risk Levels - Bar Chart
@@ -4162,6 +4164,7 @@ async function refreshAll(){
 // ═══ AI PROJECT REPORT (#21) ═══
 async function generateProjectReport(){
   if(!CP||!CP.risks?.length){alert('Run analysis first');return;}
+  if(!requireActiveAccess())return;
   if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
   const el=document.getElementById('projAIReport');
   if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Generating AI report...</div>';
@@ -4172,7 +4175,7 @@ async function generateProjectReport(){
   const low=risks.filter(r=>r.level==='low').length;
   const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Cat: ${r.category} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation||'none'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Provide a comprehensive project risk report in English in JSON format only.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Detect the language of the risk register below and write the ENTIRE report in that same language. Provide a comprehensive project risk report in JSON format only.
 
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} SAR
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
@@ -4181,93 +4184,120 @@ Total Risks: ${risks.length} [${high} high, ${med} medium, ${low} low]
 RISK REGISTER:
 ${risksCtx}
 
-Respond ONLY with valid JSON:
+Respond ONLY with valid JSON (text in the register's language):
 {"executive_summary":"4-5 sentence executive summary about project risk health","project_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4","finding 5"],"top_concerns":["concern 1 with details","concern 2","concern 3","concern 4","concern 5"],"common_patterns":["pattern 1 with explanation","pattern 2","pattern 3","pattern 4","pattern 5"],"strategic_recommendations":["1. IMMEDIATE: recommendation","2. URGENT: recommendation","3. HIGH PRIORITY: recommendation","4. recommendation"],"areas_needing_attention":["area 1 with specific details","area 2"]}`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
-    
-    const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.project_health]||'#a16207';
-    const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.project_health];
-    const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.project_health]||'◆';
-    const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.project_health]||'Warning';
-    
-    if(el) el.innerHTML=`
-      <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Overall Project Report — ${htext}</div>
-          <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${new Date().toLocaleDateString('ar-SA')}</div>
-        </div>
-        <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
-      </div>
-      
-      <div class="dash-row dash-3" style="margin-bottom:14px">
-        <div class="card"><div class="card-t" style="color:var(--primary)">Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
-        <div class="card"><div class="card-t" style="color:var(--red)">⚠ Top Concerns</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
-        <div class="card"><div class="card-t" style="color:var(--purple)">🔄 Common Patterns</div>${(parsed.common_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
-      </div>
-      
-      <div class="dash-row dash-21" style="margin-bottom:14px">
-        <div class="card"><div class="card-t" style="color:var(--grn)">✓ Strategic Recommendations</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
-        <div class="card"><div class="card-t" style="color:var(--org)">🚨 Areas Needing Attention</div>${(parsed.areas_needing_attention||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
-      </div>`;
-    el?.scrollIntoView({behavior:'smooth',block:'start'});
+
+    // Save to DB + local
+    const now=new Date().toISOString();
+    CP.ai_report=parsed;CP.ai_report_date=now;
+    sb('projects?id=eq.'+CID,'PATCH',{ai_report:parsed,ai_report_date:now}).catch(()=>{});
+    renderProjectReport(parsed,now);
+    document.getElementById('projAIReport')?.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+// Render a saved/just-generated report
+function renderProjectReport(parsed,dateStr){
+  const el=document.getElementById('projAIReport');
+  if(!el||!parsed)return;
+  const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.project_health]||'#a16207';
+  const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.project_health];
+  const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.project_health]||'◆';
+  const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.project_health]||'Warning';
+  const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  el.innerHTML=`
+    <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Executive Summary — ${htext}</div>
+        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div>
+      </div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
+    </div>
+    <div class="dash-row dash-3" style="margin-bottom:14px">
+      <div class="card"><div class="card-t" style="color:var(--red)">Critical Risks</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
+      <div class="card"><div class="card-t" style="color:var(--primary)">Impact Analysis</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}${(parsed.common_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
+      <div class="card"><div class="card-t" style="color:var(--grn)">Recommended Actions</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
+    </div>
+    <div class="dash-row" style="margin-bottom:14px">
+      <div class="card"><div class="card-t" style="color:var(--org)">Emerging Risks</div>${(parsed.areas_needing_attention||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
+    </div>`;
 }
 
 // ═══ PROJECT MARKET INSIGHTS (#21) ═══
 async function loadProjectInsights(){
   if(!CP)return;
+  if(!requireActiveAccess())return;
   if(!GK().startsWith('sk-ant-'))return;
   const el=document.getElementById('projMarketInsights');
   if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Loading market insights...</div>';
   const risks=CP.risks||[];
   const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market analyst for construction in Saudi Arabia. Project: ${CP.name} (${CP.type}).
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the construction industry. Detect the language of the risk list below and respond ENTIRELY in that same language. Project: ${CP.name} (${CP.type}).
 Current project risks: ${riskList}
 
-Provide market insights in JSON:
-{"insights":[{"title":"insight title","description":"2 sentences about the market condition","affected_risks":["which project risks could be affected"],"impact_probability":"high|medium|low","recommendation":"1 sentence action"}],"keep_eye_on":[{"event":"market event to watch","risk_connection":"which risks it connects to","probability":"high|medium|low"}]}
+Provide market & world insights in JSON (all text in the detected language):
+{"executive_brief":"3-4 sentence executive brief summarizing the current market and geopolitical situation relevant to this project","insights":[{"title":"signal title (market conditions, material prices, or economic indicator)","description":"2 sentences","affected_risks":["which project risks could be affected"],"impact_probability":"high|medium|low","recommendation":"1 sentence action"}],"keep_eye_on":[{"event":"emerging threat (geopolitical event or regulatory change)","risk_connection":"project/portfolio impact","probability":"high|medium|low"}]}
 
-Include 3-4 insights and 3-4 keep_eye_on items. Be specific to Saudi construction market.`}]});
+Include 3-4 insights (cover market conditions, material prices, economic indicators) and 3-4 emerging threats (geopolitical events, regulatory changes).`}]});
     const text=data.content?.[0]?.text||'';
     const parsed=pJSON(text);
     if(parsed&&el){
-      let html='<div class="dash-section" style="margin-bottom:14px">';
-      html+='<div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Market Conditions</span></div></div>';
-      (parsed.insights||[]).forEach(ins=>{
-        html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
-          <div class="metric-icon o">📈</div>
-          <div class="metric-info" style="flex:1">
-            <div class="metric-name">${ins.title}</div>
-            <div style="font-size:11px;color:var(--t3);line-height:1.6;margin-top:3px">${ins.description}</div>
-            ${ins.affected_risks?.length?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${ins.affected_risks.map(r=>`<span class="chip" style="font-size:9.5px">⚠ ${r}</span>`).join('')}</div>`:''}
-            <div style="font-size:10.5px;color:var(--primary);margin-top:4px">${ins.recommendation||''}</div>
-          </div>
-          <span class="bdg ${ins.impact_probability==='high'?'b-h':ins.impact_probability==='medium'?'b-m':'b-l'}">${ins.impact_probability||'medium'}</span>
-        </div>`;
-      });
-      html+='</div>';
-      // Keep Eye On (#19)
-      if(parsed.keep_eye_on?.length){
-        html+='<div class="dash-section" style="margin-bottom:14px"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Keep Eye On</span></div></div>';
-        parsed.keep_eye_on.forEach(item=>{
-          html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
-            <div class="metric-icon" style="background:#fef9c3;color:#ffa800">👁</div>
-            <div class="metric-info" style="flex:1">
-              <div class="metric-name">${item.event}</div>
-              <div style="font-size:11px;color:var(--t3);margin-top:3px">Risk Connection: ${item.risk_connection||'General'}</div>
-            </div>
-            <span class="bdg ${item.probability==='high'?'b-h':item.probability==='medium'?'b-m':'b-l'}">${item.probability||'medium'} probability</span>
-          </div>`;
-        });
-        html+='</div>';
-      }
-      el.innerHTML=html;
+      // Save to DB + local
+      const now=new Date().toISOString();
+      CP.market_insights=parsed;CP.market_insights_date=now;
+      sb('projects?id=eq.'+CID,'PATCH',{market_insights:parsed,market_insights_date:now}).catch(()=>{});
+      renderProjectInsights(parsed,now);
     }
   }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+}
+
+function renderProjectInsights(parsed,dateStr){
+  const el=document.getElementById('projMarketInsights');
+  if(!el||!parsed)return;
+  const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  let html='';
+  if(dateLabel)html+=`<div style="text-align:right;font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace;margin-bottom:8px">Generated ${dateLabel}</div>`;
+  if(parsed.executive_brief){
+    html+=`<div class="card" style="background:var(--primary-soft);border-color:rgba(114,57,234,.18);margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px">Executive Brief</div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_brief}</div>
+    </div>`;
+  }
+  html+='<div class="dash-section" style="margin-bottom:14px">';
+  html+='<div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Market Signals</span></div></div>';
+  (parsed.insights||[]).forEach(ins=>{
+    html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
+      <div class="metric-icon o">📈</div>
+      <div class="metric-info" style="flex:1">
+        <div class="metric-name">${ins.title}</div>
+        <div style="font-size:11px;color:var(--t3);line-height:1.6;margin-top:3px">${ins.description}</div>
+        ${ins.affected_risks?.length?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${ins.affected_risks.map(r=>`<span class="chip" style="font-size:9.5px">⚠ ${r}</span>`).join('')}</div>`:''}
+        <div style="font-size:10.5px;color:var(--primary);margin-top:4px">${ins.recommendation||''}</div>
+      </div>
+      <span class="bdg ${ins.impact_probability==='high'?'b-h':ins.impact_probability==='medium'?'b-m':'b-l'}">${ins.impact_probability||'medium'}</span>
+    </div>`;
+  });
+  html+='</div>';
+  if(parsed.keep_eye_on?.length){
+    html+='<div class="dash-section" style="margin-bottom:14px"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Emerging Threats</span></div></div>';
+    parsed.keep_eye_on.forEach(item=>{
+      html+=`<div class="metric-row" style="align-items:flex-start;padding:10px 0">
+        <div class="metric-icon" style="background:#fef9c3;color:#ffa800">👁</div>
+        <div class="metric-info" style="flex:1">
+          <div class="metric-name">${item.event}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px">Project/Portfolio Impact: ${item.risk_connection||'General'}</div>
+        </div>
+        <span class="bdg ${item.probability==='high'?'b-h':item.probability==='medium'?'b-m':'b-l'}">${item.probability||'medium'} probability</span>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  el.innerHTML=html;
 }
 
 // ═══ EXPORT WITH CHECKLIST (#22 #25 #26) ═══
@@ -5999,7 +6029,7 @@ function renderPortfolioInsights(data,articles){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;flex-wrap:wrap;gap:8px">
         <div class="dash-sec-title">
           <span class="dash-sec-num" style="background:linear-gradient(135deg,#a16207,var(--yel))">✦</span>
-          <span class="dash-sec-name">Portfolio Intelligence Summary</span>
+          <span class="dash-sec-name">Project/Portfolio Impact</span>
         </div>
         <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${articles.length} sources analyzed</div>
       </div>
