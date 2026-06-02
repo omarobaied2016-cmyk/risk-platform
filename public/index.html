@@ -2010,12 +2010,46 @@ async function api(payload){
 function pJSON(text){
   text=text.trim();
   const m=text.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
-  if(m)return JSON.parse(m[1].trim());
+  if(m)text=m[1].trim();
   const j=text.search(/[{[]/);
   if(j>0)text=text.slice(j);
   const e=Math.max(text.lastIndexOf('}'),text.lastIndexOf(']'));
   if(e>0&&e<text.length-1)text=text.slice(0,e+1);
-  return JSON.parse(text);
+  try{
+    return JSON.parse(text);
+  }catch(err){
+    // Repair attempt: fix common AI mistakes (smart quotes, trailing commas, stray control chars)
+    let t=text
+      .replace(/[\u201C\u201D]/g,'"')      // smart double quotes
+      .replace(/[\u2018\u2019]/g,"'")      // smart single quotes
+      .replace(/,\s*([}\]])/g,'$1')        // trailing commas
+      .replace(/[\u0000-\u001F]+/g,' ');   // control chars
+    try{return JSON.parse(t);}catch(e2){}
+    // Last resort: escape unescaped double-quotes inside string values
+    try{return JSON.parse(repairJSONQuotes(t));}catch(e3){}
+    throw err;
+  }
+}
+
+// Escape stray double-quotes that appear inside JSON string values
+function repairJSONQuotes(s){
+  let out='',inStr=false,i=0;
+  while(i<s.length){
+    const c=s[i],prev=s[i-1];
+    if(c==='"'&&prev!=='\\'){
+      if(!inStr){inStr=true;out+=c;i++;continue;}
+      // We're in a string and hit a quote — look ahead to see if it's a real close
+      let k=i+1;while(k<s.length&&(s[k]===' '||s[k]==='\n'||s[k]==='\r'||s[k]==='\t'))k++;
+      const nxt=s[k];
+      if(nxt===':'||nxt===','||nxt==='}'||nxt===']'||nxt===undefined){
+        inStr=false;out+=c;i++;continue;
+      }else{
+        out+='\\"';i++;continue; // escape inner quote
+      }
+    }
+    out+=c;i++;
+  }
+  return out;
 }
 
 // ═══ LOAD ALL ═══
@@ -4281,7 +4315,9 @@ async function translateReport(){
   if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
   showLoad('Translating report to '+lang+'...');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`Translate all text values in this risk report JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate the "project_health" value (keep it as good/warning/critical). Return ONLY the translated JSON.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`Translate all text values in this risk report JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate the "project_health" value (keep it as good/warning/critical). 
+
+CRITICAL JSON RULES: Output must be valid JSON. Do not use double-quotes inside any text value — use single quotes or remove them. Do not add line breaks inside string values. Return ONLY the JSON object, nothing else.
 
 ${JSON.stringify(CP.ai_report)}`}]});
     const parsed=pJSON(data.content[0].text);
@@ -4300,7 +4336,9 @@ async function translateInsights(){
   if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
   showLoad('Translating insights to '+lang+'...');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`Translate all text values in this market insights JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate probability values (keep high/medium/low). Return ONLY the translated JSON.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`Translate all text values in this market insights JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate probability values (keep high/medium/low).
+
+CRITICAL JSON RULES: Output must be valid JSON. Do not use double-quotes inside any text value — use single quotes or remove them. Do not add line breaks inside string values. Return ONLY the JSON object, nothing else.
 
 ${JSON.stringify(CP.market_insights)}`}]});
     const parsed=pJSON(data.content[0].text);
