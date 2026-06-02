@@ -4885,13 +4885,34 @@ function renderWarn(){
     </div>
 
     <div class="ew-sec" style="margin-top:16px">
-      <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Continuous</span> Continuous Risks <span style="font-size:10px;font-weight:600;color:var(--t3);margin-inline-start:8px">Market & ongoing exposures — no fixed date</span></div>
+      <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Continuous</span> Continuous Risks <span style="font-size:10px;font-weight:600;color:var(--t3);margin-inline-start:8px">Market & ongoing exposures — monitored via Insights</span></div>
+      ${(()=>{const mon=ongoing.filter(r=>r.market_signal);const esc=mon.filter(r=>r.market_signal.trend==='up'&&r.market_signal.severity==='high');return esc.length?`<div class="ai ai-w" style="margin-bottom:10px"><div><b>${esc.length} continuous risk(s) escalating</b> based on live market signals. Review Insights for details.</div></div>`:'';})()}
       ${ongoing.length?ongoing.map(r=>ewOngoingCard(r)).join(''):`<div class="ai ai-ok" style="margin-bottom:0">No continuous risks identified</div>`}
+      ${ongoing.length&&!ongoing.some(r=>r.market_signal)?`<div style="font-size:11px;color:var(--t3);margin-top:8px;text-align:center">Generate <span style="color:var(--primary);cursor:pointer;font-weight:600" onclick="ST('insights')">Market Insights</span> to monitor these risks with live signals</div>`:''}
     </div>`;
 }
 
 function ewOngoingCard(r){
   const cls={high:'ew-h',medium:'ew-m',low:'ew-l'}[r.level]||'ew-l';
+  const sig=r.market_signal;
+  let sigHtml='';
+  if(sig){
+    const tIcon=sig.trend==='up'?'↑':sig.trend==='down'?'↓':'→';
+    const tColor=sig.trend==='up'?'var(--red)':sig.trend==='down'?'var(--grn)':'var(--t3)';
+    const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[sig.severity]||'var(--t3)';
+    const sigDate=sig.date?new Date(sig.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    sigHtml=`<div style="margin-top:7px;padding:8px 10px;border-radius:8px;background:var(--primary-soft);border:1px solid rgba(114,57,234,.16)">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+        <span style="font-size:14px;font-weight:800;color:${tColor}">${tIcon}</span>
+        <span style="font-size:10.5px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.04em">Live Market Signal</span>
+        <span class="bdg" style="background:${sevColor}20;color:${sevColor};font-size:9px">${sig.severity}</span>
+        ${sig.suggested_level?`<span style="font-size:9.5px;color:var(--t3)">suggests → ${RL[sig.suggested_level]||sig.suggested_level}</span>`:''}
+        <span style="margin-inline-start:auto;font-size:9.5px;color:var(--t3)">${sigDate}</span>
+      </div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.5">${sig.note||''}</div>
+      <div style="margin-top:5px"><button class="btn btn-g" style="padding:3px 9px;font-size:10px" onclick="ST('insights')">View Insights →</button></div>
+    </div>`;
+  }
   return`<div class="ew-card ${cls}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
       <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
@@ -4900,10 +4921,11 @@ function ewOngoingCard(r){
         <span class="cb">${CAT_AR[r.category]||r.category}</span>
         <span class="bdg b-${r.level}">${RL[r.level]||r.level}</span>
       </div>
-      <span class="wbdg" style="background:var(--primary-soft);color:var(--primary)">Continuous</span>
+      <span class="wbdg" style="background:var(--primary-soft);color:var(--primary)">${sig?'Monitored':'Continuous'}</span>
     </div>
     <div style="font-size:12.5px;font-weight:500;margin-bottom:3px;color:var(--t1)">${r.description}</div>
     <div style="font-size:11.5px;color:var(--t2);font-style:italic">Action: ${r.mitigation}</div>
+    ${sigHtml}
   </div>`;
 }
 
@@ -5995,11 +6017,54 @@ Be specific. Reference real data from the news. Connect global events to local p
       const now=new Date().toISOString();
       CP.insights_data=parsed;CP.insights_date=now;CP.insights_sources=allArticles.length;
       sb('projects?id=eq.'+CID,'PATCH',{insights_data:parsed,insights_date:now}).catch(()=>{});
+      // ── Phase C: link market signals to ongoing/continuous risks ──
+      await linkSignalsToRisks(parsed);
     }
   }catch(e){
     document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
   }
 }
+
+// Attach live market signals from Insights onto matching risks (mainly ongoing/continuous)
+async function linkSignalsToRisks(parsed){
+  if(!CP?.risks?.length||!parsed)return;
+  const now=new Date().toISOString();
+  const updates=[];
+  const byId={};CP.risks.forEach(r=>{if(r.risk_id)byId[r.risk_id.toUpperCase()]=r;});
+
+  // 1) Strong signals from risk_updates (have explicit risk_id + suggested_level)
+  (parsed.risk_updates||[]).forEach(u=>{
+    const rid=(u.risk_id||'').toUpperCase();
+    const risk=byId[rid];
+    if(!risk)return;
+    const sev=u.suggested_level||'medium';
+    const cur=levelRank(risk.level),nxt=levelRank(u.suggested_level);
+    const trend=nxt>cur?'up':nxt<cur?'down':'stable';
+    risk.market_signal={trend,note:u.reason||'',severity:sev,date:now,suggested_level:u.suggested_level||null};
+    updates.push(risk);
+  });
+
+  // 2) Softer signals from insights[].affected_risks (text mentions risk IDs)
+  (parsed.insights||[]).forEach(ins=>{
+    const txt=(ins.affected_risks||[]).join(' ');
+    CP.risks.forEach(r=>{
+      if(!r.risk_id||(r.market_signal&&r.market_signal.date===now))return; // don't overwrite strong signal just set
+      if(txt.toUpperCase().includes(r.risk_id.toUpperCase())){
+        r.market_signal={trend:ins.impact_probability==='high'?'up':'stable',note:ins.title||ins.description||'',severity:ins.impact_probability||'medium',date:now,suggested_level:null};
+        if(!updates.includes(r))updates.push(r);
+      }
+    });
+  });
+
+  // Persist signals
+  for(const r of updates){
+    try{await sb('risks?id=eq.'+r.id,'PATCH',{market_signal:r.market_signal});}catch(e){}
+  }
+  // Refresh early warning if it's open
+  if(document.getElementById('warnContent')&&document.querySelector('#pane-warn'))renderWarn();
+}
+
+function levelRank(l){return {low:1,medium:2,high:3,critical:4}[(l||'').toLowerCase()]||0;}
 
 function renderInsights(data,articles){
   const srcCount=typeof articles==='number'?articles:(articles?.length||0);
