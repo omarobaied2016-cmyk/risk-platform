@@ -3172,7 +3172,7 @@ Cost levels: ${(tl.cost_levels||costLevels(appetite)).map(l=>l.l+'='+l.d).join('
 Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).join('; ')}
 ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
-  const parts=[{type:'text',text:`Senior construction risk manager — Saudi Arabia. IMPORTANT: Detect the primary language of the uploaded project files and generate ALL content (descriptions, causes, mitigations, summary) in THAT SAME language. If files are in Arabic, respond in Arabic; if in English, respond in English; match whatever language dominates the source documents.
+  const parts=[{type:'text',text:`Senior construction risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
 Start: ${CP.start_date||'—'} | Description: ${CP.description||'—'}
 ${tolCtx}
@@ -3196,7 +3196,7 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in the detected language","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in the detected file language","cause":"root cause in the detected file language","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in the detected file language","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","activity_ref":"","expected_weeks":2}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -3817,7 +3817,16 @@ function renderDash(){
             <div style="font-size:11.5px;color:var(--t3)">Current market conditions affecting this project</div>
           </div>
         </div>
-        <button class="btn btn-g" onclick="loadProjectInsights()" style="border-color:rgba(255,168,0,.4);color:#ffa800">Load Insights</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="insightsLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+            <option value="English">English</option>
+            <option value="Arabic">العربية</option>
+            <option value="Spanish">Español</option>
+            <option value="French">Français</option>
+          </select>
+          <button class="btn btn-g" onclick="translateInsights()" style="padding:9px 14px">Translate</button>
+          <button class="btn btn-g" onclick="loadProjectInsights()" style="border-color:rgba(255,168,0,.4);color:#ffa800">Load Insights</button>
+        </div>
       </div>
     </div>
     <div id="projMarketInsights"></div>
@@ -3831,7 +3840,16 @@ function renderDash(){
             <div style="font-size:11.5px;color:var(--t3)">Comprehensive AI analysis with strategic recommendations</div>
           </div>
         </div>
-        <button class="btn btn-p" onclick="generateProjectReport()">Generate Report</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="reportLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+            <option value="English">English</option>
+            <option value="Arabic">العربية</option>
+            <option value="Spanish">Español</option>
+            <option value="French">Français</option>
+          </select>
+          <button class="btn btn-g" onclick="translateReport()" style="padding:9px 14px">Translate</button>
+          <button class="btn btn-p" onclick="generateProjectReport()">Generate Report</button>
+        </div>
       </div>
     </div>
     <div id="projAIReport"></div>
@@ -4175,7 +4193,7 @@ async function generateProjectReport(){
   const low=risks.filter(r=>r.level==='low').length;
   const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Cat: ${r.category} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation||'none'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Detect the language of the risk register below and write the ENTIRE report in that same language. Provide a comprehensive project risk report in JSON format only.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
 
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} SAR
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
@@ -4237,7 +4255,7 @@ async function loadProjectInsights(){
   const risks=CP.risks||[];
   const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the construction industry. Detect the language of the risk list below and respond ENTIRELY in that same language. Project: ${CP.name} (${CP.type}).
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the construction industry. Respond entirely in English. Project: ${CP.name} (${CP.type}).
 Current project risks: ${riskList}
 
 Provide market & world insights in JSON (all text in the detected language):
@@ -4254,6 +4272,44 @@ Include 3-4 insights (cover market conditions, material prices, economic indicat
       renderProjectInsights(parsed,now);
     }
   }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+}
+
+// Translate the saved AI report to a chosen language
+async function translateReport(){
+  if(!CP||!CP.ai_report){alert('Generate a report first');return;}
+  const lang=document.getElementById('reportLang')?.value||'English';
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Translating report to '+lang+'...');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`Translate all text values in this risk report JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate the "project_health" value (keep it as good/warning/critical). Return ONLY the translated JSON.
+
+${JSON.stringify(CP.ai_report)}`}]});
+    const parsed=pJSON(data.content[0].text);
+    CP.ai_report=parsed;
+    const now=CP.ai_report_date||new Date().toISOString();
+    sb('projects?id=eq.'+CID,'PATCH',{ai_report:parsed}).catch(()=>{});
+    hideLoad();
+    renderProjectReport(parsed,now);
+  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+}
+
+// Translate the saved market insights to a chosen language
+async function translateInsights(){
+  if(!CP||!CP.market_insights){alert('Load insights first');return;}
+  const lang=document.getElementById('insightsLang')?.value||'English';
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Translating insights to '+lang+'...');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`Translate all text values in this market insights JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate probability values (keep high/medium/low). Return ONLY the translated JSON.
+
+${JSON.stringify(CP.market_insights)}`}]});
+    const parsed=pJSON(data.content[0].text);
+    CP.market_insights=parsed;
+    const now=CP.market_insights_date||new Date().toISOString();
+    sb('projects?id=eq.'+CID,'PATCH',{market_insights:parsed}).catch(()=>{});
+    hideLoad();
+    renderProjectInsights(parsed,now);
+  }catch(e){hideLoad();alert('Translation error: '+e.message);}
 }
 
 function renderProjectInsights(parsed,dateStr){
@@ -4759,7 +4815,7 @@ async function analyzeTrend(){
   const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%`).join('\n')||'No history';
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Detect the language of the existing risks below and generate ALL output in THAT SAME language (match the risk register's language).
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ENGLISH.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
 Existing Risks:\n${existing}
 History (last 4 weeks):\n${history}
@@ -4773,7 +4829,7 @@ THIS WEEK (${weekDate}):
 
 Each indicator analysis must be 2-4 sentences explaining: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact.
 
-Respond ONLY with valid JSON (text values in the detected register language):
+Respond ONLY with valid JSON in English:
 {"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative summary","indicators_analysis":{"schedule_variance":"detailed analysis","cost_variance":"detailed analysis","change_requests":"detailed analysis","resource_utilization":"detailed analysis","vendor_delay":"detailed analysis"},"warnings":["warning 1","warning 2","warning 3"],"predicted_risks":["prediction 1","prediction 2","prediction 3"],"actions":["action 1","action 2","action 3","action 4"]}`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
