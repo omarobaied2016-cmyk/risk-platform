@@ -5773,7 +5773,11 @@ async function loadInsights(){
         <div class="dash-hero-l">Market & World Insights</div>
         <div class="dash-hero-s">Real-time intelligence from news sources analyzed by AI</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="mainInsightsLang" style="font-size:12px;padding:9px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+          <option value="English">English</option><option value="Arabic">العربية</option><option value="Spanish">Español</option><option value="French">Français</option>
+        </select>
+        <button class="btn btn-g" onclick="translateMainInsights()">Translate</button>
         <button class="btn btn-p" onclick="generateInsights()">Refresh Insights</button>
       </div>
     </div>
@@ -5785,6 +5789,36 @@ async function loadInsights(){
       </div>
     </div>
   `;
+  // Restore saved insights for this project
+  if(CP&&CP.insights_data){
+    insightsData=CP.insights_data;
+    insightsLastFetch=CP.insights_date?new Date(CP.insights_date):new Date();
+    renderInsights(CP.insights_data,CP.insights_sources||0);
+  }
+}
+
+async function translateMainInsights(){
+  if(!CP||!CP.insights_data){alert('Generate insights first');return;}
+  const lang=document.getElementById('mainInsightsLang')?.value||'English';
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Translating to '+lang+'...');
+  try{
+    const d=CP.insights_data;const items=[];const map=[];
+    const push=(getter,setter)=>{const v=getter();if(typeof v==='string'&&v.trim()){map.push(setter);items.push(v);}};
+    push(()=>d.executive_summary,v=>d.executive_summary=v);
+    (d.construction_news||[]).forEach(n=>{push(()=>n.headline,v=>n.headline=v);push(()=>n.impact,v=>n.impact=v);});
+    (d.material_prices||[]).forEach(m=>{push(()=>m.impact,v=>m.impact=v);});
+    (d.geopolitical||[]).forEach(g=>{push(()=>g.event,v=>g.event=v);push(()=>g.impact,v=>g.impact=v);});
+    (d.currency||[]).forEach(c=>{push(()=>c.impact,v=>c.impact=v);});
+    (d.regulatory||[]).forEach(r=>{push(()=>r.decision,v=>r.decision=v);push(()=>r.impact,v=>r.impact=v);});
+    (d.risk_updates||[]).forEach(r=>{push(()=>r.reason,v=>r.reason=v);});
+    (d.keep_eye_on||[]).forEach(k=>{push(()=>k.topic,v=>k.topic=v);push(()=>k.why,v=>k.why=v);push(()=>k.watch_for,v=>k.watch_for=v);});
+    const tr=await translateStrings(items,lang);
+    tr.forEach((t,i)=>map[i](t));
+    sb('projects?id=eq.'+CID,'PATCH',{insights_data:d}).catch(()=>{});
+    hideLoad();
+    renderInsights(d,CP.insights_sources||0);
+  }catch(e){hideLoad();alert('Translation error: '+e.message);}
 }
 
 async function generateInsights(){
@@ -5891,12 +5925,19 @@ Be specific. Reference real data from the news. Connect global events to local p
     insightsData=parsed;
     insightsLastFetch=new Date();
     renderInsights(parsed,allArticles);
+    // Save to project so it persists
+    if(CP&&CID){
+      const now=new Date().toISOString();
+      CP.insights_data=parsed;CP.insights_date=now;CP.insights_sources=allArticles.length;
+      sb('projects?id=eq.'+CID,'PATCH',{insights_data:parsed,insights_date:now}).catch(()=>{});
+    }
   }catch(e){
     document.getElementById('insightsBody').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
   }
 }
 
 function renderInsights(data,articles){
+  const srcCount=typeof articles==='number'?articles:(articles?.length||0);
   const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const sevBg={high:'#ffe8e8',medium:'#fef9c3',low:'#dcfce7'};
   const sevIcon={high:'⚠',medium:'◆',low:'✓'};
@@ -5911,7 +5952,7 @@ function renderInsights(data,articles){
           <span class="dash-sec-num" style="background:linear-gradient(135deg,var(--purple),var(--primary))">✦</span>
           <span class="dash-sec-name">Executive Summary</span>
         </div>
-        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Updated ${lastUpdate} · ${articles.length} sources</div>
+        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Updated ${lastUpdate} · ${srcCount} sources</div>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${data.executive_summary||'—'}</div>
     </div>
