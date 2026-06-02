@@ -4868,6 +4868,9 @@ function renderWarn(){
   const noSched=!CP.has_schedule;
   const bucket=(title,color,items)=>items.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:${color};letter-spacing:.06em;margin:14px 0 7px">${title} (${items.length})</div>${items.map(x=>ewCard(x.r,x.d)).join('')}`:'';
 
+  // Ongoing / continuous risks
+  const ongoing=risks.filter(r=>r.timing_type==='ongoing');
+
   el.innerHTML=`
     <div class="ew-sec">
       <div class="ew-sec-t"><span style="background:var(--red-soft);color:var(--red);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Schedule</span> Schedule-Linked Risks <span style="font-size:10px;font-weight:600;color:var(--t3);margin-inline-start:8px">Today: ${today.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span></div>
@@ -4879,7 +4882,29 @@ function renderWarn(){
       ${bucket('Upcoming','var(--t3)',upcoming)}
       ${noDateScheduled.length?`<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.06em;margin:14px 0 7px">Scheduled — Date Not Determined (${noDateScheduled.length})</div>${noDateScheduled.map(r=>ewCard(r,null)).join('')}`:''}
       ${!scheduled.length&&!noDateScheduled.length?`<div class="ai ai-ok" style="margin-bottom:0">No schedule-linked risks identified</div>`:''}`}
+    </div>
+
+    <div class="ew-sec" style="margin-top:16px">
+      <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Continuous</span> Continuous Risks <span style="font-size:10px;font-weight:600;color:var(--t3);margin-inline-start:8px">Market & ongoing exposures — no fixed date</span></div>
+      ${ongoing.length?ongoing.map(r=>ewOngoingCard(r)).join(''):`<div class="ai ai-ok" style="margin-bottom:0">No continuous risks identified</div>`}
     </div>`;
+}
+
+function ewOngoingCard(r){
+  const cls={high:'ew-h',medium:'ew-m',low:'ew-l'}[r.level]||'ew-l';
+  return`<div class="ew-card ${cls}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span>
+        <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'opportunity':'threat'}</span>
+        <span class="cb">${CAT_AR[r.category]||r.category}</span>
+        <span class="bdg b-${r.level}">${RL[r.level]||r.level}</span>
+      </div>
+      <span class="wbdg" style="background:var(--primary-soft);color:var(--primary)">Continuous</span>
+    </div>
+    <div style="font-size:12.5px;font-weight:500;margin-bottom:3px;color:var(--t1)">${r.description}</div>
+    <div style="font-size:11.5px;color:var(--t2);font-style:italic">Action: ${r.mitigation}</div>
+  </div>`;
 }
 
 // ═══ WEEKLY INDICATOR ANALYSIS (moved to Updates) ═══
