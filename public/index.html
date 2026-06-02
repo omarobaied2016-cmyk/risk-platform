@@ -2786,24 +2786,25 @@ function renderPortfolioReport(parsed,dateStr){
   if(!el||!parsed)return;
   const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.portfolio_health]||'#a16207';
   const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.portfolio_health];
-  const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.portfolio_health]||'◆';
   const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.portfolio_health]||'Warning';
   const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  const sec=(num,color,name,rows)=>`<div class="dash-section"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num" style="background:${color}">${num}</span><span class="dash-sec-name">${name}</span></div></div>${rows}</div>`;
+  const li=(items,mark,mc)=>(items||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><span style="color:${mc};font-weight:700;margin-inline-end:6px">${mark}</span>${x}</div>`).join('');
   el.innerHTML=`
-    <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
+    <div class="dash-section" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Executive Summary — ${htext}</div>
+        <div class="dash-sec-title"><span class="dash-sec-num" style="background:${hc}">✦</span><span class="dash-sec-name" style="color:${hc}">Executive Summary — ${htext}</span></div>
         <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div>
       </div>
-      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
     </div>
-    <div class="dash-row dash-3" style="margin-bottom:14px">
-      <div class="card"><div class="card-t" style="color:var(--red)">Critical Risks</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
-      <div class="card"><div class="card-t" style="color:var(--primary)">Impact Analysis</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
-      <div class="card"><div class="card-t" style="color:var(--grn)">Recommended Actions</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${sec('1','linear-gradient(135deg,var(--red),#d8344a)','Critical Risks',li(parsed.top_concerns,'•','var(--red)'))}
+      ${sec('2','linear-gradient(135deg,var(--primary),var(--purple))','Impact Analysis',li(parsed.key_findings,'▸','var(--primary)')+li(parsed.cross_project_patterns,'↔','var(--purple)'))}
     </div>
-    <div class="dash-row" style="margin-bottom:14px">
-      <div class="card"><div class="card-t" style="color:var(--org)">Emerging Risks / Priority Projects</div>${(parsed.priority_projects||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${sec('3','linear-gradient(135deg,var(--grn),#3aad6e)','Recommended Actions',(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join(''))}
+      ${sec('4','linear-gradient(135deg,var(--org),#e09600)','Emerging Risks / Priority Projects',li(parsed.priority_projects,'▲','var(--org)'))}
     </div>`;
 }
 
@@ -3881,29 +3882,6 @@ function renderDash(){
       <button class="btn btn-p" onclick="refreshAll()" style="padding:10px 28px;font-size:13px">Refresh All — AI Report, Market Insights & Early Warning</button>
     </div>
 
-    <!-- #21 Market & World Insights for Project -->
-    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(255,168,0,.04),rgba(245,158,11,.02));border-color:rgba(255,168,0,.2)">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
-        <div style="display:flex;align-items:center;gap:11px">
-          <div class="kpi-icon-circle yellow" style="width:42px;height:42px;font-size:18px">🌍</div>
-          <div>
-            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">Market & World Insights</div>
-            <div style="font-size:11.5px;color:var(--t3)">Current market conditions affecting this project</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <select id="insightsLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
-            <option value="English">English</option>
-            <option value="Arabic">العربية</option>
-            <option value="Spanish">Español</option>
-            <option value="French">Français</option>
-          </select>
-          <button class="btn btn-g" onclick="translateInsights()" style="padding:9px 14px">Translate</button>
-          <button class="btn btn-g" onclick="loadProjectInsights()" style="border-color:rgba(255,168,0,.4);color:#ffa800">Load Insights</button>
-        </div>
-      </div>
-    </div>
-    <div id="projMarketInsights"></div>
     <!-- #21 AI Project Report -->
     <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(114,57,234,.04),rgba(137,80,252,.02));border-color:rgba(114,57,234,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
@@ -3927,6 +3905,29 @@ function renderDash(){
       </div>
     </div>
     <div id="projAIReport"></div>
+    <!-- #21 Market & World Insights for Project -->
+    <div class="dash-section" style="margin-bottom:14px;margin-top:14px;background:linear-gradient(135deg,rgba(255,168,0,.04),rgba(245,158,11,.02));border-color:rgba(255,168,0,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div class="kpi-icon-circle yellow" style="width:42px;height:42px;font-size:18px">🌍</div>
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">Market & World Insights</div>
+            <div style="font-size:11.5px;color:var(--t3)">Current market conditions affecting this project</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="insightsLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+            <option value="English">English</option>
+            <option value="Arabic">العربية</option>
+            <option value="Spanish">Español</option>
+            <option value="French">Français</option>
+          </select>
+          <button class="btn btn-g" onclick="translateInsights()" style="padding:9px 14px">Translate</button>
+          <button class="btn btn-g" onclick="loadProjectInsights()" style="border-color:rgba(255,168,0,.4);color:#ffa800">Load Insights</button>
+        </div>
+      </div>
+    </div>
+    <div id="projMarketInsights"></div>
   `;
 
   // Restore saved AI report if exists
@@ -4298,24 +4299,25 @@ function renderProjectReport(parsed,dateStr){
   if(!el||!parsed)return;
   const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.project_health]||'#a16207';
   const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.project_health];
-  const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.project_health]||'◆';
   const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.project_health]||'Warning';
   const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  const sec=(num,color,name,rows)=>`<div class="dash-section"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num" style="background:${color}">${num}</span><span class="dash-sec-name">${name}</span></div></div>${rows}</div>`;
+  const li=(items,mark,mc)=>(items||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><span style="color:${mc};font-weight:700;margin-inline-end:6px">${mark}</span>${x}</div>`).join('');
   el.innerHTML=`
-    <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
+    <div class="dash-section" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Executive Summary — ${htext}</div>
+        <div class="dash-sec-title"><span class="dash-sec-num" style="background:${hc}">✦</span><span class="dash-sec-name" style="color:${hc}">Executive Summary — ${htext}</span></div>
         <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div>
       </div>
-      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
     </div>
-    <div class="dash-row dash-3" style="margin-bottom:14px">
-      <div class="card"><div class="card-t" style="color:var(--red)">Critical Risks</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
-      <div class="card"><div class="card-t" style="color:var(--primary)">Impact Analysis</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}${(parsed.common_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
-      <div class="card"><div class="card-t" style="color:var(--grn)">Recommended Actions</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${sec('1','linear-gradient(135deg,var(--red),#d8344a)','Critical Risks',li(parsed.top_concerns,'•','var(--red)'))}
+      ${sec('2','linear-gradient(135deg,var(--primary),var(--purple))','Impact Analysis',li(parsed.key_findings,'▸','var(--primary)')+li(parsed.common_patterns,'↔','var(--purple)'))}
     </div>
-    <div class="dash-row" style="margin-bottom:14px">
-      <div class="card"><div class="card-t" style="color:var(--org)">Emerging Risks</div>${(parsed.areas_needing_attention||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${sec('3','linear-gradient(135deg,var(--grn),#3aad6e)','Recommended Actions',(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join(''))}
+      ${sec('4','linear-gradient(135deg,var(--org),#e09600)','Emerging Risks',li(parsed.areas_needing_attention,'▲','var(--org)'))}
     </div>`;
 }
 
