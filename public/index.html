@@ -4308,46 +4308,81 @@ Include 3-4 insights (cover market conditions, material prices, economic indicat
   }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
 }
 
-// Translate the saved AI report to a chosen language
+// Translate the saved AI report to a chosen language (field-by-field, JSON-safe)
 async function translateReport(){
   if(!CP||!CP.ai_report){alert('Generate a report first');return;}
   const lang=document.getElementById('reportLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
   showLoad('Translating report to '+lang+'...');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`Translate all text values in this risk report JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate the "project_health" value (keep it as good/warning/critical). 
-
-CRITICAL JSON RULES: Output must be valid JSON. Do not use double-quotes inside any text value — use single quotes or remove them. Do not add line breaks inside string values. Return ONLY the JSON object, nothing else.
-
-${JSON.stringify(CP.ai_report)}`}]});
-    const parsed=pJSON(data.content[0].text);
-    CP.ai_report=parsed;
-    const now=CP.ai_report_date||new Date().toISOString();
-    sb('projects?id=eq.'+CID,'PATCH',{ai_report:parsed}).catch(()=>{});
+    const rep=CP.ai_report;
+    // Collect all translatable strings into a flat numbered list
+    const items=[];const map=[];
+    const addStr=(obj,key)=>{if(typeof obj[key]==='string'){map.push({type:'k',obj,key});items.push(obj[key]);}};
+    const addArr=(obj,key)=>{if(Array.isArray(obj[key])){obj[key].forEach((v,i)=>{if(typeof v==='string'){map.push({type:'a',arr:obj[key],idx:i});items.push(v);}});}};
+    addStr(rep,'executive_summary');
+    addArr(rep,'key_findings');addArr(rep,'top_concerns');addArr(rep,'common_patterns');
+    addArr(rep,'strategic_recommendations');addArr(rep,'areas_needing_attention');
+    const translated=await translateStrings(items,lang);
+    translated.forEach((t,i)=>{const m=map[i];if(m.type==='k')m.obj[m.key]=t;else m.arr[m.idx]=t;});
+    sb('projects?id=eq.'+CID,'PATCH',{ai_report:rep}).catch(()=>{});
     hideLoad();
-    renderProjectReport(parsed,now);
+    renderProjectReport(rep,CP.ai_report_date||new Date().toISOString());
   }catch(e){hideLoad();alert('Translation error: '+e.message);}
 }
 
-// Translate the saved market insights to a chosen language
+// Translate the saved market insights (field-by-field, JSON-safe)
 async function translateInsights(){
   if(!CP||!CP.market_insights){alert('Load insights first');return;}
   const lang=document.getElementById('insightsLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
   showLoad('Translating insights to '+lang+'...');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`Translate all text values in this market insights JSON to ${lang}. Keep the exact same JSON structure and keys. Do NOT translate probability values (keep high/medium/low).
-
-CRITICAL JSON RULES: Output must be valid JSON. Do not use double-quotes inside any text value — use single quotes or remove them. Do not add line breaks inside string values. Return ONLY the JSON object, nothing else.
-
-${JSON.stringify(CP.market_insights)}`}]});
-    const parsed=pJSON(data.content[0].text);
-    CP.market_insights=parsed;
-    const now=CP.market_insights_date||new Date().toISOString();
-    sb('projects?id=eq.'+CID,'PATCH',{market_insights:parsed}).catch(()=>{});
+    const ins=CP.market_insights;
+    const items=[];const map=[];
+    if(typeof ins.executive_brief==='string'){map.push({set:v=>ins.executive_brief=v});items.push(ins.executive_brief);}
+    (ins.insights||[]).forEach(it=>{
+      if(it.title){map.push({set:v=>it.title=v});items.push(it.title);}
+      if(it.description){map.push({set:v=>it.description=v});items.push(it.description);}
+      if(it.recommendation){map.push({set:v=>it.recommendation=v});items.push(it.recommendation);}
+      if(Array.isArray(it.affected_risks))it.affected_risks.forEach((r,i)=>{map.push({set:v=>it.affected_risks[i]=v});items.push(r);});
+    });
+    (ins.keep_eye_on||[]).forEach(it=>{
+      if(it.event){map.push({set:v=>it.event=v});items.push(it.event);}
+      if(it.risk_connection){map.push({set:v=>it.risk_connection=v});items.push(it.risk_connection);}
+    });
+    const translated=await translateStrings(items,lang);
+    translated.forEach((t,i)=>map[i].set(t));
+    sb('projects?id=eq.'+CID,'PATCH',{market_insights:ins}).catch(()=>{});
     hideLoad();
-    renderProjectInsights(parsed,now);
+    renderProjectInsights(ins,CP.market_insights_date||new Date().toISOString());
   }catch(e){hideLoad();alert('Translation error: '+e.message);}
+}
+
+// Translate an array of strings -> returns array of translations (same order, same length)
+async function translateStrings(items,lang){
+  if(!items.length)return [];
+  // Use a delimiter-based format instead of JSON to avoid quote-escaping issues
+  const DELIM='|||';
+  const numbered=items.map((s,i)=>`[${i}] ${s}`).join('\n'+DELIM+'\n');
+  const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate each numbered segment below into ${lang}. 
+Rules:
+- Keep the EXACT same number of segments in the same order.
+- Keep each [N] index marker at the start of its segment.
+- Separate segments with a line containing only ${DELIM}
+- Translate ONLY the text, keep technical terms accurate.
+- Do not add any commentary.
+
+Segments:
+${numbered}`}]});
+  const out=(data.content?.[0]?.text||'').split(DELIM).map(s=>s.trim()).filter(Boolean);
+  // Parse back by index marker
+  const result=items.slice();
+  out.forEach(seg=>{
+    const m=seg.match(/^\[(\d+)\]\s*([\s\S]*)$/);
+    if(m){const idx=parseInt(m[1]);if(idx>=0&&idx<result.length)result[idx]=m[2].trim();}
+  });
+  return result;
 }
 
 function renderProjectInsights(parsed,dateStr){
