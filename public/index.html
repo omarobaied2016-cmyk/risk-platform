@@ -2625,7 +2625,13 @@ async function renderPortfolio(pfId){
             <div style="font-size:11.5px;color:var(--t3)">Comprehensive Claude analysis with strategic recommendations</div>
           </div>
         </div>
-        <button class="btn btn-p" onclick="generatePortfolioReport('${pfId||''}')">Generate Report</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="pfReportLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+            <option value="English">English</option><option value="Arabic">العربية</option><option value="Spanish">Español</option><option value="French">Français</option>
+          </select>
+          <button class="btn btn-g" onclick="translatePortfolioReport()" style="padding:9px 14px">Translate</button>
+          <button class="btn btn-p" onclick="generatePortfolioReport('${pfId||''}')">Generate Report</button>
+        </div>
       </div>
     </div>
     <div id="portfReport"></div>
@@ -2640,7 +2646,13 @@ async function renderPortfolio(pfId){
             <div style="font-size:11.5px;color:var(--t3)">Real-time intelligence affecting your portfolio</div>
           </div>
         </div>
-        <button class="btn btn-p" onclick="generatePortfolioInsights('${pfId||''}')">Generate Insights</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="pfInsightsLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
+            <option value="English">English</option><option value="Arabic">العربية</option><option value="Spanish">Español</option><option value="French">Français</option>
+          </select>
+          <button class="btn btn-g" onclick="translatePortfolioInsights()" style="padding:9px 14px">Translate</button>
+          <button class="btn btn-p" onclick="generatePortfolioInsights('${pfId||''}')">Generate Insights</button>
+        </div>
       </div>
     </div>
     <div id="portfInsights"></div>
@@ -2680,6 +2692,10 @@ async function renderPortfolio(pfId){
       </div>
     </div>
   `;
+
+  // Restore saved portfolio report & insights
+  if(currentPF&&currentPF.ai_report){renderPortfolioReport(currentPF.ai_report,currentPF.ai_report_date);}
+  if(currentPF&&currentPF.market_insights){renderPortfolioInsights(currentPF.market_insights,currentPF.market_insights_sources||0);}
 
   setTimeout(()=>{
     const projWithRisks=projScores.filter(p=>p.score!==null);
@@ -2725,6 +2741,7 @@ async function generatePortfolioReport(){
   if(!currentPF)return;
   const list=projs.filter(p=>p.portfolio_id===currentPF.id);
   if(!list.length){alert('No projects in portfolio');return;}
+  if(!requireActiveAccess())return;
   if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
   showLoad('Generating portfolio report...');
   
@@ -2756,33 +2773,56 @@ Provide a comprehensive report in the following format only:
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
-    
-    const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.portfolio_health]||'#a16207';
-    const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.portfolio_health];
-    const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.portfolio_health]||'◆';
-    const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.portfolio_health]||'Warning';
-    
-    document.getElementById('portfReport').innerHTML=`
-      <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Overall Portfolio Report — ${htext}</div>
-          <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${new Date().toLocaleDateString('ar-SA')}</div>
-        </div>
-        <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
-      </div>
-      
-      <div class="dash-row dash-3" style="margin-bottom:14px">
-        <div class="card"><div class="card-t" style="color:var(--primary)">Key Findings</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}</div>
-        <div class="card"><div class="card-t" style="color:var(--red)">⚠ Top Concerns</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
-        <div class="card"><div class="card-t" style="color:var(--purple)">🔄 Common Patterns</div>${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
-      </div>
-      
-      <div class="dash-row dash-21" style="margin-bottom:14px">
-        <div class="card"><div class="card-t" style="color:var(--grn)">✓ Strategic Recommendations</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
-        <div class="card"><div class="card-t" style="color:var(--org)">🚨 Projects Needing Attention</div>${(parsed.priority_projects||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
-      </div>`;
-    document.getElementById('portfReport').scrollIntoView({behavior:'smooth',block:'start'});
+    const now=new Date().toISOString();
+    currentPF.ai_report=parsed;currentPF.ai_report_date=now;
+    sb('portfolios?id=eq.'+currentPF.id,'PATCH',{ai_report:parsed,ai_report_date:now}).catch(()=>{});
+    renderPortfolioReport(parsed,now);
+    document.getElementById('portfReport')?.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+function renderPortfolioReport(parsed,dateStr){
+  const el=document.getElementById('portfReport');
+  if(!el||!parsed)return;
+  const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.portfolio_health]||'#a16207';
+  const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.portfolio_health];
+  const hicon={good:'✓',warning:'◆',critical:'⚠'}[parsed.portfolio_health]||'◆';
+  const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.portfolio_health]||'Warning';
+  const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  el.innerHTML=`
+    <div class="card" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:${hc}">${hicon} Executive Summary — ${htext}</div>
+        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div>
+      </div>
+      <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary}</div>
+    </div>
+    <div class="dash-row dash-3" style="margin-bottom:14px">
+      <div class="card"><div class="card-t" style="color:var(--red)">Critical Risks</div>${(parsed.top_concerns||[]).map(c=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">• ${c}</div>`).join('')}</div>
+      <div class="card"><div class="card-t" style="color:var(--primary)">Impact Analysis</div>${(parsed.key_findings||[]).map(k=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▸ ${k}</div>`).join('')}${(parsed.cross_project_patterns||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">↔ ${p}</div>`).join('')}</div>
+      <div class="card"><div class="card-t" style="color:var(--grn)">Recommended Actions</div>${(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join('')}</div>
+    </div>
+    <div class="dash-row" style="margin-bottom:14px">
+      <div class="card"><div class="card-t" style="color:var(--org)">Emerging Risks / Priority Projects</div>${(parsed.priority_projects||[]).map(p=>`<div style="font-size:12px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--b1);line-height:1.6">▲ ${p}</div>`).join('')}</div>
+    </div>`;
+}
+
+async function translatePortfolioReport(){
+  if(!currentPF||!currentPF.ai_report){alert('Generate a report first');return;}
+  const lang=document.getElementById('pfReportLang')?.value||'English';
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Translating to '+lang+'...');
+  try{
+    const rep=currentPF.ai_report;const items=[];const map=[];
+    const addStr=(o,k)=>{if(typeof o[k]==='string'){map.push({type:'k',obj:o,key:k});items.push(o[k]);}};
+    const addArr=(o,k)=>{if(Array.isArray(o[k]))o[k].forEach((v,i)=>{if(typeof v==='string'){map.push({type:'a',arr:o[k],idx:i});items.push(v);}});};
+    addStr(rep,'executive_summary');addArr(rep,'key_findings');addArr(rep,'top_concerns');
+    addArr(rep,'cross_project_patterns');addArr(rep,'strategic_recommendations');addArr(rep,'priority_projects');
+    const tr=await translateStrings(items,lang);
+    tr.forEach((t,i)=>{const m=map[i];if(m.type==='k')m.obj[m.key]=t;else m.arr[m.idx]=t;});
+    sb('portfolios?id=eq.'+currentPF.id,'PATCH',{ai_report:rep}).catch(()=>{});
+    hideLoad();renderPortfolioReport(rep,currentPF.ai_report_date||new Date().toISOString());
+  }catch(e){hideLoad();alert('Translation error: '+e.message);}
 }
 
 // ═══ PROJECT MODAL ═══
@@ -4362,26 +4402,28 @@ async function translateInsights(){
 // Translate an array of strings -> returns array of translations (same order, same length)
 async function translateStrings(items,lang){
   if(!items.length)return [];
-  // Use a delimiter-based format instead of JSON to avoid quote-escaping issues
+  const result=items.slice();
   const DELIM='|||';
-  const numbered=items.map((s,i)=>`[${i}] ${s}`).join('\n'+DELIM+'\n');
-  const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate each numbered segment below into ${lang}. 
+  const batchSize=8; // smaller batches = reliable, no truncation
+  for(let start=0;start<items.length;start+=batchSize){
+    const batch=items.slice(start,start+batchSize);
+    const numbered=batch.map((s,i)=>`[${i}] ${s}`).join('\n'+DELIM+'\n');
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate each numbered segment below into ${lang}.
 Rules:
-- Keep the EXACT same number of segments in the same order.
-- Keep each [N] index marker at the start of its segment.
+- Output the SAME number of segments in the same order.
+- Keep each [N] index marker exactly at the start of its segment.
 - Separate segments with a line containing only ${DELIM}
-- Translate ONLY the text, keep technical terms accurate.
-- Do not add any commentary.
+- Translate ONLY the text; keep technical terms and risk IDs (like R001) accurate.
+- No commentary, no extra text.
 
 Segments:
 ${numbered}`}]});
-  const out=(data.content?.[0]?.text||'').split(DELIM).map(s=>s.trim()).filter(Boolean);
-  // Parse back by index marker
-  const result=items.slice();
-  out.forEach(seg=>{
-    const m=seg.match(/^\[(\d+)\]\s*([\s\S]*)$/);
-    if(m){const idx=parseInt(m[1]);if(idx>=0&&idx<result.length)result[idx]=m[2].trim();}
-  });
+    const out=(data.content?.[0]?.text||'').split(DELIM).map(s=>s.trim()).filter(Boolean);
+    out.forEach(seg=>{
+      const m=seg.match(/^\[(\d+)\]\s*([\s\S]*)$/);
+      if(m){const idx=parseInt(m[1]);if(idx>=0&&idx<batch.length)result[start+idx]=m[2].trim();}
+    });
+  }
   return result;
 }
 
@@ -6143,12 +6185,19 @@ Analyze impact on the entire portfolio. Respond ONLY with valid JSON:
     }
 
     renderPortfolioInsights(parsed,allArticles);
+    // Save to DB
+    if(currentPF){
+      const now=new Date().toISOString();
+      currentPF.market_insights=parsed;currentPF.market_insights_date=now;currentPF.market_insights_sources=allArticles.length;
+      sb('portfolios?id=eq.'+currentPF.id,'PATCH',{market_insights:parsed,market_insights_date:now}).catch(()=>{});
+    }
   }catch(e){
     document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="padding:30px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
   }
 }
 
 function renderPortfolioInsights(data,articles){
+  const srcCount=typeof articles==='number'?articles:(articles?.length||0);
   const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const sevBg={high:'#ffe8e8',medium:'#fef9c3',low:'#dcfce7'};
   const sevIcon={high:'⚠',medium:'◆',low:'✓'};
@@ -6160,7 +6209,7 @@ function renderPortfolioInsights(data,articles){
           <span class="dash-sec-num" style="background:linear-gradient(135deg,#a16207,var(--yel))">✦</span>
           <span class="dash-sec-name">Project/Portfolio Impact</span>
         </div>
-        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${articles.length} sources analyzed</div>
+        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${srcCount} sources analyzed</div>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${data.executive_summary||'—'}</div>
     </div>
@@ -6198,6 +6247,29 @@ function renderPortfolioInsights(data,articles){
       </div>
     </div>
   `;
+}
+
+async function translatePortfolioInsights(){
+  if(!currentPF||!currentPF.market_insights){alert('Generate insights first');return;}
+  const lang=document.getElementById('pfInsightsLang')?.value||'English';
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  showLoad('Translating to '+lang+'...');
+  try{
+    const d=currentPF.market_insights;const items=[];const map=[];
+    const push=(getter,setter)=>{const v=getter();if(typeof v==='string'&&v.trim()){map.push(setter);items.push(v);}};
+    push(()=>d.executive_summary,v=>d.executive_summary=v);
+    (d.construction_news||[]).forEach(n=>{push(()=>n.headline,v=>n.headline=v);push(()=>n.impact,v=>n.impact=v);});
+    (d.material_prices||[]).forEach(m=>{push(()=>m.impact,v=>m.impact=v);});
+    (d.geopolitical||[]).forEach(g=>{push(()=>g.event,v=>g.event=v);push(()=>g.impact,v=>g.impact=v);});
+    (d.currency||[]).forEach(c=>{push(()=>c.impact,v=>c.impact=v);});
+    (d.regulatory||[]).forEach(r=>{push(()=>r.decision,v=>r.decision=v);push(()=>r.impact,v=>r.impact=v);});
+    (d.keep_eye_on||[]).forEach(k=>{push(()=>k.topic,v=>k.topic=v);push(()=>k.why,v=>k.why=v);push(()=>k.watch_for,v=>k.watch_for=v);});
+    const tr=await translateStrings(items,lang);
+    tr.forEach((t,i)=>map[i](t));
+    sb('portfolios?id=eq.'+currentPF.id,'PATCH',{market_insights:d}).catch(()=>{});
+    hideLoad();
+    renderPortfolioInsights(d,currentPF.market_insights_sources||0);
+  }catch(e){hideLoad();alert('Translation error: '+e.message);}
 }
 
 // ═══ STATS ═══
