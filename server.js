@@ -107,9 +107,11 @@ app.get('/api/news/status', (req, res) => {
 //  Set in Railway → Variables:
 //    RESEND_API_KEY = re_...
 //    EMAIL_FROM     = RiskAtlas AI <noreply@riskatlas.pro>  (optional)
+//    CONTACT_TO     = your-inbox@riskatlas.pro              (optional)
 // ─────────────────────────────────────────────
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const EMAIL_FROM = process.env.EMAIL_FROM || 'RiskAtlas AI <noreply@riskatlas.pro>';
+const CONTACT_TO = process.env.CONTACT_TO || 'support@riskatlas.pro';
 const emailLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, key: 'email' });
 
 function emailShell(title, bodyHtml) {
@@ -161,12 +163,14 @@ function tplReset(code) {
     <p style="margin:0;font-size:13px;line-height:1.6;color:#8888a8;">This code expires in 15 minutes. If you didn't request this, your password is still safe.</p>`);
 }
 
-async function sendEmail(to, subject, html) {
+async function sendEmail(to, subject, html, replyTo) {
   if (!RESEND_API_KEY) throw new Error('Email service not configured');
+  const payload = { from: EMAIL_FROM, to: [to], subject, html };
+  if (replyTo) payload.reply_to = replyTo;
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + RESEND_API_KEY },
-    body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html }),
+    body: JSON.stringify(payload),
   });
   const data = await r.json();
   if (!r.ok) throw new Error(data.message || 'Email send failed');
@@ -202,6 +206,37 @@ app.post('/api/email/reset', emailLimiter, async (req, res) => {
 
 app.get('/api/email/status', (req, res) => {
   res.json({ configured: !!RESEND_API_KEY });
+});
+
+// ─────────────────────────────────────────────
+//  CONTACT form → email via Resend
+// ─────────────────────────────────────────────
+app.post('/api/contact', emailLimiter, async (req, res) => {
+  const { name, email, company, message } = req.body || {};
+  if (!name || !email || !message) return res.status(400).json({ ok: false, error: 'Missing required fields.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) return res.status(400).json({ ok: false, error: 'Invalid email.' });
+  if (String(message).length > 5000) return res.status(400).json({ ok: false, error: 'Message too long.' });
+  const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+  const html = emailShell('New contact message', `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;color:#4a4a68;margin:0 0 16px;">
+      <tr><td style="padding:4px 0;color:#8888a8;width:90px;">Name</td><td style="padding:4px 0;">${esc(name)}</td></tr>
+      <tr><td style="padding:4px 0;color:#8888a8;">Email</td><td style="padding:4px 0;">${esc(email)}</td></tr>
+      <tr><td style="padding:4px 0;color:#8888a8;">Company</td><td style="padding:4px 0;">${esc(company || '-')}</td></tr>
+    </table>
+    <p style="margin:0;font-size:14px;line-height:1.6;color:#15152b;white-space:pre-wrap;border-top:1px solid #eef0f7;padding-top:14px;">${esc(message)}</p>`);
+  try {
+    await sendEmail(CONTACT_TO, 'Contact form — ' + name, html, email);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ─────────────────────────────────────────────
+//  Legal pages (clean URLs) — must be BEFORE catch-all
+// ─────────────────────────────────────────────
+['privacy', 'terms', 'cookies', 'contact'].forEach((page) => {
+  app.get('/' + page, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', page + '.html'));
+  });
 });
 
 // ─────────────────────────────────────────────
