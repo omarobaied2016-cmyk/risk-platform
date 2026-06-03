@@ -1271,6 +1271,7 @@ tr:hover td{background:rgba(114,57,234,.015);}
             <button class="pill on" onclick="setUT(this,'change_order')">Change Order</button>
             <button class="pill" onclick="setUT(this,'delay')">Delay</button>
             <button class="pill" onclick="setUT(this,'scope')">Scope Change</button>
+            <button class="pill" onclick="setUT(this,'schedule')">Schedule Update</button>
             <button class="pill" onclick="setUT(this,'site')">Site Update</button>
             <button class="pill" onclick="setUT(this,'contract')">Contract Amendment</button>
             <button class="pill" onclick="setUT(this,'meeting')">Meeting Minutes</button>
@@ -4894,7 +4895,142 @@ function renderWarn(){
       ${(()=>{const mon=ongoing.filter(r=>r.market_signal);const esc=mon.filter(r=>r.market_signal.trend==='up'&&r.market_signal.severity==='high');return esc.length?`<div class="ai ai-w" style="margin-bottom:10px"><div><b>${esc.length} continuous risk(s) escalating</b> based on live market signals. Review Insights for details.</div></div>`:'';})()}
       ${ongoing.length?ongoing.map(r=>ewOngoingCard(r)).join(''):`<div class="ai ai-ok" style="margin-bottom:0">No continuous risks identified</div>`}
       ${ongoing.length&&!ongoing.some(r=>r.market_signal)?`<div style="font-size:11px;color:var(--t3);margin-top:8px;text-align:center">Generate <span style="color:var(--primary);cursor:pointer;font-weight:600" onclick="ST('insights')">Market Insights</span> to monitor these risks with live signals</div>`:''}
+    </div>
+
+    <div class="ew-sec" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div class="ew-sec-t" style="margin-bottom:0"><span style="background:var(--grn-soft);color:var(--grn);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Action Plan</span> Response Plan Schedule <span style="font-size:10px;font-weight:600;color:var(--t3);margin-inline-start:8px">Gantt timeline for implementing mitigation actions</span></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p" style="padding:7px 14px;font-size:11.5px" onclick="generateResponseSchedule()">Generate Response Schedule</button>
+        </div>
+      </div>
+      <div id="responseScheduleContent" style="margin-top:12px"></div>
     </div>`;
+
+  // Restore saved response schedule if any
+  if(CP&&CP.response_schedule){renderResponseSchedule(CP.response_schedule);}
+}
+
+// ═══ RESPONSE PLAN SCHEDULE (Gantt) ═══
+async function generateResponseSchedule(){
+  const risks=(CP?.risks||[]).filter(r=>r.status!=='closed');
+  if(!risks.length){alert('No risks to schedule');return;}
+  if(!requireActiveAccess())return;
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  const el=document.getElementById('responseScheduleContent');
+  if(el)el.innerHTML='<div class="dash-section" style="text-align:center;padding:24px;color:var(--t3)"><div class="spin" style="margin:0 auto 12px"></div>Building response plan schedule...</div>';
+  showLoad('Generating response plan schedule...');
+  const today=new Date().toISOString().slice(0,10);
+  const ctx=risks.slice(0,40).map(r=>`${r.risk_id||r.id?.slice(0,6)}: [${r.level}] ${r.description} | Strategy: ${r.response_strategy||'Mitigate'} | Plan: ${r.mitigation||'none'} | Owner: ${r.owner||'TBD'} | Expected: ${r.expected_date||'—'}`).join('\n');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior construction project planner. Build an implementation SCHEDULE for executing the risk response plans below. Project: ${CP.name} (${CP.type}). Project end: ${CP.end_date||'unknown'}. Today: ${today}.
+
+RISKS & RESPONSE PLANS:
+${ctx}
+
+For each risk that has a meaningful response plan, create a scheduled task to IMPLEMENT that plan. Sequence tasks sensibly: higher-level (high) risks and risks with earlier expected_date start sooner. Tasks may overlap. Durations should be realistic for construction (days). Start from today (${today}) at the earliest.
+
+Respond ONLY with valid JSON:
+{
+  "summary":"2-sentence overview of the response implementation plan",
+  "tasks":[
+    {"risk_id":"R001","action":"short action name (under 8 words)","owner":"role","level":"high","start_date":"${today}","end_date":"2026-07-15","duration_days":14}
+  ]
+}
+Order tasks by start_date ascending. Keep action names short. Every task needs valid start_date and end_date (YYYY-MM-DD), end_date after start_date.`}]});
+    hideLoad();
+    if(data.error){alert('Error: '+data.error.message);if(el)el.innerHTML='';return;}
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Could not parse schedule');if(el)el.innerHTML='';return;}
+    if(!parsed.tasks||!parsed.tasks.length){if(el)el.innerHTML='<div class="ai ai-w">No response tasks could be generated. Make sure risks have response plans.</div>';return;}
+    parsed.generated_at=new Date().toISOString();
+    CP.response_schedule=parsed;
+    sb('projects?id=eq.'+CID,'PATCH',{response_schedule:parsed}).catch(()=>{});
+    renderResponseSchedule(parsed);
+    document.getElementById('responseScheduleContent')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(e){hideLoad();alert('Error: '+e.message);if(el)el.innerHTML='';}
+}
+
+function renderResponseSchedule(sched){
+  const el=document.getElementById('responseScheduleContent');
+  if(!el||!sched||!sched.tasks?.length)return;
+  const tasks=sched.tasks.slice().filter(t=>t.start_date&&t.end_date&&!isNaN(new Date(t.start_date))&&!isNaN(new Date(t.end_date)));
+  if(!tasks.length){el.innerHTML='<div class="ai ai-w">No valid dated tasks.</div>';return;}
+  tasks.sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
+  const dayMs=86400000;
+  const minD=new Date(Math.min(...tasks.map(t=>new Date(t.start_date))));
+  const maxD=new Date(Math.max(...tasks.map(t=>new Date(t.end_date))));
+  minD.setHours(0,0,0,0);maxD.setHours(0,0,0,0);
+  const span=Math.max(1,Math.round((maxD-minD)/dayMs));
+  const lc={high:'var(--red)',medium:'#ffa800',low:'var(--grn)'};
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayPct=Math.max(0,Math.min(100,((today-minD)/dayMs)/span*100));
+  // Month axis labels
+  let axis='';const months=[];let cur=new Date(minD.getFullYear(),minD.getMonth(),1);
+  while(cur<=maxD){months.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
+  axis=months.map(m=>{const off=Math.max(0,(m-minD)/dayMs)/span*100;return `<div style="position:absolute;left:${off}%;top:0;font-size:9.5px;color:var(--t3);transform:translateX(2px);white-space:nowrap">${m.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})}</div>`;}).join('');
+  const bars=tasks.map(t=>{
+    const s=new Date(t.start_date);s.setHours(0,0,0,0);
+    const e=new Date(t.end_date);e.setHours(0,0,0,0);
+    const left=((s-minD)/dayMs)/span*100;
+    const width=Math.max(1.5,((e-s)/dayMs)/span*100);
+    const col=lc[t.level]||'var(--primary)';
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="width:150px;flex-shrink:0;font-size:11px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.action}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--t3)">${t.risk_id||''}</span> ${t.action}</div>
+      <div style="flex:1;position:relative;height:22px;background:var(--s2);border-radius:5px;overflow:hidden">
+        <div style="position:absolute;left:${left}%;width:${width}%;top:3px;bottom:3px;background:${col};border-radius:4px;opacity:.85" title="${t.start_date} → ${t.end_date} (${t.duration_days||''}d)"></div>
+      </div>
+      <div style="width:64px;flex-shrink:0;font-size:10px;color:var(--t3);text-align:end">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
+    </div>`;
+  }).join('');
+  const rows=tasks.map(t=>`<tr>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${t.risk_id||''}</td>
+    <td style="font-size:11.5px;color:var(--t1)">${t.action}</td>
+    <td><span class="bdg b-${t.level}">${RL[t.level]||t.level||''}</span></td>
+    <td style="font-size:11px;color:var(--t2)">${t.owner||'—'}</td>
+    <td style="font-size:10.5px;color:var(--t2);white-space:nowrap">${new Date(t.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</td>
+    <td style="font-size:10.5px;color:var(--t2);white-space:nowrap">${new Date(t.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</td>
+    <td style="font-size:10.5px;color:var(--t2);text-align:center">${t.duration_days||Math.round((new Date(t.end_date)-new Date(t.start_date))/dayMs)}</td>
+  </tr>`).join('');
+  const dateLabel=sched.generated_at?new Date(sched.generated_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  el.innerHTML=`
+    ${sched.summary?`<div class="ai ai-ok" style="margin-bottom:12px">${sched.summary}</div>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--t3)">${tasks.length} tasks${dateLabel?' · generated '+dateLabel:''}</div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportResponseScheduleCSV()">Export CSV</button>
+        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportResponseSchedulePDF()">Export PDF</button>
+      </div>
+    </div>
+    <div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">
+      <div style="position:relative;height:16px;margin-bottom:6px;margin-inline-start:158px">${axis}</div>
+      <div style="position:relative">
+        ${bars}
+      </div>
+      <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--b1);font-size:10px;color:var(--t3)">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--red)"></span>High</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:#ffa800"></span>Medium</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--grn)"></span>Low</span>
+      </div>
+    </div>
+    <div class="tw"><table class="rt"><thead><tr><th>Risk</th><th>Action</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function exportResponseScheduleCSV(){
+  const sched=CP?.response_schedule;if(!sched?.tasks?.length){alert('Generate schedule first');return;}
+  const h=['Risk ID','Action','Level','Owner','Start','End','Duration (days)'];
+  const rows=sched.tasks.map(t=>[t.risk_id||'',t.action||'',RL[t.level]||t.level||'',t.owner||'',t.start_date||'',t.end_date||'',t.duration_days||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
+  const csv='\uFEFF'+[h.join(','),...rows].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`RiskAtlas_${(CP.name||'project').replace(/[^\w]+/g,'_')}_ResponseSchedule.csv`;a.click();
+}
+
+function exportResponseSchedulePDF(){
+  const sched=CP?.response_schedule;if(!sched?.tasks?.length){alert('Generate schedule first');return;}
+  const w=window.open('','_blank');
+  const rows=sched.tasks.map(t=>`<tr><td>${t.risk_id||''}</td><td>${t.action||''}</td><td class="${t.level}">${(RL[t.level]||t.level||'')}</td><td>${t.owner||''}</td><td>${t.start_date||''}</td><td>${t.end_date||''}</td><td>${t.duration_days||''}</td></tr>`).join('');
+  w.document.write(`<html><head><title>Response Plan Schedule — ${CP.name}</title><style>body{font-family:'Segoe UI',Tahoma,sans-serif;color:#1e1e2d;padding:30px;font-size:12px}h1{font-size:20px;color:#7239ea;margin-bottom:4px}.sub{color:#888;font-size:12px;margin-bottom:18px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1e1e2d;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #e4e7ef}tr:nth-child(even){background:#f9f9fb}.high{color:#f64e60;font-weight:700}.medium{color:#d48f00;font-weight:700}.low{color:#3aad6e;font-weight:700}.summary{background:#f0fdf4;border:1px solid rgba(80,205,137,.3);border-radius:8px;padding:14px;margin-bottom:18px;line-height:1.6}@media print{body{padding:0}@page{margin:12mm}}</style></head><body><h1>Response Plan Schedule</h1><div class="sub">${CP.name} · ${CP.type||''} · Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>${sched.summary?`<div class="summary">${sched.summary}</div>`:''}<table><tr><th>Risk</th><th>Action</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr>${rows}</table></body></html>`);
+  w.document.close();setTimeout(()=>w.print(),500);
 }
 
 function ewOngoingCard(r){
@@ -5086,11 +5222,13 @@ async function addUpdate(){
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
   if(!text&&!UF.length){alert('Please add details or attach a file');return;}
-  const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
+  const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',schedule:'Schedule Update',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
 
   // Snapshot existing risks BEFORE update for change tracking
   const beforeRisks=JSON.parse(JSON.stringify(CP.risks||[]));
-  const existing=beforeRisks.map(r=>`${r.risk_id||r.id?.slice(0,8)}: ${r.description} | Level: ${r.level} | Mitigation: ${r.mitigation||'none'}`).join('\n');
+  const existing=beforeRisks.map(r=>`${r.risk_id||r.id?.slice(0,8)}: ${r.description} | Level: ${r.level} | Timing: ${r.timing_type||'scheduled'} | Activity: ${r.activity_ref||'—'} | Expected: ${r.expected_date||'—'} | Mitigation: ${r.mitigation||'none'}`).join('\n');
+  const isSchedule=cUT==='schedule';
+  const scheduleNote=isSchedule?`\n\nTHIS IS A SCHEDULE UPDATE. The user uploaded a revised project schedule / progress update. Your PRIMARY job is to RE-FORECAST the calendar dates of scheduled risks. For every existing scheduled risk whose linked activity has moved, RETURN it in "updated_risks" with a new "expected_date" (YYYY-MM-DD) in its "changes". Recalculate based on the revised activity dates. Today is ${new Date().toISOString().slice(0,10)}. Also flag any new risks the schedule change introduces and remove any whose activity is now complete.`:'';
 
   showLoad('Analyzing update and detecting changes...');
 
@@ -5103,25 +5241,27 @@ ${existing||'No risks yet'}
 
 UPDATE TYPE: ${tl[cUT]}
 UPDATE DETAILS: ${text}
-${fdesc?'Attached File: '+fdesc:''}
+${fdesc?'Attached File: '+fdesc:''}${scheduleNote}
 
 Your task: Identify three categories of changes:
 1. NEW RISKS triggered by this update
-2. EXISTING RISKS that need updating (level change, probability change, or mitigation update due to new info)
+2. EXISTING RISKS that need updating (level, probability, mitigation, OR a shifted expected_date / activity_ref due to new schedule info)
 3. RISKS THAT NO LONGER APPLY (resolved or eliminated by this update)
 
 Respond ONLY with valid JSON. Keep all text fields under 25 words:
 {
   "analysis": "2-3 sentence impact summary in English",
   "new_risks": [
-    {"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"Schedule","description":"...","cause":"...","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"...","owner":"Project Manager","expected_weeks":2}
+    {"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"Schedule","description":"...","cause":"...","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"...","owner":"Project Manager","activity_ref":"linked activity name","timing_type":"scheduled","expected_date":"2026-09-12","expected_weeks":2}
   ],
   "updated_risks": [
-    {"risk_id":"R001","reason":"why this needs updating","changes":{"level":"high","probability":4,"mitigation":"updated mitigation plan"}}
+    {"risk_id":"R001","reason":"why this needs updating","changes":{"level":"high","probability":4,"mitigation":"updated mitigation plan","expected_date":"2026-10-05","activity_ref":"revised activity"}}
   ],
   "removed_risk_ids": ["R005","R012"],
   "removed_reasons": {"R005":"Risk eliminated by contract amendment","R012":"No longer applicable"}
 }
+
+In "updated_risks.changes" only include the fields that actually changed. Use "expected_date" (YYYY-MM-DD) whenever the timing of a scheduled risk shifts.
 
 Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
 Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate
@@ -5165,7 +5305,8 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
         impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,
         level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',
         mitigation:r.mitigation||'',owner:r.owner||'',
-        activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null
+        activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,
+        timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null
       }));
       const inserted=await sb('risks','POST',ins);
       changes.added=parsed.new_risks;
@@ -5334,8 +5475,8 @@ function renderUpds(){
   const upds=CP?.upds||[];
   const el=document.getElementById('tlEl');
   if(!upds.length){el.innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div><div class="et">No updates yet</div></div>`;return;}
-  const dc={change_order:'var(--primary)',delay:'var(--red)',scope:'var(--yel)',site:'var(--grn)',contract:'var(--grn)',meeting:'var(--purple)',note:'#a1a5b7'};
-  const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
+  const dc={change_order:'var(--primary)',delay:'var(--red)',scope:'var(--yel)',schedule:'var(--cyan)',site:'var(--grn)',contract:'var(--grn)',meeting:'var(--purple)',note:'#a1a5b7'};
+  const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',schedule:'Schedule Update',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
   el.innerHTML=upds.map(u=>`
     <div class="tli">
       <div class="tld" style="background:${dc[u.type]||'#a1a5b7'}"></div>
