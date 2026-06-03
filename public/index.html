@@ -4970,63 +4970,83 @@ function renderResponseSchedule(sched){
   minD.setHours(0,0,0,0);maxD.setHours(0,0,0,0);
   const span=Math.max(1,Math.round((maxD-minD)/dayMs));
   const lc={high:'var(--red)',medium:'#ffa800',low:'var(--grn)'};
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayPct=Math.max(0,Math.min(100,((today-minD)/dayMs)/span*100));
-  // Month axis labels
-  let axis='';const months=[];let cur=new Date(minD.getFullYear(),minD.getMonth(),1);
+  // Pixel timeline so long schedules become wide and scroll horizontally
+  const LABEL_W=240, DUR_W=52, PX_PER_DAY=3.4;
+  const timelineW=Math.max(640,Math.round(span*PX_PER_DAY));
+  const rowMinW=LABEL_W+timelineW+DUR_W+20;
+  // Month axis labels (px positioned)
+  const months=[];let cur=new Date(minD.getFullYear(),minD.getMonth(),1);
   while(cur<=maxD){months.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
-  axis=months.map(m=>{const off=Math.max(0,(m-minD)/dayMs)/span*100;return `<div style="position:absolute;left:${off}%;top:0;font-size:9.5px;color:var(--t3);transform:translateX(2px);white-space:nowrap">${m.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})}</div>`;}).join('');
+  const axis=months.map(m=>{const off=Math.max(0,(m-minD)/dayMs)*PX_PER_DAY;return `<div style="position:absolute;left:${off}px;top:0;font-size:9.5px;color:var(--t3);white-space:nowrap;border-inline-start:1px solid var(--b1);padding-inline-start:3px;height:10px">${m.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})}</div>`;}).join('');
+  // Today marker (px)
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayPx=(today-minD)/dayMs*PX_PER_DAY;
+  const todayLine=(todayPx>=0&&todayPx<=timelineW)?`<div style="position:absolute;left:${todayPx}px;top:0;bottom:0;width:2px;background:var(--primary);opacity:.45;z-index:2" title="Today"></div>`:'';
   const bars=tasks.map(t=>{
     const s=new Date(t.start_date);s.setHours(0,0,0,0);
     const e=new Date(t.end_date);e.setHours(0,0,0,0);
-    const left=((s-minD)/dayMs)/span*100;
-    const width=Math.max(1.5,((e-s)/dayMs)/span*100);
+    const left=(s-minD)/dayMs*PX_PER_DAY;
+    const width=Math.max(5,(e-s)/dayMs*PX_PER_DAY);
     const col=lc[t.level]||'var(--primary)';
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <div style="width:150px;flex-shrink:0;font-size:11px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.action}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--t3)">${t.risk_id||''}</span> ${t.action}</div>
-      <div style="flex:1;position:relative;height:22px;background:var(--s2);border-radius:5px;overflow:hidden">
-        <div style="position:absolute;left:${left}%;width:${width}%;top:3px;bottom:3px;background:${col};border-radius:4px;opacity:.85" title="${t.start_date} → ${t.end_date} (${t.duration_days||''}d)"></div>
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;min-height:24px">
+      <div style="width:${LABEL_W}px;flex-shrink:0;font-size:11px;color:var(--t1);line-height:1.35"><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--t3)">${t.risk_id||''}</span> ${t.action||''}</div>
+      <div style="width:${timelineW}px;flex-shrink:0;position:relative;height:22px;background:var(--s2);border-radius:5px">
+        <div style="position:absolute;left:${left}px;width:${width}px;top:3px;bottom:3px;background:${col};border-radius:4px;opacity:.9" title="${t.start_date} → ${t.end_date} (${t.duration_days||''}d)"></div>
       </div>
-      <div style="width:64px;flex-shrink:0;font-size:10px;color:var(--t3);text-align:end">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
+      <div style="width:${DUR_W}px;flex-shrink:0;font-size:10px;color:var(--t3);text-align:end">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
     </div>`;
   }).join('');
-  const rows=tasks.map(t=>`<tr>
-    <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${t.risk_id||''}</td>
-    <td style="font-size:11.5px;color:var(--t1)">${t.action}</td>
+  // Detail rows incl. full response plan (looked up from the risk register)
+  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
+  const rows=tasks.map(t=>{
+    const plan=(riskById[t.risk_id]?.mitigation)||'';
+    return `<tr>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);white-space:nowrap">${t.risk_id||''}</td>
+    <td style="font-size:11.5px;color:var(--t1)">${t.action||''}</td>
+    <td style="font-size:11px;color:var(--t2);min-width:220px;line-height:1.5">${plan||'—'}</td>
     <td><span class="bdg b-${t.level}">${RL[t.level]||t.level||''}</span></td>
-    <td style="font-size:11px;color:var(--t2)">${t.owner||'—'}</td>
+    <td style="font-size:11px;color:var(--t2);white-space:nowrap">${t.owner||'—'}</td>
     <td style="font-size:10.5px;color:var(--t2);white-space:nowrap">${new Date(t.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</td>
     <td style="font-size:10.5px;color:var(--t2);white-space:nowrap">${new Date(t.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</td>
     <td style="font-size:10.5px;color:var(--t2);text-align:center">${t.duration_days||Math.round((new Date(t.end_date)-new Date(t.start_date))/dayMs)}</td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   const dateLabel=sched.generated_at?new Date(sched.generated_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   el.innerHTML=`
     ${sched.summary?`<div class="ai ai-ok" style="margin-bottom:12px">${sched.summary}</div>`:''}
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-      <div style="font-size:11px;color:var(--t3)">${tasks.length} tasks${dateLabel?' · generated '+dateLabel:''}</div>
+      <div style="font-size:11px;color:var(--t3)">${tasks.length} tasks${dateLabel?' · generated '+dateLabel:''} · scroll sideways to see the full timeline</div>
       <div style="display:flex;gap:7px">
         <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportResponseScheduleCSV()">Export CSV</button>
         <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportResponseSchedulePDF()">Export PDF</button>
       </div>
     </div>
     <div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">
-      <div style="position:relative;height:16px;margin-bottom:6px;margin-inline-start:158px">${axis}</div>
-      <div style="position:relative">
-        ${bars}
+      <div style="min-width:${rowMinW}px">
+        <div style="display:flex;gap:10px;margin-bottom:8px">
+          <div style="width:${LABEL_W}px;flex-shrink:0"></div>
+          <div style="width:${timelineW}px;flex-shrink:0;position:relative;height:12px">${axis}</div>
+          <div style="width:${DUR_W}px;flex-shrink:0"></div>
+        </div>
+        <div style="position:relative">
+          <div style="position:absolute;left:${LABEL_W+10}px;top:0;bottom:0;width:${timelineW}px;pointer-events:none">${todayLine}</div>
+          ${bars}
+        </div>
       </div>
       <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--b1);font-size:10px;color:var(--t3)">
         <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--red)"></span>High</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:#ffa800"></span>Medium</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--grn)"></span>Low</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:2px;height:10px;background:var(--primary);opacity:.6"></span>Today</span>
       </div>
     </div>
-    <div class="tw"><table class="rt"><thead><tr><th>Risk</th><th>Action</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="tw"><table class="rt"><thead><tr><th>Risk</th><th>Action</th><th>Response Plan</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function exportResponseScheduleCSV(){
   const sched=CP?.response_schedule;if(!sched?.tasks?.length){alert('Generate schedule first');return;}
-  const h=['Risk ID','Action','Level','Owner','Start','End','Duration (days)'];
-  const rows=sched.tasks.map(t=>[t.risk_id||'',t.action||'',RL[t.level]||t.level||'',t.owner||'',t.start_date||'',t.end_date||'',t.duration_days||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
+  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
+  const h=['Risk ID','Action','Response Plan','Level','Owner','Start','End','Duration (days)'];
+  const rows=sched.tasks.map(t=>[t.risk_id||'',t.action||'',(riskById[t.risk_id]?.mitigation)||'',RL[t.level]||t.level||'',t.owner||'',t.start_date||'',t.end_date||'',t.duration_days||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`RiskAtlas_${(CP.name||'project').replace(/[^\w]+/g,'_')}_ResponseSchedule.csv`;a.click();
@@ -5043,26 +5063,29 @@ function exportResponseSchedulePDF(){
     const minD=new Date(Math.min(...valid.map(t=>new Date(t.start_date))));minD.setHours(0,0,0,0);
     const maxD=new Date(Math.max(...valid.map(t=>new Date(t.end_date))));maxD.setHours(0,0,0,0);
     const span=Math.max(1,Math.round((maxD-minD)/dayMs));
+    const LABEL_W=200,PX_PER_DAY=2.0,timelineW=Math.max(520,Math.round(span*PX_PER_DAY));
     const months=[];let cur=new Date(minD.getFullYear(),minD.getMonth(),1);
     while(cur<=maxD){months.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
-    const axis=months.map(m=>{const off=Math.max(0,(m-minD)/dayMs)/span*100;return `<div style="position:absolute;left:${off}%;top:0;font-size:8px;color:#888;white-space:nowrap">${m.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})}</div>`;}).join('');
+    const axis=months.map(m=>{const off=Math.max(0,(m-minD)/dayMs)*PX_PER_DAY;return `<div style="position:absolute;left:${off}px;top:0;font-size:7.5px;color:#888;white-space:nowrap;border-left:1px solid #e4e7ef;padding-left:2px;height:9px">${m.toLocaleDateString('en-GB',{month:'short',year:'2-digit'})}</div>`;}).join('');
     const bars=valid.map(t=>{
       const s=new Date(t.start_date);s.setHours(0,0,0,0);
       const e=new Date(t.end_date);e.setHours(0,0,0,0);
-      const left=((s-minD)/dayMs)/span*100;
-      const width=Math.max(1.5,((e-s)/dayMs)/span*100);
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;page-break-inside:avoid">
-        <div style="width:170px;flex-shrink:0;font-size:9.5px;color:#1e1e2d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#999;font-size:8px">${t.risk_id||''}</span> ${t.action||''}</div>
-        <div style="flex:1;position:relative;height:16px;background:#f0f2f7;border-radius:4px">
-          <div style="position:absolute;left:${left}%;width:${width}%;top:2px;bottom:2px;background:${lc[t.level]||'#7239ea'};border-radius:3px"></div>
+      const left=(s-minD)/dayMs*PX_PER_DAY;
+      const width=Math.max(3,(e-s)/dayMs*PX_PER_DAY);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;page-break-inside:avoid">
+        <div style="width:${LABEL_W}px;flex-shrink:0;font-size:8.5px;color:#1e1e2d;line-height:1.3"><span style="color:#999;font-size:7.5px">${t.risk_id||''}</span> ${t.action||''}</div>
+        <div style="width:${timelineW}px;flex-shrink:0;position:relative;height:13px;background:#f0f2f7;border-radius:3px">
+          <div style="position:absolute;left:${left}px;width:${width}px;top:2px;bottom:2px;background:${lc[t.level]||'#7239ea'};border-radius:2px"></div>
         </div>
-        <div style="width:42px;flex-shrink:0;font-size:8.5px;color:#888;text-align:right">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
+        <div style="width:34px;flex-shrink:0;font-size:8px;color:#888;text-align:right">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
       </div>`;
     }).join('');
     ganttHtml=`<div class="section-title">Response Schedule — Gantt</div>
-      <div style="border:1px solid #e4e7ef;border-radius:8px;padding:14px 16px;margin-bottom:22px">
-        <div style="position:relative;height:14px;margin-bottom:6px;margin-left:178px">${axis}</div>
-        ${bars}
+      <div style="border:1px solid #e4e7ef;border-radius:8px;padding:12px 14px;margin-bottom:22px;overflow:hidden">
+        <div style="width:${LABEL_W+timelineW+42}px;max-width:100%;transform-origin:left top">
+          <div style="display:flex;gap:8px;margin-bottom:6px"><div style="width:${LABEL_W}px;flex-shrink:0"></div><div style="width:${timelineW}px;flex-shrink:0;position:relative;height:11px">${axis}</div></div>
+          ${bars}
+        </div>
         <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid #e4e7ef;font-size:9px;color:#888">
           <span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:#f64e60;vertical-align:middle"></span> High</span>
           <span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:#ffa800;vertical-align:middle"></span> Medium</span>
@@ -5071,7 +5094,8 @@ function exportResponseSchedulePDF(){
       </div>`;
   }
   const w=window.open('','_blank');
-  const rows=valid.map(t=>`<tr><td>${t.risk_id||''}</td><td>${t.action||''}</td><td class="${t.level}">${(RL[t.level]||t.level||'')}</td><td>${t.owner||''}</td><td>${t.start_date||''}</td><td>${t.end_date||''}</td><td>${t.duration_days||''}</td></tr>`).join('');
+  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
+  const rows=valid.map(t=>{const plan=(riskById[t.risk_id]?.mitigation)||'';return `<tr><td>${t.risk_id||''}</td><td>${t.action||''}</td><td>${plan}</td><td class="${t.level}">${(RL[t.level]||t.level||'')}</td><td>${t.owner||''}</td><td>${t.start_date||''}</td><td>${t.end_date||''}</td><td>${t.duration_days||''}</td></tr>`;}).join('');
   w.document.write(`<html><head><title>Response Plan Schedule — ${CP.name}</title><style>
     body{font-family:'Segoe UI',Tahoma,sans-serif;color:#1e1e2d;padding:30px;font-size:12px}
     .head{display:flex;align-items:center;gap:14px;border-bottom:2px solid #7239ea;padding-bottom:14px;margin-bottom:20px}
@@ -5086,13 +5110,13 @@ function exportResponseSchedulePDF(){
     .high{color:#f64e60;font-weight:700}.medium{color:#d48f00;font-weight:700}.low{color:#3aad6e;font-weight:700}
     .summary{background:#f0fdf4;border:1px solid rgba(80,205,137,.3);border-radius:8px;padding:14px;margin-bottom:18px;line-height:1.6}
     .foot{text-align:center;color:#aaa;font-size:10px;margin-top:24px;padding-top:14px;border-top:1px solid #e4e7ef}
-    @media print{body{padding:0}@page{margin:12mm}}
+    @media print{body{padding:0}@page{size:A4 landscape;margin:10mm}}
   </style></head><body>
     <div class="head"><img src="${LOGO}" alt="RiskAtlas AI"/><div class="ht"><h1>Response Plan Schedule</h1><div class="sub">${CP.name} · ${CP.type||''} · Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div></div></div>
     ${sched.summary?`<div class="summary">${sched.summary}</div>`:''}
     ${ganttHtml}
     <div class="section-title">Task Details</div>
-    <table><tr><th>Risk</th><th>Action</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr>${rows}</table>
+    <table><tr><th>Risk</th><th>Action</th><th>Response Plan</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr>${rows}</table>
     <div class="foot">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div>
   </body></html>`);
   w.document.close();
