@@ -806,9 +806,13 @@ tr:hover td{background:rgba(114,57,234,.015);}
         </div>
         <div class="auth-fg">
           <label class="auth-fl">Password</label>
-          <input type="password" class="auth-fi" id="reg_pass" placeholder="Min. 8 characters" onkeydown="if(event.key==='Enter')doSignup()"/>
+          <input type="password" class="auth-fi" id="reg_pass" placeholder="Min. 8 characters" onkeydown="if(event.key==='Enter'){if(!document.getElementById('reg_agree').checked){showAuthError('Please agree to the Privacy Policy and Cookie Policy');return;}doSignup();}"/>
         </div>
-        <button class="auth-submit" onclick="doSignup()">Create Free Account →</button>
+        <label style="display:flex;align-items:flex-start;gap:9px;margin:2px 0 6px;cursor:pointer;font-size:.82rem;color:var(--t2);line-height:1.5">
+          <input type="checkbox" id="reg_agree" onchange="var b=document.getElementById('signupBtn');b.disabled=!this.checked;b.style.opacity=this.checked?'1':'.5';b.style.cursor=this.checked?'pointer':'not-allowed'" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:var(--primary);cursor:pointer"/>
+          <span>I agree to the <a href="/privacy" target="_blank" style="color:var(--primary);font-weight:600;text-decoration:none">Privacy Policy</a> and <a href="/cookies" target="_blank" style="color:var(--primary);font-weight:600;text-decoration:none">Cookie Policy</a></span>
+        </label>
+        <button class="auth-submit" id="signupBtn" onclick="doSignup()" disabled style="opacity:.5;cursor:not-allowed">Create Free Account →</button>
         <div class="auth-divider">or</div>
         <div class="auth-switch">Already have an account? <a onclick="switchAuthTab('login')">Sign in</a></div>
       </div>
@@ -1440,6 +1444,7 @@ async function doSignup(){
   if(!name||!email||!pass){showAuthError('Please fill all required fields');return;}
   if(!email.includes('@')){showAuthError('Please enter a valid email address');return;}
   if(pass.length<6){showAuthError('Password must be at least 6 characters');return;}
+  if(!document.getElementById('reg_agree')?.checked){showAuthError('Please agree to the Privacy Policy and Cookie Policy');return;}
 
   // Check if email-verification is available on backend
   let emailReady=false;
