@@ -1867,9 +1867,12 @@ async function checkSession(){
   const token=localStorage.getItem('sb_token');
   if(token){
     try{
-      const res=await fetch(SB+'/auth/v1/user',{
-        headers:{'Authorization':'Bearer '+token,'apikey':SK}
-      });
+      let res=await fetch(SB+'/auth/v1/user',{headers:{'Authorization':'Bearer '+token,'apikey':SK}});
+      // Token expired? Try to refresh before giving up.
+      if(res.status===401){
+        const nt=await refreshSession();
+        if(nt)res=await fetch(SB+'/auth/v1/user',{headers:{'Authorization':'Bearer '+nt,'apikey':SK}});
+      }
       if(res.ok){
         currentUser=await res.json();
         localStorage.setItem('sb_user',JSON.stringify(currentUser));
@@ -1890,10 +1893,43 @@ async function checkSession(){
 // ═══ CONFIG ═══
 const SB='https://ssogxdqwcoehcoqaajxy.supabase.co';
 const SK='sb_publishable_a2Zyo0zJMuBqMxGEk4WKGQ_JNHO5KBQ';
+// Refresh the access token using the stored refresh token (returns new access token or null)
+let _refreshing=null;
+async function refreshSession(){
+  if(_refreshing)return _refreshing;
+  _refreshing=(async()=>{
+    const rt=localStorage.getItem('sb_refresh');
+    if(!rt)return null;
+    try{
+      const r=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{
+        method:'POST',headers:{'Content-Type':'application/json','apikey':SK},
+        body:JSON.stringify({refresh_token:rt})
+      });
+      if(!r.ok)return null;
+      const d=await r.json();
+      if(d.access_token){
+        localStorage.setItem('sb_token',d.access_token);
+        if(d.refresh_token)localStorage.setItem('sb_refresh',d.refresh_token);
+        if(d.user){currentUser=d.user;localStorage.setItem('sb_user',JSON.stringify(d.user));}
+        return d.access_token;
+      }
+    }catch(e){console.error('Refresh:',e);}
+    return null;
+  })();
+  const out=await _refreshing;_refreshing=null;return out;
+}
 async function sb(path,method='GET',body=null){
-  const h={'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK};
-  if(method==='POST')h.Prefer='return=representation';
-  const r=await fetch(SB+'/rest/v1/'+path,{method,headers:h,body:body?JSON.stringify(body):null});
+  // Always authenticate data requests as the logged-in user (so RLS auth.uid() works).
+  // Fall back to the publishable key only when no session exists (e.g. pre-login).
+  const tok=localStorage.getItem('sb_token')||SK;
+  const build=t=>({'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+t});
+  const opts=h=>{const o={method,headers:h};if(method==='POST')o.headers.Prefer='return=representation';if(body)o.body=JSON.stringify(body);return o;};
+  let r=await fetch(SB+'/rest/v1/'+path,opts(build(tok)));
+  // If the access token expired, refresh once and retry.
+  if(r.status===401&&localStorage.getItem('sb_refresh')){
+    const nt=await refreshSession();
+    if(nt)r=await fetch(SB+'/rest/v1/'+path,opts(build(nt)));
+  }
   if(!r.ok)throw new Error(await r.text());
   const t=await r.text();return t?JSON.parse(t):null;
 }
