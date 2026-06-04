@@ -6924,14 +6924,13 @@ RESPONSE FORMAT — respond with ONLY a valid JSON object, no markdown, no extra
   ]
 }
 Scores are 1-5 for probability, 0-5 for impacts. Keep "reply" concise and helpful. If no actions, use "actions": [].`;
-  // Build conversation history for the API (exclude sys/confirm helper rows)
-  const hist=armMsgs.filter(m=>m.role==='user'||m.role==='ai').map(m=>({role:m.role==='user'?'user':'assistant',content:m.text}));
-  // Fold system instructions + live context into the first user turn (robust to proxies that ignore a top-level system field)
-  if(hist.length&&hist[0].role==='user'){
-    hist[0]={role:'user',content:sys+'\n\n=== Conversation ===\nUser: '+hist[0].content};
-  }
+  // Match the proven working call shape used elsewhere in the app: a single self-contained
+  // user message, no top-level "system" field (the backend proxy may forward only messages).
+  const convo=armMsgs.filter(m=>m.role==='user'||m.role==='ai').slice(-8)
+    .map(m=>(m.role==='user'?'User: ':'Assistant: ')+m.text).join('\n');
+  const prompt=sys+'\n\n=== Conversation so far ===\n'+convo+'\n\nNow respond as the Assistant with ONLY the JSON object described above.';
   try{
-    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:2000,system:sys,messages:hist});
+    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]});
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),45000));
     const data=await Promise.race([apiCall,timeout]);
     armBusy=false;document.getElementById('armSendBtn').disabled=false;
@@ -7067,7 +7066,7 @@ async function armApprove(){
   <div class="arm-foot">
     <div class="arm-sugg" id="armSugg"></div>
     <div class="arm-inrow">
-      <textarea class="arm-in" id="armIn" rows="1" placeholder="اكتب سؤالك أو طلبك... / Ask anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();armSend();}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <textarea class="arm-in" id="armIn" rows="1" placeholder="Ask anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();armSend();}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
       <button class="arm-send" id="armSendBtn" onclick="armSend()" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
     </div>
   </div>
