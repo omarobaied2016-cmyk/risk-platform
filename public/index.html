@@ -4982,29 +4982,50 @@ function renderResponseSchedule(sched){
   const today=new Date();today.setHours(0,0,0,0);
   const todayPx=(today-minD)/dayMs*PX_PER_DAY;
   const todayLine=(todayPx>=0&&todayPx<=timelineW)?`<div style="position:absolute;left:${todayPx}px;top:0;bottom:0;width:2px;background:var(--primary);opacity:.45;z-index:2" title="Today"></div>`:'';
+  // Detail rows incl. full response plan (looked up from the risk register)
+  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
+  const GRAY='#a1a5b7';
+  // Determine live status of each task vs current register
+  function taskState(t){
+    const r=riskById[t.risk_id];
+    if(t.risk_id&&!r)return 'removed';
+    if(r&&r.status==='closed')return 'closed';
+    return 'active';
+  }
   const bars=tasks.map(t=>{
     const s=new Date(t.start_date);s.setHours(0,0,0,0);
     const e=new Date(t.end_date);e.setHours(0,0,0,0);
     const left=(s-minD)/dayMs*PX_PER_DAY;
     const width=Math.max(5,(e-s)/dayMs*PX_PER_DAY);
-    const col=lc[t.level]||'var(--primary)';
+    const st=taskState(t);
+    const done=st==='closed'||st==='removed';
+    const col=done?GRAY:(lc[t.level]||'var(--primary)');
+    const barOp=done?'.4':'.9';
+    const tag=st==='closed'?`<span style="font-size:8.5px;font-weight:700;color:${GRAY};border:1px solid ${GRAY};border-radius:3px;padding:0 4px;margin-inline-start:5px">CLOSED</span>`:st==='removed'?`<span style="font-size:8.5px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:0 4px;margin-inline-start:5px">REMOVED</span>`:'';
+    const labelStyle=done?`color:var(--t3);text-decoration:line-through;text-decoration-thickness:1px`:`color:var(--t1)`;
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;min-height:24px">
-      <div style="width:${LABEL_W}px;flex-shrink:0;font-size:11px;color:var(--t1);line-height:1.35"><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--t3)">${t.risk_id||''}</span> ${t.action||''}</div>
+      <div style="width:${LABEL_W}px;flex-shrink:0;font-size:11px;line-height:1.35;${labelStyle}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--t3)">${t.risk_id||''}</span> ${t.action||''}${tag}</div>
       <div style="width:${timelineW}px;flex-shrink:0;position:relative;height:22px;background:var(--s2);border-radius:5px">
-        <div style="position:absolute;left:${left}px;width:${width}px;top:3px;bottom:3px;background:${col};border-radius:4px;opacity:.9" title="${t.start_date} → ${t.end_date} (${t.duration_days||''}d)"></div>
+        <div style="position:absolute;left:${left}px;width:${width}px;top:3px;bottom:3px;background:${col};border-radius:4px;opacity:${barOp}${done?';background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.35) 3px,rgba(255,255,255,.35) 6px)':''}" title="${t.start_date} → ${t.end_date} (${t.duration_days||''}d)${done?' — '+st:''}"></div>
       </div>
       <div style="width:${DUR_W}px;flex-shrink:0;font-size:10px;color:var(--t3);text-align:end">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
     </div>`;
   }).join('');
-  // Detail rows incl. full response plan (looked up from the risk register)
-  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
+  // Detect any unspecified-level active task to decide whether to show that legend entry
+  const hasUnspec=tasks.some(t=>taskState(t)==='active'&&!lc[t.level]);
+  const hasClosed=tasks.some(t=>{const st=taskState(t);return st==='closed'||st==='removed';});
   const rows=tasks.map(t=>{
     const plan=(riskById[t.risk_id]?.mitigation)||'';
-    return `<tr>
+    const st=taskState(t);
+    const done=st==='closed'||st==='removed';
+    const statusBadge=st==='closed'?`<span style="font-size:9.5px;font-weight:700;color:${GRAY};border:1px solid ${GRAY};border-radius:4px;padding:1px 6px">Closed</span>`:st==='removed'?`<span style="font-size:9.5px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 6px">Removed</span>`:`<span style="font-size:9.5px;color:var(--grn)">Active</span>`;
+    const strike=done?'text-decoration:line-through;color:var(--t3)':'';
+    return `<tr style="${done?'opacity:.7':''}">
     <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);white-space:nowrap">${t.risk_id||''}</td>
-    <td style="font-size:11.5px;color:var(--t1)">${t.action||''}</td>
-    <td style="font-size:11px;color:var(--t2);min-width:220px;line-height:1.5">${plan||'—'}</td>
-    <td><span class="bdg b-${t.level}">${RL[t.level]||t.level||''}</span></td>
+    <td style="font-size:11.5px;color:var(--t1);${strike}">${t.action||''}</td>
+    <td style="font-size:11px;color:var(--t2);min-width:220px;line-height:1.5;${done?'text-decoration:line-through':''}">${plan||'—'}</td>
+    <td><span class="bdg b-${t.level}">${RL[t.level]||t.level||'—'}</span></td>
+    <td style="white-space:nowrap">${statusBadge}</td>
     <td style="font-size:11px;color:var(--t2);white-space:nowrap">${t.owner||'—'}</td>
     <td style="font-size:10.5px;color:var(--t2);white-space:nowrap">${new Date(t.start_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</td>
     <td style="font-size:10.5px;color:var(--t2);white-space:nowrap">${new Date(t.end_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</td>
@@ -5032,21 +5053,24 @@ function renderResponseSchedule(sched){
           ${bars}
         </div>
       </div>
-      <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--b1);font-size:10px;color:var(--t3)">
+      <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--b1);font-size:10px;color:var(--t3);flex-wrap:wrap">
         <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--red)"></span>High</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:#ffa800"></span>Medium</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--grn)"></span>Low</span>
+        ${hasUnspec?`<span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:var(--primary)"></span>Unspecified</span>`:''}
+        ${hasClosed?`<span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;border-radius:2px;background:#a1a5b7;background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.5) 2px,rgba(255,255,255,.5) 4px)"></span>Closed / Removed</span>`:''}
         <span style="display:flex;align-items:center;gap:5px"><span style="width:2px;height:10px;background:var(--primary);opacity:.6"></span>Today</span>
       </div>
     </div>
-    <div class="tw"><table class="rt"><thead><tr><th>Risk</th><th>Action</th><th>Response Plan</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="tw"><table class="rt"><thead><tr><th>Risk</th><th>Action</th><th>Response Plan</th><th>Level</th><th>Status</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function exportResponseScheduleCSV(){
   const sched=CP?.response_schedule;if(!sched?.tasks?.length){alert('Generate schedule first');return;}
   const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
-  const h=['Risk ID','Action','Response Plan','Level','Owner','Start','End','Duration (days)'];
-  const rows=sched.tasks.map(t=>[t.risk_id||'',t.action||'',(riskById[t.risk_id]?.mitigation)||'',RL[t.level]||t.level||'',t.owner||'',t.start_date||'',t.end_date||'',t.duration_days||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
+  const tSt=t=>{const r=riskById[t.risk_id];if(t.risk_id&&!r)return 'Removed';if(r&&r.status==='closed')return 'Closed';return 'Active';};
+  const h=['Risk ID','Action','Response Plan','Level','Status','Owner','Start','End','Duration (days)'];
+  const rows=sched.tasks.map(t=>[t.risk_id||'',t.action||'',(riskById[t.risk_id]?.mitigation)||'',RL[t.level]||t.level||'',tSt(t),t.owner||'',t.start_date||'',t.end_date||'',t.duration_days||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`RiskAtlas_${(CP.name||'project').replace(/[^\w]+/g,'_')}_ResponseSchedule.csv`;a.click();
@@ -5058,6 +5082,11 @@ function exportResponseSchedulePDF(){
   const dayMs=86400000;
   const valid=sched.tasks.filter(t=>t.start_date&&t.end_date&&!isNaN(new Date(t.start_date))&&!isNaN(new Date(t.end_date))).slice().sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
   const lc={high:'#f64e60',medium:'#ffa800',low:'#50cd89'};
+  const GRAY='#a1a5b7';
+  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
+  function tState(t){const r=riskById[t.risk_id];if(t.risk_id&&!r)return 'removed';if(r&&r.status==='closed')return 'closed';return 'active';}
+  const hasUnspec=valid.some(t=>tState(t)==='active'&&!lc[t.level]);
+  const hasClosed=valid.some(t=>{const s=tState(t);return s==='closed'||s==='removed';});
   let ganttHtml='';
   if(valid.length){
     const minD=new Date(Math.min(...valid.map(t=>new Date(t.start_date))));minD.setHours(0,0,0,0);
@@ -5072,10 +5101,14 @@ function exportResponseSchedulePDF(){
       const e=new Date(t.end_date);e.setHours(0,0,0,0);
       const left=(s-minD)/dayMs*PX_PER_DAY;
       const width=Math.max(3,(e-s)/dayMs*PX_PER_DAY);
+      const st=tState(t);const done=st==='closed'||st==='removed';
+      const col=done?GRAY:(lc[t.level]||'#7239ea');
+      const tag=st==='closed'?` <span style="font-size:7px;font-weight:700;color:${GRAY};border:1px solid ${GRAY};border-radius:2px;padding:0 3px">CLOSED</span>`:st==='removed'?` <span style="font-size:7px;font-weight:700;color:#f64e60;border:1px solid #f64e60;border-radius:2px;padding:0 3px">REMOVED</span>`:'';
+      const lblDec=done?'text-decoration:line-through;color:#999':'color:#1e1e2d';
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;page-break-inside:avoid">
-        <div style="width:${LABEL_W}px;flex-shrink:0;font-size:8.5px;color:#1e1e2d;line-height:1.3"><span style="color:#999;font-size:7.5px">${t.risk_id||''}</span> ${t.action||''}</div>
+        <div style="width:${LABEL_W}px;flex-shrink:0;font-size:8.5px;line-height:1.3;${lblDec}"><span style="color:#999;font-size:7.5px">${t.risk_id||''}</span> ${t.action||''}${tag}</div>
         <div style="width:${timelineW}px;flex-shrink:0;position:relative;height:13px;background:#f0f2f7;border-radius:3px">
-          <div style="position:absolute;left:${left}px;width:${width}px;top:2px;bottom:2px;background:${lc[t.level]||'#7239ea'};border-radius:2px"></div>
+          <div style="position:absolute;left:${left}px;width:${width}px;top:2px;bottom:2px;background:${col};border-radius:2px;${done?'opacity:.55;background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.6) 2px,rgba(255,255,255,.6) 4px)':''}"></div>
         </div>
         <div style="width:34px;flex-shrink:0;font-size:8px;color:#888;text-align:right">${t.duration_days||Math.round((e-s)/dayMs)}d</div>
       </div>`;
@@ -5086,16 +5119,17 @@ function exportResponseSchedulePDF(){
           <div style="display:flex;gap:8px;margin-bottom:6px"><div style="width:${LABEL_W}px;flex-shrink:0"></div><div style="width:${timelineW}px;flex-shrink:0;position:relative;height:11px">${axis}</div></div>
           ${bars}
         </div>
-        <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid #e4e7ef;font-size:9px;color:#888">
+        <div style="display:flex;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid #e4e7ef;font-size:9px;color:#888;flex-wrap:wrap">
           <span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:#f64e60;vertical-align:middle"></span> High</span>
           <span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:#ffa800;vertical-align:middle"></span> Medium</span>
           <span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:#50cd89;vertical-align:middle"></span> Low</span>
+          ${hasUnspec?`<span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:#7239ea;vertical-align:middle"></span> Unspecified</span>`:''}
+          ${hasClosed?`<span><span style="display:inline-block;width:11px;height:7px;border-radius:2px;background:${GRAY};vertical-align:middle"></span> Closed / Removed</span>`:''}
         </div>
       </div>`;
   }
   const w=window.open('','_blank');
-  const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
-  const rows=valid.map(t=>{const plan=(riskById[t.risk_id]?.mitigation)||'';return `<tr><td>${t.risk_id||''}</td><td>${t.action||''}</td><td>${plan}</td><td class="${t.level}">${(RL[t.level]||t.level||'')}</td><td>${t.owner||''}</td><td>${t.start_date||''}</td><td>${t.end_date||''}</td><td>${t.duration_days||''}</td></tr>`;}).join('');
+  const rows=valid.map(t=>{const plan=(riskById[t.risk_id]?.mitigation)||'';const st=tState(t);const done=st==='closed'||st==='removed';const stTxt=st==='closed'?'Closed':st==='removed'?'Removed':'Active';return `<tr style="${done?'opacity:.7':''}"><td>${t.risk_id||''}</td><td style="${done?'text-decoration:line-through':''}">${t.action||''}</td><td style="${done?'text-decoration:line-through':''}">${plan}</td><td class="${t.level}">${(RL[t.level]||t.level||'—')}</td><td>${stTxt}</td><td>${t.owner||''}</td><td>${t.start_date||''}</td><td>${t.end_date||''}</td><td>${t.duration_days||''}</td></tr>`;}).join('');
   w.document.write(`<html><head><title>Response Plan Schedule — ${CP.name}</title><style>
     body{font-family:'Segoe UI',Tahoma,sans-serif;color:#1e1e2d;padding:30px;font-size:12px}
     .head{display:flex;align-items:center;gap:14px;border-bottom:2px solid #7239ea;padding-bottom:14px;margin-bottom:20px}
@@ -5116,7 +5150,7 @@ function exportResponseSchedulePDF(){
     ${sched.summary?`<div class="summary">${sched.summary}</div>`:''}
     ${ganttHtml}
     <div class="section-title">Task Details</div>
-    <table><tr><th>Risk</th><th>Action</th><th>Response Plan</th><th>Level</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr>${rows}</table>
+    <table><tr><th>Risk</th><th>Action</th><th>Response Plan</th><th>Level</th><th>Status</th><th>Owner</th><th>Start</th><th>End</th><th>Days</th></tr>${rows}</table>
     <div class="foot">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div>
   </body></html>`);
   w.document.close();
