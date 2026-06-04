@@ -6802,7 +6802,7 @@ function armSetMode(m){
   document.getElementById('armModeAdv').classList.toggle('on',m==='advisor');
   document.getElementById('armModeMgr').classList.toggle('on',m==='manager');
   armPending=null;
-  const note=m==='advisor'?'Advisor mode — I analyze and recommend only (no changes). · وضع المستشار — تحليل وتوصيات فقط.':'Manager mode — I can execute changes after your approval. · وضع المدير — أنفّذ التغييرات بعد موافقتك.';
+  const note=m==='advisor'?'Advisor mode — I analyze and recommend only (no changes).':'Manager mode — I can execute changes after your approval.';
   armMsgs.push({role:'sys',text:note});armRender();
 }
 function armDetectLang(t){return /[\u0600-\u06FF]/.test(t||'')?'ar':'en';}
@@ -6811,9 +6811,9 @@ function armRenderSugg(){
   const el=document.getElementById('armSugg');if(!el)return;
   const inProj=!!(typeof CID!=='undefined'&&CID&&typeof CP!=='undefined'&&CP);
   const s=inProj
-    ? ['ما أهم المخاطر في مشروعي؟','حلّل مخاطر هذا المشروع','اقترح خطط استجابة للمخاطر العالية','مشروعي متأخر، وش أسوي؟']
-    : ['وش هي إدارة المخاطر؟','ساعدني أبدأ مع مشاريعي','أي مشاريعي الأكثر خطورة؟'];
-  el.innerHTML=s.map(q=>`<button onclick="armQuick(this)">${q}</button>`).join('');
+    ? ['What are my top risks?','Analyze this project\'s risks','Suggest response plans for high risks','My project is delayed — what should I do?']
+    : ['What is risk management?','Which of my projects is most at risk?','Summarize my portfolio risk exposure'];
+  el.innerHTML=s.map(q=>`<button onclick="armQuick(this)">${armEsc(q)}</button>`).join('');
 }
 function armQuick(btn){document.getElementById('armIn').value=btn.textContent;armSend();}
 
@@ -6821,7 +6821,7 @@ function armRender(){
   const b=document.getElementById('armBody');if(!b)return;
   let html='';
   if(armMsgs.length===0){
-    html=`<div class="arm-msg ai">مرحباً! أنا مدير المخاطر بالذكاء الاصطناعي. اسألني بأي لغة عن مخاطر مشاريعك، أو اطلب مني أنشئ/أحدّث/أغلق مخاطر — وأنا أساعدك خطوة بخطوة.\n\nHi! I'm your AI Risk Manager. Ask me anything about your project risks in any language, or ask me to create, update, or close risks — I'll guide you.</div>`;
+    html=`<div class="arm-msg ai">Hi! I'm your AI Risk Manager. Ask me anything about your project risks in any language, or ask me to create, update, or close risks — I'll guide you and apply changes only after your approval.</div>`;
   }else{
     html=armMsgs.map(m=>{
       if(m.role==='confirm')return armConfirmHtml(m.actions);
@@ -6845,11 +6845,11 @@ function armActLabel(a){
 function armConfirmHtml(actions){
   const rows=actions.map(a=>{const m=ARM_ACT_META[a.type]||['ACTION','var(--t3)'];return `<div class="arm-act"><span class="ai-act-tag" style="background:${m[1]}1a;color:${m[1]}">${m[0]}</span><span>${armActLabel(a)}</span></div>`;}).join('');
   return `<div class="arm-confirm">
-    <div class="arm-confirm-t">AI Risk Manager wants to: · يريد تنفيذ:</div>
+    <div class="arm-confirm-t">AI Risk Manager wants to:</div>
     ${rows}
     <div class="arm-confirm-btns">
-      <button class="arm-ap" onclick="armApprove()">Approve · موافقة</button>
-      <button class="arm-cn" onclick="armCancel()">Cancel · إلغاء</button>
+      <button class="arm-ap" onclick="armApprove()">Approve</button>
+      <button class="arm-cn" onclick="armCancel()">Cancel</button>
     </div>
   </div>`;
 }
@@ -6887,7 +6887,7 @@ async function armSend(){
   const txt=(inp.value||'').trim();
   if(!txt)return;
   if(typeof requireActiveAccess==='function'&&!requireActiveAccess())return;
-  if(!GK().startsWith('sk-ant-')){armMsgs.push({role:'ai',text:'يتطلب مفتاح Claude API. فعّله من الإعدادات. · A Claude API key is required — enable it in settings.'});armRender();return;}
+  if(!GK().startsWith('sk-ant-')){armMsgs.push({role:'ai',text:'A Claude API key is required — enable it in settings.'});armRender();return;}
   armMsgs.push({role:'user',text:txt});
   inp.value='';inp.style.height='auto';
   document.getElementById('armSugg').innerHTML='';
@@ -6906,6 +6906,8 @@ ${ctx}
 WHAT YOU CAN DO:
 - Read and analyze the data above, explain risks, recommend mitigation/response strategies, prioritize, forecast impacts on schedule/cost/scope/quality, and answer questions.
 - Propose concrete changes to the CURRENT OPEN PROJECT's risk register: create risks, update risks, or close risks.
+
+SCOPE: You manage RISKS, not the platform itself. You cannot create projects, portfolios, or user accounts. If the user asks for something outside risk management (e.g. "add a project"), briefly explain in their language that they can do it from the "New Project" button, and offer to help with risks instead. Always answer in 1-3 short sentences for such cases — never stall.
 
 EXECUTION RULES:
 - ${canExecute?'You ARE allowed to propose actions (the user is in Manager mode with a project open). Actions require explicit user approval before anything happens.':'Do NOT propose actions now (advisor mode, or no project is open). Set "actions" to an empty array. If the user asked to change data, briefly tell them to switch to Manager mode and open a project.'}
@@ -6929,25 +6931,30 @@ Scores are 1-5 for probability, 0-5 for impacts. Keep "reply" concise and helpfu
     hist[0]={role:'user',content:sys+'\n\n=== Conversation ===\nUser: '+hist[0].content};
   }
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,system:sys,messages:hist});
+    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:2000,system:sys,messages:hist});
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),45000));
+    const data=await Promise.race([apiCall,timeout]);
     armBusy=false;document.getElementById('armSendBtn').disabled=false;
-    if(data.error){armMsgs.push({role:'ai',text:'حدث خطأ: '+(data.error.message||'')+' · Error occurred.'});armRender();return;}
+    if(data.error){armMsgs.push({role:'ai',text:'Error: '+(data.error.message||'something went wrong')});armRender();return;}
     let parsed,raw=(data.content&&data.content[0]&&data.content[0].text)||'';
-    try{parsed=pJSON(raw);}catch(e){parsed={reply:raw||'تعذّر فهم الرد. · Could not parse response.',actions:[]};}
-    armMsgs.push({role:'ai',text:parsed.reply||'…'});
+    try{parsed=pJSON(raw);}catch(e){parsed=null;}
+    // If the model didn't return our JSON shape, still show its text as a normal reply
+    if(!parsed||typeof parsed!=='object'){parsed={reply:raw||'I could not generate a response. Please rephrase and try again.',actions:[]};}
+    armMsgs.push({role:'ai',text:parsed.reply||raw||'…'});
     const acts=Array.isArray(parsed.actions)?parsed.actions.filter(a=>a&&ARM_ACT_META[a.type]):[];
     if(acts.length&&canExecute){armPending=acts;armMsgs.push({role:'confirm',actions:acts});}
     armRender();
   }catch(e){
     armBusy=false;document.getElementById('armSendBtn').disabled=false;
-    armMsgs.push({role:'ai',text:'تعذّر الاتصال. حاول مرة ثانية. · Connection failed, please try again.'});armRender();
+    const msg=(e&&e.message==='timeout')?'This is taking too long — the request timed out. Please try a shorter question or try again.':'Connection failed — please try again.';
+    armMsgs.push({role:'ai',text:msg});armRender();
   }
 }
 
 function armCancel(){
   armPending=null;
   armMsgs=armMsgs.filter(m=>m.role!=='confirm');
-  armMsgs.push({role:'sys',text:'تم الإلغاء — لم يُنفّذ أي تغيير. · Cancelled — no changes made.'});
+  armMsgs.push({role:'sys',text:'Cancelled — no changes made.'});
   armRender();
 }
 
@@ -6988,8 +6995,8 @@ async function armApprove(){
   // Refresh the open project views so changes show everywhere
   try{if(typeof selectProj==='function'&&CID)await selectProj(CID);}catch(e){}
   armBusy=false;
-  let msg=`تم تنفيذ ${done} إجراء بنجاح. · ${done} action(s) completed.`;
-  if(failed)msg+=`\nفشل ${failed}: ${errs.join('; ')}`;
+  let msg=`${done} action(s) completed successfully.`;
+  if(failed)msg+=` ${failed} failed: ${errs.join('; ')}`;
   armMsgs.push({role:'sys',text:msg});
   armRender();
 }
@@ -7053,8 +7060,8 @@ async function armApprove(){
     <button class="arm-x" onclick="armToggle()" aria-label="Close">×</button>
   </div>
   <div class="arm-mode">
-    <button id="armModeAdv" onclick="armSetMode('advisor')">Advisor · مستشار</button>
-    <button id="armModeMgr" class="on" onclick="armSetMode('manager')">Manager · مدير</button>
+    <button id="armModeAdv" onclick="armSetMode('advisor')">Advisor</button>
+    <button id="armModeMgr" class="on" onclick="armSetMode('manager')">Manager</button>
   </div>
   <div class="arm-body" id="armBody"></div>
   <div class="arm-foot">
