@@ -6972,7 +6972,7 @@ async function armApprove(){
     try{
       if(a.type==='create_risk'){
         const r=a.risk||{};
-        const rec={project_id:CID,user_id:currentUser?.id,risk_id:armNextRiskId(),
+        const rec={project_id:CID,risk_id:armNextRiskId(),
           type:r.type==='opportunity'?'opportunity':'threat',category:r.category||'General',
           description:r.description||'',cause:r.cause||'',probability:parseInt(r.probability)||3,
           impact_cost:parseInt(r.impact_cost)||0,impact_schedule:parseInt(r.impact_schedule)||0,
