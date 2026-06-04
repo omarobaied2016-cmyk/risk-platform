@@ -1732,6 +1732,7 @@ function checkPlanLimit(type){
 function enterApp(){
   document.getElementById('authScreen').style.display='none';
   document.querySelector('.app').style.display='grid';
+  if(typeof armShowFab==='function')armShowFab();
   const userName=currentUserProfile?.full_name||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
@@ -6777,6 +6778,293 @@ function exportCSV(){
 // ═══ UTILS ═══
 function showLoad(txt){document.getElementById('loadT').textContent=txt;document.getElementById('loadOv').classList.add('on');}
 function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
+
+// ═══════════════════════════════════════════════════════
+// AI RISK MANAGER — conversational copilot (Advisor + Manager modes)
+// ═══════════════════════════════════════════════════════
+let armOpen=false, armMode='manager', armMsgs=[], armPending=null, armBusy=false, armGreeted=false;
+
+function armShowFab(){const f=document.getElementById('armFab');if(f)f.style.display='flex';}
+
+function armToggle(){
+  const p=document.getElementById('armPanel');
+  armOpen=!armOpen;
+  p.classList.toggle('on',armOpen);
+  p.setAttribute('aria-hidden',armOpen?'false':'true');
+  if(armOpen){
+    if(!armGreeted){armGreeted=true;armRender();}
+    armRenderSugg();
+    setTimeout(()=>document.getElementById('armIn')?.focus(),200);
+  }
+}
+function armSetMode(m){
+  armMode=m;
+  document.getElementById('armModeAdv').classList.toggle('on',m==='advisor');
+  document.getElementById('armModeMgr').classList.toggle('on',m==='manager');
+  armPending=null;
+  const note=m==='advisor'?'Advisor mode — I analyze and recommend only (no changes). · وضع المستشار — تحليل وتوصيات فقط.':'Manager mode — I can execute changes after your approval. · وضع المدير — أنفّذ التغييرات بعد موافقتك.';
+  armMsgs.push({role:'sys',text:note});armRender();
+}
+function armDetectLang(t){return /[\u0600-\u06FF]/.test(t||'')?'ar':'en';}
+
+function armRenderSugg(){
+  const el=document.getElementById('armSugg');if(!el)return;
+  const inProj=!!(typeof CID!=='undefined'&&CID&&typeof CP!=='undefined'&&CP);
+  const s=inProj
+    ? ['ما أهم المخاطر في مشروعي؟','حلّل مخاطر هذا المشروع','اقترح خطط استجابة للمخاطر العالية','مشروعي متأخر، وش أسوي؟']
+    : ['وش هي إدارة المخاطر؟','ساعدني أبدأ مع مشاريعي','أي مشاريعي الأكثر خطورة؟'];
+  el.innerHTML=s.map(q=>`<button onclick="armQuick(this)">${q}</button>`).join('');
+}
+function armQuick(btn){document.getElementById('armIn').value=btn.textContent;armSend();}
+
+function armRender(){
+  const b=document.getElementById('armBody');if(!b)return;
+  let html='';
+  if(armMsgs.length===0){
+    html=`<div class="arm-msg ai">مرحباً! أنا مدير المخاطر بالذكاء الاصطناعي. اسألني بأي لغة عن مخاطر مشاريعك، أو اطلب مني أنشئ/أحدّث/أغلق مخاطر — وأنا أساعدك خطوة بخطوة.\n\nHi! I'm your AI Risk Manager. Ask me anything about your project risks in any language, or ask me to create, update, or close risks — I'll guide you.</div>`;
+  }else{
+    html=armMsgs.map(m=>{
+      if(m.role==='confirm')return armConfirmHtml(m.actions);
+      const cls=m.role==='user'?'user':m.role==='sys'?'sys':'ai';
+      return `<div class="arm-msg ${cls}">${armEsc(m.text)}</div>`;
+    }).join('');
+  }
+  if(armBusy)html+=`<div class="arm-typing"><span></span><span></span><span></span></div>`;
+  b.innerHTML=html;b.scrollTop=b.scrollHeight;
+}
+function armEsc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+const ARM_ACT_META={create_risk:['CREATE','var(--grn)'],update_risk:['UPDATE','var(--primary)'],close_risk:['CLOSE','var(--t3)']};
+function armActLabel(a){
+  if(a.label)return armEsc(a.label);
+  if(a.type==='create_risk')return 'Create risk: '+armEsc((a.risk&&a.risk.description||'').slice(0,70));
+  if(a.type==='update_risk')return 'Update '+armEsc(a.risk_id||'')+': '+armEsc(Object.keys(a.changes||{}).join(', '));
+  if(a.type==='close_risk')return 'Close '+armEsc(a.risk_id||'');
+  return armEsc(a.type||'action');
+}
+function armConfirmHtml(actions){
+  const rows=actions.map(a=>{const m=ARM_ACT_META[a.type]||['ACTION','var(--t3)'];return `<div class="arm-act"><span class="ai-act-tag" style="background:${m[1]}1a;color:${m[1]}">${m[0]}</span><span>${armActLabel(a)}</span></div>`;}).join('');
+  return `<div class="arm-confirm">
+    <div class="arm-confirm-t">AI Risk Manager wants to: · يريد تنفيذ:</div>
+    ${rows}
+    <div class="arm-confirm-btns">
+      <button class="arm-ap" onclick="armApprove()">Approve · موافقة</button>
+      <button class="arm-cn" onclick="armCancel()">Cancel · إلغاء</button>
+    </div>
+  </div>`;
+}
+
+function armNextRiskId(){
+  const risks=(typeof CP!=='undefined'&&CP&&CP.risks)||[];
+  let max=0;risks.forEach(r=>{const m=/R(\d+)/.exec(r.risk_id||'');if(m)max=Math.max(max,parseInt(m[1]));});
+  return 'R'+String(max+1).padStart(3,'0');
+}
+function armBuildContext(){
+  let c='';
+  const inProj=(typeof CID!=='undefined'&&CID&&typeof CP!=='undefined'&&CP);
+  if(inProj){
+    c+=`CURRENT OPEN PROJECT: "${CP.name}" (type: ${CP.type||'—'}, value: ${CP.value||'—'}, ends: ${CP.end_date||'—'}). Risk appetite: ${CP.risk_appetite?.level||'moderate'}.\n`;
+    const risks=(CP.risks||[]).slice(0,45);
+    if(risks.length){
+      c+=`RISK REGISTER (${(CP.risks||[]).length} risks):\n`;
+      c+=risks.map(r=>`- ${r.risk_id||r.id?.slice(0,6)} [${r.level||'?'}] (${r.status||'open'}) ${r.type||'threat'}/${r.category||'—'}: ${r.description||''} | P=${r.probability||'?'} cost=${r.impact_cost||0} sched=${r.impact_schedule||0} | owner: ${r.owner||'—'} | mitigation: ${r.mitigation||'none'}`).join('\n')+'\n';
+    }else c+='RISK REGISTER: empty (no risks yet).\n';
+    const ups=(CP.updates||[]).slice(0,5);
+    if(ups.length)c+=`RECENT UPDATES:\n`+ups.map(u=>`- ${u.type}: ${(u.description||u.text||'').slice(0,120)}`).join('\n')+'\n';
+  }else{
+    c+='No project is currently open.\n';
+  }
+  const projs=(typeof window.projs!=='undefined'&&window.projs)||(typeof projs!=='undefined'?projs:[]);
+  if(projs&&projs.length){
+    c+=`\nUSER'S PROJECTS (${projs.length}): `+projs.map(p=>`"${p.name}" (${p.type||'—'})`).join(', ')+'.\n';
+  }
+  return c;
+}
+
+async function armSend(){
+  if(armBusy)return;
+  const inp=document.getElementById('armIn');
+  const txt=(inp.value||'').trim();
+  if(!txt)return;
+  if(typeof requireActiveAccess==='function'&&!requireActiveAccess())return;
+  if(!GK().startsWith('sk-ant-')){armMsgs.push({role:'ai',text:'يتطلب مفتاح Claude API. فعّله من الإعدادات. · A Claude API key is required — enable it in settings.'});armRender();return;}
+  armMsgs.push({role:'user',text:txt});
+  inp.value='';inp.style.height='auto';
+  document.getElementById('armSugg').innerHTML='';
+  armPending=null;armBusy=true;armRender();
+  document.getElementById('armSendBtn').disabled=true;
+  const lang=armDetectLang(txt);
+  const ctx=armBuildContext();
+  const canExecute=(armMode==='manager')&&(typeof CID!=='undefined'&&CID);
+  const sys=`You are "AI Risk Manager", an expert construction & project risk-management copilot inside the RiskAtlas platform. The user may NOT be a risk expert (could be a project owner or project manager). Explain clearly and simply, avoid jargon, and be practical and supportive.
+
+LANGUAGE: Reply in the SAME language as the user's latest message. If they write Arabic, reply in clear Arabic; if English, reply in English. The user's latest message is in ${lang==='ar'?'Arabic':'English'}.
+
+CONTEXT (live platform data you can read):
+${ctx}
+
+WHAT YOU CAN DO:
+- Read and analyze the data above, explain risks, recommend mitigation/response strategies, prioritize, forecast impacts on schedule/cost/scope/quality, and answer questions.
+- Propose concrete changes to the CURRENT OPEN PROJECT's risk register: create risks, update risks, or close risks.
+
+EXECUTION RULES:
+- ${canExecute?'You ARE allowed to propose actions (the user is in Manager mode with a project open). Actions require explicit user approval before anything happens.':'Do NOT propose actions now (advisor mode, or no project is open). Set "actions" to an empty array. If the user asked to change data, briefly tell them to switch to Manager mode and open a project.'}
+- Only ever propose actions for risks in the CURRENT OPEN PROJECT shown above. Never invent risk_ids — for updates/closes use an existing risk_id from the register.
+- Never claim you already made a change. Changes only happen after the user taps Approve.
+
+RESPONSE FORMAT — respond with ONLY a valid JSON object, no markdown, no extra text:
+{
+  "reply": "your natural-language message to the user, in their language",
+  "actions": [
+    {"type":"create_risk","label":"short human label","risk":{"type":"threat|opportunity","category":"e.g. Schedule, Cost, Safety, Procurement","description":"clear risk statement","cause":"root cause","probability":1,"impact_cost":0,"impact_schedule":0,"impact_qhse":0,"impact_reputation":0,"level":"high|medium|low","response_strategy":"Mitigate|Avoid|Transfer|Accept|Exploit|Enhance|Share","mitigation":"the response plan","owner":"suitable role"}},
+    {"type":"update_risk","label":"short label","risk_id":"R003","changes":{"level":"high","probability":4,"mitigation":"...","owner":"...","status":"open|closed","expected_date":"YYYY-MM-DD"}},
+    {"type":"close_risk","label":"short label","risk_id":"R005"}
+  ]
+}
+Scores are 1-5 for probability, 0-5 for impacts. Keep "reply" concise and helpful. If no actions, use "actions": [].`;
+  // Build conversation history for the API (exclude sys/confirm helper rows)
+  const hist=armMsgs.filter(m=>m.role==='user'||m.role==='ai').map(m=>({role:m.role==='user'?'user':'assistant',content:m.text}));
+  // Fold system instructions + live context into the first user turn (robust to proxies that ignore a top-level system field)
+  if(hist.length&&hist[0].role==='user'){
+    hist[0]={role:'user',content:sys+'\n\n=== Conversation ===\nUser: '+hist[0].content};
+  }
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,system:sys,messages:hist});
+    armBusy=false;document.getElementById('armSendBtn').disabled=false;
+    if(data.error){armMsgs.push({role:'ai',text:'حدث خطأ: '+(data.error.message||'')+' · Error occurred.'});armRender();return;}
+    let parsed,raw=(data.content&&data.content[0]&&data.content[0].text)||'';
+    try{parsed=pJSON(raw);}catch(e){parsed={reply:raw||'تعذّر فهم الرد. · Could not parse response.',actions:[]};}
+    armMsgs.push({role:'ai',text:parsed.reply||'…'});
+    const acts=Array.isArray(parsed.actions)?parsed.actions.filter(a=>a&&ARM_ACT_META[a.type]):[];
+    if(acts.length&&canExecute){armPending=acts;armMsgs.push({role:'confirm',actions:acts});}
+    armRender();
+  }catch(e){
+    armBusy=false;document.getElementById('armSendBtn').disabled=false;
+    armMsgs.push({role:'ai',text:'تعذّر الاتصال. حاول مرة ثانية. · Connection failed, please try again.'});armRender();
+  }
+}
+
+function armCancel(){
+  armPending=null;
+  armMsgs=armMsgs.filter(m=>m.role!=='confirm');
+  armMsgs.push({role:'sys',text:'تم الإلغاء — لم يُنفّذ أي تغيير. · Cancelled — no changes made.'});
+  armRender();
+}
+
+async function armApprove(){
+  if(!armPending||!armPending.length)return;
+  const acts=armPending;armPending=null;
+  armMsgs=armMsgs.filter(m=>m.role!=='confirm');
+  armBusy=true;armRender();
+  let done=0,failed=0;const errs=[];
+  const riskByRid={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskByRid[r.risk_id]=r;});
+  for(const a of acts){
+    try{
+      if(a.type==='create_risk'){
+        const r=a.risk||{};
+        const rec={project_id:CID,user_id:currentUser?.id,risk_id:armNextRiskId(),
+          type:r.type==='opportunity'?'opportunity':'threat',category:r.category||'General',
+          description:r.description||'',cause:r.cause||'',probability:parseInt(r.probability)||3,
+          impact_cost:parseInt(r.impact_cost)||0,impact_schedule:parseInt(r.impact_schedule)||0,
+          impact_qhse:parseInt(r.impact_qhse)||0,impact_reputation:parseInt(r.impact_reputation)||0,
+          level:['high','medium','low'].includes(r.level)?r.level:'medium',
+          response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation||'',owner:r.owner||'',
+          status:'open',timing_type:'scheduled'};
+        const ins=await sb('risks','POST',rec);
+        if(ins&&ins[0])(CP.risks=CP.risks||[]).push(ins[0]);
+        riskByRid[rec.risk_id]=rec;done++;
+      }else if(a.type==='update_risk'){
+        const row=riskByRid[a.risk_id];if(!row||!row.id){failed++;errs.push(a.risk_id+': not found');continue;}
+        const ch={};const allow=['level','probability','impact_cost','impact_schedule','impact_qhse','impact_reputation','mitigation','owner','response_strategy','status','expected_date','description','cause'];
+        Object.keys(a.changes||{}).forEach(k=>{if(allow.includes(k))ch[k]=a.changes[k];});
+        if(Object.keys(ch).length){await sb('risks?id=eq.'+row.id,'PATCH',ch);Object.assign(row,ch);}
+        done++;
+      }else if(a.type==='close_risk'){
+        const row=riskByRid[a.risk_id];if(!row||!row.id){failed++;errs.push(a.risk_id+': not found');continue;}
+        await sb('risks?id=eq.'+row.id,'PATCH',{status:'closed'});row.status='closed';done++;
+      }
+    }catch(e){failed++;errs.push((a.risk_id||a.type)+': '+(e.message||'').slice(0,60));}
+  }
+  // Refresh the open project views so changes show everywhere
+  try{if(typeof selectProj==='function'&&CID)await selectProj(CID);}catch(e){}
+  armBusy=false;
+  let msg=`تم تنفيذ ${done} إجراء بنجاح. · ${done} action(s) completed.`;
+  if(failed)msg+=`\nفشل ${failed}: ${errs.join('; ')}`;
+  armMsgs.push({role:'sys',text:msg});
+  armRender();
+}
 </script>
+<style id="armStyle">
+.arm-fab{position:fixed;bottom:24px;inset-inline-end:24px;z-index:900;display:flex;align-items:center;gap:9px;background:var(--primary);color:#fff;border:none;border-radius:30px;padding:13px 18px;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 22px rgba(114,57,234,.38);transition:transform .15s,box-shadow .15s;font-family:inherit}
+.arm-fab:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(114,57,234,.46)}
+.arm-fab svg{width:19px;height:19px}
+.arm-fab .arm-fab-lbl{white-space:nowrap}
+@media(max-width:600px){.arm-fab .arm-fab-lbl{display:none}.arm-fab{padding:14px}}
+.arm-panel{position:fixed;top:0;bottom:0;inset-inline-end:0;width:420px;max-width:94vw;background:var(--s1);border-inline-start:1px solid var(--b1);box-shadow:-8px 0 32px rgba(0,0,0,.12);z-index:951;display:flex;flex-direction:column;transform:translateX(110%);transition:transform .26s cubic-bezier(.4,0,.2,1)}
+[dir=rtl] .arm-panel{transform:translateX(-110%)}
+.arm-panel.on{transform:translateX(0)}
+.arm-hd{padding:15px 17px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:11px;flex-shrink:0}
+.arm-hd-ic{width:36px;height:36px;border-radius:9px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.arm-hd-ic svg{width:20px;height:20px}
+.arm-hd-t{font-size:14.5px;font-weight:700;color:var(--t1);line-height:1.2}
+.arm-hd-s{font-size:11px;color:var(--t3);margin-top:1px}
+.arm-x{margin-inline-start:auto;background:none;border:none;color:var(--t3);font-size:22px;cursor:pointer;line-height:1;padding:2px 6px}
+.arm-mode{display:flex;gap:6px;padding:10px 17px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.arm-mode button{flex:1;padding:7px;font-size:11.5px;font-weight:600;border:1px solid var(--b1);background:var(--s2);color:var(--t2);border-radius:7px;cursor:pointer;font-family:inherit}
+.arm-mode button.on{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
+.arm-body{flex:1;overflow-y:auto;padding:16px 17px;display:flex;flex-direction:column;gap:12px}
+.arm-msg{max-width:88%;font-size:13px;line-height:1.6;padding:10px 13px;border-radius:13px;white-space:pre-wrap;word-wrap:break-word}
+.arm-msg.user{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.arm-msg.ai{align-self:flex-start;background:var(--s2);border:1px solid var(--b1);color:var(--t1);border-bottom-left-radius:4px}
+.arm-msg.sys{align-self:center;background:none;color:var(--t3);font-size:11.5px;text-align:center;padding:4px}
+.arm-typing{align-self:flex-start;display:flex;gap:4px;padding:11px 14px;background:var(--s2);border:1px solid var(--b1);border-radius:13px}
+.arm-typing span{width:7px;height:7px;border-radius:50%;background:var(--t3);animation:armBlink 1.2s infinite}
+.arm-typing span:nth-child(2){animation-delay:.2s}.arm-typing span:nth-child(3){animation-delay:.4s}
+@keyframes armBlink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+.arm-confirm{align-self:stretch;background:var(--primary-soft);border:1px solid var(--primary);border-radius:12px;padding:13px 14px}
+.arm-confirm-t{font-size:12.5px;font-weight:700;color:var(--primary);margin-bottom:9px}
+.arm-act{font-size:12px;color:var(--t1);padding:6px 0;border-top:1px solid rgba(114,57,234,.15);display:flex;gap:7px;align-items:flex-start}
+.arm-act:first-of-type{border-top:none}
+.arm-act .ai-act-tag{flex-shrink:0;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;text-transform:uppercase}
+.arm-confirm-btns{display:flex;gap:8px;margin-top:11px}
+.arm-confirm-btns button{flex:1;padding:9px;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer;border:none;font-family:inherit}
+.arm-ap{background:var(--primary);color:#fff}
+.arm-cn{background:var(--s2);color:var(--t2);border:1px solid var(--b1)!important}
+.arm-foot{padding:12px 14px;border-top:1px solid var(--b1);flex-shrink:0}
+.arm-inrow{display:flex;gap:8px;align-items:flex-end}
+.arm-in{flex:1;resize:none;border:1px solid var(--b1);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--t1);background:var(--s2);max-height:120px;line-height:1.5}
+.arm-in:focus{outline:none;border-color:var(--primary)}
+.arm-send{background:var(--primary);color:#fff;border:none;border-radius:10px;width:40px;height:40px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.arm-send:disabled{opacity:.5;cursor:not-allowed}
+.arm-send svg{width:18px;height:18px}
+.arm-sugg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.arm-sugg button{font-size:11px;color:var(--primary);background:var(--primary-soft);border:1px solid rgba(114,57,234,.2);border-radius:14px;padding:5px 11px;cursor:pointer;font-family:inherit}
+</style>
+
+<button class="arm-fab" id="armFab" onclick="armToggle()" style="display:none" aria-label="AI Risk Manager">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z"/></svg>
+  <span class="arm-fab-lbl">AI Risk Manager</span>
+</button>
+
+<div class="arm-panel" id="armPanel" aria-hidden="true">
+  <div class="arm-hd">
+    <div class="arm-hd-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z"/></svg></div>
+    <div><div class="arm-hd-t">AI Risk Manager</div><div class="arm-hd-s">Your AI risk management expert</div></div>
+    <button class="arm-x" onclick="armToggle()" aria-label="Close">×</button>
+  </div>
+  <div class="arm-mode">
+    <button id="armModeAdv" onclick="armSetMode('advisor')">Advisor · مستشار</button>
+    <button id="armModeMgr" class="on" onclick="armSetMode('manager')">Manager · مدير</button>
+  </div>
+  <div class="arm-body" id="armBody"></div>
+  <div class="arm-foot">
+    <div class="arm-sugg" id="armSugg"></div>
+    <div class="arm-inrow">
+      <textarea class="arm-in" id="armIn" rows="1" placeholder="اكتب سؤالك أو طلبك... / Ask anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();armSend();}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <button class="arm-send" id="armSendBtn" onclick="armSend()" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
