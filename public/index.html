@@ -6874,9 +6874,10 @@ function armBuildContext(){
   }else{
     c+='No project is currently open.\n';
   }
-  const projs=(typeof window.projs!=='undefined'&&window.projs)||(typeof projs!=='undefined'?projs:[]);
-  if(projs&&projs.length){
-    c+=`\nUSER'S PROJECTS (${projs.length}): `+projs.map(p=>`"${p.name}" (${p.type||'—'})`).join(', ')+'.\n';
+  let plist=[];
+  try{ if(typeof projs!=='undefined'&&Array.isArray(projs))plist=projs; }catch(e){ plist=[]; }
+  if(plist.length){
+    c+=`\nUSER'S PROJECTS (${plist.length}): `+plist.map(p=>`"${p.name}" (${p.type||'—'})`).join(', ')+'.\n';
   }
   return c;
 }
