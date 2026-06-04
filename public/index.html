@@ -6930,22 +6930,25 @@ Scores are 1-5 for probability, 0-5 for impacts. Keep "reply" concise and helpfu
     .map(m=>(m.role==='user'?'User: ':'Assistant: ')+m.text).join('\n');
   const prompt=sys+'\n\n=== Conversation so far ===\n'+convo+'\n\nNow respond as the Assistant with ONLY the JSON object described above.';
   try{
-    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]});
-    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),45000));
+    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]});
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),30000));
     const data=await Promise.race([apiCall,timeout]);
     armBusy=false;document.getElementById('armSendBtn').disabled=false;
-    if(data.error){armMsgs.push({role:'ai',text:'Error: '+(data.error.message||'something went wrong')});armRender();return;}
-    let parsed,raw=(data.content&&data.content[0]&&data.content[0].text)||'';
-    try{parsed=pJSON(raw);}catch(e){parsed=null;}
-    // If the model didn't return our JSON shape, still show its text as a normal reply
-    if(!parsed||typeof parsed!=='object'){parsed={reply:raw||'I could not generate a response. Please rephrase and try again.',actions:[]};}
+    console.log('[AI Risk Manager] response:',data);
+    if(!data){armMsgs.push({role:'ai',text:'No response from the server. Please try again.'});armRender();return;}
+    if(data.error){armMsgs.push({role:'ai',text:'API error: '+(data.error.message||JSON.stringify(data.error))});armRender();return;}
+    let raw=(data.content&&data.content[0]&&data.content[0].text)||'';
+    if(!raw){armMsgs.push({role:'ai',text:'The AI returned an empty response. (Debug: '+JSON.stringify(data).slice(0,200)+')'});armRender();return;}
+    let parsed;try{parsed=pJSON(raw);}catch(e){parsed=null;}
+    if(!parsed||typeof parsed!=='object'){parsed={reply:raw,actions:[]};}
     armMsgs.push({role:'ai',text:parsed.reply||raw||'…'});
     const acts=Array.isArray(parsed.actions)?parsed.actions.filter(a=>a&&ARM_ACT_META[a.type]):[];
     if(acts.length&&canExecute){armPending=acts;armMsgs.push({role:'confirm',actions:acts});}
     armRender();
   }catch(e){
     armBusy=false;document.getElementById('armSendBtn').disabled=false;
-    const msg=(e&&e.message==='timeout')?'This is taking too long — the request timed out. Please try a shorter question or try again.':'Connection failed — please try again.';
+    console.error('[AI Risk Manager] error:',e);
+    const msg=(e&&e.message==='timeout')?'Request timed out (30s). The server may be slow or asleep — please try again.':('Error: '+((e&&e.message)||'connection failed')+' — please try again.');
     armMsgs.push({role:'ai',text:msg});armRender();
   }
 }
