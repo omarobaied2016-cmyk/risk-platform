@@ -3028,6 +3028,8 @@ function renderRiskLog(){
     <div id="lessonsContent" style="margin-bottom:14px"></div>
     <div class="sep" style="color:var(--grn)">Closed Risks (${closed.length})</div>
     <div class="tw"><table class="rt"><thead><tr><th>ID</th><th>Category</th><th>Description</th><th>Level</th><th>Closure Notes</th><th>Closed Date</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  // Restore saved lessons learned if any
+  if(CP&&CP.lessons_learned){renderLessonsLearned(CP.lessons_learned);}
 }
 
 async function generateLessonsLearned(){
@@ -3050,21 +3052,73 @@ Respond ONLY with valid JSON:
 Provide 4-6 lessons. Be specific and actionable.`}]});
     hideLoad();
     const parsed=pJSON(data.content[0].text);
-    if(parsed&&el){
-      el.innerHTML=`
-        <div class="card" style="margin-bottom:12px;background:var(--primary-soft);border-color:rgba(114,57,234,.2)">
-          <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px">Summary</div>
-          <div style="font-size:12.5px;color:var(--t1);line-height:1.7">${parsed.summary}</div>
-        </div>
-        <div class="dash-row dash-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-          ${(parsed.lessons||[]).map(l=>`<div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--t1);margin-bottom:6px">${l.title}</div><div style="font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:8px">${l.insight}</div><div style="font-size:11px;color:var(--primary);line-height:1.5;padding-top:8px;border-top:1px solid var(--b1)">→ ${l.recommendation}</div></div>`).join('')}
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--grn);margin-bottom:10px">What Worked</div>${(parsed.what_worked||[]).map(w=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.5">+ ${w}</div>`).join('')}</div>
-          <div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--org);margin-bottom:10px">What to Improve</div>${(parsed.what_to_improve||[]).map(w=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.5">→ ${w}</div>`).join('')}</div>
-        </div>`;
+    if(parsed){
+      parsed.generated_at=new Date().toISOString();
+      CP.lessons_learned=parsed;
+      renderLessonsLearned(parsed);
+      try{await sb('projects?id=eq.'+CID,'PATCH',{lessons_learned:parsed});}
+      catch(saveErr){console.error('Save lessons:',saveErr);alert('Lessons generated but could NOT be saved permanently. Ask your admin to add the "lessons_learned" column to the projects table in Supabase.');}
     }
   }catch(e){hideLoad();if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+}
+
+function renderLessonsLearned(parsed){
+  const el=document.getElementById('lessonsContent');
+  if(!el||!parsed)return;
+  const dateLabel=parsed.generated_at?new Date(parsed.generated_at).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--t3)">${dateLabel?'Generated '+dateLabel:''}</div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportLessonsPDF()">Export PDF</button>
+        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportLessonsExcel()">Export Excel</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px;background:var(--primary-soft);border-color:rgba(114,57,234,.2)">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px">Summary</div>
+      <div style="font-size:12.5px;color:var(--t1);line-height:1.7">${parsed.summary||''}</div>
+    </div>
+    <div class="dash-row dash-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      ${(parsed.lessons||[]).map(l=>`<div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--t1);margin-bottom:6px">${l.title||''}</div><div style="font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:8px">${l.insight||''}</div><div style="font-size:11px;color:var(--primary);line-height:1.5;padding-top:8px;border-top:1px solid var(--b1)">→ ${l.recommendation||''}</div></div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--grn);margin-bottom:10px">What Worked</div>${(parsed.what_worked||[]).map(w=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.5">+ ${w}</div>`).join('')}</div>
+      <div class="card"><div style="font-size:12.5px;font-weight:700;color:var(--org);margin-bottom:10px">What to Improve</div>${(parsed.what_to_improve||[]).map(w=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--b1);line-height:1.5">→ ${w}</div>`).join('')}</div>
+    </div>`;
+}
+
+// ═══ LESSONS LEARNED — shared HTML + exports ═══
+function lessonsPdfSection(p){
+  if(!p)return '';
+  let h=`<div class="section" style="page-break-before:auto"><div class="section-title">Lessons Learned</div>`;
+  if(p.summary)h+=`<div class="summary-box good"><div class="summary-label good">Summary</div>${p.summary}</div>`;
+  if((p.lessons||[]).length){
+    h+=`<div class="card-grid">`;
+    p.lessons.forEach(l=>{h+=`<div class="rcard"><div class="rcard-t purple">${l.title||''}</div><div class="rcard-item">${l.insight||''}</div><div class="rcard-item" style="color:#7239ea;border-bottom:none">→ ${l.recommendation||''}</div></div>`;});
+    h+=`</div>`;
+  }
+  if((p.what_worked||[]).length||(p.what_to_improve||[]).length){
+    h+=`<div class="card-grid-2">
+      <div class="rcard"><div class="rcard-t grn">What Worked</div>${(p.what_worked||[]).map(w=>`<div class="rcard-item">+ ${w}</div>`).join('')}</div>
+      <div class="rcard"><div class="rcard-t org">What to Improve</div>${(p.what_to_improve||[]).map(w=>`<div class="rcard-item">→ ${w}</div>`).join('')}</div>
+    </div>`;
+  }
+  return h+`</div>`;
+}
+function exportLessonsPDF(){
+  const p=CP?.lessons_learned;if(!p){alert('Generate lessons learned first');return;}
+  const w=window.open('','_blank');
+  const css=reportBaseCSS();
+  w.document.write(`<html><head><title>Lessons Learned — ${CP.name}</title><style>${css}</style></head><body><div class="page">${reportHeaderHTML('Lessons Learned')}${lessonsPdfSection(p)}<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div></div></body></html>`);
+  w.document.close();
+  {const img=w.document.querySelector(".logo-box img");const pr=()=>w.print();if(img&&!img.complete){img.onload=pr;img.onerror=pr;setTimeout(pr,2500);}else setTimeout(pr,600);}
+}
+function exportLessonsExcel(){
+  const p=CP?.lessons_learned;if(!p){alert('Generate lessons learned first');return;}
+  if(typeof XLSX==='undefined'){alert('Excel library still loading, try again in a moment.');return;}
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,lessonsSheet(p),'Lessons Learned');
+  XLSX.writeFile(wb,`RiskAtlas_${(CP.name||'project').replace(/[^\w]+/g,'_')}_Lessons.xlsx`);
 }
 
 // ═══ FILE EXTRACTION ═══
@@ -4552,6 +4606,14 @@ function showExportModal(){
           <input type="checkbox" id="exp_tornado"/>
           <div><div style="font-size:12px;font-weight:600">Tornado Diagram</div><div style="font-size:10.5px;color:var(--t3)">Top risks by impact</div></div>
         </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_warn"/>
+          <div><div style="font-size:12px;font-weight:600">Early Warning</div><div style="font-size:10.5px;color:var(--t3)">Schedule-linked risks by urgency</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--b1);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="exp_lessons" ${CP?.lessons_learned?'':'disabled'}/>
+          <div><div style="font-size:12px;font-weight:600">Lessons Learned</div><div style="font-size:10.5px;color:var(--t3)">${CP?.lessons_learned?'AI insights from closed risks':'Generate in Risk Log first'}</div></div>
+        </label>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase">Risk Register Fields</div>
@@ -4745,8 +4807,119 @@ function doExportExcel(){
 
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Risk Register');
+  // Optional extra sheets
+  if(document.getElementById('exp_warn')?.checked){
+    try{
+      const today=new Date();today.setHours(0,0,0,0);const dayMs=86400000;
+      const du=d=>{const dt=new Date(d);dt.setHours(0,0,0,0);return Math.round((dt-today)/dayMs);};
+      const sched=(CP?.risks||[]).filter(r=>r.timing_type!=='ongoing'&&r.expected_date&&!isNaN(new Date(r.expected_date))).map(r=>({r,d:du(r.expected_date)})).sort((a,b)=>a.d-b.d);
+      const wa=[['RiskAtlas AI — Early Warning'],[CP.name],[],['ID','Risk','Level','Expected Date','Countdown (days)','Status']];
+      sched.forEach(({r,d})=>wa.push([r.risk_id||'',r.description||'',(RL[r.level]||r.level||''),new Date(r.expected_date).toLocaleDateString('en-GB'),d,d<0?'Overdue':d<=7?'This Week':d<=14?'Next Week':d<=30?'This Month':'Upcoming']));
+      const wsW=XLSX.utils.aoa_to_sheet(wa);
+      wsW['!cols']=[{wch:9},{wch:55},{wch:11},{wch:15},{wch:16},{wch:13}];
+      wsW['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}},{s:{r:1,c:0},e:{r:1,c:5}}];
+      const setW=(a,s)=>{if(wsW[a])wsW[a].s=s;};
+      setW('A1',{font:{name:'Calibri',sz:20,bold:true,color:{rgb:'7239EA'}}});
+      setW('A2',{font:{name:'Calibri',sz:13,bold:true,color:{rgb:'15152B'}}});
+      for(let c=0;c<6;c++){const a=XLSX.utils.encode_cell({r:3,c});setW(a,{font:{name:'Calibri',sz:10,bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'7239EA'}},alignment:{horizontal:'center',wrapText:true}});}
+      XLSX.utils.book_append_sheet(wb,wsW,'Early Warning');
+    }catch(e){console.error('EW sheet:',e);}
+  }
+  if(document.getElementById('exp_lessons')?.checked&&CP?.lessons_learned){
+    try{XLSX.utils.book_append_sheet(wb,lessonsSheet(CP.lessons_learned),'Lessons Learned');}catch(e){console.error('Lessons sheet:',e);}
+  }
   XLSX.writeFile(wb,`RiskAtlas_${CP.name.replace(/[^\w]+/g,'_')}_Register.xlsx`);
   document.getElementById('exportModal')?.remove();
+}
+
+// ═══ SHARED REPORT HELPERS (polished design) ═══
+function reportBaseCSS(){return `
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1e1e2d;font-size:12px;line-height:1.6;background:#fff}
+    .page{max-width:1000px;margin:0 auto;padding:30px}
+    .header{background:linear-gradient(135deg,#1e1e2d,#2d2b55);color:#fff;padding:28px 32px;border-radius:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .logo-box{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#7239ea,#8950fc);display:flex;align-items:center;justify-content:center}
+    .logo-box img{width:40px;height:40px;object-fit:contain;filter:brightness(0) invert(1)}
+    .header h1{font-size:20px;font-weight:700;letter-spacing:-.02em}
+    .header-sub{font-size:11px;opacity:.65;margin-top:3px}
+    .header-right{text-align:right;font-size:11px;opacity:.7;line-height:1.7}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .kpi{background:#f8f9fc;border:1px solid #e4e7ef;border-radius:10px;padding:16px;text-align:center}
+    .kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#a1a5b7;margin-bottom:4px}
+    .kpi-val{font-size:28px;font-weight:700}
+    .kpi-val.red{color:#f64e60}.kpi-val.yel{color:#ffa800}.kpi-val.grn{color:#50cd89}.kpi-val.blue{color:#7239ea}
+    .section{margin-bottom:22px}
+    .section-title{font-size:15px;font-weight:700;color:#1e1e2d;margin-bottom:14px;padding-bottom:7px;border-bottom:2px solid #7239ea;display:flex;align-items:center;gap:8px}
+    .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+    .card-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+    .rcard{background:#f8f9fc;border:1px solid #e4e7ef;border-radius:10px;padding:14px}
+    .rcard-t{font-size:12.5px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e4e7ef}
+    .rcard-t.red{color:#f64e60}.rcard-t.purple{color:#7239ea}.rcard-t.blue{color:#7239ea}.rcard-t.grn{color:#50cd89}.rcard-t.org{color:#ffa800}
+    .rcard-item{font-size:11.5px;color:#3a3f5c;padding:6px 0;border-bottom:1px solid #f0f1f5;line-height:1.6}
+    .rcard-item:last-child{border-bottom:none}
+    .summary-box{border-radius:10px;padding:18px;margin-bottom:18px;font-size:12.5px;line-height:1.7}
+    .summary-box.critical{background:#fef2f2;border:1px solid rgba(246,78,96,.3)}
+    .summary-box.warning{background:#fffbeb;border:1px solid rgba(255,168,0,.3)}
+    .summary-box.good{background:#f0fdf4;border:1px solid rgba(80,205,137,.3)}
+    .summary-label{font-size:13px;font-weight:700;margin-bottom:6px}
+    .summary-label.critical{color:#f64e60}.summary-label.warning{color:#ffa800}.summary-label.good{color:#50cd89}
+    table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5px}
+    th{background:#1e1e2d;color:#fff;padding:8px;text-align:left;font-weight:600;font-size:10px}
+    td{padding:7px 8px;border-bottom:1px solid #e4e7ef;vertical-align:top}
+    tr:nth-child(even){background:#f9f9fb}
+    .high{color:#f64e60;font-weight:700}.medium{color:#ffa800;font-weight:700}.low{color:#50cd89;font-weight:700}
+    .ew-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eef0f5}
+    .ew-badge{flex-shrink:0;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+    .footer{text-align:center;color:#aaa;font-size:10px;margin-top:30px;padding-top:16px;border-top:1px solid #e4e7ef}
+    @media print{body{padding:0}.page{padding:14px}.section{page-break-inside:avoid}@page{margin:10mm}}
+`;}
+function reportHeaderHTML(subtitle){
+  return `<div class="header">
+    <div class="header-left">
+      <div class="logo-box"><img src="https://i.postimg.cc/3xNVb78N/89f6c180-112e-4627-b132-e471e46a8d2b-(1).png" alt="RiskAtlas AI"/></div>
+      <div><h1>RiskAtlas AI</h1><div class="header-sub">${CP.name}${CP.type?(' · '+CP.type):''}${subtitle?(' · '+subtitle):''}</div></div>
+    </div>
+    <div class="header-right">Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}<br>${CP.start_date||''} — ${CP.end_date||''}</div>
+  </div>`;
+}
+// Excel sheet builder for lessons learned (styled)
+function lessonsSheet(p){
+  const C={head:'4A2B8C',primary:'7239EA',white:'FFFFFF',grey:'F7F8FC',t1:'15152B',t2:'4A4A68',grn:'2E9C63',grnBg:'E6F8EE',org:'B27A00',orgBg:'FFF4DD'};
+  const aoa=[];
+  aoa.push(['RiskAtlas AI — Lessons Learned']);
+  aoa.push([CP.name+(CP.type?(' · '+CP.type):'')]);
+  aoa.push(['Generated: '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})]);
+  aoa.push([]);
+  aoa.push(['SUMMARY']);
+  aoa.push([p.summary||'']);
+  aoa.push([]);
+  aoa.push(['LESSONS']);
+  const lessonsHead=aoa.length;
+  aoa.push(['#','Lesson','Insight','Recommendation']);
+  (p.lessons||[]).forEach((l,i)=>aoa.push([i+1,l.title||'',l.insight||'',l.recommendation||'']));
+  aoa.push([]);
+  aoa.push(['WHAT WORKED']);
+  (p.what_worked||[]).forEach(w=>aoa.push(['',w]));
+  aoa.push([]);
+  aoa.push(['WHAT TO IMPROVE']);
+  (p.what_to_improve||[]).forEach(w=>aoa.push(['',w]));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:5},{wch:30},{wch:55},{wch:55}];
+  ws['!merges']=[
+    {s:{r:0,c:0},e:{r:0,c:3}},{s:{r:1,c:0},e:{r:1,c:3}},{s:{r:2,c:0},e:{r:2,c:3}},
+    {s:{r:4,c:0},e:{r:4,c:3}},{s:{r:5,c:0},e:{r:5,c:3}}
+  ];
+  const set=(a,s)=>{if(ws[a])ws[a].s=s;};
+  set('A1',{font:{name:'Calibri',sz:20,bold:true,color:{rgb:C.primary}}});
+  set('A2',{font:{name:'Calibri',sz:13,bold:true,color:{rgb:C.t1}}});
+  set('A3',{font:{name:'Calibri',sz:10,color:{rgb:C.t2}}});
+  set('A5',{font:{name:'Calibri',sz:11,bold:true,color:{rgb:C.white}},fill:{fgColor:{rgb:C.head}}});
+  set('A6',{font:{name:'Calibri',sz:11,color:{rgb:C.t1}},alignment:{wrapText:true,vertical:'top'}});
+  ws['!rows']=[];ws['!rows'][5]={hpt:50};
+  // lessons header row styling
+  for(let c=0;c<4;c++){const a=XLSX.utils.encode_cell({r:lessonsHead,c});set(a,{font:{name:'Calibri',sz:10,bold:true,color:{rgb:C.white}},fill:{fgColor:{rgb:C.primary}},alignment:{horizontal:'center',vertical:'center',wrapText:true}});}
+  return ws;
 }
 
 function doExportPDF(){
@@ -4874,6 +5047,27 @@ function doExportPDF(){
     html+=`<div class="section"><div class="section-title">📋 Risk Register (${risks.length} risks)</div><table><tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Owner</th></tr>`;
     risks.forEach(r=>{html+=`<tr><td>${r.risk_id||''}</td><td>${r.type||''}</td><td>${r.category||''}</td><td style="max-width:250px">${r.description||''}</td><td class="${r.level}">${r.level||''}</td><td>${r.response_strategy||''}</td><td style="max-width:180px;font-size:10px">${r.mitigation||''}</td><td>${r.owner||''}</td></tr>`;});
     html+=`</table></div>`;
+  }
+
+  const incWarn=document.getElementById('exp_warn')?.checked;
+  const incLessons=document.getElementById('exp_lessons')?.checked;
+
+  if(incWarn){
+    const today=new Date();today.setHours(0,0,0,0);const dayMs=86400000;
+    const du=d=>{if(!d)return null;const dt=new Date(d);if(isNaN(dt))return null;dt.setHours(0,0,0,0);return Math.round((dt-today)/dayMs);};
+    const sched=risks.filter(r=>r.timing_type!=='ongoing'&&r.expected_date&&!isNaN(new Date(r.expected_date))).map(r=>({r,d:du(r.expected_date)})).sort((a,b)=>a.d-b.d);
+    const band=d=>d<0?['OVERDUE','#f64e60','#fde7ea']:d<=7?['THIS WEEK','#f64e60','#fde7ea']:d<=14?['NEXT WEEK','#ffa800','#fff4dd']:d<=30?['THIS MONTH','#7239ea','#f3efff']:['UPCOMING','#a1a5b7','#f0f1f5'];
+    html+=`<div class="section"><div class="section-title">⚠ Early Warning — Schedule-Linked Risks</div>`;
+    if(sched.length){
+      html+=`<table><tr><th>ID</th><th>Risk</th><th>Level</th><th>Expected Date</th><th>Countdown</th><th>Status</th></tr>`;
+      sched.forEach(({r,d})=>{const[lbl,col,bg]=band(d);const cd=d<0?`${Math.abs(d)}d overdue`:`in ${d}d`;html+=`<tr><td>${r.risk_id||''}</td><td style="max-width:300px">${r.description||''}</td><td class="${r.level}">${(RL[r.level]||r.level||'')}</td><td style="white-space:nowrap">${new Date(r.expected_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'})}</td><td style="white-space:nowrap;font-weight:700;color:${col}">${cd}</td><td><span class="ew-badge" style="background:${bg};color:${col}">${lbl}</span></td></tr>`;});
+      html+=`</table>`;
+    }else{html+=`<p style="color:#888">No schedule-linked risks with dates.</p>`;}
+    html+=`</div>`;
+  }
+
+  if(incLessons&&CP.lessons_learned){
+    html+=lessonsPdfSection(CP.lessons_learned);
   }
 
   html+=`<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div>`;
