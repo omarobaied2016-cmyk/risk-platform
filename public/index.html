@@ -3868,16 +3868,30 @@ function renderDash(){
       </div>
     </div>
 
-    <!-- Row 2: Tornado + Top 5 + Action Items (3 items) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Tornado Diagram</span></div>
+    <!-- Risk Exposure Analysis (full-width executive tool) -->
+    <div class="dash-section" style="margin-bottom:12px">
+      <div class="dash-sec-head" style="justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:flex-start">
+        <div>
+          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Risk Exposure Analysis</span></div>
+          <div class="dash-sec-sub" style="margin-top:3px">Identify and prioritize the most significant risks impacting project objectives</div>
         </div>
-        <div class="dash-sec-sub">Top risks by impact magnitude</div>
-        <canvas id="tornadoC" height="130"></canvas>
-        <div id="tornadoLegend" style="margin-top:8px;border-top:1px solid var(--b1);padding-top:8px"></div>
+        <select id="rexFilter" onchange="renderRiskExposure()" style="padding:7px 12px;font-size:12px;border:1px solid var(--b1);border-radius:8px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
+          <option value="overall">Overall Risk Exposure</option>
+          <option value="cost">Cost Impact</option>
+          <option value="schedule">Schedule Impact</option>
+          <option value="qhse">QHSE Impact</option>
+          <option value="reputation">Reputation Impact</option>
+        </select>
       </div>
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px;margin-top:8px;align-items:start">
+        <div><canvas id="tornadoC" height="150"></canvas></div>
+        <div id="tornadoLegend" style="font-size:11px"></div>
+      </div>
+      <div id="rexInsight" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Row 2: Top 5 Critical + Action Items -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Top 5 Critical Risks</span></div>
@@ -4053,41 +4067,9 @@ function renderDash(){
       options:{plugins:{legend:{position:'bottom',labels:{color:'#5e6278',font:{size:10},padding:6}}},cutout:'62%',layout:{padding:2}}
     });
 
-    // Tornado Diagram - Top risks by combined impact
-    const tornadoRisks=risks
-      .map(r=>({...r,totalImpact:(r.impact_cost||0)+(r.impact_schedule||0)+(r.impact_qhse||0)+(r.impact_reputation||0)}))
-      .sort((a,b)=>b.totalImpact-a.totalImpact)
-      .slice(0,6);
-    const tornadoLabels=tornadoRisks.map(r=>r.risk_id||'R?');
-    const tornadoCost=tornadoRisks.map(r=>r.impact_cost||0);
-    const tornadoSched=tornadoRisks.map(r=>-(r.impact_schedule||0));
-    new Chart(document.getElementById('tornadoC'),{
-      type:'bar',
-      data:{
-        labels:tornadoLabels,
-        datasets:[
-          {label:'Cost',data:tornadoCost,backgroundColor:'rgba(114,57,234,0.7)',borderRadius:3,barPercentage:0.65},
-          {label:'Schedule',data:tornadoSched,backgroundColor:'rgba(79,201,218,0.7)',borderRadius:3,barPercentage:0.65}
-        ]
-      },
-      options:{
-        indexAxis:'y',
-        plugins:{legend:{position:'bottom',labels:{color:'#a1a5b7',font:{size:9},padding:6,boxWidth:12}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${Math.abs(ctx.raw)}`}}},
-        scales:{
-          x:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>Math.abs(v)},grid:{color:'rgba(228,231,239,.5)'}},
-          y:{ticks:{color:'#5e6278',font:{size:10,weight:'bold'}},grid:{display:false}}
-        },
-        layout:{padding:{left:2,right:2}}
-      }
-    });
-    // Tornado Legend - show risk descriptions
-    const tLegEl=document.getElementById('tornadoLegend');
-    if(tLegEl){
-      tLegEl.innerHTML=tornadoRisks.map(r=>`<div style="display:flex;gap:6px;padding:3px 0;font-size:10.5px;line-height:1.4">
-        <span style="font-weight:700;color:var(--primary);white-space:nowrap;min-width:36px">${r.risk_id||'R?'}</span>
-        <span style="color:var(--t2)">${(r.description||'').slice(0,60)}${(r.description||'').length>60?'...':''}</span>
-      </div>`).join('');
-    }
+    // Risk Exposure Analysis (dynamic, filter-driven — replaces static tornado)
+    rexInsightCache={};
+    renderRiskExposure();
 
     const upds=CP?.upds||[];const tl2=['Start'];const hd=[high];const md2=[med];
     upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md2.push(md2[md2.length-1]);}});
@@ -4103,6 +4085,92 @@ function renderDash(){
       });
     }
   },60);
+}
+
+// ═══ RISK EXPOSURE ANALYSIS (dynamic tornado) ═══
+let rexChart=null, rexInsightCache={};
+const REX_LABELS={overall:'Overall Risk Exposure',cost:'Cost Impact',schedule:'Schedule Impact',qhse:'QHSE Impact',reputation:'Reputation Impact'};
+const REX_COLORS={overall:'rgba(114,57,234,.78)',cost:'rgba(114,57,234,.78)',schedule:'rgba(79,201,218,.85)',qhse:'rgba(255,168,0,.85)',reputation:'rgba(246,78,96,.8)'};
+function rexRanked(){
+  const f=document.getElementById('rexFilter')?.value||'overall';
+  const risks=(CP?.risks||[]).filter(r=>r.status!=='closed');
+  const val=r=>{const p=r.probability||0;
+    if(f==='cost')return p*(r.impact_cost||0);
+    if(f==='schedule')return p*(r.impact_schedule||0);
+    if(f==='qhse')return p*(r.impact_qhse||0);
+    if(f==='reputation')return p*(r.impact_reputation||0);
+    return p*((r.impact_cost||0)+(r.impact_schedule||0)+(r.impact_qhse||0)+(r.impact_reputation||0));
+  };
+  const ranked=risks.map(r=>({r,v:val(r)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,10);
+  return {f,ranked};
+}
+function renderRiskExposure(){
+  const cv=document.getElementById('tornadoC');if(!cv)return;
+  const {f,ranked}=rexRanked();
+  if(rexChart){try{rexChart.destroy();}catch(e){}rexChart=null;}
+  if(!ranked.length){
+    const ctx=cv.getContext('2d');ctx&&ctx.clearRect(0,0,cv.width,cv.height);
+    const leg=document.getElementById('tornadoLegend');if(leg)leg.innerHTML='<div style="font-size:11px;color:var(--t3)">No scored risks for this view.</div>';
+    const ins=document.getElementById('rexInsight');if(ins)ins.innerHTML='';
+    return;
+  }
+  rexChart=new Chart(cv,{
+    type:'bar',
+    data:{labels:ranked.map(x=>x.r.risk_id||'R?'),datasets:[{label:'Exposure',data:ranked.map(x=>x.v),backgroundColor:REX_COLORS[f],borderRadius:3,barPercentage:0.72}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'Exposure: '+ctx.raw+(f==='overall'?' (P × total impact)':' (P × impact)')}}},
+      scales:{x:{beginAtZero:true,ticks:{color:'#a1a5b7',font:{size:9}},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{color:'#5e6278',font:{size:10,weight:'bold'}},grid:{display:false}}},
+      layout:{padding:{left:2,right:2}}}
+  });
+  const leg=document.getElementById('tornadoLegend');
+  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em">Top ${ranked.length} · ${REX_LABELS[f]}</div>`+ranked.map(x=>`<div style="display:flex;gap:6px;padding:3px 0;font-size:10.5px;line-height:1.4;border-bottom:1px solid var(--b1)"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1">${(x.r.description||'').slice(0,52)}${(x.r.description||'').length>52?'…':''}</span><span style="font-weight:700;color:var(--t1)">${x.v}</span></div>`).join('');
+  renderRexInsight(f);
+}
+function renderRexInsight(f){
+  const el=document.getElementById('rexInsight');if(!el)return;
+  if(rexInsightCache[f]){el.innerHTML=rexInsightHTML(rexInsightCache[f],f);return;}
+  el.innerHTML=`<div style="border-top:1px solid var(--b1);padding-top:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div><div style="font-size:12.5px;font-weight:700;color:var(--t1)">AI Executive Insight</div><div style="font-size:11px;color:var(--t3)">Why these risks rank highest, key drivers & priority actions for ${REX_LABELS[f]}</div></div>
+    <button class="btn btn-p" style="padding:7px 14px;font-size:11.5px" onclick="generateRexInsight()">Generate AI Insight</button>
+  </div>`;
+}
+function rexInsightHTML(o,f){
+  const list=(arr,color)=>(arr||[]).map(x=>`<div style="font-size:11.5px;color:var(--t2);padding:5px 0;border-bottom:1px solid var(--b1);line-height:1.55">${x}</div>`).join('');
+  return `<div style="border-top:1px solid var(--b1);padding-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:12.5px;font-weight:700;color:var(--primary)">AI Executive Insight · ${REX_LABELS[f]}</div><button class="btn btn-g" style="padding:4px 10px;font-size:10.5px" onclick="generateRexInsight(true)">Regenerate</button></div>
+    <div class="ai ai-ok" style="margin-bottom:12px">${o.summary||''}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="card"><div style="font-size:11.5px;font-weight:700;color:var(--t1);margin-bottom:8px">Key Drivers</div>${list(o.drivers)}</div>
+      <div class="card"><div style="font-size:11.5px;font-weight:700;color:#ffa800;margin-bottom:8px">Emerging Concerns</div>${list(o.emerging)}</div>
+      <div class="card"><div style="font-size:11.5px;font-weight:700;color:var(--grn);margin-bottom:8px">Priority Actions</div>${list(o.priorities)}</div>
+    </div>
+  </div>`;
+}
+async function generateRexInsight(force){
+  const {f,ranked}=rexRanked();
+  if(!ranked.length){return;}
+  if(typeof requireActiveAccess==='function'&&!requireActiveAccess())return;
+  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(rexInsightCache[f]&&!force)return;
+  const el=document.getElementById('rexInsight');
+  if(el)el.innerHTML=`<div style="border-top:1px solid var(--b1);padding-top:14px;text-align:center;color:var(--t3);font-size:12px"><div class="spin" style="margin:0 auto 10px"></div>Analyzing ${REX_LABELS[f]}…</div>`;
+  const ctx=ranked.map((x,i)=>`${i+1}. ${x.r.risk_id} [exposure ${x.v}] (P=${x.r.probability}, cost=${x.r.impact_cost||0}, sched=${x.r.impact_schedule||0}, qhse=${x.r.impact_qhse||0}, rep=${x.r.impact_reputation||0}) ${x.r.category}: ${x.r.description}`).join('\n');
+  const dimNote=f==='overall'?'overall exposure (probability × total impact across all dimensions)':`${REX_LABELS[f]} (probability × ${f} impact)`;
+  const prompt=`You are a senior risk advisor producing an executive insight for a construction project risk dashboard. Project: ${CP.name} (${CP.type||''}). The view below ranks the top risks by ${dimNote}.
+
+TOP RISKS (ranked by exposure):
+${ctx}
+
+Write a concise, executive-level analysis. Respond ONLY with valid JSON:
+{"summary":"2-3 sentences: why these risks rank highest and what it means for the project","drivers":["3-4 key root causes / drivers behind the top exposures"],"emerging":["2-3 emerging or escalating concerns to watch"],"priorities":["3-4 prioritized, actionable mitigation recommendations"]}
+Keep each bullet under 22 words, specific and actionable.`;
+  try{
+    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]});
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),35000));
+    const data=await Promise.race([apiCall,timeout]);
+    if(data.error){if(el)el.innerHTML=`<div class="ai ai-w" style="margin-top:12px">Error: ${data.error.message||''}</div>`;return;}
+    const parsed=pJSON((data.content&&data.content[0]&&data.content[0].text)||'');
+    if(parsed){rexInsightCache[f]=parsed;if((document.getElementById('rexFilter')?.value||'overall')===f)renderRexInsight(f);}
+  }catch(e){if(el)el.innerHTML=`<div class="ai ai-w" style="margin-top:12px">${e.message==='timeout'?'Timed out — try again.':'Error: '+e.message}</div>`;}
 }
 
 // ═══ REFRESH ALL PORTFOLIO ═══
