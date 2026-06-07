@@ -3884,10 +3884,15 @@ function renderDash(){
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px;margin-top:8px;align-items:start">
-        <div><canvas id="tornadoC" height="150"></canvas></div>
+        <div>
+          <canvas id="tornadoC" height="160"></canvas>
+          <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:10.5px;color:var(--t3)">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:9px;border-radius:2px;background:var(--red)"></span>Threat (loss)</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:9px;border-radius:2px;background:var(--grn)"></span>Opportunity (gain)</span>
+          </div>
+        </div>
         <div id="tornadoLegend" style="font-size:11px"></div>
       </div>
-      <div id="rexInsight" style="margin-top:14px"></div>
     </div>
 
     <!-- Row 2: Top 5 Critical + Action Items -->
@@ -4068,7 +4073,6 @@ function renderDash(){
     });
 
     // Risk Exposure Analysis (dynamic, filter-driven — replaces static tornado)
-    rexInsightCache={};
     renderRiskExposure();
 
     const upds=CP?.upds||[];const tl2=['Start'];const hd=[high];const md2=[med];
@@ -4087,90 +4091,82 @@ function renderDash(){
   },60);
 }
 
-// ═══ RISK EXPOSURE ANALYSIS (dynamic tornado) ═══
-let rexChart=null, rexInsightCache={};
+// ═══ RISK EXPOSURE ANALYSIS (dynamic tornado — real-unit exposure) ═══
+let rexChart=null;
 const REX_LABELS={overall:'Overall Risk Exposure',cost:'Cost Impact',schedule:'Schedule Impact',qhse:'QHSE Impact',reputation:'Reputation Impact'};
-const REX_COLORS={overall:'rgba(114,57,234,.78)',cost:'rgba(114,57,234,.78)',schedule:'rgba(79,201,218,.85)',qhse:'rgba(255,168,0,.85)',reputation:'rgba(246,78,96,.8)'};
+const REX_UNIT={overall:'score',cost:'SAR',schedule:'days',qhse:'score',reputation:'score'};
+const PROB_PCT={1:0.05,2:0.20,3:0.40,4:0.60,5:0.85}; // probability level → representative probability
+function rexContractValue(){const n=parseFloat(String(CP?.value||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;}
+function rexBandMid(text,isFirst,isLast){
+  const nums=(String(text||'').match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+  if(!nums.length)return 0;
+  if(nums.length>=2)return (nums[0]+nums[1])/2;
+  if(isLast)return nums[0]*1.4;   // "More than X" band
+  if(isFirst)return nums[0]/2;    // "Up to X" band
+  return nums[0];
+}
+// Exposure magnitude (always positive) for a risk under a given dimension, in real units
+function rexValue(r,f){
+  const P=PROB_PCT[r.probability]||0;
+  const tl=CP?.tolerance||{};
+  if(f==='cost'){
+    const lv=r.impact_cost||0;if(!lv)return 0;
+    const levels=tl.cost_levels||costLevels(tl.appetite||'moderate');
+    const pct=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
+    return P*(pct/100)*rexContractValue();           // SAR
+  }
+  if(f==='schedule'){
+    const lv=r.impact_schedule||0;if(!lv)return 0;
+    const levels=tl.sched_levels||schedLevels(tl.appetite||'moderate');
+    const days=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
+    return P*days;                                    // days
+  }
+  if(f==='qhse')return P*(r.impact_qhse||0);          // score
+  if(f==='reputation')return P*(r.impact_reputation||0);
+  // overall: probability × total impact severity (unitless score)
+  return P*((r.impact_cost||0)+(r.impact_schedule||0)+(r.impact_qhse||0)+(r.impact_reputation||0));
+}
+function rexFmt(v,f){
+  const a=Math.abs(v);
+  if(f==='cost'){if(a>=1e6)return (a/1e6).toFixed(a>=1e7?0:1)+'M';if(a>=1e3)return Math.round(a/1e3)+'K';return Math.round(a).toString();}
+  if(f==='schedule')return a>=10?Math.round(a).toString():a.toFixed(1);
+  return a.toFixed(1);
+}
 function rexRanked(){
   const f=document.getElementById('rexFilter')?.value||'overall';
   const risks=(CP?.risks||[]).filter(r=>r.status!=='closed');
-  const val=r=>{const p=r.probability||0;
-    if(f==='cost')return p*(r.impact_cost||0);
-    if(f==='schedule')return p*(r.impact_schedule||0);
-    if(f==='qhse')return p*(r.impact_qhse||0);
-    if(f==='reputation')return p*(r.impact_reputation||0);
-    return p*((r.impact_cost||0)+(r.impact_schedule||0)+(r.impact_qhse||0)+(r.impact_reputation||0));
-  };
-  const ranked=risks.map(r=>({r,v:val(r)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,10);
-  return {f,ranked};
+  const out=risks.map(r=>{
+    const mag=rexValue(r,f);
+    const isOpp=r.type==='opportunity';
+    return {r,isOpp,mag,signed:isOpp?mag:-mag};       // threats negative, opportunities positive
+  }).filter(x=>x.mag>0).sort((a,b)=>b.mag-a.mag).slice(0,10);
+  return {f,ranked:out};
 }
 function renderRiskExposure(){
   const cv=document.getElementById('tornadoC');if(!cv)return;
   const {f,ranked}=rexRanked();
+  const unit=REX_UNIT[f];
   if(rexChart){try{rexChart.destroy();}catch(e){}rexChart=null;}
+  const leg=document.getElementById('tornadoLegend');
   if(!ranked.length){
     const ctx=cv.getContext('2d');ctx&&ctx.clearRect(0,0,cv.width,cv.height);
-    const leg=document.getElementById('tornadoLegend');if(leg)leg.innerHTML='<div style="font-size:11px;color:var(--t3)">No scored risks for this view.</div>';
-    const ins=document.getElementById('rexInsight');if(ins)ins.innerHTML='';
+    if(leg)leg.innerHTML='<div style="font-size:11px;color:var(--t3)">No scored risks for this view.</div>';
     return;
   }
   rexChart=new Chart(cv,{
     type:'bar',
-    data:{labels:ranked.map(x=>x.r.risk_id||'R?'),datasets:[{label:'Exposure',data:ranked.map(x=>x.v),backgroundColor:REX_COLORS[f],borderRadius:3,barPercentage:0.72}]},
-    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'Exposure: '+ctx.raw+(f==='overall'?' (P × total impact)':' (P × impact)')}}},
-      scales:{x:{beginAtZero:true,ticks:{color:'#a1a5b7',font:{size:9}},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{color:'#5e6278',font:{size:10,weight:'bold'}},grid:{display:false}}},
+    data:{labels:ranked.map(x=>x.r.risk_id||'R?'),datasets:[{
+      label:'Exposure',
+      data:ranked.map(x=>x.signed),
+      backgroundColor:ranked.map(x=>x.isOpp?'rgba(80,205,137,.82)':'rgba(246,78,96,.78)'),
+      borderRadius:3,barPercentage:0.72
+    }]},
+    options:{indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const x=ranked[ctx.dataIndex];return `${x.isOpp?'Opportunity':'Threat'}: ${rexFmt(x.signed,f)} ${unit}`;}}}},
+      scales:{x:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>rexFmt(v,f)},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{color:'#5e6278',font:{size:10,weight:'bold'}},grid:{display:false}}},
       layout:{padding:{left:2,right:2}}}
   });
-  const leg=document.getElementById('tornadoLegend');
-  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em">Top ${ranked.length} · ${REX_LABELS[f]}</div>`+ranked.map(x=>`<div style="display:flex;gap:6px;padding:3px 0;font-size:10.5px;line-height:1.4;border-bottom:1px solid var(--b1)"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1">${(x.r.description||'').slice(0,52)}${(x.r.description||'').length>52?'…':''}</span><span style="font-weight:700;color:var(--t1)">${x.v}</span></div>`).join('');
-  renderRexInsight(f);
-}
-function renderRexInsight(f){
-  const el=document.getElementById('rexInsight');if(!el)return;
-  if(rexInsightCache[f]){el.innerHTML=rexInsightHTML(rexInsightCache[f],f);return;}
-  el.innerHTML=`<div style="border-top:1px solid var(--b1);padding-top:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-    <div><div style="font-size:12.5px;font-weight:700;color:var(--t1)">AI Executive Insight</div><div style="font-size:11px;color:var(--t3)">Why these risks rank highest, key drivers & priority actions for ${REX_LABELS[f]}</div></div>
-    <button class="btn btn-p" style="padding:7px 14px;font-size:11.5px" onclick="generateRexInsight()">Generate AI Insight</button>
-  </div>`;
-}
-function rexInsightHTML(o,f){
-  const list=(arr,color)=>(arr||[]).map(x=>`<div style="font-size:11.5px;color:var(--t2);padding:5px 0;border-bottom:1px solid var(--b1);line-height:1.55">${x}</div>`).join('');
-  return `<div style="border-top:1px solid var(--b1);padding-top:12px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:12.5px;font-weight:700;color:var(--primary)">AI Executive Insight · ${REX_LABELS[f]}</div><button class="btn btn-g" style="padding:4px 10px;font-size:10.5px" onclick="generateRexInsight(true)">Regenerate</button></div>
-    <div class="ai ai-ok" style="margin-bottom:12px">${o.summary||''}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-      <div class="card"><div style="font-size:11.5px;font-weight:700;color:var(--t1);margin-bottom:8px">Key Drivers</div>${list(o.drivers)}</div>
-      <div class="card"><div style="font-size:11.5px;font-weight:700;color:#ffa800;margin-bottom:8px">Emerging Concerns</div>${list(o.emerging)}</div>
-      <div class="card"><div style="font-size:11.5px;font-weight:700;color:var(--grn);margin-bottom:8px">Priority Actions</div>${list(o.priorities)}</div>
-    </div>
-  </div>`;
-}
-async function generateRexInsight(force){
-  const {f,ranked}=rexRanked();
-  if(!ranked.length){return;}
-  if(typeof requireActiveAccess==='function'&&!requireActiveAccess())return;
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
-  if(rexInsightCache[f]&&!force)return;
-  const el=document.getElementById('rexInsight');
-  if(el)el.innerHTML=`<div style="border-top:1px solid var(--b1);padding-top:14px;text-align:center;color:var(--t3);font-size:12px"><div class="spin" style="margin:0 auto 10px"></div>Analyzing ${REX_LABELS[f]}…</div>`;
-  const ctx=ranked.map((x,i)=>`${i+1}. ${x.r.risk_id} [exposure ${x.v}] (P=${x.r.probability}, cost=${x.r.impact_cost||0}, sched=${x.r.impact_schedule||0}, qhse=${x.r.impact_qhse||0}, rep=${x.r.impact_reputation||0}) ${x.r.category}: ${x.r.description}`).join('\n');
-  const dimNote=f==='overall'?'overall exposure (probability × total impact across all dimensions)':`${REX_LABELS[f]} (probability × ${f} impact)`;
-  const prompt=`You are a senior risk advisor producing an executive insight for a construction project risk dashboard. Project: ${CP.name} (${CP.type||''}). The view below ranks the top risks by ${dimNote}.
-
-TOP RISKS (ranked by exposure):
-${ctx}
-
-Write a concise, executive-level analysis. Respond ONLY with valid JSON:
-{"summary":"2-3 sentences: why these risks rank highest and what it means for the project","drivers":["3-4 key root causes / drivers behind the top exposures"],"emerging":["2-3 emerging or escalating concerns to watch"],"priorities":["3-4 prioritized, actionable mitigation recommendations"]}
-Keep each bullet under 22 words, specific and actionable.`;
-  try{
-    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]});
-    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),35000));
-    const data=await Promise.race([apiCall,timeout]);
-    if(data.error){if(el)el.innerHTML=`<div class="ai ai-w" style="margin-top:12px">Error: ${data.error.message||''}</div>`;return;}
-    const parsed=pJSON((data.content&&data.content[0]&&data.content[0].text)||'');
-    if(parsed){rexInsightCache[f]=parsed;if((document.getElementById('rexFilter')?.value||'overall')===f)renderRexInsight(f);}
-  }catch(e){if(el)el.innerHTML=`<div class="ai ai-w" style="margin-top:12px">${e.message==='timeout'?'Timed out — try again.':'Error: '+e.message}</div>`;}
+  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em">Top ${ranked.length} · ${REX_LABELS[f]} <span style="color:var(--t3);font-weight:500">(${unit})</span></div>`+ranked.map(x=>`<div style="display:flex;gap:6px;padding:3px 0;font-size:10.5px;line-height:1.4;border-bottom:1px solid var(--b1)"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1">${(x.r.description||'').slice(0,50)}${(x.r.description||'').length>50?'…':''}</span><span style="font-weight:700;color:${x.isOpp?'var(--grn)':'var(--red)'};white-space:nowrap">${x.isOpp?'+':'−'}${rexFmt(x.signed,f)}</span></div>`).join('');
 }
 
 // ═══ REFRESH ALL PORTFOLIO ═══
