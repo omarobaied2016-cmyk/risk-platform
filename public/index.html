@@ -4991,6 +4991,11 @@ function doExportPDF(){
       <div class="kpi"><div class="kpi-label">Medium</div><div class="kpi-val yel">${med}</div></div>
       <div class="kpi"><div class="kpi-label">Low</div><div class="kpi-val grn">${low}</div></div>
     </div>`;
+    // Embed dashboard charts as images (captured from the rendered canvases)
+    const chartImg=(id,title)=>{const c=document.getElementById(id);if(!c||!c.getContext)return '';try{const d=c.toDataURL('image/png');if(!d||d.length<3000)return '';return `<div class="rcard" style="text-align:center"><div class="rcard-t blue" style="text-align:left">${title}</div><img src="${d}" style="max-width:100%;height:auto"/></div>`;}catch(e){return '';}};
+    const lvlImg=chartImg('lvlC','Risk Levels');
+    const respImg=chartImg('respC','Response Strategies');
+    if(lvlImg||respImg)html+=`<div class="section"><div class="section-title">📊 Risk Analytics</div><div class="card-grid-2">${lvlImg}${respImg}</div></div>`;
   }
 
   if(incAI){
@@ -5036,10 +5041,18 @@ function doExportPDF(){
     }
   }
 
+  if(incTornado){
+    const c=document.getElementById('tornadoC');
+    let timg='';
+    if(c&&c.getContext){try{const d=c.toDataURL('image/png');if(d&&d.length>3000)timg=`<img src="${d}" style="max-width:100%;height:auto"/>`;}catch(e){}}
+    html+=`<div class="section"><div class="section-title">Tornado Diagram — Top Risks by Impact</div>${timg||'<p style="color:#888">Open the Dashboard tab first to render this chart, then export.</p>'}</div>`;
+  }
+
   if(incMarket){
     const mEl=document.getElementById('projMarketInsights');
-    if(mEl&&mEl.innerHTML.length>100){
-      html+=`<div class="section"><div class="section-title">Market & World Insights</div><div style="font-size:12px;color:#3a3f5c;line-height:1.7">${mEl.innerText}</div></div>`;
+    if(mEl&&mEl.innerText.trim().length>40){
+      const paras=mEl.innerText.split(/\n+/).map(s=>s.trim()).filter(s=>s.length>1);
+      html+=`<div class="section"><div class="section-title">Market &amp; World Insights</div>${paras.map(p=>`<p style="font-size:12px;color:#3a3f5c;line-height:1.7;margin-bottom:8px;unicode-bidi:plaintext;text-align:start">${p.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>`).join('')}</div>`;
     }
   }
 
