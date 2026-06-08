@@ -716,7 +716,45 @@ tr:hover td{background:rgba(114,57,234,.015);}
 .mobile-menu-btn{display:none;position:fixed;top:16px;left:16px;z-index:201;width:40px;height:40px;border-radius:12px;background:white;border:1px solid rgba(0,0,0,.08);box-shadow:var(--shadow);align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
 @media(max-width:768px){.mobile-menu-btn{display:flex;}}
 
-/* ═══════════ PREMIUM POLISH LAYER ═══════════ */
+/* ═══ FORM REFINEMENTS ═══ */
+.modal-sub{font-size:12px;color:var(--t3);margin-bottom:18px;line-height:1.5;}
+.fl-hint{font-size:10.5px;color:var(--t3);margin-top:4px;line-height:1.4;}
+.fl-err{font-size:10.5px;color:var(--red);margin-top:4px;font-weight:600;display:none;}
+.fi-err{border-color:var(--red) !important;box-shadow:0 0 0 3px rgba(246,78,96,.1) !important;}
+.fi-err + .fl-err{display:block;}
+
+/* ═══ ATTENTION PANEL (dashboard hierarchy) ═══ */
+.attn-panel{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:16px 18px;margin-bottom:18px;box-shadow:var(--shadow);border-left:4px solid var(--red);}
+.attn-panel.attn-clear{border-left-color:var(--grn);}
+.attn-head{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;letter-spacing:-.01em;color:var(--t1);}
+.attn-dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(246,78,96,.15);animation:attnPulse 2s infinite;}
+@keyframes attnPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.attn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px;}
+.attn-chip{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:11px;cursor:pointer;border:1px solid var(--b1);background:var(--s2,#f8f9fb);transition:all .18s var(--ease);}
+.attn-chip:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
+.attn-n{font-size:22px;font-weight:800;line-height:1;min-width:30px;text-align:center;}
+.attn-l{font-size:11.5px;color:var(--t2);line-height:1.35;font-weight:500;}
+.attn-red{border-color:rgba(246,78,96,.25);background:rgba(246,78,96,.05);}.attn-red .attn-n{color:var(--red);}
+.attn-orange{border-color:rgba(255,168,0,.28);background:rgba(255,168,0,.06);}.attn-orange .attn-n{color:#d97706;}
+.attn-yellow{border-color:rgba(202,138,4,.25);background:rgba(202,138,4,.05);}.attn-yellow .attn-n{color:#a16207;}
+
+/* ═══ GUIDED EMPTY / ONBOARDING STATES ═══ */
+.eo{max-width:560px;margin:0 auto;text-align:center;padding:46px 24px;animation:fadeIn .35s var(--ease);}
+.eo-badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);background:var(--primary-soft);padding:5px 12px;border-radius:20px;margin-bottom:16px;}
+.eo-ic{width:72px;height:72px;border-radius:20px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--purple,#8950fc));color:#fff;box-shadow:0 10px 28px rgba(114,57,234,.32);}
+.eo-h{font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--t1);margin-bottom:8px;}
+.eo-p{font-size:13.5px;color:var(--t2);line-height:1.65;margin-bottom:22px;max-width:440px;margin-left:auto;margin-right:auto;}
+.eo-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 auto 24px;text-align:start;max-width:520px;}
+.eo-step{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:15px 14px;box-shadow:var(--shadow-sm);transition:all .18s var(--ease);}
+.eo-step:hover{box-shadow:var(--shadow);transform:translateY(-2px);}
+.eo-step-n{width:24px;height:24px;border-radius:7px;background:var(--primary-soft);color:var(--primary);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.eo-step-t{font-size:12.5px;font-weight:700;color:var(--t1);margin-bottom:3px;}
+.eo-step-d{font-size:11px;color:var(--t3);line-height:1.5;}
+.eo-cta{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.eo-cta .btn{padding:11px 24px;font-size:13px;}
+@media(max-width:640px){.eo-steps{grid-template-columns:1fr;}}
+
+
 :root{--ease:cubic-bezier(.4,0,.2,1);}
 /* Branded text selection */
 ::selection{background:rgba(114,57,234,.18);color:var(--t1);}
@@ -895,7 +933,8 @@ tr:hover td{background:rgba(114,57,234,.015);}
 <!-- ADD RISK MANUALLY MODAL -->
 <div class="modal-ov" id="addRiskModal">
   <div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto">
-    <div class="modal-t">Add Risk Manually</div>
+    <div class="modal-t" style="margin-bottom:4px">Add Risk Manually</div>
+    <div class="modal-sub">Add a single risk or opportunity. Not sure about scoring? Upload documents in Files and let AI do it for you.</div>
     <div id="addRiskMsg" style="display:none;padding:.6rem .9rem;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
@@ -909,13 +948,14 @@ tr:hover td{background:rgba(114,57,234,.015);}
       </div>
     </div>
 
-    <div class="fg" style="margin-bottom:12px"><label class="fl">Risk Description</label>
+    <div class="fg" style="margin-bottom:12px"><label class="fl">Risk Description <span style="color:var(--red)">*</span></label>
       <textarea class="fta" id="ar_description" rows="2" placeholder="Describe the risk event..."></textarea>
     </div>
     <div class="fg" style="margin-bottom:12px"><label class="fl">Root Cause</label>
       <textarea class="fta" id="ar_cause" rows="2" placeholder="Underlying cause / source..."></textarea>
     </div>
 
+    <div class="fl-hint" style="margin-bottom:6px">Score each on a <b>1–5 scale</b> — Probability: 1 = rare, 5 = almost certain · Impact: 0 = none, 5 = critical.</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px">
       <div class="fg"><label class="fl">Prob</label><input type="number" class="fi" id="ar_prob" min="1" max="5" value="3"/></div>
       <div class="fg"><label class="fl">Cost</label><input type="number" class="fi" id="ar_ic" min="0" max="5" value="3"/></div>
@@ -1075,14 +1115,15 @@ tr:hover td{background:rgba(114,57,234,.015);}
 <!-- PROJECT MODAL -->
 <div class="modal-ov" id="projModal">
   <div class="modal" style="max-width:600px">
-    <div class="modal-t">New Project</div>
+    <div class="modal-t" style="margin-bottom:4px">New Project</div>
+    <div class="modal-sub">Set up your project, then upload documents to generate its AI risk register.</div>
     <div class="fgrid">
       <div class="fg full"><label class="fl">Portfolio</label>
         <select class="fs" id="np_pf"></select>
       </div>
-      <div class="fg"><label class="fl">Project Name *</label><input type="text" class="fi" id="np_n"/></div>
+      <div class="fg"><label class="fl">Project Name <span style="color:var(--red)">*</span></label><input type="text" class="fi" id="np_n" oninput="this.classList.remove('fi-err')" placeholder="e.g. Riyadh Tower — Phase 2"/><div class="fl-err" id="np_n_err">Project name is required</div></div>
       <div class="fg"><label class="fl">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
-      <div class="fg"><label class="fl">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" placeholder="15,000,000"/></div>
+      <div class="fg"><label class="fl">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" inputmode="numeric" oninput="fmtMoney(this)" placeholder="15,000,000"/><div class="fl-hint">Used to calculate cost exposure (recommended)</div></div>
       <div class="fg"><label class="fl">Project Type</label>
         <select class="fs" id="np_t">
           <option value="Residential">Residential</option>
@@ -2259,11 +2300,20 @@ function renderHome(){
   
   if(!portfolios.length&&!projs.length){
     el.innerHTML=`
-      <div class="empty">
-        <div class="empty-icon">○</div>
-        <div class="et">Create your first portfolio</div>
-        <div class="es" style="margin-bottom:14px">Portfolios help you organize similar projects together</div>
-        <button class="btn btn-p" onclick="openPortfModal()">+ Create Portfolio</button>
+      <div class="eo">
+        <div class="eo-badge">Welcome to RiskAtlas AI</div>
+        <div class="eo-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L3 7v6c0 5 3.5 8 9 9 5.5-1 9-4 9-9V7l-9-5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="eo-h">Let's set up your first project</div>
+        <div class="eo-p">RiskAtlas turns your project documents into a complete, AI-powered risk register in minutes — then helps you monitor, forecast, and act on what matters.</div>
+        <div class="eo-steps">
+          <div class="eo-step"><div class="eo-step-n">1</div><div class="eo-step-t">Create a project</div><div class="eo-step-d">Add the name, contract value, and risk appetite.</div></div>
+          <div class="eo-step"><div class="eo-step-n">2</div><div class="eo-step-t">Upload documents</div><div class="eo-step-d">Contract, scope, or schedule — PDF, Excel, or Primavera.</div></div>
+          <div class="eo-step"><div class="eo-step-n">3</div><div class="eo-step-t">Generate register</div><div class="eo-step-d">AI identifies, scores, and plans responses for every risk.</div></div>
+        </div>
+        <div class="eo-cta">
+          <button class="btn btn-p" onclick="openProjModal()">+ Create Your First Project</button>
+          <button class="btn btn-g" onclick="openPortfModal()">Create a Portfolio</button>
+        </div>
       </div>`;
     return;
   }
@@ -2906,6 +2956,13 @@ async function translatePortfolioReport(){
 }
 
 // ═══ PROJECT MODAL ═══
+function fmtMoney(el){
+  const caretEnd=el.selectionStart===el.value.length;
+  let digits=el.value.replace(/[^\d]/g,'');
+  if(!digits){el.value='';return;}
+  el.value=parseInt(digits,10).toLocaleString('en-US');
+  if(caretEnd)el.selectionStart=el.selectionEnd=el.value.length;
+}
 function openProjModal(){
   // Populate portfolio selector
   const sel=document.getElementById('np_pf');
@@ -2916,8 +2973,9 @@ function openProjModal(){
 function closeProjModal(){document.getElementById('projModal').classList.remove('on');}
 
 async function createProj(){
-  const name=document.getElementById('np_n').value.trim();
-  if(!name){alert('Please enter project name');return;}
+  const nameEl=document.getElementById('np_n');
+  const name=nameEl.value.trim();
+  if(!name){nameEl.classList.add('fi-err');nameEl.focus();return;}
   if(!requireActiveAccess())return;
   if(!checkPlanLimit('project'))return;
   showLoad('Creating...');
@@ -2925,7 +2983,8 @@ async function createProj(){
     const appetite=document.getElementById('np_ra_level').value;
     const tol={appetite:appetite,cost_levels:costLevels(appetite),sched_levels:schedLevels(appetite),qhse:DQ,rep:DR,prob:DP,imp:DI};
     const pfId=document.getElementById('np_pf').value;
-    const d={name,contract:document.getElementById('np_c').value,value:document.getElementById('np_v').value,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
+    const cleanVal=(document.getElementById('np_v').value||'').replace(/,/g,'').trim();
+    const d={name,contract:document.getElementById('np_c').value,value:cleanVal,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
     if(pfId)d.portfolio_id=pfId;
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
@@ -3516,7 +3575,14 @@ function clearRegFilters(){regFilters={category:'',level:'',response:''};renderR
 function renderReg(){
   const allRisks=CP?.risks||[];
   let risks=allRisks.filter(r=>r.status!=='closed');
-  if(!allRisks.length){document.getElementById('regContent').innerHTML=`<div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></div><div class="et">No risk register yet</div></div>`;return;}
+  if(!allRisks.length){document.getElementById('regContent').innerHTML=`
+      <div class="eo">
+        <div class="eo-badge">No risks yet</div>
+        <div class="eo-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg></div>
+        <div class="eo-h">Build your risk register</div>
+        <div class="eo-p">Upload your project documents and AI will identify risks and opportunities, score them, and draft response plans — ready for your review and approval.</div>
+        <div class="eo-cta"><button class="btn btn-p" onclick="ST('files')">Go to Files &amp; Upload</button><button class="btn btn-g" onclick="openAddRisk()">+ Add Risk Manually</button></div>
+      </div>`;return;}
 
   // Build filter options from the unfiltered active set
   const cats=[...new Set(risks.map(r=>r.category).filter(Boolean))];
@@ -3765,7 +3831,19 @@ async function changeRiskStatus(riskId,status){
 function renderDash(){
   const risks=CP?.risks||[];
   if(!risks.length){
-    document.getElementById('dashContent').innerHTML=`<div class="empty"><div class="empty-icon">○</div><div class="et">Run analysis to view dashboard</div></div>`;
+    document.getElementById('dashContent').innerHTML=`
+      <div class="eo">
+        <div class="eo-badge">Almost there</div>
+        <div class="eo-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div>
+        <div class="eo-h">Generate your risk register</div>
+        <div class="eo-p">This project has no risks yet. Upload your project documents and let AI build a complete risk register — with scoring, response strategies, and mitigation plans.</div>
+        <div class="eo-steps">
+          <div class="eo-step"><div class="eo-step-n">1</div><div class="eo-step-t">Open the Files tab</div><div class="eo-step-d">Your project's document workspace.</div></div>
+          <div class="eo-step"><div class="eo-step-n">2</div><div class="eo-step-t">Upload documents</div><div class="eo-step-d">Contract, scope, schedule, drawings.</div></div>
+          <div class="eo-step"><div class="eo-step-n">3</div><div class="eo-step-t">Analyze &amp; Generate</div><div class="eo-step-d">Review and approve the AI-generated risks.</div></div>
+        </div>
+        <div class="eo-cta"><button class="btn btn-p" onclick="ST('files')">Go to Files &amp; Upload</button></div>
+      </div>`;
     return;
   }
 
@@ -3797,6 +3875,23 @@ function renderDash(){
   const noOwner=risks.filter(r=>!r.owner||r.owner.trim()==='—'||r.owner.trim()==='');
   const noAction=risks.filter(r=>r.level==='high'&&(!r.mitigation||r.mitigation.trim().length<10));
 
+  // "What needs attention now" computations
+  const _today=new Date();_today.setHours(0,0,0,0);const _day=86400000;
+  const imminent=risks.filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed'&&r.timing_type!=='ongoing'&&r.expected_date&&!isNaN(new Date(r.expected_date)))
+    .map(r=>{const dt=new Date(r.expected_date);dt.setHours(0,0,0,0);return Math.round((dt-_today)/_day);});
+  const overdueN=imminent.filter(d=>d<0).length;
+  const weekN=imminent.filter(d=>d>=0&&d<=7).length;
+  const td=CP.trend_data||[];
+  const trendDeclining=td.length>=2&&(td[td.length-1].health_score||0)<(td[td.length-2].health_score||0);
+  const lastHealth=td.length?td[td.length-1].health_score:null;
+  const attn=[];
+  if(high>0)attn.push({n:high,l:high===1?'high risk needs action':'high risks need action',c:'red',go:"ST('reg')"});
+  if(overdueN>0)attn.push({n:overdueN,l:overdueN===1?'risk overdue':'risks overdue',c:'red',go:"ST('warn')"});
+  if(weekN>0)attn.push({n:weekN,l:'due within 7 days',c:'orange',go:"ST('warn')"});
+  if(noAction.length>0)attn.push({n:noAction.length,l:'high risks without a plan',c:'orange',go:"ST('reg')"});
+  if(noOwner.length>0)attn.push({n:noOwner.length,l:noOwner.length===1?'risk has no owner':'risks have no owner',c:'yellow',go:"ST('reg')"});
+  if(trendDeclining)attn.push({n:'↓',l:`health declining (${lastHealth}/100)`,c:'red',go:"ST('upd')"});
+
   // Category icons
   const catIcons={};
   const catColors=['purple','blue','cyan','orange','pink','green','red','yellow'];
@@ -3825,6 +3920,20 @@ function renderDash(){
         </div>`:''}
       </div>
     </div>
+
+    <!-- What Needs Attention Now -->
+    ${attn.length?`<div class="attn-panel">
+      <div class="attn-head"><span class="attn-dot"></span>What Needs Attention Now</div>
+      <div class="attn-grid">
+        ${attn.map(a=>`<div class="attn-chip attn-${a.c}" onclick="${a.go}">
+          <div class="attn-n">${a.n}</div>
+          <div class="attn-l">${a.l}</div>
+        </div>`).join('')}
+      </div>
+    </div>`:`<div class="attn-panel attn-clear">
+      <div class="attn-head" style="color:var(--grn)"><span class="attn-dot" style="background:var(--grn)"></span>All Clear</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:4px">No urgent items right now — no overdue risks, and all high risks have plans and owners.</div>
+    </div>`}
 
     <!-- KPIs -->
     <div class="kpi-grid">
@@ -4009,7 +4118,7 @@ function renderDash(){
       return `<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:14px">
         <div class="dash-section" style="background:${alBg};border-color:${alColor}33">
           <div class="dash-sec-head">
-            <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Early Warning Report</span><span class="scenario-tag ${al==='high'?'st-bad':al==='medium'?'st-warn':'st-good'}">${alIcon} ${(RL[al]||al).toUpperCase()}</span></div>
+            <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Trend Analysis Report</span><span class="scenario-tag ${al==='high'?'st-bad':al==='medium'?'st-warn':'st-good'}">${alIcon} ${(RL[al]||al).toUpperCase()}</span></div>
             <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:11px">
@@ -4024,7 +4133,7 @@ function renderDash(){
         </div>
         <div class="dash-section">
           <div class="dash-sec-head">
-            <div class="dash-sec-title"><span class="dash-sec-num">8</span><span class="dash-sec-name">Trend</span></div>
+            <div class="dash-sec-title"><span class="dash-sec-num">8</span><span class="dash-sec-name">Health Trend & Forecast</span></div>
           </div>
           <canvas id="trendC" height="120"></canvas>
         </div>
@@ -4034,12 +4143,12 @@ function renderDash(){
         <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Risk Trend</span></div>
       </div>
       <canvas id="trendC" height="60"></canvas>
-      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter weekly indicators in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Updates</a> for trend report</div>
+      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter period indicators (SV, CV, resources…) in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Updates</a> to build a Trend Analysis Report with forecast</div>
     </div>`}
 
     <!-- #20 Refresh All Button -->
     <div style="text-align:center;margin-bottom:14px">
-      <button class="btn btn-p" onclick="refreshAll()" style="padding:10px 28px;font-size:13px">Refresh All — AI Report, Market Insights & Early Warning</button>
+      <button class="btn btn-p" onclick="refreshAll()" style="padding:10px 28px;font-size:13px">Refresh All — AI Report, Market Insights & Trend Analysis</button>
     </div>
 
     <!-- #21 AI Project Report -->
@@ -4117,6 +4226,9 @@ function renderDash(){
     upds.slice().reverse().forEach(u=>{if(u.new_risks_count>0){tl2.push(new Date(u.created_at).toLocaleDateString('en-GB',{month:'short',day:'numeric'}));hd.push(hd[hd.length-1]+u.new_risks_count);md2.push(md2[md2.length-1]);}});
     const tEl=document.getElementById('trendC');
     if(tEl){
+      if(CP?.trend_data?.length){
+        renderTrendChart('trendC');
+      }else{
       new Chart(tEl,{
         type:'line',
         data:{labels:tl2,datasets:[
@@ -4125,6 +4237,7 @@ function renderDash(){
         ]},
         options:{plugins:{legend:{position:'top',labels:{color:'#5e6278',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#a1a5b7',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#a1a5b7',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:2}}}
       });
+      }
     }
   },60);
 }
@@ -5554,38 +5667,33 @@ function renderWeeklyIndicators(){
     <div class="ew-sec" style="margin-top:0">
       <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Trend Analysis</span> Weekly Indicator Analysis</div>
       <div class="trend-form">
-        <div style="font-size:12px;font-weight:600;margin-bottom:3px">Weekly Trend Indicators</div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:11px">Enter this week's indicators for trend analysis</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px">Period Trend Indicators</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:11px">Enter indicators for a period. Set the date to backfill past weeks/months — the more history, the better the forecast.</div>
         <div class="ind-grid">
+          <div class="ind-item"><label class="ind-lbl">Period Date</label><input type="date" class="ind-inp" id="ind_date" value="${new Date().toISOString().slice(0,10)}"/></div>
           <div class="ind-item"><label class="ind-lbl">Schedule Variance SV (%)</label><input type="number" class="ind-inp" id="ind_sv" placeholder="e.g. -5 means behind"/></div>
           <div class="ind-item"><label class="ind-lbl">Cost Variance CV (%)</label><input type="number" class="ind-inp" id="ind_br" placeholder="e.g. -3 means over budget"/></div>
           <div class="ind-item"><label class="ind-lbl">Change Requests</label><input type="number" class="ind-inp" id="ind_cr" placeholder="count"/></div>
           <div class="ind-item"><label class="ind-lbl">Resource Utilization (%)</label><input type="number" class="ind-inp" id="ind_ru" placeholder="e.g. 80" min="0" max="100"/></div>
           <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Vendor / Dependency Delays</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="e.g. Steel delivery delayed 5 days"></textarea></div>
-          <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Additional Notes (optional)</label><textarea class="ind-inp" id="ind_notes" rows="2" style="min-height:50px;font-family:inherit" placeholder="Any notes this week"></textarea></div>
+          <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Additional Notes (optional)</label><textarea class="ind-inp" id="ind_notes" rows="2" style="min-height:50px;font-family:inherit" placeholder="Any notes this period"></textarea></div>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px;align-items:center"><button class="btn btn-p" onclick="analyzeTrend()">Analyze Trend</button><span style="font-size:11px;color:var(--t3)">${CP.trend_data?.length?CP.trend_data.length+' weeks recorded':''}</span></div>
       </div>
 
-      ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px;margin-top:12px"><div class="card-t">Weekly Indicators History</div>
-        <table class="exp-tbl"><thead><tr><th>Week</th><th>SV%</th><th>CV%</th><th>Changes</th><th>Resources</th><th>Vendor</th><th>Health</th><th>Alert</th></tr></thead>
-        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'#a16207':'var(--grn)'}">${w.sv||0}%</td><td style="color:${(w.burn_rate||0)<-5?'var(--red)':(w.burn_rate||0)<0?'#a16207':'var(--grn)'}">${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'OK'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table>
-        <div style="margin-top:10px"><canvas id="trendIndC" height="70"></canvas></div></div>`:''}
+      ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px;margin-top:12px"><div class="card-t">Period Indicators History</div>
+        <table class="exp-tbl"><thead><tr><th>Date</th><th>SV%</th><th>CV%</th><th>Changes</th><th>Resources</th><th>Vendor</th><th>Health</th><th>Alert</th></tr></thead>
+        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'#a16207':'var(--grn)'}">${w.sv||0}%</td><td style="color:${(w.burn_rate||0)<-5?'var(--red)':(w.burn_rate||0)<0?'#a16207':'var(--grn)'}">${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'OK'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table></div>
+        <div class="card" style="margin-bottom:12px"><div class="card-t">Project Health Trend & Forecast</div><div style="font-size:11px;color:var(--t3);margin:-8px 0 10px">Solid = actual health score · Dashed = AI forecast · Grey = healthy threshold</div><canvas id="trendIndC" height="${window.innerWidth<700?150:75}"></canvas></div>`:''}
 
       <div id="trendAnalysis"></div>
     </div>`;
 
-  if(CP.trend_data?.length>1){
-    setTimeout(()=>{
-      const td=CP.trend_data.slice(-10);const labels=td.map(w=>w.date);
-      new Chart(document.getElementById('trendIndC'),{type:'line',data:{labels,datasets:[
-        {label:'SV%',data:td.map(w=>w.sv||0),borderColor:'#f64e60',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'CV%',data:td.map(w=>w.burn_rate||0),borderColor:'#ffa800',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Changes',data:td.map(w=>w.change_requests||0),borderColor:'#8950fc',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Resources',data:td.map(w=>w.resource_util||0),borderColor:'#7239ea',tension:.4,borderWidth:1.5,pointRadius:3},
-        {label:'Health',data:td.map(w=>w.health_score||0),borderColor:'#50cd89',tension:.4,borderWidth:1.5,pointRadius:3,borderDash:[3,3]},
-      ]},options:{plugins:{legend:{position:'top',labels:{color:'#5e6278',font:{size:10},padding:6}}},scales:{x:{ticks:{color:'#5e6278',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#5e6278',font:{size:10}},grid:{color:'rgba(228,231,239,.6)'}}},layout:{padding:{top:2}}}});
-    },60);
+  if(CP.trend_data?.length){
+    setTimeout(()=>renderTrendChart('trendIndC'),60);
+    // Restore the most recent saved Trend Analysis Report
+    const last=CP.trend_data[CP.trend_data.length-1];
+    if(last&&last.report)renderTrendReport(last);
   }
 }
 
@@ -5626,19 +5734,22 @@ async function analyzeTrend(){
   const ru=parseFloat(document.getElementById('ind_ru').value)||0;
   const vd=document.getElementById('ind_vd').value.trim()||'';
   const notes=document.getElementById('ind_notes').value.trim()||'';
-  const today=new Date();
-  const weekDate=today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  showLoad('Analyzing indicators...');
+  const dateInp=document.getElementById('ind_date')?.value;
+  const dObj=dateInp?new Date(dateInp+'T00:00:00'):new Date();
+  const iso=dObj.toISOString().slice(0,10);
+  const weekDate=dObj.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  showLoad('Analyzing trend indicators...');
 
   const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
-  const history=CP.trend_data?.slice(-4).map(w=>`Week ${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%`).join('\n')||'No history';
+  const sorted=(CP.trend_data||[]).slice().sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
+  const history=sorted.slice(-6).map(w=>`${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Health=${w.health_score||'?'}`).join('\n')||'No prior history';
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ENGLISH.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
 Existing Risks:\n${existing}
-History (last 4 weeks):\n${history}
-THIS WEEK (${weekDate}):
+Trend history (chronological):\n${history}
+CURRENT PERIOD (${weekDate}):
 - SV (Schedule Variance): ${sv}% ${sv<0?'(behind schedule)':sv>0?'(ahead)':'(on track)'}
 - CV (Cost Variance): ${br}% ${br<0?'(over budget)':br>0?'(under budget)':'(on budget)'}
 - Change Requests: ${cr}
@@ -5646,49 +5757,81 @@ THIS WEEK (${weekDate}):
 - Vendor/Dependency Delay: ${vd||'none'}
 - Notes: ${notes||'none'}
 
-Each indicator analysis must be 2-4 sentences explaining: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact.
+Analyze the TREND across the history plus this period. Each indicator analysis = 2-4 sentences: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact. Then FORECAST the project's health score for the next 3 periods based on the trajectory so far (consider whether the trend is improving or deteriorating).
 
 Respond ONLY with valid JSON in English:
-{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative summary","indicators_analysis":{"schedule_variance":"detailed analysis","cost_variance":"detailed analysis","change_requests":"detailed analysis","resource_utilization":"detailed analysis","vendor_delay":"detailed analysis"},"warnings":["warning 1","warning 2","warning 3"],"predicted_risks":["prediction 1","prediction 2","prediction 3"],"actions":["action 1","action 2","action 3","action 4"]}`}]});
+{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative of the TREND and trajectory","indicators_analysis":{"schedule_variance":"...","cost_variance":"...","change_requests":"...","resource_utilization":"...","vendor_delay":"..."},"forecast":[{"label":"+1","health_score":72},{"label":"+2","health_score":68},{"label":"+3","health_score":65}],"forecast_narrative":"2-3 sentences predicting what will happen to the project if the current trend continues","warnings":["..."],"predicted_risks":["..."],"actions":["...","...","...","..."]}`}]});
     hideLoad();
     if(data.error){alert('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
 
-    const entry={date:weekDate,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50,report:parsed};
+    const entry={date:weekDate,iso,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50,forecast:Array.isArray(parsed.forecast)?parsed.forecast:[],report:parsed};
     if(!CP.trend_data)CP.trend_data=[];
+    // replace a same-date entry if re-analyzed, else add; then sort chronologically
+    CP.trend_data=CP.trend_data.filter(w=>w.iso!==iso);
     CP.trend_data.push(entry);
-    await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});
+    CP.trend_data.sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
+    try{await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});}
+    catch(saveErr){console.error('Save trend:',saveErr);alert('Analyzed but could NOT save. Ensure the projects table has a "trend_data" jsonb column.');}
 
-    const alertClass={high:'ta-r',medium:'ta-y',low:'ta-g'}[parsed.alert_level]||'ta-y';
-    const alertIcon={high:'⚠️',medium:'◆',low:'✓'}[parsed.alert_level]||'◆';
-    const ind=parsed.indicators_analysis||{};
-
-    document.getElementById('trendAnalysis').innerHTML=`
-      <div class="trend-alert ${alertClass}">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:8px">
-          <span style="font-weight:700;font-size:13px">${alertIcon} Early Warning Report — Week ${weekDate}</span>
-          <span style="font-size:11px">Health Score: <b style="font-size:14px">${parsed.health_score}/100</b></span>
-        </div>
-        <div style="font-size:12.5px;line-height:1.6">${parsed.executive_summary||''}</div>
-      </div>
-      <div class="card" style="margin-bottom:10px">
-        <div class="card-t" style="color:var(--primary)">Detailed Indicator Analysis</div>
-        ${[
-          {k:'schedule_variance',label:'Schedule Variance (SV)',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
-          {k:'cost_variance',label:'Cost Variance (CV)',val:`${br}%`,color:br<-5?'var(--red)':br<0?'#a16207':'var(--grn)'},
-          {k:'change_requests',label:'Change Requests',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
-          {k:'resource_utilization',label:'Resource Utilization',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
-          {k:'vendor_delay',label:'Vendor Delays',val:vd?'Reported':'None',color:vd?'var(--red)':'var(--grn)'}
-        ].map(item=>`<div style="margin-bottom:11px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="background:${item.color}22;color:${item.color};padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700">${item.val}</span><span style="font-size:11.5px;font-weight:600">${item.label}</span></div><div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind[item.k]||'—'}</div></div>`).join('')}
-      </div>
-      ${parsed.warnings?.length?`<div class="card" style="background:var(--yel-soft);border-color:rgba(255,168,0,.3);margin-bottom:10px"><div class="card-t" style="color:#ffa800">⚠ Warning Signals</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(255,168,0,.15);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
-      ${parsed.predicted_risks?.length?`<div class="card" style="background:var(--red-soft);border-color:rgba(246,78,96,.3);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ Predicted Risks (Next 2 Weeks)</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(246,78,96,.15);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
-      ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(80,205,137,.3)"><div class="card-t" style="color:var(--grn)">✓ Recommended Actions</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(80,205,137,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}`;
-
-    ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{document.getElementById(id).value='';});
+    renderTrendReport(entry);
+    ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     renderWarn();renderDash();
   }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+
+// Render the saved/just-generated Trend Analysis Report into #trendAnalysis
+function renderTrendReport(entry){
+  const el=document.getElementById('trendAnalysis');if(!el||!entry||!entry.report)return;
+  const parsed=entry.report;const sv=entry.sv,br=entry.burn_rate,cr=entry.change_requests,ru=entry.resource_util,vd=entry.vendor_delay;
+  const alertClass={high:'ta-r',medium:'ta-y',low:'ta-g'}[parsed.alert_level]||'ta-y';
+  const alertIcon={high:'⚠️',medium:'◆',low:'✓'}[parsed.alert_level]||'◆';
+  const ind=parsed.indicators_analysis||{};
+  el.innerHTML=`
+    <div class="trend-alert ${alertClass}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:8px">
+        <span style="font-weight:700;font-size:13px">${alertIcon} Trend Analysis Report — ${entry.date}</span>
+        <span style="font-size:11px">Health Score: <b style="font-size:14px">${parsed.health_score}/100</b></span>
+      </div>
+      <div style="font-size:12.5px;line-height:1.6">${parsed.executive_summary||''}</div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-t" style="color:var(--primary)">Detailed Indicator Analysis</div>
+      ${[
+        {k:'schedule_variance',label:'Schedule Variance (SV)',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
+        {k:'cost_variance',label:'Cost Variance (CV)',val:`${br}%`,color:br<-5?'var(--red)':br<0?'#a16207':'var(--grn)'},
+        {k:'change_requests',label:'Change Requests',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
+        {k:'resource_utilization',label:'Resource Utilization',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
+        {k:'vendor_delay',label:'Vendor Delays',val:vd?'Reported':'None',color:vd?'var(--red)':'var(--grn)'}
+      ].map(item=>`<div style="margin-bottom:11px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="background:${item.color}22;color:${item.color};padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700">${item.val}</span><span style="font-size:11.5px;font-weight:600">${item.label}</span></div><div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind[item.k]||'—'}</div></div>`).join('')}
+    </div>
+    ${parsed.forecast_narrative?`<div class="card" style="background:var(--primary-soft);border-color:rgba(114,57,234,.25);margin-bottom:10px"><div class="card-t" style="color:var(--primary)">▶ Forecast — What Happens Next</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${parsed.forecast_narrative}</div></div>`:''}
+    ${parsed.warnings?.length?`<div class="card" style="background:var(--yel-soft);border-color:rgba(255,168,0,.3);margin-bottom:10px"><div class="card-t" style="color:#ffa800">⚠ Warning Signals</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(255,168,0,.15);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
+    ${parsed.predicted_risks?.length?`<div class="card" style="background:var(--red-soft);border-color:rgba(246,78,96,.3);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ Predicted Risks (Next Periods)</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(246,78,96,.15);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
+    ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(80,205,137,.3)"><div class="card-t" style="color:var(--grn)">✓ Recommended Actions</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(80,205,137,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}`;
+}
+
+// Shared burndown-style health trend chart (actual solid + AI forecast dashed + healthy threshold)
+let trendCharts={};
+function renderTrendChart(canvasId){
+  const cv=document.getElementById(canvasId);if(!cv||!CP||!CP.trend_data||!CP.trend_data.length)return;
+  if(trendCharts[canvasId]){try{trendCharts[canvasId].destroy();}catch(e){}delete trendCharts[canvasId];}
+  const td=CP.trend_data.slice(-12);
+  const labels=td.map(w=>w.date);
+  const health=td.map(w=>w.health_score||0);
+  const last=td[td.length-1];
+  const fc=(last&&Array.isArray(last.forecast))?last.forecast:[];
+  const fcLabels=fc.map((f,i)=>f.label||('+'+(i+1)));
+  const allLabels=[...labels,...fcLabels];
+  const actualData=[...health,...fc.map(()=>null)];
+  const forecastData=[...health.map((h,i)=>i===health.length-1?h:null),...fc.map(f=>f.health_score!=null?f.health_score:null)];
+  const target=allLabels.map(()=>70);
+  trendCharts[canvasId]=new Chart(cv,{type:'line',data:{labels:allLabels,datasets:[
+    {label:'Health Score (Actual)',data:actualData,borderColor:'#7239ea',backgroundColor:'rgba(114,57,234,.07)',borderWidth:2.5,tension:.35,pointRadius:3,pointBackgroundColor:'#7239ea',fill:true,spanGaps:false},
+    {label:'AI Forecast',data:forecastData,borderColor:'#f64e60',borderWidth:2,borderDash:[6,4],tension:.35,pointRadius:3,pointBackgroundColor:'#f64e60',fill:false,spanGaps:true},
+    {label:'Healthy threshold',data:target,borderColor:'rgba(161,165,183,.7)',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false}
+  ]},options:{plugins:{legend:{position:'top',labels:{color:'#5e6278',font:{size:10},padding:8,boxWidth:14,usePointStyle:true}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.raw==null?'—':ctx.raw)}}},scales:{x:{ticks:{color:'#5e6278',font:{size:10}},grid:{display:false}},y:{min:0,max:100,ticks:{color:'#5e6278',font:{size:10},stepSize:20},grid:{color:'rgba(228,231,239,.6)'}}},layout:{padding:{top:2}}}});
 }
 
 // ═══ UPDATES ═══
