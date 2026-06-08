@@ -716,6 +716,11 @@ tr:hover td{background:rgba(114,57,234,.015);}
 .mobile-menu-btn{display:none;position:fixed;top:16px;left:16px;z-index:201;width:40px;height:40px;border-radius:12px;background:white;border:1px solid rgba(0,0,0,.08);box-shadow:var(--shadow);align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
 @media(max-width:768px){.mobile-menu-btn{display:flex;}}
 
+/* ═══ REGISTER TABLE COLUMN WIDTHS ═══ */
+.rt-reg{table-layout:fixed;width:100%;min-width:1366px;}
+.rt-reg td{white-space:normal;word-break:break-word;vertical-align:top;line-height:1.5;}
+.rt-reg th{vertical-align:bottom;}
+
 /* ═══ FORM REFINEMENTS ═══ */
 .modal-sub{font-size:12px;color:var(--t3);margin-bottom:18px;line-height:1.5;}
 .fl-hint{font-size:10.5px;color:var(--t3);margin-top:4px;line-height:1.4;}
@@ -3624,6 +3629,7 @@ function renderReg(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
   const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th>Status</th><th>Notes</th><th></th></tr>`;
+  const colg=`<colgroup><col style="width:52px"><col style="width:74px"><col style="width:88px"><col style="width:260px"><col style="width:54px"><col style="width:78px"><col style="width:78px"><col style="width:96px"><col style="width:240px"><col style="width:120px"><col style="width:120px"><col style="width:92px"><col style="width:130px"><col style="width:44px"></colgroup>`;
 
   const opt=(arr,sel,map)=>arr.map(v=>`<option value="${v}" ${sel===v?'selected':''}>${map?map(v):v}</option>`).join('');
   const filterBar=`
@@ -3660,8 +3666,8 @@ function renderReg(){
       <button class="btn btn-p" onclick="openAddRisk()" style="padding:9px 18px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Risk Manually</button>
     </div>
     ${filterBar}
-    ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
-    ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt"><thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
+    ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt rt-reg">${colg}<thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
+    ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt rt-reg">${colg}<thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
     ${!thr.length&&!opp.length?`<div class="empty"><div class="empty-icon">○</div><div class="et">No risks match the selected filters</div></div>`:''}
     <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
 }
