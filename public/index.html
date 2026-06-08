@@ -716,6 +716,47 @@ tr:hover td{background:rgba(114,57,234,.015);}
 .mobile-menu-btn{display:none;position:fixed;top:16px;left:16px;z-index:201;width:40px;height:40px;border-radius:12px;background:white;border:1px solid rgba(0,0,0,.08);box-shadow:var(--shadow);align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
 @media(max-width:768px){.mobile-menu-btn{display:flex;}}
 
+/* ═══════════ PREMIUM POLISH LAYER ═══════════ */
+:root{--ease:cubic-bezier(.4,0,.2,1);}
+/* Branded text selection */
+::selection{background:rgba(114,57,234,.18);color:var(--t1);}
+/* Premium custom scrollbars */
+*{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.16) transparent;}
+*::-webkit-scrollbar{width:10px;height:10px;}
+*::-webkit-scrollbar-track{background:transparent;}
+*::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:8px;border:2px solid transparent;background-clip:content-box;}
+*::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.26);background-clip:content-box;}
+/* Consistent, smooth easing across interactive controls */
+.btn,.tab,.fi,.fs,.fta,.kpi-card,.stat-card,.portfolio-card,.card,.bdg,.search-bar,select{transition:all .18s var(--ease);}
+/* Keyboard-accessible focus rings */
+.btn:focus-visible,.tab:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:8px;}
+/* Clear disabled state */
+.btn:disabled,.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+/* Content cards lift subtly on hover (matches KPI/stat cards) */
+.card{transition:box-shadow .18s var(--ease),transform .18s var(--ease);}
+.card:hover{box-shadow:var(--shadow-lg);}
+/* Tab hover affordance */
+.tab:not(.on):hover{background:rgba(0,0,0,.035);color:var(--t1);}
+/* Modal entrance animation */
+.modal-ov.on{animation:ovIn .2s var(--ease);}
+.modal-ov.on .modal{animation:modalIn .26s var(--ease);}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+/* Generic fade-in utility for dynamically rendered content */
+.fade-in{animation:fadeIn .28s var(--ease);}
+.pane.on{animation:fadeIn .28s var(--ease);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* Skeleton shimmer loader utility */
+.skeleton{position:relative;overflow:hidden;background:rgba(0,0,0,.06);border-radius:8px;}
+.skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.4s infinite;}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+/* Smoother table-row & nav hover */
+.rt tr td,table tr td{transition:background .12s var(--ease);}
+/* Respect reduced-motion preference (accessibility) */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+}
+
 </style>
 </head>
 <body>
@@ -2424,12 +2465,12 @@ async function renderPortfolio(pfId){
   const totalOpps=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='opportunity').length,0);
   const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='high').length,0);
   const totalValue=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
-  const totalExposure=list.reduce((s,p)=>{
-    const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
-    const h=projRisks[p.id].filter(r=>r.level==='high').length;
-    const m=projRisks[p.id].filter(r=>r.level==='medium').length;
-    return s+(v*0.05*h+v*0.02*m);
-  },0);
+  // Portfolio exposure = sum of each project's expected cost exposure (EMV: prob × cost-impact value, threats only)
+  const projCostExposure=(p)=>{
+    const rs=projRisks[p.id]||[];
+    return rs.filter(r=>r.type!=='opportunity'&&r.status!=='closed').reduce((s,r)=>s+(typeof rexValue==='function'?rexValue(r,'cost',p):0),0);
+  };
+  const totalExposure=list.reduce((s,p)=>s+projCostExposure(p),0);
   const analyzed=list.filter(p=>projRisks[p.id].length>0);
   const pending=list.filter(p=>projRisks[p.id].length===0);
 
@@ -2469,12 +2510,7 @@ async function renderPortfolio(pfId){
   });
   const topCauses=Object.values(causeFull).sort((a,b)=>b.count-a.count).slice(0,5).map(c=>[c.text,c.count]);
 
-  const exposureByProj=list.map(p=>{
-    const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
-    const h=projRisks[p.id].filter(r=>r.level==='high').length;
-    const m=projRisks[p.id].filter(r=>r.level==='medium').length;
-    return{name:p.name,exposure:Math.round(v*0.05*h+v*0.02*m)};
-  }).filter(p=>p.exposure>0).sort((a,b)=>b.exposure-a.exposure);
+  const exposureByProj=list.map(p=>({name:p.name,exposure:Math.round(projCostExposure(p))})).filter(p=>p.exposure>0).sort((a,b)=>b.exposure-a.exposure);
 
   const typeDist={};list.forEach(p=>{const t=p.type||'Other';typeDist[t]=(typeDist[t]||0)+1;});
 
@@ -3740,7 +3776,9 @@ function renderDash(){
   const opp=risks.filter(r=>r.type==='opportunity').length;
   const riskScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
   const val=parseFloat((CP.value||'0').replace(/[^0-9.]/g,''))||0;
-  const exposure=val>0?Math.round(val*0.05*high+val*0.02*med):null;
+  // Expected cost exposure (EMV): sum of probability × cost-impact value across THREATS only.
+  // Uses the same principled calc as Risk Exposure Analysis, so it stays realistic (a fraction of contract value).
+  const exposure=val>0?Math.round((risks.filter(r=>r.type!=='opportunity'&&r.status!=='closed').reduce((s,r)=>s+(typeof rexValue==='function'?rexValue(r,'cost'):0),0))):null;
 
   const cats={};
   risks.forEach(r=>{const c=CAT_AR[r.category]||r.category;cats[c]=(cats[c]||0)+1;});
@@ -4105,15 +4143,18 @@ function rexBandMid(text,isFirst,isLast){
   if(isFirst)return nums[0]/2;    // "Up to X" band
   return nums[0];
 }
-// Exposure magnitude (always positive) for a risk under a given dimension, in real units
-function rexValue(r,f){
+// Exposure magnitude (always positive) for a risk under a given dimension, in real units.
+// Optional `proj` lets portfolio code compute per-project exposure; defaults to current project CP.
+function rexValue(r,f,proj){
+  proj=proj||CP;
   const P=PROB_PCT[r.probability]||0;
-  const tl=CP?.tolerance||{};
+  const tl=(proj&&proj.tolerance)||{};
+  const cv=()=>{const n=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
   if(f==='cost'){
     const lv=r.impact_cost||0;if(!lv)return 0;
     const levels=tl.cost_levels||costLevels(tl.appetite||'moderate');
     const pct=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
-    return P*(pct/100)*rexContractValue();           // SAR
+    return P*(pct/100)*cv();                          // SAR
   }
   if(f==='schedule'){
     const lv=r.impact_schedule||0;if(!lv)return 0;
