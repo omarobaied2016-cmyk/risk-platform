@@ -718,7 +718,9 @@ tr:hover td{background:rgba(114,57,234,.015);}
 
 /* ═══ REGISTER TABLE COLUMN WIDTHS ═══ */
 .rt-reg{table-layout:fixed;width:100%;min-width:1366px;}
-.rt-reg td{white-space:normal;word-break:break-word;vertical-align:top;line-height:1.5;}
+.rt-reg td{vertical-align:top;line-height:1.5;white-space:nowrap;}
+/* Description, Risk Response, and Owner columns wrap to multiple lines; the rest stay on one line */
+.rt-reg td:nth-child(4),.rt-reg td:nth-child(9),.rt-reg td:nth-child(10),.rt-reg td:nth-child(11){white-space:normal;word-break:normal;overflow-wrap:break-word;}
 .rt-reg th{vertical-align:bottom;}
 
 /* ═══ FORM REFINEMENTS ═══ */
@@ -3629,7 +3631,7 @@ function renderReg(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
   const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th>Status</th><th>Notes</th><th></th></tr>`;
-  const colg=`<colgroup><col style="width:52px"><col style="width:74px"><col style="width:88px"><col style="width:260px"><col style="width:54px"><col style="width:78px"><col style="width:78px"><col style="width:96px"><col style="width:240px"><col style="width:120px"><col style="width:120px"><col style="width:92px"><col style="width:130px"><col style="width:44px"></colgroup>`;
+  const colg=`<colgroup><col style="width:56px"><col style="width:84px"><col style="width:104px"><col style="width:250px"><col style="width:58px"><col style="width:82px"><col style="width:92px"><col style="width:104px"><col style="width:230px"><col style="width:124px"><col style="width:124px"><col style="width:104px"><col style="width:130px"><col style="width:46px"></colgroup>`;
 
   const opt=(arr,sel,map)=>arr.map(v=>`<option value="${v}" ${sel===v?'selected':''}>${map?map(v):v}</option>`).join('');
   const filterBar=`
