@@ -722,6 +722,12 @@ tr:hover td{background:rgba(114,57,234,.015);}
 /* Description, Risk Response, and Owner columns wrap to multiple lines; the rest stay on one line */
 .rt-reg td:nth-child(4),.rt-reg td:nth-child(9),.rt-reg td:nth-child(10),.rt-reg td:nth-child(11){white-space:normal;word-break:normal;overflow-wrap:break-word;}
 .rt-reg th{vertical-align:bottom;}
+/* Expandable detail row */
+.rrow:hover>td{background:rgba(114,57,234,.035);}
+.rrow.row-open>td{background:rgba(114,57,234,.06);}
+.rchev{transition:transform .18s var(--ease);}
+.rrow.row-open .rchev{transform:rotate(90deg);}
+.rdet td{white-space:normal;}
 
 /* ═══ FORM REFINEMENTS ═══ */
 .modal-sub{font-size:12px;color:var(--t3);margin-bottom:18px;line-height:1.5;}
@@ -3469,6 +3475,7 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
    OPPORTUNITIES: Exploit (make the root source certain to happen) / Enhance (increase probability or benefit of the source) / Share (partner to capture the benefit) / Accept (take it if it comes) / Escalate (raise to higher authority)
 4. The RESPONSE PLAN must be CONSISTENT with the chosen strategy AND target the root cause (threats) or root source/enabler (opportunities). E.g. Exploit = how to guarantee the enabler; Enhance = how to amplify the source; Transfer = to whom; Accept = the contingency.
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
+6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — Site Constraints section: variable ground conditions in southeast", or "Schedule — activity A6000 Piling & foundations"). If a risk is inferred from general construction knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words.
 
 TIMING CLASSIFICATION (critical for early warning):
 - "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. foundation pouring, excavation, steel erection, testing, commissioning) that occurs at a defined point in the timeline. Use "ongoing" for continuous/market risks with no single date (e.g. price inflation, labor shortage, currency fluctuation, regulatory climate).
@@ -3476,7 +3483,7 @@ TIMING CLASSIFICATION (critical for early warning):
 - "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","activity_ref":"Foundation Excavation Zone A","timing_type":"scheduled","expected_date":"2026-09-12"}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","activity_ref":"Foundation Excavation Zone A","timing_type":"scheduled","expected_date":"2026-09-12","source":"Scope of Work — Site Constraints: variable ground conditions in southeast"}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -3516,6 +3523,7 @@ function renderValList(risks){
           </div>
           <div style="font-size:12.5px;font-weight:500;margin-bottom:2px;color:var(--t1)">${r.description}</div>
           <div style="font-size:11px;color:var(--t3)">${r.cause||''}</div>
+          ${r.source?`<div style="font-size:10.5px;color:var(--primary);margin-top:5px;display:flex;align-items:start;gap:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span><b>Source:</b> ${r.source}</span></div>`:''}
         </div>
         <div class="vca">
           <button class="btn btn-ok" style="padding:3px 9px;font-size:11px" onclick="appR(${i})">✓</button>
@@ -3534,13 +3542,22 @@ function renderValList(risks){
 function appR(i){PR[i]._a=true;renderValList(PR);}
 function rejR(i){PR[i]._a=false;renderValList(PR);}
 function approveAll(){PR.forEach(r=>r._a=true);renderValList(PR);}
+function toggleRiskDetail(tr){
+  const det=tr.nextElementSibling;
+  if(det&&det.classList.contains('rdet')){
+    const open=det.style.display!=='none';
+    det.style.display=open?'none':'table-row';
+    tr.classList.toggle('row-open',!open);
+  }
+}
+
 async function confirmVal(){
   const app=PR.filter(r=>r._a!==false);
   if(!app.length){alert('Approve at least one risk');return;}
   showLoad('Saving...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
-    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null}));
+    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null,source:r.source||''}));
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
@@ -3602,12 +3619,14 @@ function renderReg(){
   const hasFilter=regFilters.category||regFilters.level||regFilters.response;
 
   const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const fdate=v=>{if(!v)return '—';const d=new Date(v);return isNaN(d)?'—':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});};
+  const detField=(label,val)=>`<div style="min-width:0"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;margin-bottom:3px">${label}</div><div style="font-size:11.5px;color:var(--t1);line-height:1.5;word-break:break-word">${val||'—'}</div></div>`;
   const buildRows=arr=>arr.map(r=>`
-    <tr class="${r.type==='opportunity'?'opp':'thr'}">
-      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></td>
+    <tr class="${r.type==='opportunity'?'opp':'thr'} rrow" onclick="toggleRiskDetail(this)" style="cursor:pointer">
+      <td><span style="display:inline-flex;align-items:center;gap:4px"><svg class="rchev" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></span></td>
       <td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'opportunity':'threat'}</span></td>
       <td><span class="cb">${CAT_AR[r.category]||r.category}</span></td>
-      <td><div style="font-size:12px;max-width:200px;color:var(--t1)">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
+      <td><div style="font-size:12px;color:var(--t1)">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
       <td style="text-align:center"><b style="font-size:13px">${r.probability}</b></td>
       <td><div class="ic">
         <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">C</span><div class="ib"><div class="ibf" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_cost}</span></div>
@@ -3619,15 +3638,38 @@ function renderReg(){
       <td><div style="font-size:11px;color:var(--t2);max-width:160px;line-height:1.5">${r.mitigation}</div></td>
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.response_owner||'—'}</td>
-      <td>
+      <td onclick="event.stopPropagation()">
         <select onchange="changeRiskStatus('${r.id}',this.value)" style="font-size:10.5px;padding:3px 6px;border-radius:6px;border:1px solid var(--b1);background:${r.status==='closed'?'var(--grn-soft)':'var(--s1)'};color:var(--t1);cursor:pointer">
           <option value="open" ${r.status!=='closed'?'selected':''}>Open</option>
           <option value="closed" ${r.status==='closed'?'selected':''}>Closed</option>
         </select>
       </td>
-      <td><textarea onblur="updateRiskNotes('${r.id}',this.value)" placeholder="Add notes..." style="font-size:11px;color:var(--t2);width:140px;min-height:38px;border:1px solid var(--b1);border-radius:6px;padding:5px 7px;font-family:inherit;resize:vertical;background:var(--s1);outline:none">${r.notes||''}</textarea></td>
-      <td><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">Edit</button></td>
-    </tr>`).join('');
+      <td onclick="event.stopPropagation()"><textarea onblur="updateRiskNotes('${r.id}',this.value)" placeholder="Add notes..." style="font-size:11px;color:var(--t2);width:140px;min-height:38px;border:1px solid var(--b1);border-radius:6px;padding:5px 7px;font-family:inherit;resize:vertical;background:var(--s1);outline:none">${r.notes||''}</textarea></td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">Edit</button></td>
+    </tr>
+    <tr class="rdet" style="display:none"><td colspan="14" style="background:var(--s2);border-bottom:2px solid var(--b1);padding:0">
+      <div style="padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span style="font-size:12px;font-weight:700;color:var(--primary)">Source & Traceability</span>
+        </div>
+        <div style="background:var(--primary-soft);border:1px solid rgba(114,57,234,.18);border-radius:8px;padding:11px 13px;margin-bottom:14px;font-size:12px;color:var(--t1);line-height:1.6">${r.source?r.source:'<span style="color:var(--t3)">No source recorded (added manually or via AI Risk Manager).</span>'}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">
+          ${detField('Approved / Added',fdate(r.created_at))}
+          ${detField('Status',r.status==='closed'?('Closed · '+fdate(r.closed_at)):'Open')}
+          ${detField('Timing',r.timing_type==='ongoing'?'Ongoing':'Scheduled')}
+          ${detField('Linked Activity',r.activity_ref)}
+          ${detField('Expected Date',fdate(r.expected_date))}
+          ${detField('Probability',(PL[r.probability]||r.probability)+' ('+r.probability+'/5)')}
+          ${detField('Cost Impact',(IL[r.impact_cost]||r.impact_cost)+' ('+(r.impact_cost||0)+'/5)')}
+          ${detField('Schedule Impact',(IL[r.impact_schedule]||r.impact_schedule)+' ('+(r.impact_schedule||0)+'/5)')}
+          ${detField('QHSE Impact',(IL[r.impact_qhse]||r.impact_qhse)+' ('+(r.impact_qhse||0)+'/5)')}
+          ${detField('Reputation Impact',(IL[r.impact_reputation]||r.impact_reputation)+' ('+(r.impact_reputation||0)+'/5)')}
+          ${detField('Root Cause',r.cause)}
+          ${detField('Response Plan',r.mitigation)}
+        </div>
+      </div>
+    </td></tr>`).join('');
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
   const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th>Status</th><th>Notes</th><th></th></tr>`;
