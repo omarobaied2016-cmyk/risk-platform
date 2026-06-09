@@ -719,6 +719,14 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .mobile-menu-btn{display:none;position:fixed;top:16px;left:16px;z-index:201;width:40px;height:40px;border-radius:12px;background:white;border:1px solid rgba(0,0,0,.08);box-shadow:var(--shadow);align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
 @media(max-width:768px){.mobile-menu-btn{display:flex;}}
 
+/* ═══ TODAY'S TASKS ═══ */
+.tt-list{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto;}
+.tt-item{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--b1);border-radius:11px;cursor:pointer;transition:all .16s var(--ease);background:var(--s1);}
+.tt-item:hover{border-color:var(--primary);background:var(--primary-soft);transform:translateX(2px);}
+.tt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tt-title{font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tt-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+
 /* ═══ REGISTER TABLE COLUMN WIDTHS ═══ */
 .rt-reg{table-layout:fixed;width:100%;min-width:1366px;}
 .rt-reg td{vertical-align:top;line-height:1.5;white-space:nowrap;}
@@ -1286,6 +1294,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <input type="text" placeholder="Search projects and portfolios..." id="searchInput" oninput="filterAll(this.value)"/>
         </div>
         <div class="top-actions">
+          <button class="btn btn-g" onclick="showTodayTasks(true)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Today's Tasks</button>
           <button class="btn btn-g" onclick="openPortfModal()">+ Portfolio</button>
           <button class="btn btn-p" onclick="openProjModal()">+ Project</button>
         </div>
@@ -2221,6 +2230,7 @@ async function loadAll(){
     }
     renderSidebar();
     renderHome();
+    setTimeout(maybeShowTodayTasks,700);
   }catch(e){console.error(e);}
 }
 
@@ -2411,6 +2421,76 @@ function renderHome(){
       </div>
     `:''}
   `;
+}
+
+// ═══ TODAY'S TASKS (daily briefing) ═══
+function buildTodayTasks(){
+  const today=new Date();today.setHours(0,0,0,0);const day=86400000;
+  const tasks=[];
+  (projs||[]).forEach(p=>{
+    const rs=(allRisks||[]).filter(r=>r.project_id===p.id);
+    if(!rs.length){tasks.push({pr:5,icon:'📄',color:'#6D8196',title:'Generate risk register',sub:p.name,projId:p.id,tab:'files'});return;}
+    const open=rs.filter(r=>r.status!=='closed'&&(r.type==='threat'||!r.type));
+    let overdue=0,soon=0;
+    open.forEach(r=>{
+      if(r.timing_type!=='ongoing'&&r.expected_date&&!isNaN(new Date(r.expected_date))){
+        const dt=new Date(r.expected_date);dt.setHours(0,0,0,0);
+        const d=Math.round((dt-today)/day);
+        if(d<0)overdue++;else if(d<=7)soon++;
+      }
+    });
+    if(overdue)tasks.push({pr:1,icon:'⏰',color:'#f64e60',title:`${overdue} overdue risk${overdue>1?'s':''}`,sub:p.name,projId:p.id,tab:'warn'});
+    if(soon)tasks.push({pr:2,icon:'📅',color:'#ffa800',title:`${soon} risk${soon>1?'s':''} due within 7 days`,sub:p.name,projId:p.id,tab:'warn'});
+    const noPlan=open.filter(r=>r.level==='high'&&(!r.mitigation||r.mitigation.trim().length<10)).length;
+    if(noPlan)tasks.push({pr:3,icon:'⚠️',color:'#f64e60',title:`${noPlan} high risk${noPlan>1?'s':''} without a response plan`,sub:p.name,projId:p.id,tab:'reg'});
+    const noOwner=open.filter(r=>r.level==='high'&&(!r.owner||r.owner.trim()===''||r.owner.trim()==='—')).length;
+    if(noOwner)tasks.push({pr:4,icon:'👤',color:'#a16207',title:`${noOwner} high risk${noOwner>1?'s':''} without an owner`,sub:p.name,projId:p.id,tab:'reg'});
+    const td=p.trend_data||[];
+    if(td.length>=2&&(td[td.length-1].health_score||0)<(td[td.length-2].health_score||0))
+      tasks.push({pr:4,icon:'📉',color:'#f64e60',title:`Health declining (${td[td.length-1].health_score}/100)`,sub:p.name,projId:p.id,tab:'upd'});
+  });
+  tasks.sort((a,b)=>a.pr-b.pr);
+  return tasks.slice(0,10);
+}
+function showTodayTasks(force){
+  document.getElementById('ttModal')?.remove();
+  const tasks=buildTodayTasks();
+  const dateStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const name=(currentUserProfile?.full_name||'').split(' ')[0]||'there';
+  const body=tasks.length?tasks.map(t=>`
+    <div class="tt-item" onclick="ttGo('${t.projId}','${t.tab}')">
+      <div class="tt-ic" style="background:${t.color}1f;color:${t.color}">${t.icon}</div>
+      <div style="flex:1;min-width:0"><div class="tt-title">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`).join('')
+    :`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No urgent tasks across your projects today.</div></div>`;
+  const html=`<div class="modal-ov on" id="ttModal" onclick="if(event.target===this)closeTodayTasks()">
+    <div class="modal" style="max-width:460px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.02em">Today's Tasks</div>
+          <div style="font-size:12px;color:var(--t3)">${dateStr}</div>
+        </div>
+        ${tasks.length?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${tasks.length}</span>`:''}
+      </div>
+      <div style="font-size:12.5px;color:var(--t2);margin:8px 0 16px">${tasks.length?`Good morning, ${name}. Here's what needs your attention across your projects:`:`Good morning, ${name}.`}</div>
+      <div class="tt-list">${body}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-p" onclick="closeTodayTasks()">Got it</button></div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function closeTodayTasks(){document.getElementById('ttModal')?.remove();}
+function ttGo(projId,tab){closeTodayTasks();selectProj(projId);setTimeout(()=>{try{ST(tab);}catch(e){}},450);}
+function maybeShowTodayTasks(){
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    if(localStorage.getItem('tt_lastShown')===today)return;
+    const tasks=buildTodayTasks();
+    if(!tasks.length)return;
+    localStorage.setItem('tt_lastShown',today);
+    showTodayTasks();
+  }catch(e){}
 }
 
 function filterAll(q){
