@@ -726,6 +726,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .tt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .tt-title{font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tt-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+.tt-chk{width:18px;height:18px;flex-shrink:0;accent-color:var(--primary);cursor:pointer;}
 
 /* ═══ REGISTER TABLE COLUMN WIDTHS ═══ */
 .rt-reg{table-layout:fixed;width:100%;min-width:1366px;}
@@ -2426,62 +2427,122 @@ function renderHome(){
 // ═══ TODAY'S TASKS (daily briefing) ═══
 function buildTodayTasks(){
   const today=new Date();today.setHours(0,0,0,0);const day=86400000;
-  const tasks=[];
+  const items=[];
   (projs||[]).forEach(p=>{
     const rs=(allRisks||[]).filter(r=>r.project_id===p.id);
-    if(!rs.length){tasks.push({pr:5,icon:'📄',color:'#6D8196',title:'Generate risk register',sub:p.name,projId:p.id,tab:'files'});return;}
-    const open=rs.filter(r=>r.status!=='closed'&&(r.type==='threat'||!r.type));
-    let overdue=0,soon=0;
-    open.forEach(r=>{
-      if(r.timing_type!=='ongoing'&&r.expected_date&&!isNaN(new Date(r.expected_date))){
-        const dt=new Date(r.expected_date);dt.setHours(0,0,0,0);
-        const d=Math.round((dt-today)/day);
-        if(d<0)overdue++;else if(d<=7)soon++;
+    if(!rs.length){items.push({kind:'nav',pr:7,icon:'📄',color:'#6D8196',title:'Generate risk register',sub:p.name,projId:p.id,tab:'files'});return;}
+    const plan=p.action_plan;
+    if(!plan||!Array.isArray(plan.actions)||!plan.actions.length){
+      items.push({kind:'genplan',pr:6,icon:'✨',color:'#6D8196',title:'Create your AI action plan',sub:p.name,projId:p.id});
+      return;
+    }
+    plan.actions.forEach(a=>{
+      if(a.status==='done')return;
+      let d=999;
+      if(a.due_date&&!isNaN(new Date(a.due_date))){const dt=new Date(a.due_date);dt.setHours(0,0,0,0);d=Math.round((dt-today)/day);}
+      if(d<=7){
+        const overdue=d<0;
+        const col=overdue?'#f64e60':(a.priority===1?'#f64e60':a.priority===2?'#ffa800':'#6D8196');
+        items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id});
       }
     });
-    if(overdue)tasks.push({pr:1,icon:'⏰',color:'#f64e60',title:`${overdue} overdue risk${overdue>1?'s':''}`,sub:p.name,projId:p.id,tab:'warn'});
-    if(soon)tasks.push({pr:2,icon:'📅',color:'#ffa800',title:`${soon} risk${soon>1?'s':''} due within 7 days`,sub:p.name,projId:p.id,tab:'warn'});
-    const noPlan=open.filter(r=>r.level==='high'&&(!r.mitigation||r.mitigation.trim().length<10)).length;
-    if(noPlan)tasks.push({pr:3,icon:'⚠️',color:'#f64e60',title:`${noPlan} high risk${noPlan>1?'s':''} without a response plan`,sub:p.name,projId:p.id,tab:'reg'});
-    const noOwner=open.filter(r=>r.level==='high'&&(!r.owner||r.owner.trim()===''||r.owner.trim()==='—')).length;
-    if(noOwner)tasks.push({pr:4,icon:'👤',color:'#a16207',title:`${noOwner} high risk${noOwner>1?'s':''} without an owner`,sub:p.name,projId:p.id,tab:'reg'});
-    const td=p.trend_data||[];
-    if(td.length>=2&&(td[td.length-1].health_score||0)<(td[td.length-2].health_score||0))
-      tasks.push({pr:4,icon:'📉',color:'#f64e60',title:`Health declining (${td[td.length-1].health_score}/100)`,sub:p.name,projId:p.id,tab:'upd'});
   });
-  tasks.sort((a,b)=>a.pr-b.pr);
-  return tasks.slice(0,10);
+  items.sort((x,y)=>x.pr-y.pr);
+  return items.slice(0,12);
 }
 function showTodayTasks(force){
   document.getElementById('ttModal')?.remove();
   const tasks=buildTodayTasks();
   const dateStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const name=(currentUserProfile?.full_name||'').split(' ')[0]||'there';
-  const body=tasks.length?tasks.map(t=>`
+  const actionCount=tasks.filter(t=>t.kind==='action').length;
+  const overdueCount=tasks.filter(t=>t.kind==='action'&&/overdue/.test(t.sub)).length;
+  const needPlan=tasks.some(t=>t.kind==='genplan');
+  let brief;
+  if(actionCount)brief=`Good morning, ${name}. You have <b>${actionCount} action${actionCount>1?'s':''}</b> to tackle${overdueCount?` (<b style="color:var(--red)">${overdueCount} overdue</b>)`:''}. Start with the red high-priority items — they cut your risk exposure fastest.`;
+  else if(needPlan)brief=`Good morning, ${name}. Generate your AI action plan to get a daily to-do that keeps your risks on track through to project completion.`;
+  else brief=`Good morning, ${name}.`;
+  const rowAction=t=>`
+    <div class="tt-item" onclick="ttGo('${t.projId}','reg')">
+      <input type="checkbox" class="tt-chk" onclick="event.stopPropagation()" onchange="toggleActionDone('${t.projId}','${t.actionId}',this.checked)"/>
+      <span style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0"></span>
+      <div style="flex:1;min-width:0"><div class="tt-title">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
+    </div>`;
+  const rowGen=t=>`
+    <div class="tt-item" style="cursor:default">
+      <div class="tt-ic" style="background:#6D81961f;color:#6D8196">✨</div>
+      <div style="flex:1;min-width:0"><div class="tt-title">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
+      <button class="btn btn-p" style="padding:5px 12px;font-size:11px;white-space:nowrap" onclick="event.stopPropagation();generateActionPlan('${t.projId}')">Generate</button>
+    </div>`;
+  const rowNav=t=>`
     <div class="tt-item" onclick="ttGo('${t.projId}','${t.tab}')">
       <div class="tt-ic" style="background:${t.color}1f;color:${t.color}">${t.icon}</div>
       <div style="flex:1;min-width:0"><div class="tt-title">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>`).join('')
-    :`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No urgent tasks across your projects today.</div></div>`;
+    </div>`;
+  const body=tasks.length?tasks.map(t=>t.kind==='action'?rowAction(t):t.kind==='genplan'?rowGen(t):rowNav(t)).join('')
+    :`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No actions due across your projects today.</div></div>`;
   const html=`<div class="modal-ov on" id="ttModal" onclick="if(event.target===this)closeTodayTasks()">
-    <div class="modal" style="max-width:460px">
+    <div class="modal" style="max-width:470px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div>
           <div style="font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.02em">Today's Tasks</div>
           <div style="font-size:12px;color:var(--t3)">${dateStr}</div>
         </div>
-        ${tasks.length?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${tasks.length}</span>`:''}
+        ${actionCount?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${actionCount}</span>`:''}
       </div>
-      <div style="font-size:12.5px;color:var(--t2);margin:8px 0 16px">${tasks.length?`Good morning, ${name}. Here's what needs your attention across your projects:`:`Good morning, ${name}.`}</div>
+      <div style="font-size:12.5px;color:var(--t2);margin:8px 0 16px;line-height:1.55">${brief}</div>
       <div class="tt-list">${body}</div>
-      <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-p" onclick="closeTodayTasks()">Got it</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+        <span style="font-size:11px;color:var(--t3)">Adjust your plan anytime via the AI Risk Manager.</span>
+        <button class="btn btn-p" onclick="closeTodayTasks()">Got it</button>
+      </div>
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
 }
 function closeTodayTasks(){document.getElementById('ttModal')?.remove();}
 function ttGo(projId,tab){closeTodayTasks();selectProj(projId);setTimeout(()=>{try{ST(tab);}catch(e){}},450);}
+
+async function generateActionPlan(projId){
+  const p=(projs||[]).find(x=>x.id===projId);if(!p)return;
+  const rs=(allRisks||[]).filter(r=>r.project_id===projId&&r.status!=='closed');
+  if(!rs.length){alert('No risks to plan yet. Generate the risk register first.');return;}
+  showLoad('Building your AI action plan...');
+  const todayISO=new Date().toISOString().slice(0,10);
+  const list=rs.map(r=>`${r.risk_id} [${r.level}|${r.type||'threat'}] ${r.description} | Response plan: ${r.mitigation||'—'} | Expected: ${r.expected_date||'ongoing'} | Owner: ${r.response_owner||r.owner||'—'}`).join('\n');
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3800,messages:[{role:'user',content:`You are a construction risk-management copilot. Today is ${todayISO}. For the project "${p.name}", turn each risk's response plan into concrete, scheduled ACTION ITEMS the manager should complete to mitigate the risk BEFORE it occurs. If the manager follows every action by its due date, the risks will be well managed by project end.
+
+Rules:
+- Break each risk's plan into 1-3 specific actions (start with a verb: Order, Inspect, Coordinate, Submit, Review, Secure, Pre-qualify...).
+- Each action's due_date MUST be on or after ${todayISO} and scheduled BEFORE the risk's expected date, leaving enough lead time to act. For ongoing risks or risks with no date, spread actions over the coming weeks starting from today.
+- priority: 1 = high/urgent (high risks or near-term), 2 = medium, 3 = low.
+- Action titles under 12 words. Output in English.
+- Front-load high-severity and high-exposure risks.
+
+Risks:\n${list}
+
+Respond ONLY with valid JSON:
+{"brief":"2-sentence summary of the focus for this project","actions":[{"risk_id":"R001","title":"Order long-lead steel and confirm delivery schedule","due_date":"2026-07-15","priority":1}]}`}]});
+    hideLoad();
+    if(data.error){alert('Error: '+data.error.message);return;}
+    let parsed;try{parsed=pJSON(data.content[0].text);}catch(e){alert('Could not build the plan. Please try again.');return;}
+    const actions=(parsed.actions||[]).map((a,i)=>({id:'ap'+Date.now().toString(36)+i,risk_id:a.risk_id||'',title:a.title||'',due_date:a.due_date||'',priority:a.priority||2,status:'todo'}));
+    const plan={generated_at:new Date().toISOString(),brief:parsed.brief||'',actions};
+    p.action_plan=plan;
+    try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:plan});}
+    catch(e){console.error('save action_plan',e);alert('Plan built but could NOT save. Ensure the projects table has an "action_plan" jsonb column.');}
+    showTodayTasks(true);
+  }catch(e){hideLoad();alert('Error: '+e.message);}
+}
+async function toggleActionDone(projId,actionId,checked){
+  const p=(projs||[]).find(x=>x.id===projId);if(!p||!p.action_plan)return;
+  const a=p.action_plan.actions.find(x=>x.id===actionId);if(!a)return;
+  a.status=checked?'done':'todo';
+  try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
+  showTodayTasks(true);
+}
 function maybeShowTodayTasks(){
   try{
     const today=new Date().toISOString().slice(0,10);
