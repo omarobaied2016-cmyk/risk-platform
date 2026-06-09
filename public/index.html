@@ -204,7 +204,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 
 /* ═══ TABS ═══ */
 .tabs{display:flex;gap:3px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:4px;margin-bottom:18px;flex-wrap:wrap;box-shadow:var(--shadow-sm);}
-.tab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;border-radius:var(--r-sm);transition:all .15s;}
+.tab{padding:8px 14px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;border-radius:var(--r-sm);transition:all .15s;}
 .tab:hover{color:var(--t1);background:var(--s3);}
 .tab.on{background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);color:white;box-shadow:0 2px 8px rgba(109,129,150,.3);}
 .pane{display:none;}
@@ -645,8 +645,11 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .fi,.fs,.fta{border-radius:10px;padding:10px 14px;font-size:13.5px;border:1px solid rgba(0,0,0,.1);}
 .fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(109,129,150,.08);}
 .tabs{border-radius:12px;padding:5px;gap:2px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.02);}
-.tab{padding:9px 16px;font-size:13px;border-radius:10px;}
-.tab.on{box-shadow:var(--shadow);background:white;color:var(--primary);}
+.tab{padding:9px 16px;font-size:13px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;color:var(--t2);}
+.tab svg{stroke:var(--t3);transition:stroke .15s;}
+.tab:not(.on):hover{background:rgba(109,129,150,.08);color:var(--primary);}
+.tab:not(.on):hover svg{stroke:var(--primary);}
+.tab.on{box-shadow:var(--shadow);background:white;color:var(--primary);font-weight:700;}
 .tab.on svg{stroke:var(--primary);}
 .ph{border-radius:16px;padding:20px 22px;border:1px solid rgba(0,0,0,.06);box-shadow:var(--shadow);}
 .ph-n{font-size:20px;font-weight:800;letter-spacing:-.02em;}
@@ -787,7 +790,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .card{transition:box-shadow .18s var(--ease),transform .18s var(--ease);}
 .card:hover{box-shadow:var(--shadow-lg);}
 /* Tab hover affordance */
-.tab:not(.on):hover{background:rgba(0,0,0,.035);color:var(--t1);}
+.tab:not(.on):hover{background:rgba(109,129,150,.08);color:var(--primary);}
+.tab:not(.on):hover svg{stroke:var(--primary);}
 /* Modal entrance animation */
 .modal-ov.on{animation:ovIn .2s var(--ease);}
 .modal-ov.on .modal{animation:modalIn .26s var(--ease);}
