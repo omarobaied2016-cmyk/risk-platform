@@ -849,7 +849,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
       </div>
       <div class="auth-feat">
         <div class="auth-feat-icon">🌍</div>
-        <div class="auth-feat-text"><b>Market Intelligence</b><br>Stay informed with real-time construction and economic insights</div>
+        <div class="auth-feat-text"><b>Market Intelligence</b><br>Stay informed with real-time industry and economic insights</div>
       </div>
     </div>
   </div>
@@ -1154,6 +1154,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
       <div class="fg"><label class="fl">Currency</label><select class="fs" id="np_cur"><option value="USD">USD ($)</option><option value="SAR">SAR (ر.س)</option><option value="AED">AED (د.إ)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="EGP">EGP</option><option value="KWD">KWD</option><option value="QAR">QAR</option><option value="OMR">OMR</option><option value="BHD">BHD</option><option value="JOD">JOD</option><option value="Other">Other</option></select><div class="fl-hint">Auto-detected from your documents on analysis</div></div>
       <div class="fg"><label class="fl">Project Type</label>
         <select class="fs" id="np_t">
+          <optgroup label="Construction & Infrastructure">
           <option value="Residential">Residential</option>
           <option value="Commercial">Commercial</option>
           <option value="Mixed-Use">Mixed-Use</option>
@@ -1167,8 +1168,30 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <option value="Marine">Marine</option>
           <option value="MEP">MEP</option>
           <option value="Renovation">Renovation</option>
+          </optgroup>
+          <optgroup label="Energy & Industrial">
+          <option value="Oil & Gas">Oil & Gas</option>
+          <option value="Energy & Power">Energy & Power</option>
+          <option value="Renewables">Renewables</option>
+          <option value="Manufacturing">Manufacturing</option>
+          <option value="Mining">Mining</option>
+          </optgroup>
+          <optgroup label="Technology & Business">
+          <option value="IT & Software">IT & Software</option>
+          <option value="Telecom">Telecom</option>
+          <option value="Product Development">Product Development</option>
+          <option value="Research & Development">Research & Development</option>
+          <option value="Consulting">Consulting</option>
+          <option value="Financial Services">Financial Services</option>
+          </optgroup>
+          <optgroup label="Other Sectors">
           <option value="Government">Government</option>
+          <option value="Defense">Defense</option>
+          <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+          <option value="Events">Events</option>
+          <option value="Manufacturing & Production">Manufacturing & Production</option>
           <option value="Other">Other</option>
+          </optgroup>
         </select>
       </div>
       <div class="fg"><label class="fl">Start Date</label><input type="date" class="fi" id="np_s"/></div>
@@ -2600,7 +2623,7 @@ async function generateActionPlan(projId,noPopup){
   const todayISO=new Date().toISOString().slice(0,10);
   const list=rs.map(r=>`${r.risk_id} [${r.level}|${r.type||'threat'}] ${r.description} | Response plan: ${r.mitigation||'—'} | Expected: ${r.expected_date||'ongoing'} | Owner: ${r.response_owner||r.owner||'—'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3800,messages:[{role:'user',content:`You are a construction risk-management copilot. Today is ${todayISO}. For the project "${p.name}", turn each risk's response plan into concrete, scheduled ACTION ITEMS the manager should complete to mitigate the risk BEFORE it occurs. If the manager follows every action by its due date, the risks will be well managed by project end.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3800,messages:[{role:'user',content:`You are a project risk-management copilot. Today is ${todayISO}. For the project "${p.name}", turn each risk's response plan into concrete, scheduled ACTION ITEMS the manager should complete to mitigate the risk BEFORE it occurs. If the manager follows every action by its due date, the risks will be well managed by project end.
 
 Rules:
 - Break each risk's plan into 1-3 specific actions (start with a verb: Order, Inspect, Coordinate, Submit, Review, Secure, Pre-qualify...).
@@ -3133,7 +3156,7 @@ async function generatePortfolioReport(){
   const topRisks=allRisks.filter(r=>r.level==='high'&&list.some(p=>p.id===r.project_id)).slice(0,15).map(r=>{const proj=list.find(p=>p.id===r.project_id);return `[${proj?.name||'?'}] ${r.description} — ${r.category}`;}).join('\n');
   
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction portfolio risk manager. Provide a comprehensive portfolio report in English in JSON format only.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior portfolio risk manager. Provide a comprehensive portfolio report in English in JSON format only.
 
 Portfolio: ${currentPF.name}
 ${currentPF.description?'Description: '+currentPF.description:''}
@@ -3387,7 +3410,7 @@ async function generateLessonsLearned(){
   showLoad('Analyzing closed risks...');
   const ctx=closed.map(r=>`Risk: ${r.description} | Category: ${r.category} | Level: ${r.level} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation} | Closure Notes: ${r.notes||'none'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a senior risk manager analyzing closed risks from a construction project to extract lessons learned. Project: ${CP.name} (${CP.type}).
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a senior risk manager analyzing closed risks from a project to extract lessons learned. Project: ${CP.name} (${CP.type}).
 
 CLOSED RISKS:
 ${ctx}
@@ -3699,7 +3722,7 @@ Cost levels: ${(tl.cost_levels||costLevels(appetite)).map(l=>l.l+'='+l.d).join('
 Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).join('; ')}
 ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
-  const parts=[{type:'text',text:`Senior construction risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
+  const parts=[{type:'text',text:`Senior project risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Project Start Date: ${CP.start_date||'unknown'} | Project End Date: ${CP.end_date||'unknown'} | Today: ${new Date().toISOString().slice(0,10)}
 Description: ${CP.description||'—'}
@@ -3722,15 +3745,15 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
    OPPORTUNITIES: Exploit (make the root source certain to happen) / Enhance (increase probability or benefit of the source) / Share (partner to capture the benefit) / Accept (take it if it comes) / Escalate (raise to higher authority)
 4. The RESPONSE PLAN must be CONSISTENT with the chosen strategy AND target the root cause (threats) or root source/enabler (opportunities). E.g. Exploit = how to guarantee the enabler; Enhance = how to amplify the source; Transfer = to whom; Accept = the contingency.
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
-6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — Site Constraints section: variable ground conditions in southeast", or "Schedule — activity A6000 Piling & foundations"). If a risk is inferred from general construction knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words.
+6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — section X: specific stated constraint", or "Schedule — a specific activity or work package"). If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words.
 
 TIMING CLASSIFICATION (critical for early warning):
-- "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. foundation pouring, excavation, steel erection, testing, commissioning) that occurs at a defined point in the timeline. Use "ongoing" for continuous/market risks with no single date (e.g. price inflation, labor shortage, currency fluctuation, regulatory climate).
+- "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. a key milestone, delivery, installation, test, or commissioning) that occurs at a defined point in the timeline (e.g. a delivery, installation, milestone, test, or commissioning). Use "ongoing" for continuous risks with no single date (e.g. price inflation, staffing shortage, currency fluctuation, regulatory climate).
 - "activity_ref": for scheduled risks, name the specific schedule activity it is linked to (from the uploaded schedule if available). Empty for ongoing risks.
 - "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"Foundation Excavation Zone A","timing_type":"scheduled","expected_date":"2026-09-12","source":"Scope of Work — Site Constraints: variable ground conditions in southeast"}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -4060,7 +4083,7 @@ async function submitAddRisk(){
       const tasks=[];
       if(useSmart)tasks.push('Rewrite the "description" into a clear SMART or cause-and-effect format (threats: "Due to [cause], [event], leading to [effect]"; opportunities: "Due to [enabler], [favorable event], leading to [benefit]"). Match the language of the input.');
       if(useComplete)tasks.push('Fill any EMPTY fields: cause (root cause/source), response_strategy (threats: Avoid/Mitigate/Transfer/Accept/Escalate; opportunities: Exploit/Enhance/Share/Accept/Escalate — must target the root cause), mitigation (response plan consistent with the strategy), owner (suitable role), response_owner (suitable role). Do NOT overwrite fields that already have a value.');
-      const data=await api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:`You are a construction risk manager. Given this risk record for project "${CP.name}" (${CP.type}), perform these tasks:
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:`You are a project risk manager. Given this risk record for project "${CP.name}" (${CP.type}), perform these tasks:
 ${tasks.map((t,i)=>(i+1)+'. '+t).join('\n')}
 
 Current record:
@@ -4111,7 +4134,7 @@ async function translateRegister(){
     for(let i=0;i<risks.length;i+=batchSize){
       const batch=risks.slice(i,i+batchSize);
       const payload=batch.map(r=>({id:r.id,description:r.description||'',cause:r.cause||'',mitigation:r.mitigation||'',notes:r.notes||''}));
-      const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate the text fields of these construction risk records to ${lang}. Keep technical accuracy. Do NOT translate field names or IDs. Return ONLY valid JSON array with same structure (id, description, cause, mitigation, notes). If a field is empty keep it empty.
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate the text fields of these project risk records to ${lang}. Keep technical accuracy. Do NOT translate field names or IDs. Return ONLY valid JSON array with same structure (id, description, cause, mitigation, notes). If a field is empty keep it empty.
 
 ${JSON.stringify(payload)}`}]});
       const translated=pJSON(data.content[0].text);
@@ -4916,7 +4939,7 @@ async function generateProjectReport(){
   const low=risks.filter(r=>r.level==='low').length;
   const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Cat: ${r.category} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation||'none'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior project risk manager. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
 
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} ${curCode()}
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
@@ -4979,7 +5002,7 @@ async function loadProjectInsights(){
   const risks=CP.risks||[];
   const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the construction industry. Respond entirely in English. Project: ${CP.name} (${CP.type}). Location/region: ${CP.region||'(not specified — infer the most likely region from the project name and context)'}. Contract currency: ${curCode()}.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the project's industry. Respond entirely in English. Project: ${CP.name} (${CP.type}). Location/region: ${CP.region||'(not specified — infer the most likely region from the project name and context)'}. Contract currency: ${curCode()}.
 Current project risks: ${riskList}
 
 IMPORTANT: Tailor EVERY insight to this project's specific country/region and local market — local material prices, local labor market, local economic indicators (inflation, interest rates), local regulations, and the ${curCode()} currency. Do NOT give generic global commentary; ground it in the project's geography.
@@ -5715,12 +5738,12 @@ async function generateResponseSchedule(){
   const today=new Date().toISOString().slice(0,10);
   const ctx=risks.slice(0,40).map(r=>`${r.risk_id||r.id?.slice(0,6)}: [${r.level}] ${r.description} | Strategy: ${r.response_strategy||'Mitigate'} | Plan: ${r.mitigation||'none'} | Owner: ${r.owner||'TBD'} | Expected: ${r.expected_date||'—'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior construction project planner. Build an implementation SCHEDULE for executing the risk response plans below. Project: ${CP.name} (${CP.type}). Project end: ${CP.end_date||'unknown'}. Today: ${today}.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project planner. Build an implementation SCHEDULE for executing the risk response plans below. Project: ${CP.name} (${CP.type}). Project end: ${CP.end_date||'unknown'}. Today: ${today}.
 
 RISKS & RESPONSE PLANS:
 ${ctx}
 
-For each risk that has a meaningful response plan, create a scheduled task to IMPLEMENT that plan. Sequence tasks sensibly: higher-level (high) risks and risks with earlier expected_date start sooner. Tasks may overlap. Durations should be realistic for construction (days). Start from today (${today}) at the earliest.
+For each risk that has a meaningful response plan, create a scheduled task to IMPLEMENT that plan. Sequence tasks sensibly: higher-level (high) risks and risks with earlier expected_date start sooner. Tasks may overlap. Durations should be realistic (in days). Start from today (${today}) at the earliest.
 
 Respond ONLY with valid JSON:
 {
@@ -6073,7 +6096,7 @@ async function analyzeTrend(){
   const history=sorted.slice(-6).map(w=>`${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Health=${w.health_score||'?'}`).join('\n')||'No prior history';
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ENGLISH.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior project risk manager. Generate ALL output in ENGLISH.
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Existing Risks:\n${existing}
 Trend history (chronological):\n${history}
@@ -6179,7 +6202,7 @@ async function addUpdate(){
 
   showLoad('Analyzing update and detecting changes...');
 
-  const parts=[{type:'text',text:`You are a senior construction risk manager analyzing a project update. Compare the update to existing risks and identify ALL changes.
+  const parts=[{type:'text',text:`You are a senior project risk manager analyzing a project update. Compare the update to existing risks and identify ALL changes.
 
 Project: ${CP.name} | Type: ${CP.type}
 
@@ -6635,7 +6658,7 @@ async function runSimulation(){
   if(leverTexts.other)leverDesc.push(`Other Actions: ${leverTexts.other}`);
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior construction risk manager running a what-if scenario simulation.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project risk manager running a what-if scenario simulation.
 
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Baseline Risk Score: ${baselineScore}/100 | High: ${high}, Medium: ${med}, Low: ${low}
@@ -7012,13 +7035,15 @@ async function generateInsights(){
     </div>
   `;
 
-  // Build search queries based on project context
+  // Build search queries based on the project's type and detected region
+  const loc=(CP.region||'').split('—')[0].split(/[,(]/)[0].trim();
+  const dom=(CP.type||'').trim();
   const queries=[
-    'construction Saudi Arabia',
-    'steel prices',
-    'oil prices',
+    [dom,loc,'industry'].filter(Boolean).join(' ')||'industry news',
+    [dom,'market trends'].filter(Boolean).join(' ')||'market trends',
     'supply chain',
-    'Saudi infrastructure'
+    [loc,'economy'].filter(Boolean).join(' ')||'economic outlook',
+    [dom,'material prices'].filter(Boolean).join(' ')||'commodity prices'
   ];
 
   const allArticles=[];
@@ -7050,10 +7075,11 @@ async function generateInsights(){
   `;
 
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior risk intelligence analyst for a construction project in Saudi Arabia.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior risk intelligence analyst for a project located in ${CP.region||'(region not specified — infer the most likely location from the project name and context)'}.
 
 PROJECT CONTEXT:
 Name: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
+Location/region: ${CP.region||'—'} | Currency: ${curCode()}
 Description: ${CP.description||'—'}
 
 CURRENT RISK REGISTER:
@@ -7062,11 +7088,11 @@ ${risksContext}
 LATEST NEWS ARTICLES (${allArticles.length} articles fetched today):
 ${articlesText}
 
-Analyze the news and provide intelligence in JSON format. For each insight, link it to specific risk IDs in the register where relevant. Respond ONLY with valid JSON:
+Analyze the news and provide intelligence in JSON format. Tailor EVERY item to the project's specific country/region and local market (local prices, local regulators, local economy, ${curCode()} currency) — do not assume any other country. For each insight, link it to specific risk IDs in the register where relevant. Respond ONLY with valid JSON:
 {
   "executive_summary": "3-4 sentence overview of how current world events affect this project",
   "construction_news": [
-    {"headline": "Saudi construction news headline", "impact": "How this affects the project", "severity": "high|medium|low", "related_risks": ["R001", "R005"]}
+    {"headline": "industry/sector news headline relevant to the project region", "impact": "How this affects the project", "severity": "high|medium|low", "related_risks": ["R001", "R005"]}
   ],
   "material_prices": [
     {"material": "Steel", "trend": "rising|falling|stable", "change": "+8%", "impact": "Description of impact", "severity": "high|medium|low"}
@@ -7078,7 +7104,7 @@ Analyze the news and provide intelligence in JSON format. For each insight, link
     {"pair": "the most relevant currency pair for this project region", "trend": "stable|rising|falling", "rate": "current rate", "impact": "Effect on imports/exports"}
   ],
   "regulatory": [
-    {"decision": "Saudi government decision", "agency": "Issuing body", "impact": "How it affects the project", "severity": "high|medium|low"}
+    {"decision": "government/regulatory decision in the project's region", "agency": "Issuing body", "impact": "How it affects the project", "severity": "high|medium|low"}
   ],
   "risk_updates": [
     {"risk_id": "R005", "current_level": "medium", "suggested_level": "high", "reason": "News-based justification"}
@@ -7205,13 +7231,13 @@ function renderInsights(data,articles){
       `).join('')}
     </div>`:''}
 
-    <!-- Construction news + Material prices -->
+    <!-- Industry news + Material prices -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-sec-head">
           <div class="dash-sec-title">
             <span class="dash-sec-num" style="background:linear-gradient(135deg,#6D8196,var(--primary))">1</span>
-            <span class="dash-sec-name">Construction Industry News</span>
+            <span class="dash-sec-name">Industry News</span>
           </div>
         </div>
         ${(data.construction_news||[]).map(n=>`
@@ -7384,7 +7410,16 @@ async function generatePortfolioInsights(pfId){
 
   document.getElementById('portfInsights').innerHTML=`<div class="dash-section" style="text-align:center;padding:40px"><div class="spin" style="margin:0 auto 14px"></div><div style="font-size:13px;color:var(--t2)">Fetching news from multiple sources...</div></div>`;
 
-  const queries=['construction Saudi Arabia','steel prices','oil prices','supply chain','Saudi infrastructure'];
+  const pfRegions=[...new Set((list||[]).map(p=>(p.region||'').split('—')[0].split(/[,(]/)[0].trim()).filter(Boolean))];
+  const pfLoc=pfRegions[0]||'';
+  const pfDom=[...new Set((list||[]).map(p=>(p.type||'').trim()).filter(Boolean))][0]||'';
+  const queries=[
+    [pfDom,pfLoc,'industry'].filter(Boolean).join(' ')||'industry news',
+    [pfDom,'market trends'].filter(Boolean).join(' ')||'market trends',
+    'supply chain',
+    [pfLoc,'economy'].filter(Boolean).join(' ')||'economic outlook',
+    [pfDom,'material prices'].filter(Boolean).join(' ')||'commodity prices'
+  ];
   const allArticles=[];
   for(const q of queries){
     const data=await fetchNews(q);
@@ -7408,9 +7443,10 @@ async function generatePortfolioInsights(pfId){
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:3500,messages:[{role:'user',content:`Senior portfolio risk intelligence analyst.
 
-PORTFOLIO: ${list.length} construction projects in Saudi Arabia
+PORTFOLIO: ${list.length} projects${pfRegions.length?` located in ${pfRegions.join(', ')}`:''}
 Projects: ${projNames}
 Types: ${projTypes}
+${pfRegions.length?`Tailor all insights to these regions and their local markets — do not assume any other country.`:''}
 
 LATEST NEWS (${allArticles.length} articles):
 ${articlesText}
@@ -7481,7 +7517,7 @@ function renderPortfolioInsights(data,articles){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="dash-section">
-        <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">1</span><span class="dash-sec-name">Construction News</span></div></div>
+        <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num">1</span><span class="dash-sec-name">Industry News</span></div></div>
         ${(data.construction_news||[]).map(n=>`<div style="padding:10px 0;border-bottom:1px solid var(--b1)"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:5px"><div style="font-size:12px;font-weight:600;color:var(--t1);flex:1;line-height:1.45">${n.headline}</div><span style="background:${sevBg[n.severity]};color:${sevColor[n.severity]};padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content">${(n.severity||'').toUpperCase()}</span></div><div style="font-size:11px;color:var(--t2);line-height:1.55">${n.impact}</div>${n.affected_projects?.length?`<div style="margin-top:5px;font-size:10px;color:var(--primary)">→ ${n.affected_projects.join(', ')}</div>`:''}</div>`).join('')}
       </div>
 
@@ -7700,7 +7736,7 @@ async function armSend(){
   const lang=armDetectLang(txt);
   const ctx=armBuildContext();
   const canExecute=(armMode==='manager')&&(typeof CID!=='undefined'&&CID);
-  const sys=`You are "AI Risk Manager", an expert construction & project risk-management copilot inside the RiskAtlas platform. The user may NOT be a risk expert (could be a project owner or project manager). Explain clearly and simply, avoid jargon, and be practical and supportive.
+  const sys=`You are "AI Risk Manager", an expert project risk-management copilot inside the RiskAtlas platform. The user may NOT be a risk expert (could be a project owner or project manager). Explain clearly and simply, avoid jargon, and be practical and supportive.
 
 LANGUAGE: Reply in the SAME language as the user's latest message. If they write Arabic, reply in clear Arabic; if English, reply in English. The user's latest message is in ${lang==='ar'?'Arabic':'English'}.
 
