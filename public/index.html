@@ -2428,6 +2428,7 @@ function renderHome(){
 // ═══ TODAY'S TASKS (daily briefing) ═══
 function buildTodayTasks(){
   const today=new Date();today.setHours(0,0,0,0);const day=86400000;
+  const todayISO=new Date().toISOString().slice(0,10);
   const items=[];
   (projs||[]).forEach(p=>{
     const rs=(allRisks||[]).filter(r=>r.project_id===p.id);
@@ -2435,22 +2436,43 @@ function buildTodayTasks(){
     const plan=p.action_plan;
     if(!plan||!Array.isArray(plan.actions)||!plan.actions.length){
       items.push({kind:'genplan',pr:6,icon:'✨',color:'#6D8196',title:'Create your AI action plan',sub:p.name,projId:p.id});
-      return;
+    }else{
+      plan.actions.forEach(a=>{
+        if(a.status==='done')return;
+        if(a.last_touched===todayISO)return; // logged today — hide until it resurfaces
+        let d=999;
+        if(a.due_date&&!isNaN(new Date(a.due_date))){const dt=new Date(a.due_date);dt.setHours(0,0,0,0);d=Math.round((dt-today)/day);}
+        if(d<=7){
+          const overdue=d<0;
+          const col=overdue?'#f64e60':(a.priority===1?'#f64e60':a.priority===2?'#ffa800':'#6D8196');
+          const rk=rs.find(r=>r.risk_id===a.risk_id);
+          const followUp=!!a.last_update;
+          items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:followUp?('Follow up: '+a.title):a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id,risk_id:a.risk_id,riskDbId:rk?rk.id:'',risk_desc:rk?rk.description:'',mitigation:rk?rk.mitigation:'',due:a.due_date||'',last_update:a.last_update||''});
+        }
+      });
     }
-    plan.actions.forEach(a=>{
-      if(a.status==='done')return;
-      let d=999;
-      if(a.due_date&&!isNaN(new Date(a.due_date))){const dt=new Date(a.due_date);dt.setHours(0,0,0,0);d=Math.round((dt-today)/day);}
-      if(d<=7){
-        const overdue=d<0;
-        const col=overdue?'#f64e60':(a.priority===1?'#f64e60':a.priority===2?'#ffa800':'#6D8196');
-        const rk=rs.find(r=>r.risk_id===a.risk_id);
-        items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id,risk_id:a.risk_id,riskDbId:rk?rk.id:'',risk_desc:rk?rk.description:'',mitigation:rk?rk.mitigation:'',due:a.due_date||''});
+    // Signal from latest Trend Analysis
+    const td=p.trend_data;
+    if(td&&td.length){
+      const tr=td[td.length-1];const rep=tr&&tr.report;
+      if(rep&&(tr.alert_level==='high'||tr.alert_level==='medium')){
+        const act=(rep.actions&&rep.actions[0])||(rep.warnings&&rep.warnings[0])||'Review the latest trend alert with your team';
+        items.push({kind:'signal',pr:tr.alert_level==='high'?2:4,icon:'📉',color:tr.alert_level==='high'?'#f64e60':'#ffa800',title:act,sub:`${p.name} · Trend Analysis`,projId:p.id,tab:'upd'});
       }
-    });
+    }
+    // Signal from Market Insights
+    const mi=p.market_insights;
+    if(mi&&Array.isArray(mi.insights)&&mi.insights.length){
+      const rank={high:0,medium:1,low:2};
+      const top=mi.insights.slice().sort((x,y)=>(rank[x.impact_probability]??3)-(rank[y.impact_probability]??3))[0];
+      if(top){
+        const txt=top.recommendation||('Review market signal: '+(top.title||''));
+        items.push({kind:'signal',pr:5,icon:'🌐',color:'#6D8196',title:txt,sub:`${p.name} · Market Insights`,projId:p.id,tab:'insights'});
+      }
+    }
   });
   items.sort((x,y)=>x.pr-y.pr);
-  return items.slice(0,12);
+  return items.slice(0,14);
 }
 function showTodayTasks(force){
   document.getElementById('ttModal')?.remove();
@@ -2478,13 +2500,14 @@ function showTodayTasks(force){
       <div class="ttx-det" style="display:none;margin-top:11px;padding-top:11px;border-top:1px solid var(--b1)">
         <div style="font-size:11.5px;color:var(--t2);margin-bottom:7px;line-height:1.55"><b style="color:var(--t1)">Linked risk ${t.risk_id}:</b> ${t.risk_desc||'—'}</div>
         ${t.mitigation?`<div style="font-size:11.5px;color:var(--t2);margin-bottom:7px;line-height:1.55"><b style="color:var(--t1)">Response plan:</b> ${t.mitigation}</div>`:''}
+        ${t.last_update?`<div style="font-size:11.5px;color:var(--t1);margin-bottom:7px;line-height:1.55;background:var(--primary-soft);border:1px solid rgba(109,129,150,.18);border-radius:8px;padding:8px 10px"><b style="color:var(--primary)">You last noted:</b> ${t.last_update}<br><span style="color:var(--t3)">What's the status now?</span></div>`:''}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px">
           <span style="font-size:11px;color:var(--t3)">Due: ${t.due||'—'}</span>
           <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();ttGo('${t.projId}','reg')">Open in register →</button>
         </div>
         ${t.riskDbId?`<div style="display:flex;gap:7px;margin-top:9px" onclick="event.stopPropagation()">
-          <input type="text" id="ttupd_${t.actionId}" placeholder="Log a progress update (meeting, letter, reply…)" style="flex:1;font-size:11px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;font-family:inherit;outline:none"/>
-          <button class="btn btn-p" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="event.stopPropagation();addRiskUpdate('${t.riskDbId}',document.getElementById('ttupd_${t.actionId}').value,'tt')">Log</button>
+          <input type="text" id="ttupd_${t.actionId}" placeholder="${t.last_update?"What happened? Add the update…":"Log a progress update (meeting, letter, reply…)"}" onkeydown="if(event.key==='Enter')logTaskUpdate('${t.projId}','${t.actionId}',this.value)" style="flex:1;font-size:11px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;font-family:inherit;outline:none"/>
+          <button class="btn btn-p" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="event.stopPropagation();logTaskUpdate('${t.projId}','${t.actionId}',document.getElementById('ttupd_${t.actionId}').value)">Log</button>
         </div>`:''}
       </div>
     </div>`;
@@ -2497,8 +2520,8 @@ function showTodayTasks(force){
   const rowNav=t=>`
     <div class="tt-item" onclick="ttGo('${t.projId}','${t.tab}')">
       <div class="tt-ic" style="background:${t.color}1f;color:${t.color}">${t.icon}</div>
-      <div style="flex:1;min-width:0"><div class="tt-title">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.4">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0;align-self:center"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`;
   const body=tasks.length?tasks.map(t=>t.kind==='action'?rowAction(t):t.kind==='genplan'?rowGen(t):rowNav(t)).join('')
     :`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No actions due across your projects today.</div></div>`;
@@ -2529,6 +2552,22 @@ function toggleTaskDetail(el){
   const ch=el.querySelector('.rchev');if(ch)ch.style.transform=open?'':'rotate(90deg)';
 }
 function ttGo(projId,tab){closeTodayTasks();selectProj(projId);setTimeout(()=>{try{ST(tab);}catch(e){}},450);}
+
+// Log a progress update from Today's Tasks: saves to the risk, hides the action today, and sets up a follow-up
+async function logTaskUpdate(projId,actionId,text){
+  text=(text||'').trim();if(!text)return;
+  const p=(projs||[]).find(x=>x.id===projId);if(!p||!p.action_plan)return;
+  const a=p.action_plan.actions.find(x=>x.id===actionId);if(!a)return;
+  const todayISO=new Date().toISOString().slice(0,10);
+  const entry={date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),text};
+  [CP&&CP.risks,allRisks].forEach(arr=>{const rr=(arr||[]).find(x=>x.risk_id===a.risk_id&&x.project_id===projId);if(rr){if(!Array.isArray(rr.progress_log))rr.progress_log=[];rr.progress_log.push(entry);}});
+  const rk=(allRisks||[]).find(x=>x.risk_id===a.risk_id&&x.project_id===projId);
+  if(rk&&rk.id){try{await sb('risks?id=eq.'+rk.id,'PATCH',{progress_log:rk.progress_log});}catch(e){console.error(e);}}
+  a.last_update=text;a.last_touched=todayISO;
+  if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP)CP.action_plan=p.action_plan;
+  try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
+  showTodayTasks(true);
+}
 
 async function generateActionPlan(projId,noPopup){
   const p=(projs||[]).find(x=>x.id===projId);if(!p)return;
