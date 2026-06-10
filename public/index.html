@@ -1150,7 +1150,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
       </div>
       <div class="fg"><label class="fl">Project Name <span style="color:var(--red)">*</span></label><input type="text" class="fi" id="np_n" oninput="this.classList.remove('fi-err')" placeholder="e.g. Riyadh Tower — Phase 2"/><div class="fl-err" id="np_n_err">Project name is required</div></div>
       <div class="fg"><label class="fl">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
-      <div class="fg"><label class="fl">Contract Value (SAR)</label><input type="text" class="fi" id="np_v" inputmode="numeric" oninput="fmtMoney(this)" placeholder="15,000,000"/><div class="fl-hint">Used to calculate cost exposure (recommended)</div></div>
+      <div class="fg"><label class="fl">Contract Value</label><input type="text" class="fi" id="np_v" inputmode="numeric" oninput="fmtMoney(this)" placeholder="15,000,000"/><div class="fl-hint">Used to calculate cost exposure (recommended)</div></div>
+      <div class="fg"><label class="fl">Currency</label><select class="fs" id="np_cur"><option value="USD">USD ($)</option><option value="SAR">SAR (ر.س)</option><option value="AED">AED (د.إ)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="EGP">EGP</option><option value="KWD">KWD</option><option value="QAR">QAR</option><option value="OMR">OMR</option><option value="BHD">BHD</option><option value="JOD">JOD</option><option value="Other">Other</option></select><div class="fl-hint">Auto-detected from your documents on analysis</div></div>
       <div class="fg"><label class="fl">Project Type</label>
         <select class="fs" id="np_t">
           <option value="Residential">Residential</option>
@@ -1199,7 +1200,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
     <div class="fgrid">
       <div class="fg"><label class="fl">Project Name *</label><input type="text" class="fi" id="set_n"/></div>
       <div class="fg"><label class="fl">Contract No.</label><input type="text" class="fi" id="set_c"/></div>
-      <div class="fg"><label class="fl">Contract Value (SAR)</label><input type="text" class="fi" id="set_v"/></div>
+      <div class="fg"><label class="fl">Contract Value</label><input type="text" class="fi" id="set_v"/></div>
       <div class="fg"><label class="fl">Project Type</label>
         <select class="fs" id="set_t">
           <option>Residential</option><option>Commercial</option><option>Mixed-Use</option><option>Infrastructure</option>
@@ -2414,7 +2415,7 @@ function renderHome(){
                 return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
                   <td><b>${p.name}</b></td>
                   <td><span class="cb">${p.type||'—'}</span></td>
-                  <td style="color:var(--t2)">${p.value?p.value+' SAR':'—'}</td>
+                  <td style="color:var(--t2)">${p.value?p.value+' '+(p.currency||'USD'):'—'}</td>
                   <td><b>${r.length}</b></td>
                   <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();assignToPortfolio('${p.id}')">Assign to Portfolio</button></td>
                 </tr>`;
@@ -2867,7 +2868,7 @@ async function renderPortfolio(pfId){
         <div class="kpi-info">
           <div class="kpi-label">Total Exposure</div>
           <div class="kpi-value" style="font-size:22px;padding-top:4px">${(totalExposure/1000000).toFixed(1)}M</div>
-          <div class="kpi-sub">of ${(totalValue/1000000).toFixed(0)}M total SAR</div>
+          <div class="kpi-sub">of ${(totalValue/1000000).toFixed(0)}M total value</div>
         </div>
         <div class="kpi-icon-circle pink">＄</div>
       </div>
@@ -2875,7 +2876,7 @@ async function renderPortfolio(pfId){
         <div class="kpi-info">
           <div class="kpi-label">Avg per Project</div>
           <div class="kpi-value" style="font-size:22px;padding-top:4px">${analyzed.length?(totalExposure/analyzed.length/1000000).toFixed(1):0}M</div>
-          <div class="kpi-sub">SAR financial exposure</div>
+          <div class="kpi-sub">total cost exposure</div>
         </div>
         <div class="kpi-icon-circle green">📊</div>
       </div>
@@ -3053,7 +3054,7 @@ async function renderPortfolio(pfId){
               return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
                 <td><div style="font-weight:600;color:var(--t1)">${p.name}</div></td>
                 <td><span class="cb">${p.type||'—'}</span></td>
-                <td style="font-family:'IBM Plex Mono',monospace;color:var(--t2);font-size:11px">${p.value?p.value+' SAR':'—'}</td>
+                <td style="font-family:'IBM Plex Mono',monospace;color:var(--t2);font-size:11px">${p.value?p.value+' '+(p.currency||'USD'):'—'}</td>
                 <td style="font-family:'IBM Plex Mono',monospace;color:${exp>0?'var(--red)':'var(--t3)'};font-size:11px">${exp>0?(exp/1000000).toFixed(1)+'M':'—'}</td>
                 <td>${p.high?`<span class="bdg b-h">${p.high}</span>`:'—'}</td>
                 <td>${p.med?`<span class="bdg b-m">${p.med}</span>`:'—'}</td>
@@ -3095,7 +3096,7 @@ async function renderPortfolio(pfId){
         type:'bar',
         data:{
           labels:exposureByProj.map(p=>p.name.length>14?p.name.slice(0,14)+'...':p.name),
-          datasets:[{label:'Exposure (SAR)',data:exposureByProj.map(p=>p.exposure),backgroundColor:'rgba(109,129,150,.65)',borderRadius:5}]
+          datasets:[{label:'Cost Exposure',data:exposureByProj.map(p=>p.exposure),backgroundColor:'rgba(109,129,150,.65)',borderRadius:5}]
         },
         options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#a1a5b7',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#a1a5b7',font:{size:10},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:5}}}
       });
@@ -3127,7 +3128,7 @@ async function generatePortfolioReport(){
     const m=r.filter(x=>x.level==='medium').length;
     const lo=r.filter(x=>x.level==='low').length;
     const o=r.filter(x=>x.type==='opportunity').length;
-    return `${p.name} (${p.type}, ${p.value||'—'} SAR): ${r.length} risks [${h} high, ${m} medium, ${lo} low, ${o} opp]`;
+    return `${p.name} (${p.type}, ${p.value||'—'} ${p.currency||'USD'}): ${r.length} risks [${h} high, ${m} medium, ${lo} low, ${o} opp]`;
   }).join('\n');
   const topRisks=allRisks.filter(r=>r.level==='high'&&list.some(p=>p.id===r.project_id)).slice(0,15).map(r=>{const proj=list.find(p=>p.id===r.project_id);return `[${proj?.name||'?'}] ${r.description} — ${r.category}`;}).join('\n');
   
@@ -3203,6 +3204,7 @@ async function translatePortfolioReport(){
 }
 
 // ═══ PROJECT MODAL ═══
+function curCode(){return (typeof CP!=='undefined'&&CP&&CP.currency)||'USD';}
 function fmtMoney(el){
   const caretEnd=el.selectionStart===el.value.length;
   let digits=el.value.replace(/[^\d]/g,'');
@@ -3231,7 +3233,8 @@ async function createProj(){
     const tol={appetite:appetite,cost_levels:costLevels(appetite),sched_levels:schedLevels(appetite),qhse:DQ,rep:DR,prob:DP,imp:DI};
     const pfId=document.getElementById('np_pf').value;
     const cleanVal=(document.getElementById('np_v').value||'').replace(/,/g,'').trim();
-    const d={name,contract:document.getElementById('np_c').value,value:cleanVal,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
+    const cur=(document.getElementById('np_cur')?.value)||'USD';
+    const d={name,contract:document.getElementById('np_c').value,value:cleanVal,currency:cur,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
     if(pfId)d.portfolio_id=pfId;
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
@@ -3322,7 +3325,7 @@ async function selectProj(id){
     document.getElementById('projView').style.display='block';
     document.getElementById('phName').textContent=CP.name;
     {const _l=document.querySelector('#ttBtnProj .ttlbl');if(_l)_l.textContent=(CP.name?CP.name+' · ':'')+"Today's Tasks";}
-    document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' SAR':'',CP.contract].filter(Boolean).join(' · ');
+    document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' '+curCode():'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
     renderSidebar();renderFiles();renderReg();renderRiskLog();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
     if(risks.length){renderDash();ST('dash');}
@@ -3697,17 +3700,17 @@ Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).
 ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
   const parts=[{type:'text',text:`Senior construction risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Project Start Date: ${CP.start_date||'unknown'} | Project End Date: ${CP.end_date||'unknown'} | Today: ${new Date().toISOString().slice(0,10)}
 Description: ${CP.description||'—'}
 ${tolCtx}
 ${hasSched?'Schedule uploaded.':'No schedule.'}
 
-Assess project complexity from files and value:
-- Simple (<5M SAR): 8 threats + 2 opportunities = 10 total
-- Medium (5-50M SAR): 16 threats + 4 opportunities = 20 total  
-- Large (50-500M SAR): 24 threats + 6 opportunities = 30 total
-- Mega (>500M SAR): 32 threats + 8 opportunities = 40 total
+Assess project complexity from files and contract value (in the project's own currency):
+- Simple (under ~5M): 8 threats + 2 opportunities = 10 total
+- Medium (~5-50M): 16 threats + 4 opportunities = 20 total  
+- Large (~50-500M): 24 threats + 6 opportunities = 30 total
+- Mega (over ~500M): 32 threats + 8 opportunities = 40 total
 
 CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 1. DESCRIPTION must follow ONE of these two formats:
@@ -3727,7 +3730,7 @@ TIMING CLASSIFICATION (critical for early warning):
 - "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"Foundation Excavation Zone A","timing_type":"scheduled","expected_date":"2026-09-12","source":"Scope of Work — Site Constraints: variable ground conditions in southeast"}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"Foundation Excavation Zone A","timing_type":"scheduled","expected_date":"2026-09-12","source":"Scope of Work — Site Constraints: variable ground conditions in southeast"}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -3743,6 +3746,9 @@ Respond ONLY with valid JSON:
     try{parsed=pJSON(data.content[0].text);}
     catch(e){alert('Analysis error: '+data.content[0].text.slice(0,300));return;}
     CP.summary=parsed.summary||'';CP.has_schedule=parsed.has_schedule!==false;
+    // Currency & geography detected from the documents
+    if(parsed.currency&&typeof parsed.currency==='string'){const cc=parsed.currency.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
+    if(parsed.region&&typeof parsed.region==='string'&&parsed.region.trim()){CP.region=parsed.region.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
     PR=parsed.risks||[];showVal(PR);
   }catch(e){hideLoad();alert('Error: '+e.message);}
 }
@@ -4221,7 +4227,7 @@ function renderDash(){
     <div class="dash-hero">
       <div>
         <div class="dash-hero-l">${CP.name}</div>
-        <div class="dash-hero-s">${[CP.type,CP.value?CP.value+' SAR':null,CP.contract].filter(Boolean).join(' · ')}</div>
+        <div class="dash-hero-s">${[CP.type,CP.value?CP.value+' '+curCode():null,CP.contract].filter(Boolean).join(' · ')}</div>
       </div>
       <div style="display:flex;gap:11px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:8px">
@@ -4619,7 +4625,7 @@ function rexRanked(){
 function renderRiskExposure(){
   const cv=document.getElementById('tornadoC');if(!cv)return;
   const {f,ranked}=rexRanked();
-  const unit=REX_UNIT[f];
+  const unit=f==='cost'?curCode():REX_UNIT[f];
   if(rexChart){try{rexChart.destroy();}catch(e){}rexChart=null;}
   const leg=document.getElementById('tornadoLegend');
   if(!ranked.length){
@@ -4781,7 +4787,7 @@ function doPortfolioExportPDF(){
       <div class="kpi"><div class="kpi-label">Total Risks</div><div class="kpi-val purple">${pfRisks.length}</div></div>
       <div class="kpi"><div class="kpi-label">High</div><div class="kpi-val red">${totalH}</div></div>
       <div class="kpi"><div class="kpi-label">Medium</div><div class="kpi-val yel">${totalM}</div></div>
-      <div class="kpi"><div class="kpi-label">Portfolio Value</div><div class="kpi-val grn">${totalVal?totalVal.toLocaleString()+' SAR':'N/A'}</div></div>
+      <div class="kpi"><div class="kpi-label">Portfolio Value</div><div class="kpi-val grn">${totalVal?totalVal.toLocaleString()+' '+((list.find(p=>p.currency)||{}).currency||'USD'):'N/A'}</div></div>
     </div>`;
   }
 
@@ -4912,7 +4918,7 @@ async function generateProjectReport(){
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior construction risk manager. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
 
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} SAR
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} ${curCode()}
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
 Total Risks: ${risks.length} [${high} high, ${med} medium, ${low} low]
 
@@ -4973,13 +4979,15 @@ async function loadProjectInsights(){
   const risks=CP.risks||[];
   const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the construction industry. Respond entirely in English. Project: ${CP.name} (${CP.type}).
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the construction industry. Respond entirely in English. Project: ${CP.name} (${CP.type}). Location/region: ${CP.region||'(not specified — infer the most likely region from the project name and context)'}. Contract currency: ${curCode()}.
 Current project risks: ${riskList}
 
-Provide market & world insights in JSON (all text in the detected language):
-{"executive_brief":"3-4 sentence executive brief summarizing the current market and geopolitical situation relevant to this project","insights":[{"title":"signal title (market conditions, material prices, or economic indicator)","description":"2 sentences","affected_risks":["which project risks could be affected"],"impact_probability":"high|medium|low","recommendation":"1 sentence action"}],"keep_eye_on":[{"event":"emerging threat (geopolitical event or regulatory change)","risk_connection":"project/portfolio impact","probability":"high|medium|low"}]}
+IMPORTANT: Tailor EVERY insight to this project's specific country/region and local market — local material prices, local labor market, local economic indicators (inflation, interest rates), local regulations, and the ${curCode()} currency. Do NOT give generic global commentary; ground it in the project's geography.
 
-Include 3-4 insights (cover market conditions, material prices, economic indicators) and 3-4 emerging threats (geopolitical events, regulatory changes).`}]});
+Provide market & world insights in JSON (all text in the detected language):
+{"executive_brief":"3-4 sentence executive brief on the current market and geopolitical situation in this project's region relevant to the project","insights":[{"title":"signal title (local market conditions, material prices, or economic indicator)","description":"2 sentences","affected_risks":["which project risks could be affected"],"impact_probability":"high|medium|low","recommendation":"1 sentence action"}],"keep_eye_on":[{"event":"emerging threat (geopolitical event or regulatory change relevant to the region)","risk_connection":"project/portfolio impact","probability":"high|medium|low"}]}
+
+Include 3-4 insights (local market conditions, material prices, economic indicators) and 3-4 emerging threats (regional geopolitical events, local regulatory changes).`}]});
     const text=data.content?.[0]?.text||'';
     const parsed=pJSON(text);
     if(parsed&&el){
@@ -5221,7 +5229,7 @@ function doExportExcel(){
   // Title rows
   aoa.push(['RiskAtlas AI — Risk Register']);
   aoa.push([CP.name+(CP.type?(' · '+CP.type):'')]);
-  aoa.push(['Generated: '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+(CP.value?('  ·  Contract Value: '+Number(CP.value).toLocaleString()+' SAR'):'')]);
+  aoa.push(['Generated: '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+(CP.value?('  ·  Contract Value: '+Number(CP.value).toLocaleString()+' '+curCode()):'')]);
   aoa.push([]);
   // Summary
   aoa.push(['SUMMARY']);
@@ -5517,7 +5525,7 @@ function doExportPDF(){
   html+=`<div class="header">
     <div class="header-left">
       <div class="logo-box"><img src="https://i.postimg.cc/3xNVb78N/89f6c180-112e-4627-b132-e471e46a8d2b-(1).png" alt="RiskAtlas AI"/></div>
-      <div><h1>RiskAtlas AI</h1><div class="header-sub">${CP.name} · ${CP.type} · ${CP.value||'N/A'} SAR</div></div>
+      <div><h1>RiskAtlas AI</h1><div class="header-sub">${CP.name} · ${CP.type} · ${CP.value||'N/A'} ${curCode()}</div></div>
     </div>
     <div class="header-right">Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}<br>${CP.start_date||''} — ${CP.end_date||''}</div>
   </div>`;
@@ -6066,7 +6074,7 @@ async function analyzeTrend(){
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior construction risk manager. Generate ALL output in ENGLISH.
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Existing Risks:\n${existing}
 Trend history (chronological):\n${history}
 CURRENT PERIOD (${weekDate}):
@@ -6629,7 +6637,7 @@ async function runSimulation(){
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior construction risk manager running a what-if scenario simulation.
 
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Baseline Risk Score: ${baselineScore}/100 | High: ${high}, Medium: ${med}, Low: ${low}
 
 CURRENT RISK REGISTER:
@@ -7045,7 +7053,7 @@ async function generateInsights(){
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior risk intelligence analyst for a construction project in Saudi Arabia.
 
 PROJECT CONTEXT:
-Name: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} SAR
+Name: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Description: ${CP.description||'—'}
 
 CURRENT RISK REGISTER:
@@ -7067,7 +7075,7 @@ Analyze the news and provide intelligence in JSON format. For each insight, link
     {"event": "Geopolitical event affecting supply chains", "region": "China/Europe/etc", "impact": "Project impact", "severity": "high|medium|low"}
   ],
   "currency": [
-    {"pair": "USD/SAR", "trend": "stable|rising|falling", "rate": "3.75", "impact": "Effect on imports/exports"}
+    {"pair": "the most relevant currency pair for this project region", "trend": "stable|rising|falling", "rate": "current rate", "impact": "Effect on imports/exports"}
   ],
   "regulatory": [
     {"decision": "Saudi government decision", "agency": "Issuing body", "impact": "How it affects the project", "severity": "high|medium|low"}
@@ -7420,7 +7428,7 @@ Analyze impact on the entire portfolio. Respond ONLY with valid JSON:
     {"event": "...", "region": "...", "impact": "...", "severity": "high|medium|low"}
   ],
   "currency": [
-    {"pair": "USD/SAR", "trend": "stable", "rate": "3.75", "impact": "..."}
+    {"pair": "most relevant pair for the region", "trend": "stable", "rate": "current rate", "impact": "..."}
   ],
   "regulatory": [
     {"decision": "...", "agency": "...", "impact": "...", "severity": "high|medium|low"}
