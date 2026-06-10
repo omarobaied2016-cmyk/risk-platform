@@ -7652,6 +7652,16 @@ function armBuildContext(){
   if(plist.length){
     c+=`\nUSER'S PROJECTS (${plist.length}): `+plist.map(p=>`"${p.name}" (${p.type||'—'})`).join(', ')+'.\n';
   }
+  if(!inProj){
+    const t0=new Date();t0.setHours(0,0,0,0);const dms=86400000;let lines=[];
+    (plist||[]).forEach(p=>{
+      const acts=(p.action_plan&&p.action_plan.actions)||[];if(!acts.length)return;
+      let due=0,soon=0;
+      acts.forEach(a=>{if(a.status==='done')return;if(a.due_date&&!isNaN(new Date(a.due_date))){const dt=new Date(a.due_date);dt.setHours(0,0,0,0);const d=Math.round((dt-t0)/dms);if(d<=0)due++;else if(d<=7)soon++;}});
+      if(due||soon)lines.push(`- "${p.name}": ${due} action(s) due now, ${soon} coming up this week`);
+    });
+    if(lines.length)c+=`\nDAILY ACTIONS ACROSS PROJECTS (today's to-do). To adjust or act on a project's plan, the user opens that project first:\n`+lines.join('\n')+'\n';
+  }
   return c;
 }
 
@@ -7708,13 +7718,19 @@ ACTION-PLAN RULES: For reschedule_actions, use action_id values EXACTLY as shown
     .map(m=>(m.role==='user'?'User: ':'Assistant: ')+m.text).join('\n');
   const prompt=sys+'\n\n=== Conversation so far ===\n'+convo+'\n\nNow respond as the Assistant with ONLY the JSON object described above.';
   try{
-    const apiCall=api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]});
-    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),30000));
-    const data=await Promise.race([apiCall,timeout]);
+    const timeout=()=>new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),30000));
+    const isRate=d=>{try{return /rate|429|overload|too many|type 2a/i.test(JSON.stringify(d&&d.error||''));}catch(e){return false;}};
+    let data=await Promise.race([api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]}),timeout()]);
+    if(data&&data.error&&isRate(data)){
+      armMsgs.push({role:'sys',text:'The AI is busy right now — retrying in a few seconds…'});armRender();
+      await new Promise(r=>setTimeout(r,6000));
+      data=await Promise.race([api({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]}),timeout()]);
+      armMsgs=armMsgs.filter(m=>!(m.role==='sys'&&/retrying in a few/.test(m.text)));
+    }
     armBusy=false;document.getElementById('armSendBtn').disabled=false;
     console.log('[AI Risk Manager] response:',data);
     if(!data){armMsgs.push({role:'ai',text:'No response from the server. Please try again.'});armRender();return;}
-    if(data.error){armMsgs.push({role:'ai',text:'API error: '+(data.error.message||JSON.stringify(data.error))});armRender();return;}
+    if(data.error){armMsgs.push({role:'ai',text:isRate(data)?'The AI is handling a lot of requests right now. Please wait a few seconds and try again.':'Something went wrong reaching the AI. Please try again in a moment.'});armRender();return;}
     let raw=(data.content&&data.content[0]&&data.content[0].text)||'';
     if(!raw){armMsgs.push({role:'ai',text:'The AI returned an empty response. (Debug: '+JSON.stringify(data).slice(0,200)+')'});armRender();return;}
     let parsed;try{parsed=pJSON(raw);}catch(e){parsed=null;}
