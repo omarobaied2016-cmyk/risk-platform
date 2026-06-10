@@ -1296,7 +1296,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <input type="text" placeholder="Search projects and portfolios..." id="searchInput" oninput="filterAll(this.value)"/>
         </div>
         <div class="top-actions">
-          <button class="btn btn-g" onclick="showTodayTasks(true)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Today's Tasks</button>
+          <button class="btn btn-g" id="ttBtnHome" onclick="showTodayTasks({mode:'all'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="ttlbl">Today's Tasks</span></button>
           <button class="btn btn-g" onclick="openPortfModal()">+ Portfolio</button>
           <button class="btn btn-p" onclick="openProjModal()">+ Project</button>
         </div>
@@ -1335,6 +1335,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <div class="ph-s" id="phSub">—</div>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-g" id="ttBtnProj" onclick="showTodayTasks({mode:'project',id:CID})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="ttlbl">Today's Tasks</span></button>
           <button class="btn btn-g" onclick="openSettingsModal()">Settings</button>
           <button class="btn btn-warn" onclick="showNotifModal()">Notifications</button>
           <button class="btn btn-g" onclick="showExportModal()">Export</button>
@@ -2232,6 +2233,7 @@ async function loadAll(){
     }
     renderSidebar();
     renderHome();
+    {const _fn=(currentUserProfile?.full_name||'').split(' ')[0];const _l=document.querySelector('#ttBtnHome .ttlbl');if(_l)_l.textContent=(_fn?_fn+' · ':'')+"Today's Tasks";}
     setTimeout(maybeShowTodayTasks,700);
   }catch(e){console.error(e);}
 }
@@ -2426,11 +2428,14 @@ function renderHome(){
 }
 
 // ═══ TODAY'S TASKS (daily briefing) ═══
-function buildTodayTasks(){
+function buildTodayTasks(scope){
   const today=new Date();today.setHours(0,0,0,0);const day=86400000;
   const todayISO=new Date().toISOString().slice(0,10);
   const items=[];
-  (projs||[]).forEach(p=>{
+  let list=projs||[];
+  if(scope&&scope.mode==='project')list=list.filter(p=>p.id===scope.id);
+  else if(scope&&scope.mode==='portfolio')list=list.filter(p=>p.portfolio_id===scope.id);
+  list.forEach(p=>{
     const rs=(allRisks||[]).filter(r=>r.project_id===p.id);
     if(!rs.length){items.push({kind:'nav',pr:7,icon:'📄',color:'#6D8196',title:'Generate risk register',sub:p.name,projId:p.id,tab:'files'});return;}
     const plan=p.action_plan;
@@ -2474,11 +2479,16 @@ function buildTodayTasks(){
   items.sort((x,y)=>x.pr-y.pr);
   return items.slice(0,14);
 }
-function showTodayTasks(force){
+let ttScope={mode:'all'};
+function showTodayTasks(scope){
+  if(scope&&typeof scope==='object')ttScope=scope;
   document.getElementById('ttModal')?.remove();
-  const tasks=buildTodayTasks();
+  const tasks=buildTodayTasks(ttScope);
   const dateStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const name=(currentUserProfile?.full_name||'').split(' ')[0]||'there';
+  let scopeName='';
+  if(ttScope.mode==='project'){const p=(projs||[]).find(x=>x.id===ttScope.id);scopeName=p?p.name:'';}
+  else if(ttScope.mode==='portfolio'){const pf=(portfolios||[]).find(x=>x.id===ttScope.id);scopeName=pf?pf.name:'';}
   const dueActions=tasks.filter(t=>t.kind==='action'&&t.d<=0);
   const soonActions=tasks.filter(t=>t.kind==='action'&&t.d>0);
   const overdueCount=dueActions.filter(t=>/overdue/.test(t.sub)).length;
@@ -2542,7 +2552,7 @@ function showTodayTasks(force){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div>
           <div style="font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.02em">Today's Tasks</div>
-          <div style="font-size:12px;color:var(--t3)">${dateStr}</div>
+          <div style="font-size:12px;color:var(--t3)">${dateStr}${scopeName?' · '+scopeName:''}</div>
         </div>
         ${todayCount?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${todayCount}</span>`:''}
       </div>
@@ -2625,10 +2635,10 @@ function maybeShowTodayTasks(){
   try{
     const today=new Date().toISOString().slice(0,10);
     if(localStorage.getItem('tt_lastShown')===today)return;
-    const tasks=buildTodayTasks();
+    const tasks=buildTodayTasks({mode:'all'});
     if(!tasks.length)return;
     localStorage.setItem('tt_lastShown',today);
-    showTodayTasks();
+    showTodayTasks({mode:'all'});
   }catch(e){}
 }
 
@@ -2808,6 +2818,7 @@ async function renderPortfolio(pfId){
       <div>
         <div class="dash-hero-l">${portf?portf.name:'Portfolio Overview'}</div>
         <div class="dash-hero-s">${portf?portf.description||'Portfolio Dashboard':'Comprehensive view of all projects'}</div>
+        <button class="btn btn-g" style="margin-top:11px" onclick="showTodayTasks(${portf?`{mode:'portfolio',id:'${portf.id}'}`:`{mode:'all'}`})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Today's Tasks</button>
       </div>
       <div style="display:flex;gap:11px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:8px">
@@ -3310,6 +3321,7 @@ async function selectProj(id){
     document.getElementById('portfolioView').style.display='none';
     document.getElementById('projView').style.display='block';
     document.getElementById('phName').textContent=CP.name;
+    {const _l=document.querySelector('#ttBtnProj .ttlbl');if(_l)_l.textContent=(CP.name?CP.name+' · ':'')+"Today's Tasks";}
     document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' SAR':'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
     renderSidebar();renderFiles();renderReg();renderRiskLog();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
