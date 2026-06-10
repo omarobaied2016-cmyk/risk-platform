@@ -2447,7 +2447,7 @@ function buildTodayTasks(){
           const col=overdue?'#f64e60':(a.priority===1?'#f64e60':a.priority===2?'#ffa800':'#6D8196');
           const rk=rs.find(r=>r.risk_id===a.risk_id);
           const followUp=!!a.last_update;
-          items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:followUp?('Follow up: '+a.title):a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id,risk_id:a.risk_id,riskDbId:rk?rk.id:'',risk_desc:rk?rk.description:'',mitigation:rk?rk.mitigation:'',due:a.due_date||'',last_update:a.last_update||''});
+          items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:followUp?('Follow up: '+a.title):a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id,risk_id:a.risk_id,riskDbId:rk?rk.id:'',risk_desc:rk?rk.description:'',mitigation:rk?rk.mitigation:'',due:a.due_date||'',last_update:a.last_update||'',d:d});
         }
       });
     }
@@ -2479,11 +2479,14 @@ function showTodayTasks(force){
   const tasks=buildTodayTasks();
   const dateStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   const name=(currentUserProfile?.full_name||'').split(' ')[0]||'there';
-  const actionCount=tasks.filter(t=>t.kind==='action').length;
-  const overdueCount=tasks.filter(t=>t.kind==='action'&&/overdue/.test(t.sub)).length;
+  const dueActions=tasks.filter(t=>t.kind==='action'&&t.d<=0);
+  const soonActions=tasks.filter(t=>t.kind==='action'&&t.d>0);
+  const overdueCount=dueActions.filter(t=>/overdue/.test(t.sub)).length;
+  const todayCount=dueActions.length;
   const needPlan=tasks.some(t=>t.kind==='genplan');
   let brief;
-  if(actionCount)brief=`Good morning, ${name}. You have <b>${actionCount} action${actionCount>1?'s':''}</b> to tackle${overdueCount?` (<b style="color:var(--red)">${overdueCount} overdue</b>)`:''}. Start with the red high-priority items — they cut your risk exposure fastest.`;
+  if(todayCount)brief=`Good morning, ${name}. You have <b>${todayCount} action${todayCount>1?'s':''}</b> to tackle today${overdueCount?` (<b style="color:var(--red)">${overdueCount} overdue</b>)`:''}. Start with the red high-priority items — they cut your risk exposure fastest.`;
+  else if(soonActions.length)brief=`Good morning, ${name}. Nothing urgent today — ${soonActions.length} action${soonActions.length>1?'s':''} coming up this week. A light day.`;
   else if(needPlan)brief=`Good morning, ${name}. Generate your AI action plan to get a daily to-do that keeps your risks on track through to project completion.`;
   else brief=`Good morning, ${name}.`;
   const rowAction=t=>`
@@ -2523,8 +2526,17 @@ function showTodayTasks(force){
       <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.4">${t.title}</div><div class="tt-sub">${t.sub}</div></div>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0;align-self:center"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`;
-  const body=tasks.length?tasks.map(t=>t.kind==='action'?rowAction(t):t.kind==='genplan'?rowGen(t):rowNav(t)).join('')
-    :`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No actions due across your projects today.</div></div>`;
+  const signalRows=tasks.filter(t=>t.kind==='signal');
+  const genRows=tasks.filter(t=>t.kind==='genplan');
+  const navRows=tasks.filter(t=>t.kind==='nav');
+  const subHead=txt=>`<div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:14px 2px 4px">${txt}</div>`;
+  let body='';
+  if(dueActions.length)body+=dueActions.map(rowAction).join('');
+  if(signalRows.length)body+=(dueActions.length?subHead('Suggested by your data'):'')+signalRows.map(rowNav).join('');
+  if(genRows.length)body+=genRows.map(rowGen).join('');
+  if(navRows.length)body+=navRows.map(rowNav).join('');
+  if(soonActions.length)body+=subHead('Coming up this week')+soonActions.map(rowAction).join('');
+  if(!body)body=`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No actions due across your projects today.</div></div>`;
   const html=`<div class="modal-ov on" id="ttModal" onclick="if(event.target===this)closeTodayTasks()">
     <div class="modal" style="max-width:470px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
@@ -2532,7 +2544,7 @@ function showTodayTasks(force){
           <div style="font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.02em">Today's Tasks</div>
           <div style="font-size:12px;color:var(--t3)">${dateStr}</div>
         </div>
-        ${actionCount?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${actionCount}</span>`:''}
+        ${todayCount?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${todayCount}</span>`:''}
       </div>
       <div style="font-size:12.5px;color:var(--t2);margin:8px 0 16px;line-height:1.55">${brief}</div>
       <div class="tt-list">${body}</div>
