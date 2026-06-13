@@ -732,7 +732,10 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .rt-reg{table-layout:fixed;width:100%;min-width:1366px;}
 .rt-reg td{vertical-align:top;line-height:1.5;white-space:nowrap;}
 /* Description, Risk Response, and Owner columns wrap to multiple lines; the rest stay on one line */
-.rt-reg td:nth-child(4),.rt-reg td:nth-child(9),.rt-reg td:nth-child(10),.rt-reg td:nth-child(11){white-space:normal;word-break:normal;overflow-wrap:break-word;}
+.rt-reg td:nth-child(5),.rt-reg td:nth-child(10),.rt-reg td:nth-child(11),.rt-reg td:nth-child(12){white-space:normal;word-break:normal;overflow-wrap:break-word;}
+.rt-compact{min-width:980px !important;}
+.rt-compact td:nth-child(3),.rt-compact td:nth-child(5),.rt-compact td:nth-child(6){white-space:normal;word-break:normal;overflow-wrap:break-word;}
+.rt-compact td:nth-child(10),.rt-compact td:nth-child(11),.rt-compact td:nth-child(12){white-space:nowrap;}
 .rt-reg th{vertical-align:bottom;}
 /* Expandable detail row */
 .rrow:hover>td{background:rgba(109,129,150,.035);}
@@ -762,6 +765,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .attn-red{border-color:rgba(246,78,96,.25);background:rgba(246,78,96,.05);}.attn-red .attn-n{color:var(--red);}
 .attn-orange{border-color:rgba(255,168,0,.28);background:rgba(255,168,0,.06);}.attn-orange .attn-n{color:#d97706;}
 .attn-yellow{border-color:rgba(202,138,4,.25);background:rgba(202,138,4,.05);}.attn-yellow .attn-n{color:#a16207;}
+.attn-blue{border-color:rgba(109,129,150,.3);background:rgba(109,129,150,.07);}.attn-blue .attn-n{color:var(--primary);}
 
 /* ═══ GUIDED EMPTY / ONBOARDING STATES ═══ */
 .eo{max-width:560px;margin:0 auto;text-align:center;padding:46px 24px;animation:fadeIn .35s var(--ease);}
@@ -821,6 +825,30 @@ tr:hover td{background:rgba(109,129,150,.015);}
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
 }
 
+/* ═══ TOASTS ═══ */
+#toastWrap{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:9999;align-items:center;pointer-events:none;}
+.toast{display:flex;align-items:center;gap:10px;background:#2B3440;color:#F4F7FA;border-radius:12px;padding:11px 14px 11px 12px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(20,28,38,.35);opacity:0;transform:translateY(12px);transition:all .25s cubic-bezier(.2,.7,.2,1);pointer-events:auto;max-width:520px;}
+.toast.in{opacity:1;transform:none;}
+.toast.out{opacity:0;transform:translateY(8px);}
+.toast-ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;background:#88A0B4;color:#fff;}
+.t-ok .toast-ic{background:var(--grn);}
+.t-err .toast-ic{background:var(--red);}
+.toast-msg{line-height:1.4;}
+.toast-undo{background:#FFFFE3;color:#2B3440;border:0;border-radius:8px;padding:5px 12px;font:700 12px/1 inherit;cursor:pointer;flex-shrink:0;}
+.toast-x{background:none;border:0;color:#8DA0B1;font-size:18px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0;}
+/* ═══ ACCESSIBILITY & MICRO-INTERACTIONS ═══ */
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px;}
+.btn:active{transform:scale(.97);}
+.btn{transition:background .15s,transform .12s,box-shadow .15s;}
+.tt-item,.dash-section,.kpi{transition:box-shadow .2s,transform .2s;}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+/* ═══ SUB NAV ═══ */
+.subtabs{display:flex;gap:6px;margin:-6px 0 14px;flex-wrap:wrap;}
+.subtab{font-size:12px;font-weight:600;color:var(--t2);background:var(--s1);border:1px solid var(--b1);border-radius:18px;padding:6px 14px;cursor:pointer;transition:all .15s;}
+.subtab:hover{border-color:var(--primary);color:var(--primary);}
+.subtab.on{background:var(--primary);border-color:var(--primary);color:#fff;}
+.role-viewer .bulk-chk,.role-viewer #bulkBar,.role-viewer .btn-del,.role-viewer .tt-chk{display:none !important;}
+.role-viewer .rdet .btn-p,.role-viewer .rdet input,.role-viewer .rdet select{pointer-events:none;opacity:.5;}
 </style>
 </head>
 <body>
@@ -926,7 +954,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- ACCOUNT SETTINGS MODAL -->
-<div class="modal-ov" id="accountModal">
+<div class="modal-ov" role="dialog" aria-modal="true" id="accountModal">
   <div class="modal" style="max-width:460px">
     <div class="modal-t">Account Settings</div>
     <div id="accountMsg" style="display:none;padding:.6rem .9rem;border-radius:8px;font-size:12px;margin-bottom:14px"></div>
@@ -957,7 +985,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- ADD RISK MANUALLY MODAL -->
-<div class="modal-ov" id="addRiskModal">
+<div class="modal-ov" role="dialog" aria-modal="true" id="addRiskModal">
   <div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto">
     <div class="modal-t" style="margin-bottom:4px">Add Risk Manually</div>
     <div class="modal-sub">Add a single risk or opportunity. Not sure about scoring? Upload documents in Files and let AI do it for you.</div>
@@ -1054,7 +1082,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- EDIT RISK MODAL -->
-<div class="modal-ov" id="editOv">
+<div class="modal-ov" role="dialog" aria-modal="true" id="editOv">
   <div class="modal" style="width:640px">
     <div class="modal-t">Edit Risk</div>
     <div class="edit-grid">
@@ -1077,7 +1105,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- NOTIFICATIONS MODAL -->
-<div class="modal-ov" id="notifOv">
+<div class="modal-ov" role="dialog" aria-modal="true" id="notifOv">
   <div class="modal" style="width:640px">
     <div class="modal-t">Notification Messages</div>
     <div style="font-size:11.5px;color:var(--t3);margin-bottom:13px">Copy these messages and send to each owner</div>
@@ -1089,7 +1117,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- PORTFOLIO MODAL -->
-<div class="modal-ov" id="portfModal">
+<div class="modal-ov" role="dialog" aria-modal="true" id="portfModal">
   <div class="modal" style="width:520px">
     <div class="modal-t" id="pfModalTitle">New Portfolio</div>
     <div class="fgrid">
@@ -1108,7 +1136,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- PORTFOLIO MODAL -->
-<div class="modal-ov" id="portfModal">
+<div class="modal-ov" role="dialog" aria-modal="true" id="portfModal">
   <div class="modal" style="width:480px">
     <div class="modal-t">New Portfolio</div>
     <div class="fgrid" style="grid-template-columns:1fr">
@@ -1124,7 +1152,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- CHANGES DETECTED MODAL -->
-<div class="modal-ov" id="changesOv">
+<div class="modal-ov" role="dialog" aria-modal="true" id="changesOv">
   <div class="modal" style="width:760px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div class="modal-t" style="margin:0">📋 Changes Detected</div>
@@ -1140,7 +1168,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- PROJECT MODAL -->
-<div class="modal-ov" id="projModal">
+<div class="modal-ov" role="dialog" aria-modal="true" id="projModal">
   <div class="modal" style="max-width:600px">
     <div class="modal-t" style="margin-bottom:4px">New Project</div>
     <div class="modal-sub">Set up your project, then upload documents to generate its AI risk register.</div>
@@ -1217,7 +1245,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- PROJECT SETTINGS MODAL (#4) -->
-<div class="modal-ov" id="settingsModal">
+<div class="modal-ov" role="dialog" aria-modal="true" id="settingsModal">
   <div class="modal" style="max-width:600px">
     <div class="modal-t">⚙ Project Settings</div>
     <div class="fgrid">
@@ -1226,10 +1254,10 @@ tr:hover td{background:rgba(109,129,150,.015);}
       <div class="fg"><label class="fl">Contract Value</label><input type="text" class="fi" id="set_v"/></div>
       <div class="fg"><label class="fl">Project Type</label>
         <select class="fs" id="set_t">
-          <option>Residential</option><option>Commercial</option><option>Mixed-Use</option><option>Infrastructure</option>
-          <option>Roads & Highways</option><option>Industrial</option><option>Healthcare</option><option>Educational</option>
-          <option>Hospitality</option><option>Landscaping</option><option>Marine</option><option>MEP</option>
-          <option>Renovation</option><option>Government</option><option>Other</option>
+          <optgroup label="Construction & Infrastructure"><option>Residential</option><option>Commercial</option><option>Mixed-Use</option><option>Infrastructure</option><option>Roads & Highways</option><option>Industrial</option><option>Healthcare</option><option>Educational</option><option>Hospitality</option><option>Landscaping</option><option>Marine</option><option>MEP</option><option>Renovation</option></optgroup>
+          <optgroup label="Energy & Industrial"><option>Oil & Gas</option><option>Energy & Power</option><option>Renewables</option><option>Manufacturing</option><option>Mining</option></optgroup>
+          <optgroup label="Technology & Business"><option>IT & Software</option><option>Telecom</option><option>Product Development</option><option>R&D</option><option>Consulting</option><option>Financial Services</option></optgroup>
+          <optgroup label="Other Sectors"><option>Government</option><option>Defense</option><option>Logistics & Supply Chain</option><option>Events</option><option>Other</option></optgroup>
         </select>
       </div>
       <div class="fg"><label class="fl">Start Date</label><input type="date" class="fi" id="set_s"/></div>
@@ -1246,6 +1274,16 @@ tr:hover td{background:rgba(109,129,150,.015);}
         </select>
         <div style="font-size:10.5px;color:var(--t3);margin-top:5px">Changing this resets the default tolerance levels. Fine-tune them in the Risk Appetite tab.</div>
       </div>
+      <div class="fg full" style="border-top:1px solid var(--b1);padding-top:12px;margin-top:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:4px">Team & Sharing</div>
+        <div style="font-size:10.5px;color:var(--t3);margin-bottom:9px">Share this project by email. Editors can change risks and plans; viewers can only read.</div>
+        <div id="teamList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:9px"></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <input type="email" class="fi" id="team_email" placeholder="colleague@company.com" style="flex:1;min-width:180px"/>
+          <select class="fs" id="team_role" style="width:110px"><option value="editor">Editor</option><option value="viewer">Viewer</option></select>
+          <button class="btn btn-p" onclick="teamAdd()">Invite</button>
+        </div>
+      </div>
     </div>
     <div style="display:flex;gap:7px;justify-content:flex-end">
       <button class="btn btn-g" onclick="closeSettingsModal()">Cancel</button>
@@ -1256,7 +1294,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 
 <!-- ═══ APP ═══ -->
 <div class="app" style="display:none">
-<div class="mobile-menu-btn" onclick="document.querySelector('.sb').classList.toggle('open')">☰</div>
+<div class="mobile-menu-btn" aria-label="Open menu" onclick="document.querySelector('.sb').classList.toggle('open')">☰</div>
   <!-- SIDEBAR -->
   <aside class="sb">
     <div class="sb-brand" style="padding:18px 16px">
@@ -1315,9 +1353,9 @@ tr:hover td{background:rgba(109,129,150,.015);}
     <!-- HOME (ALL PORTFOLIOS) -->
     <div id="homeView">
       <div class="top-bar">
-        <div class="search-bar">
+        <div class="search-bar" style="visibility:hidden">
           <span style="color:var(--t3)">⌕</span>
-          <input type="text" placeholder="Search projects and portfolios..." id="searchInput" oninput="filterAll(this.value)"/>
+          <input type="text" placeholder="Search projects and portfolios..." id="searchInput" oninput="filterAll(this.value)" style="display:none"/>
         </div>
         <div class="top-actions">
           <button class="btn btn-g" id="ttBtnHome" onclick="showTodayTasks({mode:'all'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="ttlbl">Today's Tasks</span></button>
@@ -1360,25 +1398,22 @@ tr:hover td{background:rgba(109,129,150,.015);}
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn btn-g" id="ttBtnProj" onclick="showTodayTasks({mode:'project',id:CID})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="ttlbl">Today's Tasks</span></button>
-          <button class="btn btn-g" onclick="openSettingsModal()">Settings</button>
+          <button class="btn btn-g" id="btnSettings" onclick="openSettingsModal()">Settings</button>
           <button class="btn btn-warn" onclick="showNotifModal()">Notifications</button>
           <button class="btn btn-g" onclick="showExportModal()">Export</button>
-          <button class="btn btn-del" onclick="delProj()">Delete</button>
+          <button class="btn btn-del" id="btnDelProj" onclick="delProj()">Delete</button>
+          <span id="roleBadge" style="display:none;align-self:center;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:var(--t3);background:var(--s2);border:1px solid var(--b1);border-radius:12px;padding:4px 11px"></span>
         </div>
       </div>
 
-      <div class="tabs">
-        <div class="tab on" onclick="ST('files')" data-tab="files"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Files</div>
-        <div class="tab" onclick="ST('dash')" data-tab="dash"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Dashboard</div>
-        <div class="tab" onclick="ST('reg')" data-tab="reg"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg> Risk Register</div>
-        <div class="tab" onclick="ST('risklog')" data-tab="risklog"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Risk Log</div>
-        <div class="tab" onclick="ST('warn')" data-tab="warn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg> Early Warning</div>
-        <div class="tab" onclick="ST('upd')" data-tab="upd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Updates</div>
-        <div class="tab" onclick="ST('tol')" data-tab="tol"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Risk Appetite</div>
-        <div class="tab" onclick="ST('contacts')" data-tab="contacts"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Contacts</div>
-        <div class="tab" onclick="ST('whatif')" data-tab="whatif"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> What-If</div>
-        <div class="tab" onclick="ST('insights')" data-tab="insights"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Insights</div>
+      <div class="tabs" role="tablist" aria-label="Project sections">
+        <div class="tab on" onclick="STG('overview')" data-grp="overview" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Overview</div>
+        <div class="tab" onclick="STG('risks')" data-grp="risks" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg> Risks</div>
+        <div class="tab" onclick="STG('plan')" data-grp="plan" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Plan</div>
+        <div class="tab" onclick="STG('monitor')" data-grp="monitor" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Monitor</div>
+        <div class="tab" onclick="STG('intel')" data-grp="intel" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Intelligence</div>
       </div>
+      <div class="subtabs" id="subtabs"></div>
 
       <div class="pane on" id="pane-files">
         <div class="drop">
@@ -1396,6 +1431,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
 
       <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><div class="et">Run analysis to view dashboard</div></div></div></div>
       <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><div class="et">No risk register yet</div></div></div></div>
+      <div class="pane" id="pane-plan"><div id="planContent"></div></div>
       <div class="pane" id="pane-risklog"><div id="riskLogContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="et">No closed risks yet</div></div></div></div>
       <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div><div class="et">Run analysis to view warnings</div></div></div></div>
 
@@ -1842,23 +1878,23 @@ function checkPlanLimit(type){
   const plan=getUserPlan();
   const limits=getPlanLimits(plan);
   if(type==='project'&&projs.length>=limits.projects){
-    alert(`Your ${limits.label} plan allows up to ${limits.projects} project(s). Upgrade to add more.`);
+    toast(`Your ${limits.label} plan allows up to ${limits.projects} project(s). Upgrade to add more.`);
     return false;
   }
   if(type==='portfolio'&&portfolios.length>=limits.portfolios&&plan==='free_trial'){
-    alert('Free Trial does not include portfolios. Upgrade to Pro or higher.');
+    toast('Free Trial does not include portfolios. Upgrade to Pro or higher.');
     return false;
   }
   if(type==='portfolio'&&portfolios.length>=limits.portfolios){
-    alert(`Your ${limits.label} plan allows up to ${limits.portfolios} portfolio(s). Upgrade to add more.`);
+    toast(`Your ${limits.label} plan allows up to ${limits.portfolios} portfolio(s). Upgrade to add more.`);
     return false;
   }
   if(type==='whatif'&&!limits.whatif){
-    alert('What-If Analysis is not available on Free Trial. Upgrade to Pro or higher.');
+    toast('What-If Analysis is not available on Free Trial. Upgrade to Pro or higher.');
     return false;
   }
   if(type==='insights'&&!limits.insights){
-    alert('Market Insights is not available on Free Trial. Upgrade to Pro or higher.');
+    toast('Market Insights is not available on Free Trial. Upgrade to Pro or higher.');
     return false;
   }
   return true;
@@ -2246,6 +2282,18 @@ async function loadAll(){
       projs=await sb('projects?order=created_at.desc&select=*')||[];
     }else{
       projs=await sb(`projects?user_id=eq.${uid}&order=created_at.desc&select=*`)||[];
+      // Projects shared with me (Team & Sharing) — graceful no-op until the migration is run
+      try{
+        const myEmail=(currentUser?.email||'').toLowerCase();
+        if(myEmail){
+          const mships=await sb(`project_members?user_email=eq.${encodeURIComponent(myEmail)}&select=*`)||[];
+          const sharedIds=mships.map(m=>m.project_id).filter(id=>!projs.some(p=>p.id===id));
+          if(sharedIds.length){
+            const shared=await sb(`projects?id=in.(${sharedIds.join(',')})&select=*`)||[];
+            shared.forEach(p=>{p._shared=true;p._members=mships.filter(m=>m.project_id===p.id);projs.push(p);});
+          }
+        }
+      }catch(e){/* table not created yet */}
     }
     if(projs.length){
       const projIds=projs.map(p=>p.id);
@@ -2255,6 +2303,20 @@ async function loadAll(){
         try{allRisks=await sb(`risks?project_id=in.(${projIds.join(',')})&select=*`)||[];}catch(e){allRisks=[];}
       }
     }
+    // Daily exposure snapshot per project (powers trend arrows & future charts)
+    try{
+      const tIso=new Date().toISOString().slice(0,10);
+      projs.forEach(p=>{
+        const v=parseFloat(p.value)||0;if(!v)return;
+        const rs=allRisks.filter(r=>r.project_id===p.id&&r.type!=='opportunity'&&r.status!=='closed');
+        const expo=Math.round(rs.reduce((sm,r)=>sm+v*((r.probability||3)/5)*((r.impact_cost||0)/5)*0.10,0));
+        let h=Array.isArray(p.exposure_history)?p.exposure_history:[];
+        if(h.length&&h[h.length-1].date===tIso)return;
+        h=[...h,{date:tIso,exposure:expo}].slice(-90);
+        p.exposure_history=h;
+        sb('projects?id=eq.'+p.id,'PATCH',{exposure_history:h}).catch(()=>{});
+      });
+    }catch(e){}
     renderSidebar();
     renderHome();
     {const _fn=(currentUserProfile?.full_name||'').split(' ')[0];const _l=document.querySelector('#ttBtnHome .ttlbl');if(_l)_l.textContent=(_fn?_fn+' · ':'')+"Today's Tasks";}
@@ -2396,8 +2458,53 @@ function renderHome(){
 
   // Unassigned projects
   const unassigned=projs.filter(p=>!p.portfolio_id);
-  
+
+  // (onboarding checklist exists below as obHtml)
+
+  // ═══ Onboarding checklist (auto-tracked, dismissible) ═══
+  let obHtml='';
+  try{
+    if(!localStorage.getItem('ob_dismissed')){
+      const s1=projs.length>0;
+      const s2=allRisks.length>0; // register approved
+      const s3=projs.some(p=>p.action_plan&&Array.isArray(p.action_plan.actions)&&p.action_plan.actions.length);
+      const s4=!!localStorage.getItem('arm_intro_seen');
+      const s5=projs.some(p=>(p.trend_data&&p.trend_data.length)||(p.market_insights));
+      const steps=[
+        {d:s1,t:'Create a project',go:s1?'':'openProjModal()'},
+        {d:s2,t:'Upload docs & approve your AI register',go:s2?'':(projs.length?`selectProj('${projs[0].id}')`:'openProjModal()')},
+        {d:s3,t:'Generate your action plan',go:s3?'':(projs.length?`selectProj('${projs[0].id}').then(()=>ST('plan'))`:'')},
+        {d:s4,t:'Meet your AI Risk Manager',go:s4?'':'armToggle()'},
+        {d:s5,t:'Add a trend period or market insights',go:s5?'':(projs.length?`selectProj('${projs[0].id}').then(()=>ST('upd'))`:'')}
+      ];
+      const done=steps.filter(x=>x.d).length;
+      if(done<steps.length){
+        obHtml=`<div class="dash-section" style="margin-bottom:18px;border-left:4px solid var(--primary)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:13.5px;font-weight:800;color:var(--t1)">Getting started <span style="color:var(--primary)">· ${done}/${steps.length}</span></div>
+            <button class="btn btn-g" style="padding:3px 10px;font-size:11px" onclick="localStorage.setItem('ob_dismissed','1');renderHome()" aria-label="Dismiss checklist">Dismiss</button>
+          </div>
+          <div style="height:6px;background:var(--s2);border-radius:3px;margin-bottom:12px"><div style="height:6px;width:${done/steps.length*100}%;background:var(--primary);border-radius:3px;transition:width .4s"></div></div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            ${steps.map(x=>`<div style="display:flex;align-items:center;gap:9px;${x.go?'cursor:pointer':''}" ${x.go?`onclick="${x.go}"`:''}>
+              <span style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:800;${x.d?'background:var(--grn);color:#fff':'border:2px solid var(--b2,#cfd8e0);color:transparent'}">✓</span>
+              <span style="font-size:12.5px;font-weight:600;color:${x.d?'var(--t3)':'var(--t1)'};${x.d?'text-decoration:line-through':''}">${x.t}</span>
+              ${!x.d&&x.go?'<span style="font-size:11px;color:var(--primary);font-weight:700;margin-left:auto">Start →</span>':''}
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }
+    }
+  }catch(e){}
+
+  // Cost exposure across portfolio — only summed when all projects share one currency (honest numbers)
+  const _pce=p=>{const rs=allRisks.filter(r=>r.project_id===p.id&&r.type!=='opportunity'&&r.status!=='closed');const v=parseFloat(p.value)||0;if(!v)return 0;return rs.reduce((s,r)=>s+v*((r.probability||3)/5)*((r.impact_cost||0)/5)*0.10,0);};
+  const curs=[...new Set(projs.filter(p=>parseFloat(p.value)>0).map(p=>p.currency||'USD'))];
+  const totalExpo=curs.length===1?Math.round(projs.reduce((s,p)=>s+_pce(p),0)):null;
+  const expoFmt=totalExpo?(totalExpo>=1e6?(totalExpo/1e6).toFixed(1)+'M':totalExpo>=1e3?Math.round(totalExpo/1e3)+'k':totalExpo)+' '+curs[0]:null;
+
   el.innerHTML=`
+    ${obHtml}
     <div class="stat-grid">
       <div class="stat-card cyan">
         <div class="stat-icon">📁</div>
@@ -2414,12 +2521,17 @@ function renderHome(){
         <div class="stat-l">Total Risks</div>
         <div class="stat-v" style="color:var(--red)">${totalRisks}</div>
       </div>
-      <div class="stat-card green">
+      ${expoFmt?`<div class="stat-card green">
+        <div class="stat-icon">＄</div>
+        <div class="stat-l">Cost Exposure</div>
+        <div class="stat-v" style="color:#a16207">${expoFmt}</div>
+      </div>`:`<div class="stat-card green">
         <div class="stat-icon">▲</div>
         <div class="stat-l">High Risk</div>
         <div class="stat-v" style="color:var(--red)">${totalHigh}</div>
-      </div>
+      </div>`}
     </div>
+
 
     ${portfolios.length?`
       <div style="font-size:14px;font-weight:700;margin-bottom:11px;color:var(--t1)">Portfolios</div>
@@ -2486,7 +2598,7 @@ function buildTodayTasks(scope){
       const tr=td[td.length-1];const rep=tr&&tr.report;
       if(rep&&(tr.alert_level==='high'||tr.alert_level==='medium')){
         const act=(rep.actions&&rep.actions[0])||(rep.warnings&&rep.warnings[0])||'Review the latest trend alert with your team';
-        items.push({kind:'signal',pr:tr.alert_level==='high'?2:4,icon:'📉',color:tr.alert_level==='high'?'#f64e60':'#ffa800',title:act,sub:`${p.name} · Trend Analysis`,projId:p.id,tab:'upd'});
+        items.push({kind:'signal',pr:tr.alert_level==='high'?2:4,icon:'📉',color:tr.alert_level==='high'?'#f64e60':'#ffa800',title:act,sub:`${p.name} · From Trend Analysis${tr.date?' · '+tr.date:''}`,projId:p.id,tab:'upd'});
       }
     }
     // Signal from Market Insights
@@ -2496,7 +2608,7 @@ function buildTodayTasks(scope){
       const top=mi.insights.slice().sort((x,y)=>(rank[x.impact_probability]??3)-(rank[y.impact_probability]??3))[0];
       if(top){
         const txt=top.recommendation||('Review market signal: '+(top.title||''));
-        items.push({kind:'signal',pr:5,icon:'🌐',color:'#6D8196',title:txt,sub:`${p.name} · Market Insights`,projId:p.id,tab:'insights'});
+        const miDate=mi.generated_at?new Date(mi.generated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';items.push({kind:'signal',pr:5,icon:'🌐',color:'#6D8196',title:txt,sub:`${p.name} · From Market Insights${miDate?' · '+miDate:''}`,projId:p.id,tab:'insights'});
       }
     }
   });
@@ -2527,7 +2639,7 @@ function showTodayTasks(scope){
     <div class="tt-item" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="toggleTaskDetail(this)">
       <div style="display:flex;align-items:flex-start;gap:11px">
         <input type="checkbox" class="tt-chk" style="margin-top:3px" onclick="event.stopPropagation()" onchange="toggleActionDone('${t.projId}','${t.actionId}',this.checked)"/>
-        <span style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;margin-top:6px"></span>
+        <span role="img" aria-label="Priority" title="Priority" style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;margin-top:6px"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45">${t.title}</div>
           <div class="tt-sub">${t.sub}</div>
@@ -2618,8 +2730,8 @@ async function logTaskUpdate(projId,actionId,text){
 async function generateActionPlan(projId,noPopup){
   const p=(projs||[]).find(x=>x.id===projId);if(!p)return;
   const rs=(allRisks||[]).filter(r=>r.project_id===projId&&r.status!=='closed');
-  if(!rs.length){if(!noPopup)alert('No risks to plan yet. Generate the risk register first.');return;}
-  showLoad('Building your AI action plan...');
+  if(!rs.length){if(!noPopup)toast('No risks to plan yet. Generate the risk register first.');return;}
+  showLoadStages(['Reading your response plans…','Breaking them into scheduled actions…','Prioritizing by severity and dates…'],6000);
   const todayISO=new Date().toISOString().slice(0,10);
   const list=rs.map(r=>`${r.risk_id} [${r.level}|${r.type||'threat'}] ${r.description} | Response plan: ${r.mitigation||'—'} | Expected: ${r.expected_date||'ongoing'} | Owner: ${r.response_owner||r.owner||'—'}`).join('\n');
   try{
@@ -2637,23 +2749,26 @@ Risks:\n${list}
 Respond ONLY with valid JSON:
 {"brief":"2-sentence summary of the focus for this project","actions":[{"risk_id":"R001","title":"Order long-lead steel and confirm delivery schedule","due_date":"2026-07-15","priority":1}]}`}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
-    let parsed;try{parsed=pJSON(data.content[0].text);}catch(e){alert('Could not build the plan. Please try again.');return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
+    let parsed;try{parsed=pJSON(data.content[0].text);}catch(e){toast('Could not build the plan. Please try again.');return;}
     const actions=(parsed.actions||[]).map((a,i)=>({id:'ap'+Date.now().toString(36)+i,risk_id:a.risk_id||'',title:a.title||'',due_date:a.due_date||'',priority:a.priority||2,status:'todo'}));
     const plan={generated_at:new Date().toISOString(),brief:parsed.brief||'',actions};
     p.action_plan=plan;
     if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP)CP.action_plan=plan;
     try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:plan});}
-    catch(e){console.error('save action_plan',e);alert('Plan built but could NOT save. Ensure the projects table has an "action_plan" jsonb column.');}
+    catch(e){console.error('save action_plan',e);toast('Plan built but could NOT save. Ensure the projects table has an "action_plan" jsonb column.');}
     if(!noPopup)showTodayTasks(true);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 async function toggleActionDone(projId,actionId,checked){
   const p=(projs||[]).find(x=>x.id===projId);if(!p||!p.action_plan)return;
   const a=p.action_plan.actions.find(x=>x.id===actionId);if(!a)return;
   a.status=checked?'done':'todo';
   try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
-  showTodayTasks(true);
+  const fromPlan=document.getElementById('pane-plan')?.classList.contains('on')&&!document.getElementById('ttModal');
+  const refresh=()=>{if(document.getElementById('ttModal'))showTodayTasks(true);else if(fromPlan)renderPlan();};
+  refresh();
+  if(checked)toast('Action completed',{type:'ok',undo:async()=>{a.status='todo';try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){}refresh();}});
 }
 function maybeShowTodayTasks(){
   try{
@@ -2700,7 +2815,7 @@ function closePortfModal(){document.getElementById('portfModal').classList.remov
 
 async function savePortfolio(){
   const name=document.getElementById('pf_name').value.trim();
-  if(!name){alert('Please enter portfolio name');return;}
+  if(!name){toast('Please enter portfolio name');return;}
   if(!editingPortfolio&&!requireActiveAccess())return;
   if(!editingPortfolio&&!checkPlanLimit('portfolio'))return;
   const data={
@@ -2723,9 +2838,9 @@ async function savePortfolio(){
   }catch(e){
     hideLoad();
     if(e.message.includes('does not exist')||e.message.includes('relation')){
-      alert('Portfolios table must be created in the database first. Check developer instructions.');
+      toast('Portfolios table must be created in the database first. Check developer instructions.');
     }else{
-      alert('Error: '+e.message);
+      toast('Error: '+e.message);
     }
   }
 }
@@ -2747,21 +2862,21 @@ async function delCurrentPortfolio(){
     await sb('portfolios?id=eq.'+currentPF.id,'DELETE');
     hideLoad();goHome();
     await loadAll();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 async function assignToPortfolio(projId){
-  if(!portfolios.length){alert('Create a portfolio first');return;}
+  if(!portfolios.length){toast('Create a portfolio first');return;}
   const list=portfolios.map((p,i)=>`${i+1}. ${p.name}`).join('\n');
   const choice=prompt(`Choose portfolio number:\n\n${list}`);
   if(!choice)return;
   const idx=parseInt(choice)-1;
-  if(idx<0||idx>=portfolios.length){alert('Invalid selection');return;}
+  if(idx<0||idx>=portfolios.length){toast('Invalid selection');return;}
   showLoad('Saving...');
   try{
     await sb('projects?id=eq.'+projId,'PATCH',{portfolio_id:portfolios[idx].id});
     hideLoad();await loadAll();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ PORTFOLIO VIEW ═══
@@ -2836,6 +2951,35 @@ async function renderPortfolio(pfId){
 
   const catIcons={};
 
+  // ═══ Project compare table (the PMO weekly view) ═══
+  const cmpRows=list.map(p=>{
+    const rs=allRisks.filter(r=>r.project_id===p.id&&r.status!=='closed'&&r.type!=='opportunity');
+    const hi=rs.filter(r=>r.level==='high').length;
+    const acts=(p.action_plan&&p.action_plan.actions)||[];
+    const doneN=acts.filter(a=>a.status==='done').length;
+    const planPct=acts.length?Math.round(doneN/acts.length*100):null;
+    const h=Array.isArray(p.exposure_history)?p.exposure_history:[];
+    const expo=h.length?h[h.length-1].exposure:Math.round(projCostExposure(p));
+    let arrow='—',ac='var(--t3)';
+    if(h.length>=2){const d=h[h.length-1].exposure-h[h.length-2].exposure;if(d>0){arrow='▲';ac='var(--red)';}else if(d<0){arrow='▼';ac='var(--grn)';}else{arrow='▬';}}
+    return {p,hi,planPct,acts:acts.length,expo,arrow,ac,cur:p.currency||'USD'};
+  }).sort((a,b)=>b.expo-a.expo);
+  const fmtE=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'k':n;
+  const cmpTable=cmpRows.length?`
+    <div class="dash-section" style="margin-bottom:18px">
+      <div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num" style="background:linear-gradient(135deg,var(--primary),var(--purple))">⇄</span><span class="dash-sec-name">Project Comparison</span></div></div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+        <tr style="text-align:left;color:var(--t3);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em"><th style="padding:7px 8px">Project</th><th style="padding:7px 8px">Cost Exposure</th><th style="padding:7px 8px">Trend</th><th style="padding:7px 8px">High Risks</th><th style="padding:7px 8px">Plan Progress</th></tr>
+        ${cmpRows.map(r=>`<tr style="border-top:1px solid var(--b1);cursor:pointer" onclick="selectProj('${r.p.id}')">
+          <td style="padding:9px 8px;font-weight:700;color:var(--t1)">${r.p.name}</td>
+          <td style="padding:9px 8px;font-weight:700;color:#a16207">${r.expo?fmtE(r.expo)+' '+r.cur:'—'}</td>
+          <td style="padding:9px 8px;color:${r.ac};font-weight:800">${r.arrow}</td>
+          <td style="padding:9px 8px;font-weight:700;color:${r.hi?'var(--red)':'var(--grn)'}">${r.hi}</td>
+          <td style="padding:9px 8px">${r.planPct===null?'<span style="color:var(--t3)">No plan</span>':`<div style="display:flex;align-items:center;gap:7px"><div style="width:74px;height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${r.planPct}%;background:var(--grn)"></div></div><span style="font-size:11px;color:var(--t2)">${r.planPct}%</span></div>`}</td>
+        </tr>`).join('')}
+      </table></div>
+    </div>`:'';
+
   el.innerHTML=`
     <!-- Hero -->
     <div class="dash-hero">
@@ -2906,6 +3050,7 @@ async function renderPortfolio(pfId){
     </div>
 
     <!-- Section 1: Best/Worst + Patterns -->
+    ${cmpTable}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="dash-section" style="background:${worstProj&&worstProj.score>70?'#fff5f5':'var(--s1)'};border-color:${worstProj&&worstProj.score>70?'rgba(246,78,96,.2)':'var(--b1)'}">
         <div class="dash-sec-head">
@@ -3140,9 +3285,9 @@ async function renderPortfolio(pfId){
 async function generatePortfolioReport(){
   if(!currentPF)return;
   const list=projs.filter(p=>p.portfolio_id===currentPF.id);
-  if(!list.length){alert('No projects in portfolio');return;}
+  if(!list.length){toast('No projects in portfolio');return;}
   if(!requireActiveAccess())return;
-  if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
+  if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
   showLoad('Generating portfolio report...');
   
   const projSummaries=list.map(p=>{
@@ -3168,17 +3313,20 @@ Top Risks:
 ${topRisks}
 
 Provide a comprehensive report in the following format only:
+WRITING STANDARD: Write as a senior risk consultant briefing an executive committee. Be specific to this data (cite risk IDs, amounts, dates), decisive, and concise. No generic statements that could apply to any project, no repeated points, no filler.
+
+Respond ONLY with valid JSON:
 {"executive_summary":"4-5 sentence executive summary about overall portfolio health","portfolio_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4"],"top_concerns":["concern 1 with project name","concern 2","concern 3"],"cross_project_patterns":["shared pattern 1","pattern 2"],"strategic_recommendations":["recommendation 1","recommendation 2","recommendation 3","recommendation 4"],"priority_projects":["urgent project 1 with reason","project 2"]}`}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
-    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
+    try{parsed=pJSON(data.content[0].text);}catch(e){toast('Analysis error');return;}
     const now=new Date().toISOString();
     currentPF.ai_report=parsed;currentPF.ai_report_date=now;
     sb('portfolios?id=eq.'+currentPF.id,'PATCH',{ai_report:parsed,ai_report_date:now}).catch(()=>{});
     renderPortfolioReport(parsed,now);
     document.getElementById('portfReport')?.scrollIntoView({behavior:'smooth',block:'start'});
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 function renderPortfolioReport(parsed,dateStr){
@@ -3209,9 +3357,9 @@ function renderPortfolioReport(parsed,dateStr){
 }
 
 async function translatePortfolioReport(){
-  if(!currentPF||!currentPF.ai_report){alert('Generate a report first');return;}
+  if(!currentPF||!currentPF.ai_report){toast('Generate a report first');return;}
   const lang=document.getElementById('pfReportLang')?.value||'English';
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Translating to '+lang+'...');
   try{
     const rep=currentPF.ai_report;const items=[];const map=[];
@@ -3223,7 +3371,7 @@ async function translatePortfolioReport(){
     tr.forEach((t,i)=>{const m=map[i];if(m.type==='k')m.obj[m.key]=t;else m.arr[m.idx]=t;});
     sb('portfolios?id=eq.'+currentPF.id,'PATCH',{ai_report:rep}).catch(()=>{});
     hideLoad();renderPortfolioReport(rep,currentPF.ai_report_date||new Date().toISOString());
-  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+  }catch(e){hideLoad();toast('Translation error: '+e.message);}
 }
 
 // ═══ PROJECT MODAL ═══
@@ -3265,10 +3413,59 @@ async function createProj(){
     if(pfId)openPortfolios.add(pfId);
     await loadAll();
     if(res&&res[0])selectProj(res[0].id);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ PROJECT SETTINGS (#4) ═══
+// ═══ TEAM & SHARING (project_members) ═══
+let teamMembers=[];
+async function teamLoad(){
+  const el=document.getElementById('teamList');if(!el||!CP)return;
+  el.innerHTML='<div style="font-size:11px;color:var(--t3)">Loading…</div>';
+  try{teamMembers=await sb('project_members?project_id=eq.'+CID+'&select=*')||[];}
+  catch(e){teamMembers=null;}
+  if(teamMembers===null){el.innerHTML='<div style="font-size:11px;color:var(--t3)">Sharing isn\'t enabled yet — run the Team SQL migration in Supabase to activate it.</div>';return;}
+  teamRender();
+}
+function teamRender(){
+  const el=document.getElementById('teamList');if(!el)return;
+  const ownerRow=`<div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:7px;height:7px;border-radius:50%;background:var(--primary)"></span><b style="color:var(--t1)">${currentUser?.email||'You'}</b><span style="color:var(--t3)">· Owner</span></div>`;
+  el.innerHTML=ownerRow+(teamMembers||[]).map(m=>`
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+      <span style="width:7px;height:7px;border-radius:50%;background:${m.role==='editor'?'var(--grn)':'var(--t3)'}"></span>
+      <span style="color:var(--t1)">${m.user_email}</span>
+      <span style="color:var(--t3)">· ${m.role==='editor'?'Editor':'Viewer'}</span>
+      <button class="btn btn-g" style="margin-left:auto;padding:2px 9px;font-size:10.5px" onclick="teamRemove('${m.id}')">Remove</button>
+    </div>`).join('');
+}
+async function teamAdd(){
+  const email=(document.getElementById('team_email').value||'').trim().toLowerCase();
+  const role=document.getElementById('team_role').value;
+  if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Enter a valid email address');return;}
+  if(email===(currentUser?.email||'').toLowerCase()){toast('You already own this project');return;}
+  try{
+    const res=await sb('project_members','POST',{project_id:CID,user_email:email,role,invited_by:currentUser?.email||''});
+    teamMembers.push(Array.isArray(res)?res[0]:{id:'tmp'+Date.now(),user_email:email,role});
+    document.getElementById('team_email').value='';
+    teamRender();
+    toast(email+' added as '+role,{type:'ok'});
+  }catch(e){toast('Could not add member — make sure the Team SQL migration has been run.');}
+}
+async function teamRemove(id){
+  try{
+    await sb('project_members?id=eq.'+id,'DELETE');
+    teamMembers=teamMembers.filter(m=>m.id!==id);
+    teamRender();
+    toast('Member removed',{type:'ok'});
+  }catch(e){toast('Could not remove member');}
+}
+// role of current user on the open project: 'owner' | 'editor' | 'viewer'
+function myRole(){
+  if(!CP)return 'owner';
+  if(isAdmin()||CP.user_id===currentUser?.id)return 'owner';
+  const m=(CP._members||[]).find(x=>(x.user_email||'').toLowerCase()===(currentUser?.email||'').toLowerCase());
+  return m?(m.role==='editor'?'editor':'viewer'):'owner';
+}
 function openSettingsModal(){
   if(!CP)return;
   document.getElementById('set_n').value=CP.name||'';
@@ -3280,6 +3477,7 @@ function openSettingsModal(){
   document.getElementById('set_d').value=CP.description||'';
   document.getElementById('set_ra_level').value=CP.risk_appetite?.level||CP.tolerance?.appetite||'moderate';
   document.getElementById('settingsModal').classList.add('on');
+  teamLoad();
 }
 function closeSettingsModal(){document.getElementById('settingsModal').classList.remove('on');}
 async function saveSettings(){
@@ -3308,7 +3506,7 @@ async function saveSettings(){
     await sb('projects?id=eq.'+CID,'PATCH',updates);
     hideLoad();closeSettingsModal();
     await loadAll();await selectProj(CID);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 async function delProj(){
@@ -3324,7 +3522,7 @@ async function delProj(){
     await loadAll();
     if(wasInPF){const pf=portfolios.find(p=>p.id===wasInPF);if(pf){currentPF=pf;openPortfolio(pf.id);}else goHome();}
     else goHome();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 async function selectProj(id){
@@ -3348,6 +3546,13 @@ async function selectProj(id){
     document.getElementById('projView').style.display='block';
     document.getElementById('phName').textContent=CP.name;
     {const _l=document.querySelector('#ttBtnProj .ttlbl');if(_l)_l.textContent=(CP.name?CP.name+' · ':'')+"Today's Tasks";}
+    // Role gating: viewers read-only, editors can't delete/share
+    {const role=myRole();
+     const del=document.getElementById('btnDelProj');if(del)del.style.display=role==='owner'?'':'none';
+     const st=document.getElementById('btnSettings');if(st)st.style.display=role==='viewer'?'none':'';
+     const rb=document.getElementById('roleBadge');
+     if(rb){if(role!=='owner'){rb.textContent=role==='editor'?'SHARED · EDITOR':'SHARED · VIEW ONLY';rb.style.display='inline-flex';}else rb.style.display='none';}
+     document.body.classList.toggle('role-viewer',role==='viewer');}
     document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' '+curCode():'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
     renderSidebar();renderFiles();renderReg();renderRiskLog();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
@@ -3357,12 +3562,81 @@ async function selectProj(id){
 }
 
 // ═══ TABS ═══
+// ═══ NAVIGATION: 5 primary groups, panes routed beneath them ═══
+const NAV_GROUPS={
+  overview:{panes:['dash'],labels:{}},
+  risks:{panes:['reg','risklog','files','tol'],labels:{reg:'Register',risklog:'Closed Risks',files:'Documents',tol:'Risk Appetite'}},
+  plan:{panes:['plan'],labels:{}},
+  monitor:{panes:['warn','upd','whatif'],labels:{warn:'Early Warning',upd:'Trend Analysis',whatif:'What-If Simulator'}},
+  intel:{panes:['insights','contacts'],labels:{insights:'Market & World',contacts:'Stakeholders'}}
+};
+function grpOf(pane){for(const g in NAV_GROUPS)if(NAV_GROUPS[g].panes.includes(pane))return g;return 'overview';}
+function STG(grp){ST(NAV_GROUPS[grp].panes[0]);}
+// ═══ PLAN TAB: the action plan's visible home ═══
+function renderPlan(){
+  const el=document.getElementById('planContent');if(!el)return;
+  const hasRisks=(CP?.risks||[]).some(r=>r.status!=='closed');
+  const plan=CP?.action_plan;
+  if(!hasRisks){
+    el.innerHTML=`<div class="eo"><div class="eo-icon">✓</div><div class="eo-t">Your action plan lives here</div><div class="eo-s">Generate your risk register first — then the AI turns every response plan into scheduled, trackable actions.</div><div class="eo-cta"><button class="btn btn-p" onclick="ST('files')">Go to Documents</button></div></div>`;return;
+  }
+  if(!plan||!Array.isArray(plan.actions)||!plan.actions.length){
+    el.innerHTML=`<div class="eo"><div class="eo-icon">✦</div><div class="eo-t">Turn your register into a daily plan</div><div class="eo-s">The AI breaks each risk's response plan into concrete, scheduled actions — so you always know what to do today to stay ahead of every risk.</div><div class="eo-cta"><button class="btn btn-p" onclick="generateActionPlan(CID)">✦ Generate Action Plan</button></div></div>`;return;
+  }
+  const today=new Date();today.setHours(0,0,0,0);const day=86400000;
+  const buckets={overdue:[],today:[],week:[],later:[],done:[]};
+  plan.actions.forEach(a=>{
+    if(a.status==='done'){buckets.done.push(a);return;}
+    let d=999;
+    if(a.due_date&&!isNaN(new Date(a.due_date))){const dt=new Date(a.due_date);dt.setHours(0,0,0,0);d=Math.round((dt-today)/day);}
+    a._d=d;
+    if(d<0)buckets.overdue.push(a);else if(d===0)buckets.today.push(a);else if(d<=7)buckets.week.push(a);else buckets.later.push(a);
+  });
+  const pcol=a=>a._d<0?'var(--red)':(a.priority===1?'var(--red)':a.priority===2?'#ffa800':'var(--primary)');
+  const row=a=>{
+    const rk=(CP.risks||[]).find(r=>r.risk_id===a.risk_id);
+    return `<div class="tt-item" style="background:var(--s0,#fff);border:1px solid var(--b1);margin-bottom:8px">
+      <input type="checkbox" class="tt-chk" ${a.status==='done'?'checked':''} aria-label="Mark action done" onchange="toggleActionDone('${CID}','${a.id}',this.checked)"/>
+      <span style="width:8px;height:8px;border-radius:50%;background:${pcol(a)};flex-shrink:0"></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45;${a.status==='done'?'text-decoration:line-through;color:var(--t3)':''}">${a.title}</div>
+        <div class="tt-sub">${a.risk_id}${rk?' · '+(rk.description||'').slice(0,70)+((rk.description||'').length>70?'…':''):''}${a.due_date?' · due '+a.due_date:''}${a.last_update?' · last: '+a.last_update.slice(0,50):''}</div>
+      </div>
+    </div>`;
+  };
+  const sec=(title,arr,color)=>arr.length?`<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${color||'var(--t3)'};margin:18px 2px 8px">${title} (${arr.length})</div>${arr.map(row).join('')}`:'';
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+      <div>
+        <div style="font-size:17px;font-weight:800;color:var(--t1)">Action Plan</div>
+        <div style="font-size:12.5px;color:var(--t2);margin-top:4px;max-width:640px;line-height:1.55">${plan.brief||'Your daily to-do, derived from each risk\'s response plan.'}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:4px">Generated ${plan.generated_at?new Date(plan.generated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''} · Adjust anytime via the AI Risk Manager ("I'm busy today…")</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-g" onclick="showTodayTasks({mode:'project',id:CID})">Today's Tasks</button>
+        <button class="btn btn-p" onclick="generateActionPlan(CID)">⟳ Regenerate</button>
+      </div>
+    </div>
+    ${sec('Overdue',buckets.overdue,'var(--red)')}
+    ${sec('Due today',buckets.today,'var(--red)')}
+    ${sec('This week',buckets.week)}
+    ${sec('Later',buckets.later)}
+    ${sec('Completed',buckets.done,'var(--grn)')}`;
+}
 function ST(name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
+  const grp=grpOf(name);
+  document.querySelectorAll('.tab[data-grp]').forEach(t=>t.classList.toggle('on',t.dataset.grp===grp));
+  // sub-tabs: render only when the group has more than one pane
+  const sub=document.getElementById('subtabs');
+  if(sub){
+    const g=NAV_GROUPS[grp];
+    sub.innerHTML=g.panes.length>1?g.panes.map(p=>`<div class="subtab${p===name?' on':''}" onclick="ST('${p}')" role="tab">${g.labels[p]||p}</div>`).join(''):'';
+  }
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+name));
   if(name==='whatif')renderWhatIf();
   if(name==='insights')loadInsights();
   if(name==='risklog')renderRiskLog();
+  if(name==='plan')renderPlan();
 }
 
 // ═══ RISK LOG (Closed Risks + AI Lessons Learned) ═══
@@ -3403,8 +3677,8 @@ function renderRiskLog(){
 
 async function generateLessonsLearned(){
   const closed=(CP?.risks||[]).filter(r=>r.status==='closed');
-  if(!closed.length){alert('No closed risks to analyze');return;}
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!closed.length){toast('No closed risks to analyze');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   const el=document.getElementById('lessonsContent');
   if(el)el.innerHTML='<div class="dash-section" style="text-align:center;color:var(--t3);padding:24px">Generating lessons learned...</div>';
   showLoad('Analyzing closed risks...');
@@ -3426,7 +3700,7 @@ Provide 4-6 lessons. Be specific and actionable.`}]});
       CP.lessons_learned=parsed;
       renderLessonsLearned(parsed);
       try{await sb('projects?id=eq.'+CID,'PATCH',{lessons_learned:parsed});}
-      catch(saveErr){console.error('Save lessons:',saveErr);alert('Lessons generated but could NOT be saved permanently. Ask your admin to add the "lessons_learned" column to the projects table in Supabase.');}
+      catch(saveErr){console.error('Save lessons:',saveErr);toast('Lessons generated but could NOT be saved permanently. Ask your admin to add the "lessons_learned" column to the projects table in Supabase.');}
     }
   }catch(e){hideLoad();if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
 }
@@ -3475,7 +3749,7 @@ function lessonsPdfSection(p){
   return h+`</div>`;
 }
 function exportLessonsPDF(){
-  const p=CP?.lessons_learned;if(!p){alert('Generate lessons learned first');return;}
+  const p=CP?.lessons_learned;if(!p){toast('Generate lessons learned first');return;}
   const w=window.open('','_blank');
   const css=reportBaseCSS();
   w.document.write(`<html><head><title>Lessons Learned — ${CP.name}</title><style>${css}</style></head><body><div class="page">${reportHeaderHTML('Lessons Learned')}${lessonsPdfSection(p)}<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div></div></body></html>`);
@@ -3483,8 +3757,8 @@ function exportLessonsPDF(){
   {const img=w.document.querySelector(".logo-box img");const pr=()=>w.print();if(img&&!img.complete){img.onload=pr;img.onerror=pr;setTimeout(pr,2500);}else setTimeout(pr,600);}
 }
 function exportLessonsExcel(){
-  const p=CP?.lessons_learned;if(!p){alert('Generate lessons learned first');return;}
-  if(typeof XLSX==='undefined'){alert('Excel library still loading, try again in a moment.');return;}
+  const p=CP?.lessons_learned;if(!p){toast('Generate lessons learned first');return;}
+  if(typeof XLSX==='undefined'){toast('Excel library still loading, try again in a moment.');return;}
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,lessonsSheet(p),'Lessons Learned');
   XLSX.writeFile(wb,`RiskAtlas_${(CP.name||'project').replace(/[^\w]+/g,'_')}_Lessons.xlsx`);
@@ -3583,7 +3857,7 @@ async function addContact(){
   const name=document.getElementById('c_name').value.trim();
   const role=document.getElementById('c_role').value.trim();
   const contact=document.getElementById('c_contact').value.trim();
-  if(!name||!role){alert('Name and role are required');return;}
+  if(!name||!role){toast('Name and role are required');return;}
   if(!CP.contacts)CP.contacts=[];
   CP.contacts.push({name,role,contact});
   await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
@@ -3611,9 +3885,9 @@ async function uploadContacts(event){
     }
     await sb('projects?id=eq.'+CID,'PATCH',{contacts:CP.contacts});
     renderContacts();
-    alert(`${added} contacts imported successfully!`);
+    toast(`${added} contacts imported successfully!`);
   }else{
-    alert('Please upload a CSV file. Excel files will be supported soon.');
+    toast('Please upload a CSV file. Excel files will be supported soon.');
   }
   event.target.value='';
 }
@@ -3626,9 +3900,9 @@ async function removeContact(i){
 // ═══ NOTIFICATIONS ═══
 function showNotifModal(){
   const risks=CP?.risks||[];
-  if(!risks.length){alert('No risks in register');return;}
+  if(!risks.length){toast('No risks in register');return;}
   const contacts=CP?.contacts||[];
-  if(!contacts.length){alert('No contacts — please add them first');return;}
+  if(!contacts.length){toast('No contacts — please add them first');return;}
   const byOwner={};
   risks.forEach(r=>{const owner=r.owner||'—';if(!byOwner[owner])byOwner[owner]=[];byOwner[owner].push(r);});
   let html='';
@@ -3698,7 +3972,7 @@ function startAnalyze(){
     qhse:document.getElementById('opt_qhse').checked,
     reputation:document.getElementById('opt_reputation').checked
   };
-  if(!dims.cost&&!dims.schedule&&!dims.qhse&&!dims.reputation){alert('Select at least one impact dimension');return;}
+  if(!dims.cost&&!dims.schedule&&!dims.qhse&&!dims.reputation){toast('Select at least one impact dimension');return;}
   document.getElementById('analyzeOptModal').remove();
   analyze(dims);
 }
@@ -3714,7 +3988,7 @@ async function analyze(dims){
   const files=PF[CID]||[];
   const tl=CP.tolerance||{};
   const hasSched=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
-  showLoad('Analyzing project files...');
+  showLoadStages(['Reading your documents…','Identifying threats and opportunities…','Scoring probability and impacts…','Writing response plans…','Finalizing your register…'],9000);
 
   const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
   const tolCtx=`Risk Appetite: ${appetite}.
@@ -3764,16 +4038,16 @@ Respond ONLY with valid JSON:
   try{
     const data=await api({model:'claude-opus-4-5',max_tokens:20000,messages:[{role:'user',content:parts}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}
-    catch(e){alert('Analysis error: '+data.content[0].text.slice(0,300));return;}
+    catch(e){toast('Analysis error: '+data.content[0].text.slice(0,300));return;}
     CP.summary=parsed.summary||'';CP.has_schedule=parsed.has_schedule!==false;
     // Currency & geography detected from the documents
     if(parsed.currency&&typeof parsed.currency==='string'){const cc=parsed.currency.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
     if(parsed.region&&typeof parsed.region==='string'&&parsed.region.trim()){CP.region=parsed.region.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
     PR=parsed.risks||[];showVal(PR);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ VALIDATION ═══
@@ -3823,10 +4097,91 @@ function toggleRiskDetail(tr){
     tr.classList.toggle('row-open',!open);
   }
 }
+// ═══ RISK HISTORY (audit trail as a product feature) ═══
+function logRiskEvent(riskDbId,action,details){
+  try{
+    sb('risk_events','POST',{risk_id:riskDbId,project_id:CID||null,actor:(currentUser?.email||'system'),action,details:details||{}}).catch(()=>{});
+  }catch(e){}
+}
+async function loadRiskHistory(riskDbId,btn){
+  const box=document.getElementById('rh_'+riskDbId);if(!box)return;
+  box.style.display='block';if(btn)btn.style.display='none';
+  box.innerHTML='<div style="font-size:11px;color:var(--t3)">Loading history…</div>';
+  let evs=null;
+  try{evs=await sb('risk_events?risk_id=eq.'+riskDbId+'&order=created_at.desc&limit=30&select=*');}catch(e){}
+  if(evs===null){box.innerHTML='<div style="font-size:11px;color:var(--t3)">History isn\'t enabled yet — run the Risk History SQL migration in Supabase.</div>';return;}
+  if(!evs.length){box.innerHTML='<div style="font-size:11px;color:var(--t3)">No recorded changes yet. Edits, status changes and AI actions will appear here.</div>';return;}
+  const lbl={field_changed:'Field changed',edited:'Risk edited',status_changed:'Status changed',bulk_update:'Bulk update',ai_update:'Updated by AI Manager',ai_closed:'Closed by AI Manager',created:'Created'};
+  box.innerHTML=evs.map(e=>{
+    const d=e.details||{};
+    let txt=lbl[e.action]||e.action;
+    if(e.action==='field_changed')txt+=`: <b>${d.field}</b> "${(d.old??'—')}" → "${(d.new??'—')}"`;
+    else if(e.action==='status_changed')txt+=`: "${d.old||'—'}" → "<b>${d.new}</b>"`;
+    else if(d.fields)txt+=`: ${d.fields.join(', ')}`;
+    return `<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--b1)">
+      <div style="font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;white-space:nowrap;min-width:96px;padding-top:1px">${new Date(e.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} ${new Date(e.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+      <div style="font-size:11.5px;color:var(--t1);line-height:1.5;flex:1">${txt}<div style="font-size:10px;color:var(--t3)">${e.actor||''}</div></div>
+    </div>`;
+  }).join('');
+}
+// Inline quick-edit from the expanded detail row (no modal needed)
+async function quickEditRisk(riskDbId,field,val){
+  const rr=(CP?.risks||[]).find(x=>x.id===riskDbId)||(allRisks||[]).find(x=>x.id===riskDbId);
+  if(!rr)return;
+  const old=rr[field];
+  rr[field]=val;
+  const ar=(allRisks||[]).find(x=>x.id===riskDbId);if(ar)ar[field]=val;
+  try{
+    await sb('risks?id=eq.'+riskDbId,'PATCH',{[field]:val});
+    logRiskEvent(riskDbId,'field_changed',{field,old,new:val});
+    toast('Updated',{type:'ok',undo:async()=>{rr[field]=old;if(ar)ar[field]=old;try{await sb('risks?id=eq.'+riskDbId,'PATCH',{[field]:old});}catch(e){}renderReg();}});
+    if(field==='level')renderReg();
+  }catch(e){rr[field]=old;if(ar)ar[field]=old;toast('Could not save the change');}
+}
+
+// ═══ BULK ACTIONS on the register ═══
+function bulkSelected(){return [...document.querySelectorAll('.bulk-chk:checked')].map(c=>c.dataset.rid);}
+function bulkSelectAll(on){document.querySelectorAll('.bulk-chk').forEach(c=>c.checked=on);bulkBarRefresh();}
+function bulkBarRefresh(){
+  const n=bulkSelected().length;
+  let bar=document.getElementById('bulkBar');
+  if(!n){if(bar)bar.remove();return;}
+  if(!bar){
+    bar=document.createElement('div');bar.id='bulkBar';
+    bar.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;background:#2B3440;color:#F4F7FA;border-radius:14px;padding:10px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 12px 34px rgba(20,28,38,.4);font-size:12.5px;font-weight:600;flex-wrap:wrap;justify-content:center';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML=`<span id="bulkN">${n} selected</span>
+    <select id="bulkStatus" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;cursor:pointer"><option value="">Set status…</option><option value="open">Open</option><option value="monitoring">Monitoring</option><option value="closed">Closed</option></select>
+    <input id="bulkOwner" placeholder="Set owner…" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;width:130px;font-family:inherit"/>
+    <button class="btn btn-p" style="padding:6px 14px;font-size:12px" onclick="bulkApply()">Apply</button>
+    <button class="btn btn-g" style="padding:6px 12px;font-size:12px" onclick="bulkSelectAll(false)">Cancel</button>`;
+}
+async function bulkApply(){
+  const ids=bulkSelected();if(!ids.length)return;
+  const status=document.getElementById('bulkStatus').value;
+  const owner=document.getElementById('bulkOwner').value.trim();
+  if(!status&&!owner){toast('Choose a status or enter an owner first');return;}
+  const patch={};if(status)patch.status=status;if(owner)patch.owner=owner;
+  showLoad('Updating '+ids.length+' risks…');
+  let ok=0;
+  for(const id of ids){
+    try{
+      await sb('risks?id=eq.'+id,'PATCH',patch);
+      logRiskEvent(id,'bulk_update',{fields:Object.keys(patch)});
+      [CP&&CP.risks,allRisks].forEach(arr=>{const rr=(arr||[]).find(x=>x.id===id);if(rr)Object.assign(rr,patch);});
+      ok++;
+    }catch(e){console.error(e);}
+  }
+  hideLoad();
+  document.getElementById('bulkBar')?.remove();
+  renderReg();
+  toast(ok+' risks updated',{type:'ok'});
+}
 
 async function confirmVal(){
   const app=PR.filter(r=>r._a!==false);
-  if(!app.length){alert('Approve at least one risk');return;}
+  if(!app.length){toast('Approve at least one risk');return;}
   showLoad('Saving...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
@@ -3835,7 +4190,11 @@ async function confirmVal(){
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
     await loadAll();await selectProj(CID);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+    // Capture the momentum: the hottest moment to funnel users into the action-plan loop
+    const _hasPlan=CP&&CP.action_plan&&Array.isArray(CP.action_plan.actions)&&CP.action_plan.actions.length;
+    if(_hasPlan)toast(`Register saved — ${app.length} risks`,{type:'ok'});
+    else toast(`Register saved — ${app.length} risks. Next: turn it into a daily plan.`,{type:'ok',actionLabel:'Generate Action Plan',action:()=>{ST('plan');generateActionPlan(CID);}});
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ EDIT RISK ═══
@@ -3861,12 +4220,15 @@ async function saveEdit(){
   try{
     const updates={description:document.getElementById('e_desc').value,cause:document.getElementById('e_cause').value,type:document.getElementById('e_type').value,category:document.getElementById('e_cat').value,level:document.getElementById('e_level').value,response_strategy:document.getElementById('e_resp').value,probability:parseInt(document.getElementById('e_prob').value)||3,owner:document.getElementById('e_owner').value,response_owner:document.getElementById('e_respowner').value,mitigation:document.getElementById('e_mit').value};
     await sb('risks?id=eq.'+editRiskId,'PATCH',updates);
+    logRiskEvent(editRiskId,'edited',{fields:Object.keys(updates)});
     hideLoad();closeEdit();await selectProj(CID);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ REGISTER ═══
 let regFilters={category:'',level:'',response:''};
+let regCompact=(localStorage.getItem('reg_compact')||'1')==='1';
+function toggleRegCols(){regCompact=!regCompact;try{localStorage.setItem('reg_compact',regCompact?'1':'0');}catch(e){}renderReg();}
 function applyRegFilter(key,val){regFilters[key]=val;renderReg();}
 function clearRegFilters(){regFilters={category:'',level:'',response:''};renderReg();}
 
@@ -3897,20 +4259,21 @@ function renderReg(){
   const detField=(label,val)=>`<div style="min-width:0"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;margin-bottom:3px">${label}</div><div style="font-size:11.5px;color:var(--t1);line-height:1.5;word-break:break-word">${val||'—'}</div></div>`;
   const buildRows=arr=>arr.map(r=>`
     <tr class="${r.type==='opportunity'?'opp':'thr'} rrow" onclick="toggleRiskDetail(this)" style="cursor:pointer">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-chk" data-rid="${r.id}" aria-label="Select risk" onchange="bulkBarRefresh()"/></td>
       <td><span style="display:inline-flex;align-items:center;gap:4px"><svg class="rchev" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></span></td>
-      <td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'opportunity':'threat'}</span></td>
-      <td><span class="cb">${CAT_AR[r.category]||r.category}</span></td>
+      ${_cc?'':`<td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'opportunity':'threat'}</span></td>
+      <td><span class="cb">${CAT_AR[r.category]||r.category}</span></td>`}
       <td><div style="font-size:12px;color:var(--t1)">${r.description}</div><div style="font-size:10.5px;color:var(--t3);margin-top:2px">${r.cause||''}</div></td>
-      <td style="text-align:center"><b style="font-size:13px">${r.probability}</b></td>
-      <td><div class="ic">
+      ${_cc?'':`<td style="text-align:center"><b style="font-size:13px">${r.probability}</b></td>`}
+      ${_cc?'':`<td><div class="ic">
         <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">C</span><div class="ib"><div class="ibf" style="width:${r.impact_cost*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_cost}</span></div>
         <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">S</span><div class="ib"><div class="ibf" style="width:${r.impact_schedule*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_schedule}</span></div>
         <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">Q</span><div class="ib"><div class="ibf" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_qhse}</span></div>
-      </div></td>
+      </div></td>`}
       <td><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span></td>
-      <td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>
+      ${_cc?'':`<td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>`}
       <td><div style="font-size:11px;color:var(--t2);max-width:160px;line-height:1.5">${r.mitigation}</div></td>
-      <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>
+      ${_cc?'':`<td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>`}
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.response_owner||'—'}</td>
       <td onclick="event.stopPropagation()">
         <select onchange="changeRiskStatus('${r.id}',this.value)" style="font-size:10.5px;padding:3px 6px;border-radius:6px;border:1px solid var(--b1);background:${r.status==='closed'?'var(--grn-soft)':'var(--s1)'};color:var(--t1);cursor:pointer">
@@ -3921,7 +4284,7 @@ function renderReg(){
       <td>${(()=>{const lg=Array.isArray(r.progress_log)?r.progress_log:[];const last=lg[lg.length-1];return lg.length?`<div style="font-size:10px;color:var(--primary);font-weight:700">${lg.length} update${lg.length>1?'s':''}</div><div style="font-size:10px;color:var(--t3);line-height:1.4;margin-top:2px;white-space:normal">${last.text.length>42?last.text.slice(0,42)+'…':last.text}</div>`:`<span style="font-size:10.5px;color:var(--t3)">Tap to add</span>`;})()}</td>
       <td onclick="event.stopPropagation()"><button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="openEdit('${r.id}')">Edit</button></td>
     </tr>
-    <tr class="rdet" style="display:none"><td colspan="14" style="background:var(--s2);border-bottom:2px solid var(--b1);padding:0">
+    <tr class="rdet" style="display:none"><td colspan="${_cc?9:15}" style="background:var(--s2);border-bottom:2px solid var(--b1);padding:0">
       <div style="padding:16px 20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -3931,6 +4294,8 @@ function renderReg(){
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">
           ${detField('Approved / Added',fdate(r.created_at))}
           ${detField('Status',r.status==='closed'?('Closed · '+fdate(r.closed_at)):'Open')}
+          <div style="min-width:0"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;margin-bottom:3px">Risk Owner <span style="color:var(--primary)">✎</span></div><input type="text" value="${(r.owner||'').replace(/"/g,'&quot;')}" placeholder="—" onclick="event.stopPropagation()" onblur="inlineOwnerSave('${r.id}','owner',this.value)" style="font-size:11.5px;color:var(--t1);border:1px solid transparent;border-radius:6px;padding:3px 6px;width:100%;background:transparent;outline:none" onfocus="this.style.borderColor='var(--primary)';this.style.background='var(--s1)'" /></div>
+          <div style="min-width:0"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;margin-bottom:3px">Response Owner <span style="color:var(--primary)">✎</span></div><input type="text" value="${(r.response_owner||'').replace(/"/g,'&quot;')}" placeholder="—" onclick="event.stopPropagation()" onblur="inlineOwnerSave('${r.id}','response_owner',this.value)" style="font-size:11.5px;color:var(--t1);border:1px solid transparent;border-radius:6px;padding:3px 6px;width:100%;background:transparent;outline:none" onfocus="this.style.borderColor='var(--primary)';this.style.background='var(--s1)'" /></div>
           ${detField('Timing',r.timing_type==='ongoing'?'Ongoing':'Scheduled')}
           ${detField('Linked Activity',r.activity_ref)}
           ${detField('Expected Date',fdate(r.expected_date))}
@@ -3942,6 +4307,15 @@ function renderReg(){
           ${detField('Root Cause',r.cause)}
           ${detField('Response Plan',r.mitigation)}
         </div>
+        <div style="margin-top:16px;border-top:1px solid var(--b1);padding-top:14px" onclick="event.stopPropagation()">
+          <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px">Quick Edit</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Risk Owner</div><input type="text" value="${(r.owner||'').replace(/"/g,'&quot;')}" onchange="quickEditRisk('${r.id}','owner',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;width:150px;font-family:inherit;outline:none"/></div>
+            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Response Owner</div><input type="text" value="${(r.response_owner||'').replace(/"/g,'&quot;')}" onchange="quickEditRisk('${r.id}','response_owner',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;width:150px;font-family:inherit;outline:none"/></div>
+            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Level</div><select onchange="quickEditRisk('${r.id}','level',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;font-family:inherit;outline:none;cursor:pointer"><option value="high" ${r.level==='high'?'selected':''}>High</option><option value="medium" ${r.level==='medium'?'selected':''}>Medium</option><option value="low" ${r.level==='low'?'selected':''}>Low</option></select></div>
+            <button class="btn btn-g" style="padding:6px 12px;font-size:11px" onclick="openEdit('${r.id}')">Full edit…</button>
+          </div>
+        </div>
         <div style="margin-top:16px;border-top:1px solid var(--b1);padding-top:14px">
           <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px">Progress Updates</div>
           <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:11px">
@@ -3952,12 +4326,19 @@ function renderReg(){
             <button class="btn btn-p" style="padding:6px 14px;font-size:11.5px" onclick="event.stopPropagation();addRiskUpdate('${r.id}')">Add Update</button>
           </div>
         </div>
+        <div style="margin-top:14px;border-top:1px solid var(--b1);padding-top:12px" onclick="event.stopPropagation()">
+          <button class="btn btn-g" style="padding:5px 13px;font-size:11px" onclick="loadRiskHistory('${r.id}',this)">🕘 View change history</button>
+          <div id="rh_${r.id}" style="display:none;margin-top:10px"></div>
+        </div>
       </div>
     </td></tr>`).join('');
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
-  const hdr=`<tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>Prob</th><th>Impact</th><th>Level</th><th>Response</th><th>Risk Response</th><th>Risk Owner</th><th>Response Owner</th><th>Status</th><th>Updates</th><th></th></tr>`;
-  const colg=`<colgroup><col style="width:56px"><col style="width:84px"><col style="width:104px"><col style="width:250px"><col style="width:58px"><col style="width:82px"><col style="width:92px"><col style="width:104px"><col style="width:230px"><col style="width:124px"><col style="width:124px"><col style="width:104px"><col style="width:130px"><col style="width:46px"></colgroup>`;
+  const _cc=regCompact;
+  const hdr=`<tr><th style="width:30px"><input type="checkbox" aria-label="Select all" onclick="event.stopPropagation();bulkSelectAll(this.checked)"/></th><th>ID</th>${_cc?'':'<th>Type</th><th>Category</th>'}<th>Description</th>${_cc?'':'<th>Prob</th><th>Impact</th>'}<th>Level</th>${_cc?'':'<th>Response</th>'}<th>Risk Response</th>${_cc?'':'<th>Risk Owner</th>'}<th>Response Owner</th><th>Status</th><th>Updates</th><th></th></tr>`;
+  const colg=_cc
+    ?`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:300px"><col style="width:92px"><col style="width:300px"><col style="width:140px"><col style="width:104px"><col style="width:150px"><col style="width:46px"></colgroup>`
+    :`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:84px"><col style="width:104px"><col style="width:250px"><col style="width:58px"><col style="width:82px"><col style="width:92px"><col style="width:104px"><col style="width:230px"><col style="width:124px"><col style="width:124px"><col style="width:104px"><col style="width:130px"><col style="width:46px"></colgroup>`;
 
   const opt=(arr,sel,map)=>arr.map(v=>`<option value="${v}" ${sel===v?'selected':''}>${map?map(v):v}</option>`).join('');
   const filterBar=`
@@ -3975,7 +4356,8 @@ function renderReg(){
       <select onchange="applyRegFilter('response',this.value)" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
         <option value="">All Responses</option>${opt(resps,regFilters.response,rr=>RESP_AR[rr]||rr)}
       </select>
-      ${hasFilter?`<button class="btn btn-g" style="padding:6px 12px;font-size:11.5px" onclick="clearRegFilters()">Clear Filters</button><span style="font-size:11px;color:var(--t3)">${risks.length} of ${allRisks.filter(r=>r.status!=='closed').length} shown</span>`:''}
+      ${hasFilter?`<button class="btn btn-g" style="padding:6px 12px;font-size:11.5px" onclick="clearRegFilters()">Clear Filters</button><span style="font-size:11px;color:var(--t3)">${risks.length} of ${allRisks.filter(r=>r.status!=='closed').length} shown</span>
+      ${['category','level','response'].filter(k=>regFilters[k]).map(k=>`<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--primary);background:var(--primary-soft);border:1px solid rgba(109,129,150,.25);border-radius:14px;padding:4px 10px">${k==='level'?{high:'High',medium:'Medium',low:'Low'}[regFilters[k]]:(k==='category'?(CAT_AR[regFilters[k]]||regFilters[k]):(RESP_AR[regFilters[k]]||regFilters[k]))}<span style="cursor:pointer;font-size:13px;line-height:1" onclick="applyRegFilter('${k}','')" aria-label="Remove filter">×</span></span>`).join('')}`:''}
       <div style="margin-inline-start:auto;display:flex;align-items:center;gap:8px">
         <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg> Translate</span>
         <select id="translateLang" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
@@ -3985,6 +4367,7 @@ function renderReg(){
           <option value="French">Français</option>
         </select>
         <button class="btn btn-p" style="padding:6px 14px;font-size:11.5px" onclick="translateRegister()">Translate Register</button>
+        <button class="btn btn-g" style="padding:6px 12px;font-size:11.5px" onclick="toggleRegCols()">${regCompact?'All columns':'Compact view'}</button>
       </div>
     </div>`;
 
@@ -3994,8 +4377,8 @@ function renderReg(){
       <button class="btn btn-p" onclick="openAddRisk()" style="padding:9px 18px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Risk Manually</button>
     </div>
     ${filterBar}
-    ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt rt-reg">${colg}<thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
-    ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt rt-reg">${colg}<thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
+    ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt rt-reg${_cc?' rt-compact':''}">${colg}<thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
+    ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt rt-reg${_cc?' rt-compact':''}">${colg}<thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
     ${!thr.length&&!opp.length?`<div class="empty"><div class="empty-icon">○</div><div class="et">No risks match the selected filters</div></div>`:''}
     <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
 }
@@ -4018,7 +4401,7 @@ async function addRiskUpdate(riskDbId,textArg,ctx){
   [CP&&CP.risks,allRisks].forEach(arr=>{const rr=(arr||[]).find(x=>x.id===riskDbId);if(rr){if(!Array.isArray(rr.progress_log))rr.progress_log=[];rr.progress_log.push(entry);updated=rr;}});
   if(!updated)return;
   try{await sb('risks?id=eq.'+riskDbId,'PATCH',{progress_log:updated.progress_log});}
-  catch(e){console.error('save progress_log',e);alert('Update logged but could NOT save. Ensure the risks table has a "progress_log" jsonb column.');}
+  catch(e){console.error('save progress_log',e);toast('Update logged but could NOT save. Ensure the risks table has a "progress_log" jsonb column.');}
   if(ctx==='tt'){showTodayTasks(true);}
   else if(CP){renderReg();}
 }
@@ -4124,8 +4507,8 @@ Return ONLY a valid JSON object with the same fields (type, category, descriptio
 async function translateRegister(){
   const lang=document.getElementById('translateLang')?.value||'English';
   const risks=(CP?.risks||[]);
-  if(!risks.length){alert('No risks to translate');return;}
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!risks.length){toast('No risks to translate');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   if(!confirm(`Translate all ${risks.length} risks (descriptions, causes, response plans, notes) to ${lang}? This updates the saved register.`))return;
   showLoad(`Translating register to ${lang}...`);
   try{
@@ -4153,14 +4536,16 @@ ${JSON.stringify(payload)}`}]});
     }
     hideLoad();
     renderReg();renderRiskLog();
-    alert(`Register translated to ${lang} successfully.`);
-  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+    toast(`Register translated to ${lang} successfully.`);
+  }catch(e){hideLoad();toast('Translation error: '+e.message);}
 }
 
 // Change risk status — closed risks move to Risk Log
 async function changeRiskStatus(riskId,status){
   const risk=CP.risks.find(r=>r.id===riskId);
   if(!risk)return;
+  const _oldStatus=risk.status||'open';
+  if(_oldStatus!==status)logRiskEvent(riskId,'status_changed',{old:_oldStatus,new:status});
   if(status==='closed'){
     const notes=prompt('Add closure notes (lessons learned, resolution details):',risk.notes||'');
     if(notes===null)return; // cancelled
@@ -4240,6 +4625,14 @@ function renderDash(){
   if(noAction.length>0)attn.push({n:noAction.length,l:'high risks without a plan',c:'orange',go:"ST('reg')"});
   if(noOwner.length>0)attn.push({n:noOwner.length,l:noOwner.length===1?'risk has no owner':'risks have no owner',c:'yellow',go:"ST('reg')"});
   if(trendDeclining)attn.push({n:'↓',l:`health declining (${lastHealth}/100)`,c:'red',go:"ST('upd')"});
+  // Action plan signals — the retention loop must be unmissable
+  const apActs=(CP.action_plan&&CP.action_plan.actions)||[];
+  if(!apActs.length&&risks.filter(r=>r.status!=='closed').length){attn.push({n:'✦',l:'create your AI action plan',c:'blue',go:"ST('plan')"});}
+  else if(apActs.length){
+    const t0=new Date();t0.setHours(0,0,0,0);
+    const od=apActs.filter(a=>a.status!=='done'&&a.due_date&&!isNaN(new Date(a.due_date))&&new Date(a.due_date).setHours(0,0,0,0)<t0.getTime()).length;
+    if(od)attn.push({n:od,l:od===1?'action overdue in your plan':'actions overdue in your plan',c:'red',go:"ST('plan')"});
+  }
 
   // Category icons
   const catIcons={};
@@ -4492,7 +4885,7 @@ function renderDash(){
         <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Risk Trend</span></div>
       </div>
       <canvas id="trendC" height="60"></canvas>
-      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter period indicators (SV, CV, resources…) in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Updates</a> to build a Trend Analysis Report with forecast</div>
+      <div style="text-align:center;margin-top:10px;font-size:11.5px;color:var(--t3)">Enter period indicators (SV, CV, resources…) in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Trend Analysis</a> to build a report with forecast</div>
     </div>`}
 
     <!-- #20 Refresh All Button -->
@@ -4674,14 +5067,14 @@ function renderRiskExposure(){
 
 // ═══ REFRESH ALL PORTFOLIO ═══
 async function refreshAllPortfolio(){
-  if(!currentPF){alert('No portfolio selected');return;}
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!currentPF){toast('No portfolio selected');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Refreshing all portfolio data...');
   try{
     await generatePortfolioReport();
     await generatePortfolioInsights();
     hideLoad();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ PORTFOLIO EXPORT ═══
@@ -4915,21 +5308,21 @@ function showPricingPage(){
 
 // ═══ REFRESH ALL (#20) ═══
 async function refreshAll(){
-  if(!CP||!CP.risks?.length){alert('Run analysis first');return;}
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!CP||!CP.risks?.length){toast('Run analysis first');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Refreshing all — this may take a moment...');
   try{
     await generateProjectReport();
     await loadProjectInsights();
     hideLoad();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // ═══ AI PROJECT REPORT (#21) ═══
 async function generateProjectReport(){
-  if(!CP||!CP.risks?.length){alert('Run analysis first');return;}
+  if(!CP||!CP.risks?.length){toast('Run analysis first');return;}
   if(!requireActiveAccess())return;
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   const el=document.getElementById('projAIReport');
   if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Generating AI report...</div>';
   showLoad('Generating AI project report...');
@@ -4949,11 +5342,14 @@ RISK REGISTER:
 ${risksCtx}
 
 Respond ONLY with valid JSON (text in the register's language):
+WRITING STANDARD: Write as a senior risk consultant briefing an executive committee. Be specific to this data (cite risk IDs, amounts, dates), decisive, and concise. No generic statements that could apply to any project, no repeated points, no filler.
+
+Respond ONLY with valid JSON:
 {"executive_summary":"4-5 sentence executive summary about project risk health","project_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4","finding 5"],"top_concerns":["concern 1 with details","concern 2","concern 3","concern 4","concern 5"],"common_patterns":["pattern 1 with explanation","pattern 2","pattern 3","pattern 4","pattern 5"],"strategic_recommendations":["1. IMMEDIATE: recommendation","2. URGENT: recommendation","3. HIGH PRIORITY: recommendation","4. recommendation"],"areas_needing_attention":["area 1 with specific details","area 2"]}`}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
-    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
+    try{parsed=pJSON(data.content[0].text);}catch(e){toast('Analysis error');return;}
 
     // Save to DB + local
     const now=new Date().toISOString();
@@ -4961,14 +5357,32 @@ Respond ONLY with valid JSON (text in the register's language):
     sb('projects?id=eq.'+CID,'PATCH',{ai_report:parsed,ai_report_date:now}).catch(()=>{});
     renderProjectReport(parsed,now);
     document.getElementById('projAIReport')?.scrollIntoView({behavior:'smooth',block:'start'});
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // Render a saved/just-generated report
+// Branded PDF (print) for the AI project report — reuses the lessons-learned print pattern
+function printProjectReport(){
+  const p=window._lastReport||CP.ai_report;
+  if(!p){toast('Generate the report first');return;}
+  const css=reportBaseCSS();
+  const li=arr=>(arr||[]).map(x=>`<div style="padding:6px 0;border-bottom:1px solid #e6ebf0;font-size:12px;line-height:1.6">${x}</div>`).join('');
+  const sec=(t,body)=>`<div style="margin-top:18px"><div style="font-size:13px;font-weight:800;color:#2B3440;border-bottom:2px solid #6D8196;padding-bottom:5px;margin-bottom:6px">${t}</div>${body||'<div style="font-size:12px;color:#888">—</div>'}</div>`;
+  const html=`
+    <div style="font-size:12.5px;line-height:1.7;color:#222;margin-top:10px"><b>Health:</b> ${(p.project_health||'').toUpperCase()} — ${p.executive_summary||''}</div>
+    ${sec('Critical Risks &amp; Top Concerns',li(p.top_concerns))}
+    ${sec('Key Findings',li(p.key_findings))}
+    ${sec('Patterns',li(p.common_patterns))}
+    ${sec('Strategic Recommendations',li(p.strategic_recommendations))}
+    ${sec('Areas Needing Attention',li(p.areas_needing_attention))}`;
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Risk Report — ${CP.name}</title><style>${css}</style></head><body><div class="page">${reportHeaderHTML('AI Risk Report')}${html}<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  w.document.close();
+}
 function renderProjectReport(parsed,dateStr){
   const el=document.getElementById('projAIReport');
   if(!el||!parsed)return;
-  const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.project_health]||'#a16207';
+  window._lastReport=parsed;  const hc={good:'var(--grn)',warning:'#a16207',critical:'var(--red)'}[parsed.project_health]||'#a16207';
   const hbg={good:'var(--grn-soft)',warning:'var(--yel-soft)',critical:'var(--red-soft)'}[parsed.project_health];
   const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.project_health]||'Warning';
   const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
@@ -4978,7 +5392,7 @@ function renderProjectReport(parsed,dateStr){
     <div class="dash-section" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <div class="dash-sec-title"><span class="dash-sec-num" style="background:${hc}">✦</span><span class="dash-sec-name" style="color:${hc}">Executive Summary — ${htext}</span></div>
-        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div><button class="btn btn-g" style="padding:5px 12px;font-size:11.5px" onclick="printProjectReport()">⬇ PDF</button></div>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
     </div>
@@ -5025,9 +5439,9 @@ Include 3-4 insights (local market conditions, material prices, economic indicat
 
 // Translate the saved AI report to a chosen language (field-by-field, JSON-safe)
 async function translateReport(){
-  if(!CP||!CP.ai_report){alert('Generate a report first');return;}
+  if(!CP||!CP.ai_report){toast('Generate a report first');return;}
   const lang=document.getElementById('reportLang')?.value||'English';
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Translating report to '+lang+'...');
   try{
     const rep=CP.ai_report;
@@ -5043,14 +5457,14 @@ async function translateReport(){
     sb('projects?id=eq.'+CID,'PATCH',{ai_report:rep}).catch(()=>{});
     hideLoad();
     renderProjectReport(rep,CP.ai_report_date||new Date().toISOString());
-  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+  }catch(e){hideLoad();toast('Translation error: '+e.message);}
 }
 
 // Translate the saved market insights (field-by-field, JSON-safe)
 async function translateInsights(){
-  if(!CP||!CP.market_insights){alert('Load insights first');return;}
+  if(!CP||!CP.market_insights){toast('Load insights first');return;}
   const lang=document.getElementById('insightsLang')?.value||'English';
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Translating insights to '+lang+'...');
   try{
     const ins=CP.market_insights;
@@ -5071,7 +5485,7 @@ async function translateInsights(){
     sb('projects?id=eq.'+CID,'PATCH',{market_insights:ins}).catch(()=>{});
     hideLoad();
     renderProjectInsights(ins,CP.market_insights_date||new Date().toISOString());
-  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+  }catch(e){hideLoad();toast('Translation error: '+e.message);}
 }
 
 // Translate an array of strings -> returns array of translations (same order, same length)
@@ -5215,8 +5629,8 @@ function showExportModal(){
 
 function doExportExcel(){
   const risks=CP?.risks||[];
-  if(!risks.length){alert('No risks to export');return;}
-  if(typeof XLSX==='undefined'){alert('Excel library still loading, please try again in a moment.');return;}
+  if(!risks.length){toast('No risks to export');return;}
+  if(typeof XLSX==='undefined'){toast('Excel library still loading, please try again in a moment.');return;}
 
   const fields=[];
   if(document.getElementById('exp_f_id')?.checked)fields.push({key:'risk_id',label:'ID',w:9});
@@ -5233,7 +5647,7 @@ function doExportExcel(){
   if(document.getElementById('exp_f_respowner')?.checked)fields.push({key:'response_owner',label:'Response Owner',w:18});
   if(document.getElementById('exp_f_status')?.checked)fields.push({key:'status',label:'Status',w:11});
   if(document.getElementById('exp_f_notes')?.checked)fields.push({key:'notes',label:'Notes',w:30});
-  if(!fields.length){alert('Select at least one column');return;}
+  if(!fields.length){toast('Select at least one column');return;}
 
   const ncol=fields.length;
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
@@ -5729,9 +6143,9 @@ function renderWarn(){
 // ═══ RESPONSE PLAN SCHEDULE (Gantt) ═══
 async function generateResponseSchedule(){
   const risks=(CP?.risks||[]).filter(r=>r.status!=='closed');
-  if(!risks.length){alert('No risks to schedule');return;}
+  if(!risks.length){toast('No risks to schedule');return;}
   if(!requireActiveAccess())return;
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   const el=document.getElementById('responseScheduleContent');
   if(el)el.innerHTML='<div class="dash-section" style="text-align:center;padding:24px;color:var(--t3)"><div class="spin" style="margin:0 auto 12px"></div>Building response plan schedule...</div>';
   showLoad('Generating response plan schedule...');
@@ -5754,9 +6168,9 @@ Respond ONLY with valid JSON:
 }
 Order tasks by start_date ascending. Keep action names short. Every task needs valid start_date and end_date (YYYY-MM-DD), end_date after start_date.`}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);if(el)el.innerHTML='';return;}
+    if(data.error){toast('Error: '+data.error.message);if(el)el.innerHTML='';return;}
     let parsed;
-    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Could not parse schedule');if(el)el.innerHTML='';return;}
+    try{parsed=pJSON(data.content[0].text);}catch(e){toast('Could not parse schedule');if(el)el.innerHTML='';return;}
     if(!parsed.tasks||!parsed.tasks.length){if(el)el.innerHTML='<div class="ai ai-w">No response tasks could be generated. Make sure risks have response plans.</div>';return;}
     parsed.generated_at=new Date().toISOString();
     CP.response_schedule=parsed;
@@ -5766,9 +6180,9 @@ Order tasks by start_date ascending. Keep action names short. Every task needs v
       await sb('projects?id=eq.'+CID,'PATCH',{response_schedule:parsed});
     }catch(saveErr){
       console.error('Save response_schedule:',saveErr);
-      alert('Schedule generated but could NOT be saved permanently. Ask your admin to add the "response_schedule" column to the projects table in Supabase. It will be lost when you leave the project until then.');
+      toast('Schedule generated but could NOT be saved permanently. Ask your admin to add the "response_schedule" column to the projects table in Supabase. It will be lost when you leave the project until then.');
     }
-  }catch(e){hideLoad();alert('Error: '+e.message);if(el)el.innerHTML='';}
+  }catch(e){hideLoad();toast('Error: '+e.message);if(el)el.innerHTML='';}
 }
 
 function renderResponseSchedule(sched){
@@ -5879,7 +6293,7 @@ function renderResponseSchedule(sched){
 }
 
 function exportResponseScheduleCSV(){
-  const sched=CP?.response_schedule;if(!sched?.tasks?.length){alert('Generate schedule first');return;}
+  const sched=CP?.response_schedule;if(!sched?.tasks?.length){toast('Generate schedule first');return;}
   const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
   const tSt=t=>{const r=riskById[t.risk_id];if(t.risk_id&&!r)return 'Removed';if(r&&r.status==='closed')return 'Closed';return 'Active';};
   const h=['Risk ID','Action','Response Plan','Level','Status','Owner','Start','End','Duration (days)'];
@@ -5890,7 +6304,7 @@ function exportResponseScheduleCSV(){
 }
 
 function exportResponseSchedulePDF(){
-  const sched=CP?.response_schedule;if(!sched?.tasks?.length){alert('Generate schedule first');return;}
+  const sched=CP?.response_schedule;if(!sched?.tasks?.length){toast('Generate schedule first');return;}
   const LOGO='https://i.postimg.cc/3xNVb78N/89f6c180-112e-4627-b132-e471e46a8d2b-(1).png';
   const dayMs=86400000;
   const valid=sched.tasks.filter(t=>t.start_date&&t.end_date&&!isNaN(new Date(t.start_date))&&!isNaN(new Date(t.end_date))).slice().sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
@@ -6113,9 +6527,9 @@ Analyze the TREND across the history plus this period. Each indicator analysis =
 Respond ONLY with valid JSON in English:
 {"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative of the TREND and trajectory","indicators_analysis":{"schedule_variance":"...","cost_variance":"...","change_requests":"...","resource_utilization":"...","vendor_delay":"..."},"forecast":[{"label":"+1","health_score":72},{"label":"+2","health_score":68},{"label":"+3","health_score":65}],"forecast_narrative":"2-3 sentences predicting what will happen to the project if the current trend continues","warnings":["..."],"predicted_risks":["..."],"actions":["...","...","...","..."]}`}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
-    try{parsed=pJSON(data.content[0].text);}catch(e){alert('Analysis error');return;}
+    try{parsed=pJSON(data.content[0].text);}catch(e){toast('Analysis error');return;}
 
     const entry={date:weekDate,iso,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,alert_level:parsed.alert_level||'medium',health_score:parsed.health_score||50,forecast:Array.isArray(parsed.forecast)?parsed.forecast:[],report:parsed};
     if(!CP.trend_data)CP.trend_data=[];
@@ -6124,12 +6538,12 @@ Respond ONLY with valid JSON in English:
     CP.trend_data.push(entry);
     CP.trend_data.sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
     try{await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});}
-    catch(saveErr){console.error('Save trend:',saveErr);alert('Analyzed but could NOT save. Ensure the projects table has a "trend_data" jsonb column.');}
+    catch(saveErr){console.error('Save trend:',saveErr);toast('Analyzed but could NOT save. Ensure the projects table has a "trend_data" jsonb column.');}
 
     renderTrendReport(entry);
     ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     renderWarn();renderDash();
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 // Render the saved/just-generated Trend Analysis Report into #trendAnalysis
@@ -6191,7 +6605,7 @@ async function addUpdate(){
   if(!requireActiveAccess())return;
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
-  if(!text&&!UF.length){alert('Please add details or attach a file');return;}
+  if(!text&&!UF.length){toast('Please add details or attach a file');return;}
   const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',schedule:'Schedule Update',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
 
   // Snapshot existing risks BEFORE update for change tracking
@@ -6253,7 +6667,7 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:parts}]});
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}
     catch(e){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[],updated_risks:[],removed_risk_ids:[]};}
@@ -6349,7 +6763,7 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
     if(changes.added.length||changes.updated.length||changes.removed.length){
       showChangesModal(changes,tl[cUT]);
     }
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 function showChangesModal(changes,updateType){
@@ -6626,8 +7040,8 @@ function updLever(key,val){wifLevers[key]=val;}
 async function runSimulation(){
   if(!requireActiveAccess())return;
   const risks=CP?.risks||[];
-  if(!risks.length){alert('No risks to simulate');return;}
-  if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
+  if(!risks.length){toast('No risks to simulate');return;}
+  if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
 
   // Collect text inputs
   const leverTexts={
@@ -6639,7 +7053,7 @@ async function runSimulation(){
   };
 
   const hasInput=Object.values(leverTexts).some(v=>v.length>0);
-  if(!hasInput){alert('Describe at least one change before running simulation');return;}
+  if(!hasInput){toast('Describe at least one change before running simulation');return;}
 
   showLoad('Running AI simulation...');
 
@@ -6703,15 +7117,15 @@ Simulate the impact and predict how risks would change. Respond ONLY with valid 
 Be realistic. Score range 0-100, lower is better. Adding resources reduces resource risks. Extending schedule reduces schedule risks but increases costs. Reducing scope reduces all risks but loses value. Improving communication reduces coordination/RFI risks.`}]});
 
     hideLoad();
-    if(data.error){alert('Error: '+data.error.message);return;}
+    if(data.error){toast('Error: '+data.error.message);return;}
 
     let parsed;
     try{parsed=pJSON(data.content[0].text);}
-    catch(e){alert('Parse error: '+data.content[0].text.slice(0,200));return;}
+    catch(e){toast('Parse error: '+data.content[0].text.slice(0,200));return;}
 
     wifSimulated=parsed;
     renderSimulationResults(parsed,baselineScore);
-  }catch(e){hideLoad();alert('Error: '+e.message);}
+  }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
 function renderSimulationResults(sim,baselineScore){
@@ -7001,9 +7415,9 @@ async function loadInsights(){
 }
 
 async function translateMainInsights(){
-  if(!CP||!CP.insights_data){alert('Generate insights first');return;}
+  if(!CP||!CP.insights_data){toast('Generate insights first');return;}
   const lang=document.getElementById('mainInsightsLang')?.value||'English';
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Translating to '+lang+'...');
   try{
     const d=CP.insights_data;const items=[];const map=[];
@@ -7021,12 +7435,12 @@ async function translateMainInsights(){
     sb('projects?id=eq.'+CID,'PATCH',{insights_data:d}).catch(()=>{});
     hideLoad();
     renderInsights(d,CP.insights_sources||0);
-  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+  }catch(e){hideLoad();toast('Translation error: '+e.message);}
 }
 
 async function generateInsights(){
   const risks=CP?.risks||[];
-  if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
+  if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
 
   document.getElementById('insightsBody').innerHTML=`
     <div class="dash-section" style="text-align:center;padding:50px 24px">
@@ -7401,8 +7815,8 @@ function renderInsights(data,articles){
 
 async function generatePortfolioInsights(pfId){
   const list=pfId?projs.filter(p=>p.portfolio_id===pfId):projs;
-  if(!list.length){alert('No projects in portfolio');return;}
-  if(!GK().startsWith('sk-ant-')){alert('Please enter Claude API key');return;}
+  if(!list.length){toast('No projects in portfolio');return;}
+  if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
   
   if(!localStorage.getItem('newsKey')){
     if(!setNewsKey())return;
@@ -7551,9 +7965,9 @@ function renderPortfolioInsights(data,articles){
 }
 
 async function translatePortfolioInsights(){
-  if(!currentPF||!currentPF.market_insights){alert('Generate insights first');return;}
+  if(!currentPF||!currentPF.market_insights){toast('Generate insights first');return;}
   const lang=document.getElementById('pfInsightsLang')?.value||'English';
-  if(!GK().startsWith('sk-ant-')){alert('API key required');return;}
+  if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
   showLoad('Translating to '+lang+'...');
   try{
     const d=currentPF.market_insights;const items=[];const map=[];
@@ -7570,7 +7984,7 @@ async function translatePortfolioInsights(){
     sb('portfolios?id=eq.'+currentPF.id,'PATCH',{market_insights:d}).catch(()=>{});
     hideLoad();
     renderPortfolioInsights(d,currentPF.market_insights_sources||0);
-  }catch(e){hideLoad();alert('Translation error: '+e.message);}
+  }catch(e){hideLoad();toast('Translation error: '+e.message);}
 }
 
 // ═══ STATS ═══
@@ -7586,7 +8000,7 @@ function updateStats(){
 // ═══ EXPORT ═══
 function exportCSV(){
   const r=CP?.risks||[];
-  if(!r.length){alert('No risks');return;}
+  if(!r.length){toast('No risks');return;}
   const h=['ID','Type','Category','Description','Cause','Probability','Cost Impact','Schedule Impact','QHSE Impact','Reputation Impact','Level','Response','Action Plan','Owner','Activity','Expected Week'];
   const rows=r.map(x=>[x.risk_id||x.id,x.type==='opportunity'?'opportunity':'threat',CAT_AR[x.category]||x.category,x.description,x.cause||'',PL[x.probability]||x.probability,IL[x.impact_cost]||x.impact_cost,IL[x.impact_schedule]||x.impact_schedule,IL[x.impact_qhse]||x.impact_qhse,IL[x.impact_reputation]||x.impact_reputation,RL[x.level]||x.level,RESP_AR[x.response_strategy]||x.response_strategy||'—',x.mitigation,x.owner||'',x.activity_ref||'',x.expected_weeks||''].map(v=>`"${String(v).replace(/"/g,'')}"`).join(','));
   const csv='\uFEFF'+[h.join(','),...rows].join('\n');
@@ -7596,7 +8010,40 @@ function exportCSV(){
 
 // ═══ UTILS ═══
 function showLoad(txt){document.getElementById('loadT').textContent=txt;document.getElementById('loadOv').classList.add('on');}
-function hideLoad(){document.getElementById('loadOv').classList.remove('on');}
+function hideLoad(){document.getElementById('loadOv').classList.remove('on');if(window._loadCycle){clearInterval(window._loadCycle);window._loadCycle=null;}}
+// Staged loading: cycles through step messages to set expectations during long AI work
+function showLoadStages(stages,ms){
+  showLoad(stages[0]);let i=0;
+  if(window._loadCycle)clearInterval(window._loadCycle);
+  window._loadCycle=setInterval(()=>{i=Math.min(i+1,stages.length-1);document.getElementById('loadT').textContent=stages[i];if(i===stages.length-1){clearInterval(window._loadCycle);window._loadCycle=null;}},ms||6000);
+}
+// ═══ TOAST SYSTEM (replaces blocking alerts) ═══
+function toast(msg,opts){
+  opts=opts||{};
+  let type=opts.type;
+  if(!type)type=/error|failed|could not|couldn't|wrong|invalid|denied|not found|unable/i.test(msg)?'err':(/saved|done|created|added|updated|deleted|completed|success|logged|approved/i.test(msg)?'ok':'info');
+  let wrap=document.getElementById('toastWrap');
+  if(!wrap){wrap=document.createElement('div');wrap.id='toastWrap';document.body.appendChild(wrap);}
+  const t=document.createElement('div');
+  t.className='toast t-'+type;t.setAttribute('role','status');
+  const ic=type==='err'?'!':type==='ok'?'✓':'i';
+  const actLabel=opts.undo?'Undo':(opts.actionLabel||'');
+  t.innerHTML=`<span class="toast-ic">${ic}</span><span class="toast-msg"></span>${actLabel?`<button class="toast-undo">${actLabel}</button>`:''}<button class="toast-x" aria-label="Dismiss">×</button>`;
+  t.querySelector('.toast-msg').textContent=msg;
+  const kill=()=>{t.classList.add('out');setTimeout(()=>t.remove(),250);};
+  t.querySelector('.toast-x').onclick=kill;
+  const fn=opts.undo||opts.action;
+  if(fn&&actLabel)t.querySelector('.toast-undo').onclick=()=>{try{fn();}catch(e){}kill();};
+  wrap.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('in'));
+  setTimeout(kill,(opts.undo||opts.actionLabel)?7000:(type==='err'?6500:3800));
+}
+// Esc closes the topmost open modal (a11y)
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const open=[...document.querySelectorAll('.modal-ov.on')];
+  if(open.length){open[open.length-1].classList.remove('on');e.stopPropagation();}
+});
 
 // ═══════════════════════════════════════════════════════
 // AI RISK MANAGER — conversational copilot (Advisor + Manager modes)
@@ -7611,7 +8058,16 @@ function armToggle(){
   p.classList.toggle('on',armOpen);
   p.setAttribute('aria-hidden',armOpen?'false':'true');
   if(armOpen){
-    if(!armGreeted){armGreeted=true;armRender();}
+    if(!armGreeted){
+      armGreeted=true;
+      try{
+        if(!localStorage.getItem('arm_intro_seen')){
+          localStorage.setItem('arm_intro_seen','1');
+          armMsgs.push({role:'ai',text:"I'm your AI Risk Manager — and I don't just advise, I can act (with your approval):\n• Create, update or close risks in your register\n• Build and reschedule your daily action plan\n• Answer anything about your risks and exposure\n\nTry: \"I'm busy today — lighten my tasks\""});
+        }
+      }catch(e){}
+      armRender();
+    }
     armRenderSugg();
     setTimeout(()=>document.getElementById('armIn')?.focus(),200);
   }
@@ -7736,7 +8192,7 @@ async function armSend(){
   const lang=armDetectLang(txt);
   const ctx=armBuildContext();
   const canExecute=(armMode==='manager')&&(typeof CID!=='undefined'&&CID);
-  const sys=`You are "AI Risk Manager", an expert project risk-management copilot inside the RiskAtlas platform. The user may NOT be a risk expert (could be a project owner or project manager). Explain clearly and simply, avoid jargon, and be practical and supportive.
+  const sys=`You are "AI Risk Manager", an expert project risk-management copilot inside the RiskAtlas platform. The user may NOT be a risk expert (could be a project owner or project manager). Communicate like a senior risk consultant: specific to THIS project's data, decisive, and concise. Reference actual risk IDs, dates, and numbers. Never give generic advice that would fit any project, never repeat what the user already knows, and never pad with filler.
 
 LANGUAGE: Reply in the SAME language as the user's latest message. If they write Arabic, reply in clear Arabic; if English, reply in English. The user's latest message is in ${lang==='ar'?'Arabic':'English'}.
 
@@ -7840,7 +8296,7 @@ async function armApprove(){
         done++;
       }else if(a.type==='close_risk'){
         const row=riskByRid[a.risk_id];if(!row||!row.id){failed++;errs.push(a.risk_id+': not found');continue;}
-        await sb('risks?id=eq.'+row.id,'PATCH',{status:'closed'});row.status='closed';done++;
+        await sb('risks?id=eq.'+row.id,'PATCH',{status:'closed'});row.status='closed';logRiskEvent(row.id,'ai_closed',{});done++;
       }else if(a.type==='reschedule_actions'){
         if(!CP.action_plan||!Array.isArray(CP.action_plan.actions)){failed++;errs.push('no action plan to adjust');continue;}
         const byId={};CP.action_plan.actions.forEach(x=>byId[x.id]=x);
