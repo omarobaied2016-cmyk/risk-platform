@@ -980,6 +980,11 @@ tr:hover td{background:rgba(109,129,150,.015);}
       </div>
       <button class="btn btn-g" onclick="document.getElementById('accountModal').classList.remove('on');showPricingPage()">Upgrade</button>
     </div>
+    <div style="border-top:1px solid rgba(246,78,96,.25);padding-top:18px;margin-top:18px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:8px">Danger Zone</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Deactivating closes your account and signs you out. Your projects are kept safely for 30 days in case you change your mind — just sign back in to reactivate. After 30 days, your account and all data are permanently deleted.</div>
+      <button class="btn" style="background:transparent;border:1px solid var(--red);color:var(--red);font-weight:600" onclick="requestDeactivate()">Deactivate my account</button>
+    </div>
     <div style="display:flex;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-g" onclick="document.getElementById('accountModal').classList.remove('on')">Close</button>
     </div>
@@ -1603,6 +1608,14 @@ async function doLogin(){
     localStorage.setItem('sb_refresh',data.refresh_token);
     localStorage.setItem('sb_user',JSON.stringify(data.user));
     await loadUserProfile();
+    // Account lifecycle: reactivate a deactivated account on successful sign-in (within grace window)
+    if(currentUserProfile&&currentUserProfile.status==='deactivated'){
+      try{
+        await sb('users?id=eq.'+currentUser.id,'PATCH',{status:'active',deactivated_at:null});
+        currentUserProfile.status='active';currentUserProfile.deactivated_at=null;
+        toast('Welcome back — your account has been reactivated',{type:'ok'});
+      }catch(e){}
+    }
     enterApp();
   }catch(e){showAuthError('Connection error: '+e.message);}
 }
@@ -1988,6 +2001,29 @@ function accMsg(text,ok){
   el.style.color=ok?'#15803d':'var(--red)';
 }
 
+// ═══ ACCOUNT DEACTIVATION (soft-delete with 30-day grace, then purge) ═══
+async function requestDeactivate(){
+  const projCount=(projs||[]).filter(p=>p.user_id===currentUser?.id).length;
+  const warn=`Deactivate your account?\n\n`+
+    `• You'll be signed out immediately.\n`+
+    `• Your ${projCount} project${projCount===1?'':'s'} and all data are kept for 30 days.\n`+
+    `• Sign back in any time within 30 days to reactivate — nothing is lost.\n`+
+    `• After 30 days, everything is permanently deleted.\n\n`+
+    `Type DEACTIVATE to confirm.`;
+  const ans=prompt(warn);
+  if(ans===null)return;
+  if(ans.trim().toUpperCase()!=='DEACTIVATE'){toast('Deactivation cancelled — confirmation text did not match');return;}
+  try{
+    showLoad('Deactivating your account…');
+    await sb('users?id=eq.'+currentUser.id,'PATCH',{status:'deactivated',deactivated_at:new Date().toISOString()});
+    hideLoad();
+    // sign out locally
+    localStorage.removeItem('sb_token');localStorage.removeItem('sb_refresh');localStorage.removeItem('sb_user');
+    toast('Your account has been deactivated. Sign in within 30 days to reactivate.',{type:'ok'});
+    setTimeout(()=>location.reload(),1800);
+  }catch(e){hideLoad();toast('Could not deactivate the account. Please try again or contact support.');}
+}
+
 async function saveAccountProfile(){
   const name=document.getElementById('acc_name').value.trim();
   const company=document.getElementById('acc_company').value.trim();
@@ -2051,6 +2087,13 @@ async function checkSession(){
         currentUser=await res.json();
         localStorage.setItem('sb_user',JSON.stringify(currentUser));
         await loadUserProfile();
+        // A still-valid token for a deactivated account must not silently enter the app.
+        // Reactivation only happens via an explicit sign-in (doLogin), not session restore.
+        if(currentUserProfile&&currentUserProfile.status==='deactivated'){
+          localStorage.removeItem('sb_token');localStorage.removeItem('sb_refresh');localStorage.removeItem('sb_user');
+          currentUser=null;currentUserProfile=null;
+          return false;
+        }
         enterApp();
         return true;
       }
