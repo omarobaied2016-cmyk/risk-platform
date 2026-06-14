@@ -2728,6 +2728,7 @@ async function logTaskUpdate(projId,actionId,text){
 }
 
 async function generateActionPlan(projId,noPopup){
+  if(myRole()==='viewer'){toast('View-only access — you cannot change the plan');return;}
   const p=(projs||[]).find(x=>x.id===projId);if(!p)return;
   const rs=(allRisks||[]).filter(r=>r.project_id===projId&&r.status!=='closed');
   if(!rs.length){if(!noPopup)toast('No risks to plan yet. Generate the risk register first.');return;}
@@ -3462,9 +3463,19 @@ async function teamRemove(id){
 // role of current user on the open project: 'owner' | 'editor' | 'viewer'
 function myRole(){
   if(!CP)return 'owner';
-  if(isAdmin()||CP.user_id===currentUser?.id)return 'owner';
-  const m=(CP._members||[]).find(x=>(x.user_email||'').toLowerCase()===(currentUser?.email||'').toLowerCase());
-  return m?(m.role==='editor'?'editor':'viewer'):'owner';
+  if(isAdmin())return 'owner';
+  // True owner: the project's user_id matches mine (works whether or not it's shared)
+  if(CP.user_id&&currentUser?.id&&CP.user_id===currentUser.id)return 'owner';
+  // A project flagged as shared with me, OR carrying member rows → I am NOT the owner.
+  // Find my membership row; if I genuinely can't be classified, fall back to the
+  // LEAST privilege (viewer), never to owner.
+  const myEmail=(currentUser?.email||'').toLowerCase();
+  const m=(CP._members||[]).find(x=>(x.user_email||'').toLowerCase()===myEmail);
+  if(m)return m.role==='editor'?'editor':'viewer';
+  // No membership row found. If the project is shared (not mine), default to viewer (safe).
+  if(CP._shared)return 'viewer';
+  // Otherwise it's my own unshared project.
+  return 'owner';
 }
 function openSettingsModal(){
   if(!CP)return;
@@ -3481,6 +3492,7 @@ function openSettingsModal(){
 }
 function closeSettingsModal(){document.getElementById('settingsModal').classList.remove('on');}
 async function saveSettings(){
+  if(myRole()==='viewer'){toast('View-only access — you cannot change project settings');return;}
   if(!CP)return;
   showLoad('Saving...');
   try{
@@ -4126,6 +4138,7 @@ async function loadRiskHistory(riskDbId,btn){
 }
 // Inline quick-edit from the expanded detail row (no modal needed)
 async function quickEditRisk(riskDbId,field,val){
+  if(myRole()==='viewer'){toast('View-only access — you cannot edit risks');return;}
   const rr=(CP?.risks||[]).find(x=>x.id===riskDbId)||(allRisks||[]).find(x=>x.id===riskDbId);
   if(!rr)return;
   const old=rr[field];
@@ -4158,6 +4171,7 @@ function bulkBarRefresh(){
     <button class="btn btn-g" style="padding:6px 12px;font-size:12px" onclick="bulkSelectAll(false)">Cancel</button>`;
 }
 async function bulkApply(){
+  if(myRole()==='viewer'){toast('View-only access — you cannot edit risks');return;}
   const ids=bulkSelected();if(!ids.length)return;
   const status=document.getElementById('bulkStatus').value;
   const owner=document.getElementById('bulkOwner').value.trim();
@@ -4542,6 +4556,7 @@ ${JSON.stringify(payload)}`}]});
 
 // Change risk status — closed risks move to Risk Log
 async function changeRiskStatus(riskId,status){
+  if(myRole()==='viewer'){toast('View-only access — you cannot change risks in this project');return;}
   const risk=CP.risks.find(r=>r.id===riskId);
   if(!risk)return;
   const _oldStatus=risk.status||'open';
