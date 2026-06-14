@@ -338,6 +338,66 @@ app.get('/api/digest/run', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════
+//  PURGE deactivated accounts after 30-day grace period
+//  Schedule a daily GET (reuses DIGEST_SECRET):
+//    https://riskatlas.pro/api/accounts/purge?key=DIGEST_SECRET
+// ═══════════════════════════════════════════════════════════════════════
+app.get('/api/accounts/purge', async (req, res) => {
+  try {
+    if (!DIGEST_SECRET || req.query.key !== DIGEST_SECRET) return res.status(403).json({ error: 'forbidden' });
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return res.status(503).json({ error: 'not configured' });
+
+    const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/users?status=eq.deactivated&deactivated_at=lt.${cutoff}&select=id,email`,
+      { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } }
+    );
+    const stale = await r.json();
+    if (!Array.isArray(stale) || !stale.length) return res.json({ ok: true, purged: 0 });
+
+    const del = (tbl, q) => fetch(`${SUPABASE_URL}/rest/v1/${tbl}?${q}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, Prefer: 'return=minimal' },
+    });
+
+    let purged = 0;
+    for (const u of stale) {
+      try {
+        const pr = await fetch(`${SUPABASE_URL}/rest/v1/projects?user_id=eq.${u.id}&select=id`,
+          { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } });
+        const projects = await pr.json();
+        const ids = Array.isArray(projects) ? projects.map(p => p.id) : [];
+        if (ids.length) {
+          const inList = `(${ids.join(',')})`;
+          await del('risk_events', `project_id=in.${inList}`);
+          await del('risks', `project_id=in.${inList}`);
+          await del('project_members', `project_id=in.${inList}`);
+        }
+      } catch (e) { /* continue */ }
+
+      await del('projects', `user_id=eq.${u.id}`);
+      await del('portfolios', `user_id=eq.${u.id}`);
+      await del('project_members', `user_email=eq.${encodeURIComponent(u.email)}`);
+      await del('users', `id=eq.${u.id}`);
+
+      try {
+        await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${u.id}`, {
+          method: 'DELETE',
+          headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+        });
+      } catch (e) { /* continue */ }
+
+      purged++;
+      await new Promise(r => setTimeout(r, 300));
+    }
+    res.json({ ok: true, purged });
+  } catch (e) {
+    console.error('purge error', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─────────────────────────────────────────────
 //  Legal pages (clean URLs) — must be BEFORE catch-all
 // ─────────────────────────────────────────────
