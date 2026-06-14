@@ -849,6 +849,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .subtab.on{background:var(--primary);border-color:var(--primary);color:#fff;}
 .role-viewer .bulk-chk,.role-viewer #bulkBar,.role-viewer .btn-del,.role-viewer .tt-chk{display:none !important;}
 .role-viewer .rdet .btn-p,.role-viewer .rdet input,.role-viewer .rdet select{pointer-events:none;opacity:.5;}
+.role-viewer .status-sel,.role-viewer select[onchange*="changeRiskStatus"],.role-viewer .add-risk-btn,.role-viewer [onclick*="openAddRisk"],.role-viewer [onclick*="openEdit"],.role-viewer .edit-btn,.role-viewer [onclick*="addRiskUpdate"],.role-viewer [onclick*="generateActionPlan"]{pointer-events:none !important;opacity:.45 !important;cursor:not-allowed !important;}
+.role-viewer .btn-warn[onclick*="showNotif"]{opacity:.5;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -2327,8 +2329,12 @@ async function loadAll(){
 // ═══ SIDEBAR ═══
 function renderSidebar(){
   const el=document.getElementById('portfolioList');
-  const standalone=projs.filter(p=>!p.portfolio_id);
-  if(!portfolios.length&&!standalone.length){
+  const standalone=projs.filter(p=>!p.portfolio_id&&!p._shared);
+  // Shared projects whose portfolio isn't loaded for me (e.g. a viewer/editor on someone
+  // else's project) would otherwise vanish — collect them into a "Shared with me" group.
+  const ownedPfIds=new Set(portfolios.map(pf=>pf.id));
+  const sharedOrphans=projs.filter(p=>p._shared&&(!p.portfolio_id||!ownedPfIds.has(p.portfolio_id)));
+  if(!portfolios.length&&!standalone.length&&!sharedOrphans.length){
     el.innerHTML=`<div class="empty-portfolio">No portfolios yet<br><span style="color:var(--primary);cursor:pointer;font-weight:600" onclick="openPortfModal()">Create your first portfolio</span></div>`;
     return;
   }
@@ -2369,6 +2375,26 @@ function renderSidebar(){
         </div>
         <div class="proj-list ${isOpen?'open':''}">
           ${standalone.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p.type||'—'}</div></div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  // Shared with me (projects shared by other owners, portfolio not visible to me)
+  if(sharedOrphans.length){
+    const isOpen=openPortfolios.has('__shared__');
+    html+=`
+      <div class="portfolio-group">
+        <div class="pg-hdr" onclick="event.stopPropagation();togglePortfolio('__shared__')">
+          <div class="pg-hdr-left">
+            <span class="pg-toggle ${isOpen?'open':''}">▶</span>
+            <span class="pg-icon" style="background:#88A0B4"></span>
+            <span class="pg-name">Shared with me</span>
+          </div>
+          <div class="pg-actions"></div>
+          <span class="pg-count">${sharedOrphans.length}</span>
+        </div>
+        <div class="proj-list ${isOpen?'open':''}">
+          ${sharedOrphans.map(p=>`<div class="pi ${p.id===CID?'on':''}" onclick="selectProj('${p.id}')"><div class="pi-n">${p.name}</div><div class="pi-s">${p._members&&p._members[0]?(p._members[0].role==='editor'?'Editor':'View only'):'Shared'}</div></div>`).join('')}
         </div>
       </div>`;
   }
@@ -3522,6 +3548,7 @@ async function saveSettings(){
 }
 
 async function delProj(){
+  if(typeof myRole==='function'&&myRole()==='viewer'){toast('View-only access — only the owner can delete this project');return;}
   if(!confirm('Are you sure you want to delete this project?'))return;
   showLoad('Deleting...');
   try{
@@ -3544,6 +3571,20 @@ async function selectProj(id){
     const p=await sb('projects?id=eq.'+id+'&select=*');
     CP=p&&p[0]?p[0]:null;
     if(!CP){hideLoad();return;}
+    // Carry over sharing metadata from the list copy so myRole() classifies correctly.
+    // Without this, a freshly-fetched CP loses _shared/_members and a viewer is wrongly
+    // treated as owner (able to edit). If absent, re-derive membership from project_members.
+    {
+      const listCopy=(projs||[]).find(x=>x.id===id);
+      if(listCopy&&listCopy._shared){CP._shared=true;CP._members=listCopy._members||[];}
+      if(CP.user_id!==currentUser?.id&&!isAdmin()&&!CP._members){
+        try{
+          const myEmail=(currentUser?.email||'').toLowerCase();
+          const mine=await sb('project_members?project_id=eq.'+id+'&user_email=eq.'+encodeURIComponent(myEmail)+'&select=*')||[];
+          if(mine.length){CP._shared=true;CP._members=mine;}
+        }catch(e){}
+      }
+    }
     if(!CP.tolerance)CP.tolerance={cost_pct:5,cost_val:'',sched_days:30,sched_pct:10,qhse:DQ,rep:DR,prob:DP,imp:DI};
     if(!CP.contacts)CP.contacts=[];
     if(!CP.trend_data)CP.trend_data=[];
@@ -4407,6 +4448,7 @@ async function updateRiskNotes(riskId,notes){
 
 // Add a timestamped progress update to a risk's log (from register or Today's Tasks)
 async function addRiskUpdate(riskDbId,textArg,ctx){
+  if(typeof myRole==='function'&&myRole()==='viewer'){toast('View-only access — you cannot add updates');return;}
   const inp=document.getElementById((ctx==='tt'?'ttupd_':'upd_')+riskDbId);
   let text=(textArg!=null?textArg:(inp?inp.value:''))||'';text=text.trim();
   if(!text)return;
