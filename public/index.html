@@ -2633,6 +2633,50 @@ function renderHome(){
 }
 
 // ═══ TODAY'S TASKS (daily briefing) ═══
+// ═══ PATCH 1: weekly goal + purpose layer ═══
+// Builds a "bigger picture" line from real state: what this week is FOR, and what today's work achieves.
+function weeklyContext(scope){
+  let list=projs||[];
+  if(scope&&scope.mode==='project')list=list.filter(p=>p.id===scope.id);
+  else if(scope&&scope.mode==='portfolio')list=list.filter(p=>p.portfolio_id===scope.id);
+  const today=new Date();today.setHours(0,0,0,0);const day=86400000;
+  let highOpen=0, dueThisWeek=0, overdue=0, expReduced=0, criticalSoon=[];
+  list.forEach(p=>{
+    const rs=(allRisks||[]).filter(r=>r.project_id===p.id&&r.status!=='closed'&&r.type!=='opportunity');
+    highOpen+=rs.filter(r=>r.level==='high').length;
+    const plan=p.action_plan;
+    if(plan&&Array.isArray(plan.actions)){
+      plan.actions.forEach(a=>{
+        if(a.status==='done')return;
+        if(!a.due_date||isNaN(new Date(a.due_date)))return;
+        const dt=new Date(a.due_date);dt.setHours(0,0,0,0);const d=Math.round((dt-today)/day);
+        if(d<0)overdue++;
+        if(d>=0&&d<=7)dueThisWeek++;
+        // rough exposure reduction: actions tied to high risks
+        const rk=rs.find(r=>r.risk_id===a.risk_id);
+        if(rk&&rk.level==='high'){
+          if(d<=2&&criticalSoon.length<3)criticalSoon.push(rk.risk_id);
+        }
+      });
+    }
+  });
+  return {highOpen,dueThisWeek,overdue,criticalSoon};
+}
+
+function weeklyGoalLine(scope){
+  const c=weeklyContext(scope);
+  if(c.highOpen===0&&c.dueThisWeek===0)return null;
+  // Construct a purpose-driven goal from the real numbers
+  let goal;
+  if(c.highOpen>0){
+    goal=`Bring down your <b>${c.highOpen} open high risk${c.highOpen>1?'s':''}</b>`;
+    if(c.criticalSoon.length)goal+=` — starting with ${c.criticalSoon.join(', ')} before ${new Date(Date.now()+2*86400000).toLocaleDateString('en-GB',{weekday:'long'})}`;
+  }else{
+    goal=`Stay ahead of your plan — <b>${c.dueThisWeek} action${c.dueThisWeek>1?'s':''}</b> due this week`;
+  }
+  return goal;
+}
+
 function buildTodayTasks(scope){
   const today=new Date();today.setHours(0,0,0,0);const day=86400000;
   const todayISO=new Date().toISOString().slice(0,10);
@@ -2704,6 +2748,21 @@ function showTodayTasks(scope){
   else if(soonActions.length)brief=`Good morning, ${name}. Nothing urgent today — ${soonActions.length} action${soonActions.length>1?'s':''} coming up this week. A light day.`;
   else if(needPlan)brief=`Good morning, ${name}. Generate your AI action plan to get a daily to-do that keeps your risks on track through to project completion.`;
   else brief=`Good morning, ${name}.`;
+  // PATCH 1: purpose layer — tie today's work to the week's goal and the outcome
+  const _goal=weeklyGoalLine(ttScope);
+  const _ctx=weeklyContext(ttScope);
+  let purposeBlock='';
+  if(_goal){
+    let achieve='';
+    if(todayCount&&_ctx.highOpen>0)achieve=`Clearing today's actions keeps your high risks from escalating and protects your exposure.`;
+    else if(todayCount)achieve=`Today's actions keep your plan on track and your risks under control.`;
+    else achieve=`A light day — a good time to get ahead on this week's goal.`;
+    purposeBlock=`<div style="background:linear-gradient(180deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:12px;padding:13px 15px;margin:4px 0 14px">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--primary);margin-bottom:5px">This week's goal</div>
+      <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.5;margin-bottom:7px">${_goal}</div>
+      <div style="font-size:11.5px;color:var(--t2);line-height:1.5"><b style="color:var(--t1)">Why today matters:</b> ${achieve}</div>
+    </div>`;
+  }
   const rowAction=t=>`
     <div class="tt-item" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="toggleTaskDetail(this)">
       <div style="display:flex;align-items:flex-start;gap:11px">
@@ -2762,6 +2821,7 @@ function showTodayTasks(scope){
         ${todayCount?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${todayCount}</span>`:''}
       </div>
       <div style="font-size:12.5px;color:var(--t2);margin:8px 0 16px;line-height:1.55">${brief}</div>
+      ${purposeBlock}
       <div class="tt-list">${body}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
         <span style="font-size:11px;color:var(--t3)">Adjust your plan anytime via the AI Risk Manager.</span>
@@ -5463,21 +5523,98 @@ Respond ONLY with valid JSON:
 // Render a saved/just-generated report
 // Branded PDF (print) for the AI project report — reuses the lessons-learned print pattern
 function printProjectReport(){
-  const p=window._lastReport||CP.ai_report;
-  if(!p){toast('Generate the report first');return;}
-  const css=reportBaseCSS();
-  const li=arr=>(arr||[]).map(x=>`<div style="padding:6px 0;border-bottom:1px solid #e6ebf0;font-size:12px;line-height:1.6">${x}</div>`).join('');
-  const sec=(t,body)=>`<div style="margin-top:18px"><div style="font-size:13px;font-weight:800;color:#2B3440;border-bottom:2px solid #6D8196;padding-bottom:5px;margin-bottom:6px">${t}</div>${body||'<div style="font-size:12px;color:#888">—</div>'}</div>`;
-  const html=`
-    <div style="font-size:12.5px;line-height:1.7;color:#222;margin-top:10px"><b>Health:</b> ${(p.project_health||'').toUpperCase()} — ${p.executive_summary||''}</div>
-    ${sec('Critical Risks &amp; Top Concerns',li(p.top_concerns))}
-    ${sec('Key Findings',li(p.key_findings))}
-    ${sec('Patterns',li(p.common_patterns))}
-    ${sec('Strategic Recommendations',li(p.strategic_recommendations))}
-    ${sec('Areas Needing Attention',li(p.areas_needing_attention))}`;
+  // PATCH 2: a complete, board-ready, shareable report — not just the AI summary.
+  const rpt=window._lastReport||CP.ai_report;
+  const risks=(CP.risks||(allRisks||[]).filter(r=>r.project_id===CID)||[]);
+  const open=risks.filter(r=>r.status!=='closed');
+  const threats=open.filter(r=>r.type!=='opportunity');
+  const opps=open.filter(r=>r.type==='opportunity');
+  const high=threats.filter(r=>r.level==='high').length;
+  const med=threats.filter(r=>r.level==='medium').length;
+  const low=threats.filter(r=>r.level==='low').length;
+  const cur=CP.currency||'USD';
+  const fmtMoney=v=>{const n=Number(v)||0;return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':String(n);};
+  const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  const lvlPill=l=>{const c=l==='high'?'#C0392B':l==='medium'?'#B8860B':'#2E7D52';const bg=l==='high'?'#fdecea':l==='medium'?'#fbf3e0':'#e9f5ee';return `<span style="display:inline-block;font-size:9.5px;font-weight:700;color:${c};background:${bg};border-radius:10px;padding:1px 8px;text-transform:uppercase;letter-spacing:.04em">${l||'—'}</span>`;};
+  const statusPill=s=>{const m={open:'#566576',monitoring:'#B8860B',closed:'#2E7D52'};const c=m[s]||'#566576';return `<span style="font-size:10px;color:${c};font-weight:600">${esc((s||'open').charAt(0).toUpperCase()+(s||'open').slice(1))}</span>`;};
+
+  const riskRow=r=>`<tr>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#566576;white-space:nowrap">${esc(r.risk_id||'')}</td>
+    <td><div style="font-weight:600;color:#2B3440;font-size:11px;line-height:1.4">${esc(r.description||r.title||'')}</div>${r.category?`<div style="font-size:9.5px;color:#88A0B4;margin-top:2px">${esc(r.category)}</div>`:''}</td>
+    <td style="text-align:center">${lvlPill(r.level)}</td>
+    <td style="font-size:10.5px;color:#566576;line-height:1.4">${esc(r.mitigation||r.risk_response||'—')}</td>
+    <td style="font-size:10px;color:#566576;white-space:nowrap">${esc(r.response_owner||r.owner||'—')}</td>
+    <td style="text-align:center">${statusPill(r.status)}</td>
+  </tr>`;
+
+  const riskTable=arr=>arr.length?`<table style="width:100%;border-collapse:collapse;margin-top:8px">
+    <thead><tr style="background:#2B3440">
+      <th style="color:#fff;font-size:9.5px;text-align:left;padding:7px 8px;font-weight:700">ID</th>
+      <th style="color:#fff;font-size:9.5px;text-align:left;padding:7px 8px;font-weight:700">Risk</th>
+      <th style="color:#fff;font-size:9.5px;text-align:center;padding:7px 8px;font-weight:700">Level</th>
+      <th style="color:#fff;font-size:9.5px;text-align:left;padding:7px 8px;font-weight:700">Response</th>
+      <th style="color:#fff;font-size:9.5px;text-align:left;padding:7px 8px;font-weight:700">Owner</th>
+      <th style="color:#fff;font-size:9.5px;text-align:center;padding:7px 8px;font-weight:700">Status</th>
+    </tr></thead>
+    <tbody>${arr.map((r,i)=>`<tr style="background:${i%2?'#f4f7fa':'#fff'};border-bottom:1px solid #e8edf2">${riskRow(r).replace('<tr>','').replace('</tr>','')}</tr>`).join('')}</tbody>
+  </table>`:'<div style="font-size:11px;color:#88A0B4;padding:8px 0">None recorded.</div>';
+
+  const hc=rpt?({good:'#2E7D52',warning:'#B8860B',critical:'#C0392B'}[rpt.project_health]||'#B8860B'):'#6D8196';
+  const htext=rpt?({good:'Healthy',warning:'Warning',critical:'Critical'}[rpt.project_health]||'Warning'):'';
+  const liItems=arr=>(arr||[]).map(x=>`<li style="font-size:11px;color:#3a4654;line-height:1.6;margin-bottom:3px">${esc(x)}</li>`).join('');
+
+  const summarySection=rpt?`
+    <div style="background:#f7f9fb;border:1px solid #e2e8ee;border-left:4px solid ${hc};border-radius:10px;padding:16px 18px;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${hc};margin-bottom:6px">Executive Summary · ${htext}</div>
+      <div style="font-size:12px;color:#2B3440;line-height:1.65">${esc(rpt.executive_summary||'')}</div>
+    </div>
+    ${rpt.top_concerns&&rpt.top_concerns.length?`<div style="margin-bottom:18px"><div style="font-size:13px;font-weight:800;color:#2B3440;border-bottom:2px solid #6D8196;padding-bottom:5px;margin-bottom:8px">Top Concerns</div><ul style="margin:0;padding-inline-start:18px">${liItems(rpt.top_concerns)}</ul></div>`:''}
+    ${rpt.strategic_recommendations&&rpt.strategic_recommendations.length?`<div style="margin-bottom:18px"><div style="font-size:13px;font-weight:800;color:#2B3440;border-bottom:2px solid #6D8196;padding-bottom:5px;margin-bottom:8px">Strategic Recommendations</div><ul style="margin:0;padding-inline-start:18px">${liItems(rpt.strategic_recommendations)}</ul></div>`:''}
+  `:'';
+
+  const css=`
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,sans-serif;color:#2B3440;font-size:12px;line-height:1.6;background:#fff}
+    .page{max-width:1000px;margin:0 auto;padding:34px}
+    .rhead{background:#2B3440;color:#fff;padding:24px 28px;border-radius:12px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start}
+    .rhead .brand{font-size:22px;font-weight:800;letter-spacing:1px}
+    .rhead .brand .mist{color:#88A0B4;font-weight:300}
+    .rhead .brand .ai{font-size:11px;border:2px solid #FFFFE3;color:#FFFFE3;border-radius:6px;padding:1px 6px;margin-inline-start:6px;letter-spacing:2px;vertical-align:middle}
+    .rhead .sub{font-size:11.5px;color:#9fb3c4;margin-top:8px}
+    .rhead .meta{text-align:right;font-size:11px;color:#9fb3c4;line-height:1.7}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:24px}
+    .kpi{background:#f7f9fb;border:1px solid #e2e8ee;border-radius:10px;padding:14px;text-align:center}
+    .kpi .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:#88A0B4;margin-bottom:4px}
+    .kpi .v{font-size:26px;font-weight:800;color:#2B3440}
+    .kpi .v.red{color:#C0392B}.kpi .v.amber{color:#B8860B}.kpi .v.grn{color:#2E7D52}
+    .secttl{font-size:14px;font-weight:800;color:#2B3440;margin:22px 0 4px;padding-bottom:6px;border-bottom:2px solid #6D8196}
+    .footer{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8ee;font-size:10px;color:#88A0B4;text-align:center}
+    @media print{.page{padding:0}.rhead{-webkit-print-color-adjust:exact;print-color-adjust:exact}thead tr,.kpi,.rhead{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  `;
+  const dateStr=new Date().toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'});
+  const html=`<html><head><title>Risk Report — ${esc(CP.name)}</title><style>${css}</style></head><body><div class="page">
+    <div class="rhead">
+      <div>
+        <div class="brand">RISK<span class="mist">ATLAS</span><span class="ai">AI</span></div>
+        <div class="sub">${esc(CP.name)}${CP.type?' · '+esc(CP.type):''}${CP.contract?' · '+esc(CP.contract):''}</div>
+      </div>
+      <div class="meta">Risk Report<br>${dateStr}${CP.value?'<br>Value: '+esc(cur)+' '+fmtMoney(CP.value):''}</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Total Risks</div><div class="v">${threats.length}</div></div>
+      <div class="kpi"><div class="l">High</div><div class="v red">${high}</div></div>
+      <div class="kpi"><div class="l">Medium</div><div class="v amber">${med}</div></div>
+      <div class="kpi"><div class="l">Opportunities</div><div class="v grn">${opps.length}</div></div>
+    </div>
+    ${summarySection}
+    <div class="secttl">Risk Register — Threats (${threats.length})</div>
+    ${riskTable(threats)}
+    ${opps.length?`<div class="secttl">Opportunities (${opps.length})</div>${riskTable(opps)}`:''}
+    <div class="footer">Generated by RiskAtlas AI · riskatlas.pro · ${new Date().toLocaleString('en-GB')}</div>
+  </div><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script></body></html>`;
   const w=window.open('','_blank');
-  w.document.write(`<html><head><title>Risk Report — ${CP.name}</title><style>${css}</style></head><body><div class="page">${reportHeaderHTML('AI Risk Report')}${html}<div class="footer">Generated by RiskAtlas AI — Project Risk Management Platform · ${new Date().toLocaleString()}</div></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
-  w.document.close();
+  if(!w){toast('Allow pop-ups to export the report');return;}
+  w.document.write(html);w.document.close();
 }
 function renderProjectReport(parsed,dateStr){
   const el=document.getElementById('projAIReport');
@@ -5756,11 +5893,11 @@ function doExportExcel(){
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
 
-  // Brand colors
-  const C={primary:'7239EA',primaryDk:'5D28C4',head:'4A2B8C',white:'FFFFFF',
-    light:'F3EFFF',grey:'F7F8FC',border:'D9D9E3',t1:'15152B',t2:'4A4A68',
-    high:'F64E60',highBg:'FDE7EA',med:'FFA800',medBg:'FFF4DD',low:'50CD89',lowBg:'E6F8EE',
-    threatBg:'FDECEC',oppBg:'E9F8F1',threat:'E63950',opp:'1C9E8F'};
+  // Brand colors — Ink-wash
+  const C={primary:'6D8196',primaryDk:'566576',head:'2B3440',white:'FFFFFF',
+    light:'EEF2F6',grey:'F7F9FB',border:'D8DEE5',t1:'2B3440',t2:'566576',
+    high:'C0392B',highBg:'FDECEA',med:'B8860B',medBg:'FBF3E0',low:'2E7D52',lowBg:'E9F5EE',
+    threatBg:'FBEEEE',oppBg:'E9F5EE',threat:'C0392B',opp:'2E7D52'};
 
   const aoa=[];
   // Title rows
@@ -6653,6 +6790,39 @@ function renderTrendReport(entry){
   const alertClass={high:'ta-r',medium:'ta-y',low:'ta-g'}[parsed.alert_level]||'ta-y';
   const alertIcon={high:'⚠️',medium:'◆',low:'✓'}[parsed.alert_level]||'◆';
   const ind=parsed.indicators_analysis||{};
+  // PATCH 3: lead with the conclusion. Build a 2-line takeaway; collapse the detail.
+  const _alertWord={high:'Act now',medium:'Watch closely',low:'On track'}[parsed.alert_level]||'Watch closely';
+  const _driver=(parsed.predicted_risks&&parsed.predicted_risks[0])||(parsed.warnings&&parsed.warnings[0])||'';
+  const _firstAction=(parsed.actions&&parsed.actions[0])||'';
+  const _concColor={high:'#C0392B',medium:'#B8860B',low:'#2E7D52'}[parsed.alert_level]||'#B8860B';
+  const _conclusion=`<div style="background:#fff;border:1px solid ${_concColor}40;border-inline-start:4px solid ${_concColor};border-radius:12px;padding:15px 17px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px">
+      <span style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:${_concColor}">${alertIcon} ${_alertWord} · Health ${parsed.health_score}/100</span>
+      <span style="font-size:10.5px;color:var(--t3)">${entry.date}</span>
+    </div>
+    <div style="font-size:13.5px;font-weight:600;color:var(--t1);line-height:1.5;margin-bottom:6px">${parsed.executive_summary||''}</div>
+    ${_driver?`<div style="font-size:12px;color:var(--t2);line-height:1.5"><b style="color:var(--t1)">Main driver:</b> ${_driver}</div>`:''}
+    ${_firstAction?`<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-top:3px"><b style="color:${_concColor}">Do first:</b> ${_firstAction}</div>`:''}
+    <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.indexOf('Show')>-1?'Hide full analysis ▲':'Show full analysis ▼'" style="margin-top:11px;background:transparent;border:1px solid var(--b1);color:var(--primary);font-size:11px;font-weight:600;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit">Show full analysis ▼</button>
+    <div style="display:none;margin-top:12px">
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-t" style="color:var(--primary)">Detailed Indicator Analysis</div>
+        ${[
+          {k:'schedule_variance',label:'Schedule Variance (SV)',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
+          {k:'cost_variance',label:'Cost Variance (CV)',val:`${br}%`,color:br<-5?'var(--red)':br<0?'#a16207':'var(--grn)'},
+          {k:'change_requests',label:'Change Requests',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
+          {k:'resource_utilization',label:'Resource Utilization',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
+          {k:'vendor_delay',label:'Vendor Delays',val:vd?'Reported':'None',color:vd?'var(--red)':'var(--grn)'}
+        ].map(item=>`<div style="margin-bottom:11px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="background:${item.color}22;color:${item.color};padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700">${item.val}</span><span style="font-size:11.5px;font-weight:600">${item.label}</span></div><div style="font-size:12px;color:var(--t2);line-height:1.6;padding-inline-start:8px;border-inline-start:2px solid var(--b1)">${ind[item.k]||'—'}</div></div>`).join('')}
+      </div>
+      ${parsed.forecast_narrative?`<div class="card" style="background:var(--primary-soft);border-color:rgba(109,129,150,.25);margin-bottom:10px"><div class="card-t" style="color:var(--primary)">▶ Forecast — What Happens Next</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${parsed.forecast_narrative}</div></div>`:''}
+      ${parsed.warnings?.length?`<div class="card" style="background:var(--yel-soft);border-color:rgba(255,168,0,.3);margin-bottom:10px"><div class="card-t" style="color:#ffa800">⚠ Warning Signals</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(255,168,0,.15);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
+      ${parsed.predicted_risks?.length?`<div class="card" style="background:var(--red-soft);border-color:rgba(246,78,96,.3);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ Predicted Risks (Next Periods)</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(246,78,96,.15);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
+      ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(80,205,137,.3)"><div class="card-t" style="color:var(--grn)">✓ Recommended Actions</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(80,205,137,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}
+    </div>
+  </div>`;
+  el.innerHTML=_conclusion;return;
+  /* legacy layout below kept for reference, no longer rendered */
   el.innerHTML=`
     <div class="trend-alert ${alertClass}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:8px">
@@ -7707,19 +7877,22 @@ function renderInsights(data,articles){
 
   const lastUpdate=insightsLastFetch?insightsLastFetch.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
 
-  document.getElementById('insightsBody').innerHTML=`
-    <!-- Executive summary -->
-    <div class="dash-section" style="background:linear-gradient(135deg,rgba(109,129,150,.04),rgba(137,80,252,.02));border-color:rgba(109,129,150,.2);margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;flex-wrap:wrap;gap:8px">
-        <div class="dash-sec-title">
-          <span class="dash-sec-num" style="background:linear-gradient(135deg,var(--purple),var(--primary))">✦</span>
-          <span class="dash-sec-name">Executive Summary</span>
-        </div>
-        <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Updated ${lastUpdate} · ${srcCount} sources</div>
-      </div>
-      <div style="font-size:13px;color:var(--t1);line-height:1.7">${data.executive_summary||'—'}</div>
+  // PATCH 3: lead with the bottom line. One takeaway + the single most important signal.
+  const _topUpdate=(data.risk_updates&&data.risk_updates[0]);
+  const _bottomLine=data.bottom_line||data.executive_summary||'';
+  const _mostImportant=_topUpdate?`<b style="color:var(--t1)">Most relevant to you:</b> ${_topUpdate.risk_id||''} — ${_topUpdate.reason||_topUpdate.recommendation||'review this risk'}`:'';
+  const _concBlock=`<div class="dash-section" style="border-inline-start:4px solid var(--primary);margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px">
+      <span style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--primary)">Bottom line</span>
+      <span style="font-size:10px;color:var(--t3)">Updated ${lastUpdate} · ${srcCount} sources</span>
     </div>
+    <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.55;margin-bottom:${_mostImportant?'6px':'0'}">${_bottomLine||'No significant market signals affecting your risks right now.'}</div>
+    ${_mostImportant?`<div style="font-size:12px;color:var(--t2);line-height:1.5">${_mostImportant}</div>`:''}
+    ${(data.risk_updates&&data.risk_updates.length)?`<button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.indexOf('Show')>-1?'Hide market detail ▲':'Show market detail ▼'" style="margin-top:11px;background:transparent;border:1px solid var(--b1);color:var(--primary);font-size:11px;font-weight:600;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit">Show market detail ▼</button><div style="display:none;margin-top:6px"></div>`:''}
+  </div>`;
 
+  document.getElementById('insightsBody').innerHTML=_concBlock+`
+    <!-- detailed sections below (collapsed conceptually; shown after the bottom line) -->
     <!-- Risk Updates -->
     ${data.risk_updates?.length?`
     <div class="dash-section" style="margin-bottom:14px;background:#fef9c3;border-color:rgba(255,168,0,.3)">
