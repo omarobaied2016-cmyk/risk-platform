@@ -446,6 +446,28 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .kpi-icon-circle.yellow{background:#fef9c3;color:#ffa800;}
 
 .dash-section{background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:var(--shadow);}
+
+/* ═══ EXECUTIVE OVERVIEW COMPACTION — denser, premium, less scroll (layout only) ═══ */
+#pane-dash .dash-section{padding:14px 16px;margin-bottom:10px;border-radius:12px;transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease;}
+#pane-dash .dash-section:hover{box-shadow:0 6px 20px rgba(43,52,64,.10);border-color:rgba(109,129,150,.32);}
+#pane-dash .dash-hero{padding:13px 18px;margin-bottom:10px;border-radius:12px;}
+#pane-dash .dash-hero-l{font-size:19px;}
+#pane-dash .kpi-grid{gap:10px;margin-bottom:10px;}
+#pane-dash .kpi-card{padding:13px 15px;border-radius:11px;transition:box-shadow .18s ease,transform .18s ease;}
+#pane-dash .kpi-card:hover{box-shadow:0 6px 18px rgba(43,52,64,.12);transform:translateY(-2px);}
+#pane-dash .attn-panel{padding:13px 16px;margin-bottom:10px;border-radius:13px;}
+#pane-dash .dash-row{gap:10px;margin-bottom:10px;}
+#pane-dash .dash-sec-head{margin-bottom:10px;}
+#pane-dash .dash-sec-title{gap:8px;}
+#pane-dash .dash-sec-num{width:22px;height:22px;font-size:11px;}
+#pane-dash .dash-sec-name{font-size:12.5px;}
+#pane-dash .kpi-value{font-size:24px!important;}
+#pane-dash .kpi-label{font-size:10px;letter-spacing:.04em;}
+/* Collapsible heavy sections: show summary, detail behind a toggle */
+#pane-dash .ov-collapse{position:relative;overflow:hidden;transition:max-height .3s ease;}
+#pane-dash .ov-collapse.ov-closed{max-height:0;margin:0;padding-top:0;padding-bottom:0;border:none;}
+#pane-dash .ov-toggle{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--b1);color:var(--primary);font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;}
+#pane-dash .ov-toggle:hover{background:var(--primary-soft);border-color:var(--primary);}
 .dash-sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .dash-sec-title{display:flex;align-items:center;gap:9px;}
 .dash-sec-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--purple));color:white;font-size:11.5px;font-weight:700;}
@@ -4725,6 +4747,19 @@ async function changeRiskStatus(riskId,status){
 }
 
 // ═══ DASHBOARD ═══
+// ═══ EXECUTIVE OVERVIEW: expand/collapse heavy sections (layout only) ═══
+function ovToggle(targetId,btnId){
+  const t=document.getElementById(targetId);const b=document.getElementById(btnId);
+  if(!t)return;
+  // the collapsible may be the target itself or a child marked .ov-collapse
+  const c=t.classList.contains('ov-collapse')?t:t.querySelector('.ov-collapse');
+  if(!c)return;
+  const closed=c.classList.toggle('ov-closed');
+  if(b)b.innerHTML=(b.textContent.indexOf('View')>-1)
+    ? (closed?'View Full Report ▼':'Hide Full Report ▲')
+    : (closed?'Show detail ▼':'Hide detail ▲');
+}
+
 function renderDash(){
   const risks=CP?.risks||[];
   if(!risks.length){
@@ -5092,10 +5127,11 @@ function renderDash(){
           </select>
           <button class="btn btn-g" onclick="translateReport()" style="padding:9px 14px">Translate</button>
           <button class="btn btn-p" onclick="generateProjectReport()">Generate Report</button>
+          <button class="ov-toggle" id="aiRepToggle" onclick="ovToggle('projAIReport','aiRepToggle')" style="display:none">View Full Report ▼</button>
         </div>
       </div>
     </div>
-    <div id="projAIReport"></div>
+    <div id="projAIReport" class="ov-collapse"></div>
     <!-- #21 Market & World Insights for Project -->
     <div class="dash-section" style="margin-bottom:14px;margin-top:14px;background:linear-gradient(135deg,rgba(255,168,0,.04),rgba(245,158,11,.02));border-color:rgba(255,168,0,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
@@ -5653,6 +5689,7 @@ function renderProjectReport(parsed,dateStr){
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
     </div>
+    <div class="ov-rep-detail">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       ${sec('1','linear-gradient(135deg,var(--red),#d8344a)','Critical Risks',li(parsed.top_concerns,'•','var(--red)'))}
       ${sec('2','linear-gradient(135deg,var(--primary),var(--purple))','Impact Analysis',li(parsed.key_findings,'▸','var(--primary)')+li(parsed.common_patterns,'↔','var(--purple)'))}
@@ -5660,7 +5697,13 @@ function renderProjectReport(parsed,dateStr){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       ${sec('3','linear-gradient(135deg,var(--grn),#3aad6e)','Recommended Actions',(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join(''))}
       ${sec('4','linear-gradient(135deg,var(--org),#e09600)','Emerging Risks',li(parsed.areas_needing_attention,'▲','var(--org)'))}
+    </div>
     </div>`;
+  // Executive-first: collapse the detail, reveal the toggle
+  const _t=document.getElementById('aiRepToggle');
+  if(_t){_t.style.display='inline-flex';}
+  const _det=el.querySelector('.ov-rep-detail');
+  if(_det){_det.classList.add('ov-collapse','ov-closed');el.classList.remove('ov-collapse');}
 }
 
 // ═══ PROJECT MARKET INSIGHTS (#21) ═══
@@ -5781,10 +5824,14 @@ function renderProjectInsights(parsed,dateStr){
   if(dateLabel)html+=`<div style="text-align:right;font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace;margin-bottom:8px">Generated ${dateLabel}</div>`;
   if(parsed.executive_brief){
     html+=`<div class="card" style="background:var(--primary-soft);border-color:rgba(109,129,150,.18);margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px">Executive Brief</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--primary)">Executive Brief</div>
+        <button class="ov-toggle" id="mktToggle" onclick="ovToggle('projMarketInsights','mktToggle')">Show detail ▼</button>
+      </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_brief}</div>
     </div>`;
   }
+  html+='<div class="ov-mkt-detail">';
   html+='<div class="dash-section" style="margin-bottom:14px">';
   html+='<div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-name">Market Signals</span></div></div>';
   (parsed.insights||[]).forEach(ins=>{
@@ -5814,7 +5861,10 @@ function renderProjectInsights(parsed,dateStr){
     });
     html+='</div>';
   }
+  html+='</div>';/* close ov-mkt-detail */
   el.innerHTML=html;
+  const _md=el.querySelector('.ov-mkt-detail');
+  if(_md){_md.classList.add('ov-collapse','ov-closed');}
 }
 
 // ═══ EXPORT WITH CHECKLIST (#22 #25 #26) ═══
