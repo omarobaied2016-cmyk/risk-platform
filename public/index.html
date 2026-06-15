@@ -2538,13 +2538,13 @@ function renderHome(){
       const s2=allRisks.length>0; // register approved
       const s3=projs.some(p=>p.action_plan&&Array.isArray(p.action_plan.actions)&&p.action_plan.actions.length);
       const s4=!!localStorage.getItem('arm_intro_seen');
-      const s5=projs.some(p=>(p.trend_data&&p.trend_data.length)||(p.market_insights));
+      const s5=projs.some(p=>(p.trend_data&&p.trend_data.length));
       const steps=[
         {d:s1,t:'Create a project',go:s1?'':'openProjModal()'},
         {d:s2,t:'Upload docs & approve your AI register',go:s2?'':(projs.length?`selectProj('${projs[0].id}')`:'openProjModal()')},
         {d:s3,t:'Generate your action plan',go:s3?'':(projs.length?`selectProj('${projs[0].id}').then(()=>ST('plan'))`:'')},
         {d:s4,t:'Meet your AI Risk Manager',go:s4?'':'armToggle()'},
-        {d:s5,t:'Add a trend period or market insights',go:s5?'':(projs.length?`selectProj('${projs[0].id}').then(()=>ST('upd'))`:'')}
+        {d:s5,t:'Track project health with Trend Analysis',go:s5?'':(projs.length?`selectProj('${projs[0].id}').then(()=>ST('upd'))`:'')}
       ];
       const done=steps.filter(x=>x.d).length;
       if(done<steps.length){
@@ -2719,9 +2719,11 @@ function buildTodayTasks(scope){
     if(mi&&Array.isArray(mi.insights)&&mi.insights.length){
       const rank={high:0,medium:1,low:2};
       const top=mi.insights.slice().sort((x,y)=>(rank[x.impact_probability]??3)-(rank[y.impact_probability]??3))[0];
-      if(top){
+      // PATCH 7: demote market noise — only surface a market signal in Today's Tasks
+      // if it's genuinely high-impact. Most days, the market is not the risk manager's concern.
+      if(top&&top.impact_probability==='high'){
         const txt=top.recommendation||('Review market signal: '+(top.title||''));
-        const miDate=mi.generated_at?new Date(mi.generated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';items.push({kind:'signal',pr:5,icon:'🌐',color:'#6D8196',title:txt,sub:`${p.name} · From Market Insights${miDate?' · '+miDate:''}`,projId:p.id,tab:'insights'});
+        const miDate=mi.generated_at?new Date(mi.generated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';items.push({kind:'signal',pr:6,icon:'🌐',color:'#6D8196',title:txt,sub:`${p.name} · High-impact market signal${miDate?' · '+miDate:''}`,projId:p.id,tab:'insights'});
       }
     }
   });
@@ -3725,7 +3727,7 @@ const NAV_GROUPS={
   risks:{panes:['reg','risklog','files','tol'],labels:{reg:'Register',risklog:'Closed Risks',files:'Documents',tol:'Risk Appetite'}},
   plan:{panes:['plan'],labels:{}},
   monitor:{panes:['warn','upd','whatif'],labels:{warn:'Early Warning',upd:'Trend Analysis',whatif:'What-If Simulator'}},
-  intel:{panes:['insights','contacts'],labels:{insights:'Market & World',contacts:'Stakeholders'}}
+  intel:{panes:['contacts','insights'],labels:{contacts:'Stakeholders',insights:'Market & World'}}
 };
 function grpOf(pane){for(const g in NAV_GROUPS)if(NAV_GROUPS[g].panes.includes(pane))return g;return 'overview';}
 function STG(grp){ST(NAV_GROUPS[grp].panes[0]);}
