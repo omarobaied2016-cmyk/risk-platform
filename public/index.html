@@ -3709,6 +3709,7 @@ async function selectProj(id){
      const rb=document.getElementById('roleBadge');
      if(rb){if(role!=='owner'){rb.textContent=role==='editor'?'SHARED · EDITOR':'SHARED · VIEW ONLY';rb.style.display='inline-flex';}else rb.style.display='none';}
      document.body.classList.toggle('role-viewer',role==='viewer');}
+    if(typeof armProactive==='function')armProactive(); // PATCH 5: proactive nudge
     document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' '+curCode():'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
     renderSidebar();renderFiles();renderReg();renderRiskLog();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
@@ -4799,6 +4800,23 @@ function renderDash(){
   const catColors=['purple','blue','cyan','orange','pink','green','red','yellow'];
 
   document.getElementById('dashContent').innerHTML=`
+    <!-- PATCH 4: Decision header — lead with the goal + the one thing that matters -->
+    ${(()=>{
+      const goal=(typeof weeklyGoalLine==='function')?weeklyGoalLine({mode:'project',id:CID}):null;
+      const topRisk=urgent&&urgent[0];
+      const hp=CP.ai_report&&CP.ai_report.project_health;
+      const hword={good:'Healthy',warning:'Needs attention',critical:'Critical'}[hp]||(high>0?'Needs attention':'On track');
+      const hcol={good:'#2E7D52',warning:'#B8860B',critical:'#C0392B'}[hp]||(high>0?'#B8860B':'#2E7D52');
+      return `<div style="background:linear-gradient(180deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:${goal?'9px':'0'}">
+          <span style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:${hcol}">● ${hword}</span>
+          <button class="btn btn-p" style="padding:5px 13px;font-size:11.5px" onclick="showTodayTasks({mode:'project',id:CID})">Today's Tasks →</button>
+        </div>
+        ${goal?`<div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--primary);margin-bottom:4px">Focus this week</div>
+        <div style="font-size:14px;font-weight:600;color:var(--t1);line-height:1.5">${goal}</div>`:''}
+        ${topRisk?`<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-top:7px"><b style="color:var(--t1)">Top priority:</b> ${topRisk.risk_id?topRisk.risk_id+' — ':''}${(topRisk.description||topRisk.title||'').slice(0,110)}</div>`:''}
+      </div>`;
+    })()}
     <!-- Hero -->
     <div class="dash-hero">
       <div>
@@ -8325,6 +8343,82 @@ let armOpen=false, armMode='manager', armMsgs=[], armPending=null, armBusy=false
 
 function armShowFab(){const f=document.getElementById('armFab');if(f)f.style.display='flex';}
 
+// ═══ PATCH 5: Proactive AI Risk Manager ═══
+// When a project opens, after a beat the Manager offers a context-aware opener
+// drawn from real state. At most one per session; never the same nudge twice a day.
+let armBubbleSeed=null, armBubbleTimer=null;
+function armDismissBubble(){
+  const b=document.getElementById('armBubble');if(b)b.style.display='none';
+  armBubbleSeed=null;
+}
+function armBubbleKey(){return 'arm_nudge_'+new Date().toISOString().slice(0,10);}
+function armProactive(){
+  try{
+    if(armBubbleTimer)clearTimeout(armBubbleTimer);
+    armDismissBubble();
+    if(armOpen)return;                 // panel already open
+    if(myRole&&myRole()==='viewer')return; // viewers don't get action nudges
+    if(!CP)return;
+    // one nudge per project per day
+    const seenKey=armBubbleKey()+'_'+CID;
+    if(localStorage.getItem(seenKey))return;
+
+    const rs=(CP.risks||(allRisks||[]).filter(r=>r.project_id===CID)||[]);
+    const today=new Date();today.setHours(0,0,0,0);const day=86400000;
+    const plan=CP.action_plan&&Array.isArray(CP.action_plan.actions)?CP.action_plan.actions:[];
+
+    // find the most compelling thing to mention, in priority order
+    let msg=null, seed=null;
+    // 1) an overdue / stale high risk that's been open with no recent update
+    const staleHigh=rs.find(r=>r.level==='high'&&r.status!=='closed'&&r.type!=='opportunity');
+    // 2) overdue actions
+    const overdue=plan.filter(a=>a.status!=='done'&&a.due_date&&!isNaN(new Date(a.due_date))&&(new Date(a.due_date).setHours(0,0,0,0))<today.getTime());
+    // 3) due-today actions
+    const dueToday=plan.filter(a=>a.status!=='done'&&a.due_date&&(new Date(a.due_date).setHours(0,0,0,0))===today.getTime());
+
+    if(overdue.length){
+      const a=overdue[0];
+      msg=`You have ${overdue.length} overdue action${overdue.length>1?'s':''}. Want to reschedule or talk through them?`;
+      seed=`I have ${overdue.length} overdue action${overdue.length>1?'s':''} on ${CP.name}. Help me deal with them.`;
+    }else if(staleHigh){
+      msg=`Tell me what happened with ${staleHigh.risk_id} — it's a high risk worth a check-in.`;
+      seed=`What's the latest on ${staleHigh.risk_id}? Help me review and update it.`;
+    }else if(dueToday.length){
+      msg=`Let's review your plan for today — ${dueToday.length} action${dueToday.length>1?'s':''} due. Shall we?`;
+      seed=`Walk me through today's ${dueToday.length} action${dueToday.length>1?'s':''} on ${CP.name}.`;
+    }else if(plan.length){
+      msg=`Want a quick read on where ${CP.name} stands today?`;
+      seed=`Give me a quick status on ${CP.name} — what should I focus on?`;
+    }else if(rs.length){
+      msg=`Your register's ready. Want me to build a daily action plan from it?`;
+      seed=`Build a daily action plan for ${CP.name} from its risks.`;
+    }
+    if(!msg)return;
+
+    armBubbleSeed=seed;
+    armBubbleTimer=setTimeout(()=>{
+      if(armOpen)return;
+      const b=document.getElementById('armBubble');const t=document.getElementById('armBubbleTxt');
+      if(!b||!t)return;
+      t.textContent=msg;
+      b.style.display='block';
+      b.onclick=()=>{localStorage.setItem(seenKey,'1');armOpenWithSeed();};
+      b.onkeydown=(e)=>{if(e.key==='Enter'||e.key===' '){localStorage.setItem(seenKey,'1');armOpenWithSeed();}};
+      // auto-hide after 12s if ignored (but still mark shown so it doesn't nag again today)
+      setTimeout(()=>{const bb=document.getElementById('armBubble');if(bb&&bb.style.display==='block'){bb.style.display='none';localStorage.setItem(seenKey,'1');}},12000);
+    },2800);
+  }catch(e){/* never break project load over a nudge */}
+}
+function armOpenWithSeed(){
+  armDismissBubble();
+  const seed=armBubbleSeed;
+  if(!armOpen)armToggle();
+  if(seed){
+    const inp=document.getElementById('armIn');
+    if(inp){inp.value=seed;setTimeout(()=>{if(typeof armSend==='function')armSend();},250);}
+  }
+}
+
 function armToggle(){
   const p=document.getElementById('armPanel');
   armOpen=!armOpen;
@@ -8414,6 +8508,13 @@ function armBuildContext(){
   const inProj=(typeof CID!=='undefined'&&CID&&typeof CP!=='undefined'&&CP);
   if(inProj){
     c+=`CURRENT OPEN PROJECT: "${CP.name}" (type: ${CP.type||'—'}, value: ${CP.value||'—'}, ends: ${CP.end_date||'—'}). Risk appetite: ${CP.risk_appetite?.level||'moderate'}.\n`;
+    // PATCH 6: weekly mission thread — give the AI the same goal the user sees, so it can reference it.
+    try{
+      const _g=(typeof weeklyGoalLine==='function')?weeklyGoalLine({mode:'project',id:CID}):null;
+      const _c=(typeof weeklyContext==='function')?weeklyContext({mode:'project',id:CID}):null;
+      if(_g)c+=`THIS WEEK'S GOAL (the user sees this too — reference it, tie advice and tasks back to it): ${_g.replace(/<[^>]+>/g,'')}.\n`;
+      if(_c)c+=`This-week numbers: ${_c.highOpen} open high risks, ${_c.dueThisWeek} actions due this week, ${_c.overdue} overdue.\n`;
+    }catch(e){}
     const risks=(CP.risks||[]).slice(0,45);
     if(risks.length){
       c+=`RISK REGISTER (${(CP.risks||[]).length} risks):\n`;
@@ -8478,6 +8579,8 @@ WHAT YOU CAN DO:
 - Manage the daily ACTION PLAN: reschedule actions, lighten a busy day, redistribute actions around the user's availability (e.g. "I'm busy today", "I'm on leave next week"), reprioritize (e.g. "focus on cost risks first"), or generate a plan if none exists. This is the user's copilot for staying on top of risk actions.
 
 SCOPE: You manage RISKS, not the platform itself. You cannot create projects, portfolios, or user accounts. If the user asks for something outside risk management (e.g. "add a project"), briefly explain in their language that they can do it from the "New Project" button, and offer to help with risks instead. Always answer in 1-3 short sentences for such cases — never stall.
+
+WEEKLY GOAL THREAD: When THIS WEEK'S GOAL is present in the context, treat it as the through-line. Tie your recommendations, task suggestions, and status reads back to it — show the user how today's actions move them toward this week's goal (e.g. "Closing R003 today gets you to 2 of 3 toward this week's goal"). This is what makes the experience feel like one connected mission rather than scattered tasks.
 
 EXECUTION RULES:
 - ${canExecute?'You ARE allowed to propose actions (the user is in Manager mode with a project open). Actions require explicit user approval before anything happens.':'Do NOT propose actions now (advisor mode, or no project is open). Set "actions" to an empty array. If the user asked to change data, briefly tell them to switch to Manager mode and open a project.'}
@@ -8597,6 +8700,12 @@ async function armApprove(){
 .arm-fab:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(109,129,150,.46)}
 .arm-fab svg{width:19px;height:19px}
 .arm-fab .arm-fab-lbl{white-space:nowrap}
+.arm-bubble{position:fixed;bottom:78px;inset-inline-end:24px;z-index:899;max-width:262px;background:#fff;border:1px solid var(--b1);border-inline-start:3px solid var(--primary);border-radius:14px;padding:13px 30px 13px 15px;box-shadow:0 10px 30px rgba(43,52,64,.18);cursor:pointer;animation:armBubbleIn .35s cubic-bezier(.2,.8,.2,1)}
+.arm-bubble:hover{box-shadow:0 14px 36px rgba(43,52,64,.24);transform:translateY(-1px)}
+.arm-bubble-txt{font-size:12.5px;color:var(--t1);line-height:1.5;font-weight:500}
+.arm-bubble-x{position:absolute;top:7px;inset-inline-end:9px;background:transparent;border:none;color:var(--t3);font-size:16px;cursor:pointer;line-height:1;padding:2px}
+.arm-bubble::after{content:'';position:absolute;bottom:-7px;inset-inline-end:26px;width:13px;height:13px;background:#fff;border-inline-end:1px solid var(--b1);border-bottom:1px solid var(--b1);transform:rotate(45deg)}
+@keyframes armBubbleIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:600px){.arm-fab .arm-fab-lbl{display:none}.arm-fab{padding:14px}}
 .arm-panel{position:fixed;top:0;bottom:0;inset-inline-end:0;width:420px;max-width:94vw;background:var(--s1);border-inline-start:1px solid var(--b1);box-shadow:-8px 0 32px rgba(0,0,0,.12);z-index:951;display:flex;flex-direction:column;transform:translateX(110%);transition:transform .26s cubic-bezier(.4,0,.2,1)}
 [dir=rtl] .arm-panel{transform:translateX(-110%)}
@@ -8639,6 +8748,10 @@ async function armApprove(){
 .arm-sugg button{font-size:11px;color:var(--primary);background:var(--primary-soft);border:1px solid rgba(109,129,150,.2);border-radius:14px;padding:5px 11px;cursor:pointer;font-family:inherit}
 </style>
 
+<div class="arm-bubble" id="armBubble" style="display:none" role="button" tabindex="0" aria-label="AI Risk Manager suggestion">
+  <button class="arm-bubble-x" onclick="event.stopPropagation();armDismissBubble()" aria-label="Dismiss">×</button>
+  <div class="arm-bubble-txt" id="armBubbleTxt"></div>
+</div>
 <button class="arm-fab" id="armFab" onclick="armToggle()" style="display:none" aria-label="AI Risk Manager">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z"/></svg>
   <span class="arm-fab-lbl">AI Risk Manager</span>
