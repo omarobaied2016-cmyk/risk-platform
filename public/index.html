@@ -459,7 +459,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 #pane-dash .rcc-kpi .k-v{font-size:25px;font-weight:800;color:var(--t1);line-height:1;}
 #pane-dash .rcc-kpi .k-s{font-size:10px;color:var(--t3);margin-top:4px;line-height:1.3;}
 #pane-dash .rcc-kpi .k-accent{position:absolute;top:0;inset-inline-start:0;width:3px;height:100%;}
-#pane-dash .rcc-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:10px;align-items:stretch;}
+#pane-dash .rcc-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:10px;align-items:start;}
 #pane-dash .rcc-card{background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:14px 15px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;transition:box-shadow .18s ease,border-color .18s ease;}
 #pane-dash .rcc-card:hover{box-shadow:0 6px 18px rgba(43,52,64,.10);border-color:rgba(109,129,150,.3);}
 #pane-dash .rcc-card .rcc-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;}
@@ -4987,7 +4987,7 @@ function renderDash(){
           <canvas id="scurveC" height="74"></canvas>
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
         </div>
-        <div class="rcc-card" style="flex:1">
+        <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
           <div class="rcc-hs">Distribution by severity</div>
           <canvas id="lvlC" height="120"></canvas>
@@ -5002,9 +5002,9 @@ function renderDash(){
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Response Strategies</span></div>
           <div class="rcc-hs">How risks are handled</div>
-          <canvas id="respC" height="150"></canvas>
+          <canvas id="respC" height="115"></canvas>
         </div>
-        <div class="rcc-card" style="flex:1">
+        <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Risks by Category</span></div>
           <div class="rcc-hs">Distribution across categories</div>
           ${catSorted.map(([cat,cnt],i)=>{
