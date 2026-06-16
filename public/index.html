@@ -4960,9 +4960,9 @@ function renderDash(){
 
     <!-- ZONE 2: KPI Strip -->
     <div class="rcc-kpis">
-      <div class="rcc-kpi"><span class="k-accent" style="background:${riskScore>70?'var(--red)':riskScore>40?'#B8860B':'var(--grn)'}"></span><div class="k-l">🛡 Risk Score</div><div class="k-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'#a16207':'var(--grn)'}">${riskScore}<span style="font-size:13px;color:var(--t3)">/100</span></div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v">${exposure?(exposure/1000000).toFixed(1)+'M':'—'}</div><div class="k-s">${exposure?'expected cost (EMV)':'add project value'}</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Total Risks</div><div class="k-v">${risks.length}</div><div class="k-s">${thr} threats · ${opp} opp.</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">✓ Closed Risks</div><div class="k-v" style="color:var(--grn)">${(CP?.risks||[]).filter(r=>r.status==='closed').length}</div><div class="k-s">resolved &amp; archived</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ High Risk</div><div class="k-v" style="color:var(--red)">${high}</div><div class="k-s">immediate action</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">★ Opportunities</div><div class="k-v" style="color:var(--grn)">${opp}</div><div class="k-s">to capture</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:${riskScore>70?'var(--red)':riskScore>40?'#B8860B':'var(--grn)'}"></span><div class="k-l">● Health</div><div class="k-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'#a16207':'var(--grn)'};font-size:19px;padding-top:3px">${riskScore>70?'Critical':riskScore>40?'Warning':'Healthy'}</div><div class="k-s">${noOwner.length+noAction.length} action items</div></div>
