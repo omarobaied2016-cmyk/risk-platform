@@ -4961,49 +4961,52 @@ function renderDash(){
       <div class="rcc-kpi"><span class="k-accent" style="background:${riskScore>70?'var(--red)':riskScore>40?'#B8860B':'var(--grn)'}"></span><div class="k-l">● Health</div><div class="k-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'#a16207':'var(--grn)'};font-size:19px;padding-top:3px">${riskScore>70?'Critical':riskScore>40?'Warning':'Healthy'}</div><div class="k-s">${noOwner.length+noAction.length} action items</div></div>
     </div>
 
-    <!-- ZONE 3: Command Grid -->
+    <!-- ZONE 3: Command Grid — two columns -->
     <div class="rcc-grid">
-      <!-- Predictive completion forecast (S-curve) -->
-      <div class="rcc-card col-4">
-        <div class="rcc-h"><span class="rcc-ht">Completion Forecast</span><span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span></div>
-        <div class="rcc-hs">Probability of finishing on schedule &amp; budget — updates live</div>
-        <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
-          <div style="text-align:center">
-            <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall}%</div>
-            <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Overall</div>
+      <!-- LEFT COLUMN: Completion Forecast + Risk Levels -->
+      <div class="col-6" style="display:flex;flex-direction:column;gap:10px">
+        <div class="rcc-card">
+          <div class="rcc-h"><span class="rcc-ht">Completion Forecast</span><span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span></div>
+          <div class="rcc-hs">Probability of finishing on schedule &amp; budget — updates live</div>
+          <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
+            <div style="text-align:center">
+              <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall}%</div>
+              <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Overall</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On schedule</span><b style="color:var(--t1)">${_fc.schedP}%</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.schedP}%;background:${_fc.schedP>=75?'var(--grn)':_fc.schedP>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On budget</span><b style="color:var(--t1)">${_fc.costP}%</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.costP}%;background:${_fc.costP>=75?'var(--grn)':_fc.costP>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
+              </div>
+            </div>
           </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:7px">
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On schedule</span><b style="color:var(--t1)">${_fc.schedP}%</b></div>
-              <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.schedP}%;background:${_fc.schedP>=75?'var(--grn)':_fc.schedP>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On budget</span><b style="color:var(--t1)">${_fc.costP}%</b></div>
-              <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.costP}%;background:${_fc.costP>=75?'var(--grn)':_fc.costP>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
-            </div>
+          <canvas id="scurveC" height="74"></canvas>
+          <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
+        </div>
+        <div class="rcc-card" style="flex:1">
+          <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
+          <div class="rcc-hs">Distribution by severity</div>
+          <canvas id="lvlC" height="120"></canvas>
+          <div class="rcc-attn">
+            ${attn.length?attn.slice(0,4).map(a=>`<div class="rcc-attn-chip rcc-attn-${a.c}" onclick="${a.go}"><span class="a-n">${a.n}</span><span class="a-l">${a.l}</span></div>`).join(''):`<div class="rcc-attn-chip rcc-attn-blue" style="cursor:default"><span class="a-n" style="color:var(--grn)">✓</span><span class="a-l">All clear — no overdue risks; high risks have plans and owners.</span></div>`}
           </div>
         </div>
-        <canvas id="scurveC" height="74"></canvas>
-        <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
       </div>
 
-      <!-- Left anchor: Risk Levels donut + Attention chips -->
-      <div class="rcc-card col-4">
-        <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
-        <div class="rcc-hs">Distribution by severity</div>
-        <canvas id="lvlC" height="120"></canvas>
-        <div class="rcc-attn">
-          ${attn.length?attn.slice(0,4).map(a=>`<div class="rcc-attn-chip rcc-attn-${a.c}" onclick="${a.go}"><span class="a-n">${a.n}</span><span class="a-l">${a.l}</span></div>`).join(''):`<div class="rcc-attn-chip rcc-attn-blue" style="cursor:default"><span class="a-n" style="color:var(--grn)">✓</span><span class="a-l">All clear — no overdue risks; high risks have plans and owners.</span></div>`}
+      <!-- RIGHT COLUMN: Response Strategies + Risks by Category -->
+      <div class="col-6" style="display:flex;flex-direction:column;gap:10px">
+        <div class="rcc-card">
+          <div class="rcc-h"><span class="rcc-ht">Response Strategies</span></div>
+          <div class="rcc-hs">How risks are handled</div>
+          <canvas id="respC" height="120"></canvas>
         </div>
-      </div>
-
-      <!-- Right rail: Response donut + Category mini-bars -->
-      <div class="rcc-card col-4">
-        <div class="rcc-h"><span class="rcc-ht">Response Strategies</span></div>
-        <div class="rcc-hs">How risks are handled</div>
-        <canvas id="respC" height="108"></canvas>
-        <div style="border-top:1px solid var(--b1);margin-top:11px;padding-top:10px">
-          <div class="rcc-ht" style="font-size:12px;margin-bottom:7px">Risks by Category</div>
+        <div class="rcc-card" style="flex:1">
+          <div class="rcc-h"><span class="rcc-ht">Risks by Category</span></div>
+          <div class="rcc-hs">Distribution across categories</div>
           ${catSorted.map(([cat,cnt],i)=>{
             const pct=Math.round(cnt/risks.length*100);
             const catRisks=risks.filter(r=>(CAT_AR[r.category]||r.category)===cat);
