@@ -4885,6 +4885,13 @@ function renderDash(){
 
   const byResp={};
   risks.forEach(r=>{const rs=RESP_AR[r.response_strategy]||r.response_strategy||'—';byResp[rs]=(byResp[rs]||0)+1;});
+  // Split response strategies: threats vs opportunities (two separate charts)
+  const byRespThreat={}, byRespOpp={};
+  risks.forEach(r=>{
+    const rs=RESP_AR[r.response_strategy]||r.response_strategy||'—';
+    if(r.type==='opportunity')byRespOpp[rs]=(byRespOpp[rs]||0)+1;
+    else byRespThreat[rs]=(byRespThreat[rs]||0)+1;
+  });
 
   const urgent=risks
     .filter(r=>r.type==='threat'||!r.type)
@@ -5001,8 +5008,17 @@ function renderDash(){
       <div class="col-6" style="display:flex;flex-direction:column;gap:10px">
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Response Strategies</span></div>
-          <div class="rcc-hs">How risks are handled</div>
-          <div style="height:150px;position:relative"><canvas id="respC"></canvas></div>
+          <div class="rcc-hs">How risks are handled — threats vs opportunities</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.04em;text-align:center;margin-bottom:4px">Threats</div>
+              <div style="height:130px;position:relative"><canvas id="respThreatC"></canvas></div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:.04em;text-align:center;margin-bottom:4px">Opportunities</div>
+              <div style="height:130px;position:relative"><canvas id="respOppC"></canvas></div>
+            </div>
+          </div>
         </div>
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Risks by Category</span></div>
@@ -5192,11 +5208,17 @@ function renderDash(){
 
     // Response Strategies
     const respColors={'Avoid':'#f64e60','Mitigate':'#ffa800','Transfer':'#6D8196','Accept':'#b5b7c8','Escalate':'#88A0B4','Exploit':'#4fc9da','Enhance':'#50cd89','Share':'#4fc9da'};
-    new Chart(document.getElementById('respC'),{
-      type:'doughnut',
-      data:{labels:Object.keys(byResp),datasets:[{data:Object.values(byResp),backgroundColor:Object.keys(byResp).map(k=>respColors[k]||'#b5b7c8'),borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#5e6278',font:{size:10},padding:7,boxWidth:10,boxHeight:10}}},cutout:'62%',layout:{padding:2}}
-    });
+    const respBarOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' risk'+(c.parsed.y===1?'':'s')}}},scales:{x:{ticks:{color:'#5e6278',font:{size:9},maxRotation:45,minRotation:0},grid:{display:false}},y:{ticks:{color:'#a1a5b7',font:{size:9},stepSize:1,precision:0},grid:{color:'rgba(228,231,239,.6)'},beginAtZero:true}},layout:{padding:2}};
+    const _rtEl=document.getElementById('respThreatC');
+    if(_rtEl){
+      const k=Object.keys(byRespThreat);
+      new Chart(_rtEl,{type:'bar',data:{labels:k.length?k:['—'],datasets:[{data:k.length?Object.values(byRespThreat):[0],backgroundColor:(k.length?k:['—']).map(x=>respColors[x]||'#b5b7c8'),borderWidth:0,borderRadius:5,barPercentage:0.7}]},options:respBarOpts});
+    }
+    const _roEl=document.getElementById('respOppC');
+    if(_roEl){
+      const k=Object.keys(byRespOpp);
+      new Chart(_roEl,{type:'bar',data:{labels:k.length?k:['—'],datasets:[{data:k.length?Object.values(byRespOpp):[0],backgroundColor:(k.length?k:['—']).map(x=>respColors[x]||'#50cd89'),borderWidth:0,borderRadius:5,barPercentage:0.7}]},options:respBarOpts});
+    }
 
     // Risk Exposure Analysis (dynamic, filter-driven — replaces static tornado)
     renderRiskExposure();
