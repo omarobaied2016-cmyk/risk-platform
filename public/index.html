@@ -4770,6 +4770,10 @@ function renderDash(){
   // risk exposure, trend direction, recent updates, and mitigation-plan progress.
   // Not a guarantee — a live, explainable indicator that shifts as the project changes.
   function completionForecast(){
+    // Confidence level (P-value): higher P = more conservative forecast (you demand more certainty).
+    // P80 is the baseline. P70 is more optimistic; P90/P100 more conservative.
+    const pLevel=window._fcP||80;
+    const consAdj=(pLevel-80)*0.55; // each step above 80 trims confidence; below 80 lifts it
     const rs=(CP&&CP.risks)||[];
     const openThreats=rs.filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
     const highT=openThreats.filter(r=>r.level==='high').length;
@@ -4805,6 +4809,8 @@ function renderDash(){
     // Recent market high-impact signal erodes a little (external uncertainty)
     const mi=CP&&CP.market_insights;
     if(mi&&Array.isArray(mi.insights)&&mi.insights.some(x=>x.impact_probability==='high')){costP-=4;schedP-=3;}
+    // Apply confidence-level conservatism
+    costP-=consAdj; schedP-=consAdj;
     const clamp=v=>Math.max(8,Math.min(96,Math.round(v)));
     costP=clamp(costP); schedP=clamp(schedP);
     const overall=clamp((costP+schedP)/2);
@@ -4815,7 +4821,7 @@ function renderDash(){
     else if(highT>0)why=`${highT} high risk${highT>1?'s':''} open with limited mitigation pulling confidence down.`;
     else if(acts.length)why=`Risks are moderate and your plan is progressing.`;
     else why=`Few major threats so far — keep the register current.`;
-    return {costP,schedP,overall,band,why};
+    return {costP,schedP,overall,band,why,pLevel};
   }
 
   const risks=CP?.risks||[];
@@ -4945,8 +4951,15 @@ function renderDash(){
       <!-- LEFT COLUMN: Completion Forecast + Risk Levels -->
       <div class="col-6" style="display:flex;flex-direction:column;gap:10px">
         <div class="rcc-card">
-          <div class="rcc-h"><span class="rcc-ht">Completion Forecast</span><span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span></div>
-          <div class="rcc-hs">Probability of finishing on schedule &amp; budget — updates live</div>
+          <div class="rcc-h"><span class="rcc-ht">Completion Forecast</span>
+            <div style="display:flex;align-items:center;gap:7px">
+              <select onchange="window._fcP=parseInt(this.value);renderDash()" style="padding:4px 7px;font-size:10.5px;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
+                ${[70,75,80,85,90,95,100].map(pv=>`<option value="${pv}"${(window._fcP||80)===pv?' selected':''}>P${pv}</option>`).join('')}
+              </select>
+              <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
+            </div>
+          </div>
+          <div class="rcc-hs">Probability of finishing on schedule &amp; budget at P${_fc.pLevel} confidence — updates live</div>
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
               <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall}%</div>
