@@ -4861,8 +4861,12 @@ function renderDash(){
     else byRespThreat[rs]=(byRespThreat[rs]||0)+1;
   });
 
+  // Top 5 status filter (default: open). Persists across re-renders.
+  if(typeof window._top5Status==='undefined')window._top5Status='open';
+  const _t5=window._top5Status;
   const urgent=risks
     .filter(r=>r.type==='threat'||!r.type)
+    .filter(r=>_t5==='all'?true:_t5==='closed'?r.status==='closed':r.status!=='closed')
     .sort((a,b)=>{
       const sc=r=>({'high':3,'medium':2,'low':1}[r.level]||0)*5+(r.probability||0);
       return sc(b)-sc(a);
@@ -5008,6 +5012,12 @@ function renderDash(){
       <div class="rcc-card col-12">
         <div class="rcc-h">
           <span class="rcc-ht">Risk Exposure Analysis</span>
+          <div style="display:flex;gap:7px">
+          <select id="rexStatus" onchange="renderRiskExposure()" style="padding:5px 9px;font-size:11px;border:1px solid var(--b1);border-radius:7px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
+            <option value="all"${(window._rexStatus||'all')==='all'?' selected':''}>All Risks</option>
+            <option value="open"${window._rexStatus==='open'?' selected':''}>Open Risks</option>
+            <option value="closed"${window._rexStatus==='closed'?' selected':''}>Closed Risks</option>
+          </select>
           <select id="rexFilter" onchange="renderRiskExposure()" style="padding:5px 9px;font-size:11px;border:1px solid var(--b1);border-radius:7px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
             <option value="overall">Overall</option>
             <option value="cost">Cost Impact</option>
@@ -5015,6 +5025,7 @@ function renderDash(){
             <option value="qhse">QHSE Impact</option>
             <option value="reputation">Reputation Impact</option>
           </select>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
           <div class="rcc-hs" style="margin-bottom:0">Most significant risks impacting objectives</div>
@@ -5036,7 +5047,13 @@ function renderDash(){
     <!-- ZONE 4: Decision Row — Top 5 Critical + Action Items -->
     <div class="rcc-grid">
       <div class="rcc-card col-7">
-        <div class="rcc-h"><span class="rcc-ht">Top 5 Critical Risks</span></div>
+        <div class="rcc-h"><span class="rcc-ht">Top 5 Critical Risks</span>
+          <select onchange="window._top5Status=this.value;renderDash()" style="padding:5px 9px;font-size:11px;border:1px solid var(--b1);border-radius:7px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
+            <option value="open"${_t5==='open'?' selected':''}>Open Risks</option>
+            <option value="all"${_t5==='all'?' selected':''}>All Risks</option>
+            <option value="closed"${_t5==='closed'?' selected':''}>Closed Risks</option>
+          </select>
+        </div>
         <div class="rcc-hs">Risks requiring immediate attention</div>
         ${urgent.length?urgent.map((r,i)=>`
           <div class="urgent-row">
@@ -5287,7 +5304,9 @@ function rexFmt(v,f){
 }
 function rexRanked(){
   const f=document.getElementById('rexFilter')?.value||'overall';
-  const risks=(CP?.risks||[]).filter(r=>r.status!=='closed');
+  const st=document.getElementById('rexStatus')?.value||window._rexStatus||'all';
+  window._rexStatus=st;
+  const risks=(CP?.risks||[]).filter(r=>st==='all'?true:st==='closed'?r.status==='closed':r.status!=='closed');
   const out=risks.map(r=>{
     const mag=rexValue(r,f);
     const isOpp=r.type==='opportunity';
