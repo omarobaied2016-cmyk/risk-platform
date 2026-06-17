@@ -5017,9 +5017,9 @@ function renderDash(){
           </select>
         </div>
         <div class="rcc-hs">Most significant risks impacting objectives</div>
-        <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start">
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
           <div>
-            <canvas id="tornadoC" height="150"></canvas>
+            <div style="position:relative"><canvas id="tornadoC"></canvas></div>
             <div style="display:flex;gap:14px;justify-content:center;margin-top:7px;font-size:10px;color:var(--t3)">
               <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:8px;border-radius:2px;background:var(--red)"></span>Threat (loss)</span>
               <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:8px;border-radius:2px;background:var(--grn)"></span>Opportunity (gain)</span>
@@ -5303,31 +5303,27 @@ function renderRiskExposure(){
     if(leg)leg.innerHTML='<div style="font-size:11px;color:var(--t3)">No scored risks for this view.</div>';
     return;
   }
+  // dynamic height so each bar lines up with its legend row (≈34px per row)
+  const rowH=34, chartH=Math.max(150,ranked.length*rowH+24);
+  if(cv.parentElement)cv.parentElement.style.height=chartH+'px';
+  try{
   rexChart=new Chart(cv,{
     type:'bar',
-    data:{labels:ranked.map(x=>{
-        // full risk name wrapped onto two lines (no truncation)
-        const full=(x.r.description||x.r.risk_id||'R?').trim();
-        const words=full.split(/\s+/);let l1='',l2='';
-        for(const w of words){
-          if((l1+' '+w).trim().length<=26||!l1)l1=(l1+' '+w).trim();
-          else l2=(l2+' '+w).trim();
-        }
-        return l2?[l1,l2]:[l1];
-      }),datasets:[{
+    data:{labels:ranked.map(x=>x.r.risk_id||'R?'),datasets:[{
       label:'Exposure',
       data:ranked.map(x=>x.signed),
       backgroundColor:ranked.map(x=>x.isOpp?'rgba(80,205,137,.82)':'rgba(246,78,96,.78)'),
-      borderRadius:3,barPercentage:0.78
+      borderRadius:3,barPercentage:0.62,categoryPercentage:0.8
     }]},
-    options:{indexAxis:'y',
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       onClick:(evt,els)=>{if(els&&els.length){const x=ranked[els[0].index];if(x&&x.r)gotoRisk(x.r.risk_id||x.r.id);}},
       onHover:(evt,els)=>{evt.native.target.style.cursor=els&&els.length?'pointer':'default';},
       plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>{const x=ranked[items[0].dataIndex];return (x.r.risk_id?x.r.risk_id+' — ':'')+(x.r.description||'');},label:ctx=>{const x=ranked[ctx.dataIndex];return `${x.isOpp?'Opportunity':'Threat'}: ${rexFmt(x.signed,f)} ${unit} · tap to open`;}}}},
-      scales:{x:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>rexFmt(v,f)},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{color:'#5e6278',font:{size:9.5},autoSkip:false},grid:{display:false}}},
+      scales:{x:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>rexFmt(v,f)},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{display:false},grid:{display:false}}},
       layout:{padding:{left:2,right:2}}}
   });
-  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em">Top ${ranked.length} · ${REX_LABELS[f]} <span style="color:var(--t3);font-weight:500">(${unit})</span></div>`+ranked.map(x=>`<div onclick="gotoRisk('${x.r.risk_id||x.r.id}')" style="display:flex;gap:6px;padding:4px 0;font-size:10.5px;line-height:1.4;border-bottom:1px solid var(--b1);cursor:pointer" onmouseover="this.style.background='var(--primary-soft)'" onmouseout="this.style.background=''"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1">${x.r.description||''}</span><span style="font-weight:700;color:${x.isOpp?'var(--grn)':'var(--red)'};white-space:nowrap">${x.isOpp?'+':'−'}${rexFmt(x.signed,f)}</span></div>`).join('');
+  }catch(e){console.error('rex chart',e);}
+  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em;height:24px;display:flex;align-items:flex-end">Top ${ranked.length} · ${REX_LABELS[f]} <span style="color:var(--t3);font-weight:500;margin-inline-start:4px">(${unit})</span></div>`+ranked.map(x=>`<div onclick="gotoRisk('${x.r.risk_id||x.r.id}')" style="display:flex;gap:6px;align-items:center;height:34px;font-size:10.5px;line-height:1.35;border-bottom:1px solid var(--b1);cursor:pointer;overflow:hidden" onmouseover="this.style.background='var(--primary-soft)'" onmouseout="this.style.background=''"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${x.r.description||''}</span><span style="font-weight:700;color:${x.isOpp?'var(--grn)':'var(--red)'};white-space:nowrap">${x.isOpp?'+':'−'}${rexFmt(x.signed,f)}</span></div>`).join('');
 }
 
 // ═══ REFRESH ALL PORTFOLIO ═══
