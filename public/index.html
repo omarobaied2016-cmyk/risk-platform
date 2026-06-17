@@ -448,62 +448,62 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .dash-section{background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:var(--shadow);}
 
 /* ═══ RISK COMMAND CENTER — bento grid overview (layout only, Ink-wash theme) ═══ */
-#pane-dash .rcc-bar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:12px 16px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
-#pane-dash .rcc-bar .rcc-title{font-size:18px;font-weight:800;color:var(--t1);line-height:1.2;}
-#pane-dash .rcc-bar .rcc-meta{font-size:11.5px;color:var(--t3);margin-top:2px;}
-#pane-dash .rcc-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-#pane-dash .rcc-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:10px;}
-#pane-dash .rcc-kpi{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:12px 13px;box-shadow:var(--shadow-sm);transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease;position:relative;overflow:hidden;}
-#pane-dash .rcc-kpi:hover{box-shadow:0 7px 20px rgba(43,52,64,.12);transform:translateY(-2px);border-color:rgba(109,129,150,.35);}
-#pane-dash .rcc-kpi .k-l{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
-#pane-dash .rcc-kpi .k-v{font-size:25px;font-weight:800;color:var(--t1);line-height:1;}
-#pane-dash .rcc-kpi .k-s{font-size:10px;color:var(--t3);margin-top:4px;line-height:1.3;}
-#pane-dash .rcc-kpi .k-accent{position:absolute;top:0;inset-inline-start:0;width:3px;height:100%;}
-#pane-dash .rcc-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:10px;align-items:start;}
-#pane-dash .rcc-card{background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:14px 15px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;transition:box-shadow .18s ease,border-color .18s ease;}
-#pane-dash .rcc-card:hover{box-shadow:0 6px 18px rgba(43,52,64,.10);border-color:rgba(109,129,150,.3);}
-#pane-dash .rcc-card .rcc-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;}
-#pane-dash .rcc-card .rcc-ht{font-size:12.5px;font-weight:700;color:var(--t1);}
-#pane-dash .rcc-card .rcc-hs{font-size:10.5px;color:var(--t3);margin-bottom:9px;}
-#pane-dash .col-4{grid-column:span 4;}#pane-dash .col-5{grid-column:span 5;}#pane-dash .col-3{grid-column:span 3;}
-#pane-dash .col-6{grid-column:span 6;}#pane-dash .col-7{grid-column:span 7;}#pane-dash .col-12{grid-column:span 12;}
-#pane-dash .rcc-attn{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
-#pane-dash .rcc-attn-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:transform .12s ease,box-shadow .12s ease;}
-#pane-dash .rcc-attn-chip:hover{transform:translateX(2px);box-shadow:var(--shadow-sm);}
-#pane-dash .rcc-attn-chip .a-n{font-size:17px;font-weight:800;min-width:30px;text-align:center;}
-#pane-dash .rcc-attn-chip .a-l{font-size:11.5px;font-weight:600;line-height:1.35;}
-#pane-dash .rcc-attn-red{background:var(--red-soft);border-color:rgba(192,57,43,.2);}#pane-dash .rcc-attn-red .a-n{color:var(--red);}
-#pane-dash .rcc-attn-orange{background:var(--yel-soft);border-color:rgba(184,134,11,.2);}#pane-dash .rcc-attn-orange .a-n{color:#B8860B;}
-#pane-dash .rcc-attn-yellow{background:var(--yel-soft);border-color:rgba(184,134,11,.15);}#pane-dash .rcc-attn-yellow .a-n{color:#a16207;}
-#pane-dash .rcc-attn-blue{background:var(--primary-soft);border-color:rgba(109,129,150,.22);}#pane-dash .rcc-attn-blue .a-n{color:var(--primary);}
-#pane-dash .rcc-catbar{display:flex;align-items:center;gap:8px;padding:5px 0;}
-#pane-dash .rcc-catbar .cb-n{font-size:11px;color:var(--t2);width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
-#pane-dash .rcc-catbar .cb-track{flex:1;height:7px;background:var(--s2);border-radius:4px;overflow:hidden;}
-#pane-dash .rcc-catbar .cb-fill{height:100%;border-radius:4px;}
-#pane-dash .rcc-catbar .cb-c{font-size:11px;font-weight:700;color:var(--t1);width:20px;text-align:end;flex-shrink:0;}
-#pane-dash .rcc-focus{background:linear-gradient(180deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:13px;padding:13px 16px;margin-bottom:10px;}
-@media(max-width:1200px){#pane-dash .rcc-kpis{grid-template-columns:repeat(3,1fr);}#pane-dash .col-4,#pane-dash .col-5,#pane-dash .col-3,#pane-dash .col-7{grid-column:span 12;}#pane-dash .col-6{grid-column:span 12;}}
+.rcc-host .rcc-bar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:12px 16px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
+.rcc-host .rcc-bar .rcc-title{font-size:18px;font-weight:800;color:var(--t1);line-height:1.2;}
+.rcc-host .rcc-bar .rcc-meta{font-size:11.5px;color:var(--t3);margin-top:2px;}
+.rcc-host .rcc-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.rcc-host .rcc-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:10px;}
+.rcc-host .rcc-kpi{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:12px 13px;box-shadow:var(--shadow-sm);transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease;position:relative;overflow:hidden;}
+.rcc-host .rcc-kpi:hover{box-shadow:0 7px 20px rgba(43,52,64,.12);transform:translateY(-2px);border-color:rgba(109,129,150,.35);}
+.rcc-host .rcc-kpi .k-l{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.rcc-host .rcc-kpi .k-v{font-size:25px;font-weight:800;color:var(--t1);line-height:1;}
+.rcc-host .rcc-kpi .k-s{font-size:10px;color:var(--t3);margin-top:4px;line-height:1.3;}
+.rcc-host .rcc-kpi .k-accent{position:absolute;top:0;inset-inline-start:0;width:3px;height:100%;}
+.rcc-host .rcc-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:10px;align-items:start;}
+.rcc-host .rcc-card{background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:14px 15px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;transition:box-shadow .18s ease,border-color .18s ease;}
+.rcc-host .rcc-card:hover{box-shadow:0 6px 18px rgba(43,52,64,.10);border-color:rgba(109,129,150,.3);}
+.rcc-host .rcc-card .rcc-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;}
+.rcc-host .rcc-card .rcc-ht{font-size:12.5px;font-weight:700;color:var(--t1);}
+.rcc-host .rcc-card .rcc-hs{font-size:10.5px;color:var(--t3);margin-bottom:9px;}
+.rcc-host .col-4{grid-column:span 4;}.rcc-host .col-5{grid-column:span 5;}.rcc-host .col-3{grid-column:span 3;}
+.rcc-host .col-6{grid-column:span 6;}.rcc-host .col-7{grid-column:span 7;}.rcc-host .col-12{grid-column:span 12;}
+.rcc-host .rcc-attn{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.rcc-host .rcc-attn-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:transform .12s ease,box-shadow .12s ease;}
+.rcc-host .rcc-attn-chip:hover{transform:translateX(2px);box-shadow:var(--shadow-sm);}
+.rcc-host .rcc-attn-chip .a-n{font-size:17px;font-weight:800;min-width:30px;text-align:center;}
+.rcc-host .rcc-attn-chip .a-l{font-size:11.5px;font-weight:600;line-height:1.35;}
+.rcc-host .rcc-attn-red{background:var(--red-soft);border-color:rgba(192,57,43,.2);}.rcc-host .rcc-attn-red .a-n{color:var(--red);}
+.rcc-host .rcc-attn-orange{background:var(--yel-soft);border-color:rgba(184,134,11,.2);}.rcc-host .rcc-attn-orange .a-n{color:#B8860B;}
+.rcc-host .rcc-attn-yellow{background:var(--yel-soft);border-color:rgba(184,134,11,.15);}.rcc-host .rcc-attn-yellow .a-n{color:#a16207;}
+.rcc-host .rcc-attn-blue{background:var(--primary-soft);border-color:rgba(109,129,150,.22);}.rcc-host .rcc-attn-blue .a-n{color:var(--primary);}
+.rcc-host .rcc-catbar{display:flex;align-items:center;gap:8px;padding:5px 0;}
+.rcc-host .rcc-catbar .cb-n{font-size:11px;color:var(--t2);width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.rcc-host .rcc-catbar .cb-track{flex:1;height:7px;background:var(--s2);border-radius:4px;overflow:hidden;}
+.rcc-host .rcc-catbar .cb-fill{height:100%;border-radius:4px;}
+.rcc-host .rcc-catbar .cb-c{font-size:11px;font-weight:700;color:var(--t1);width:20px;text-align:end;flex-shrink:0;}
+.rcc-host .rcc-focus{background:linear-gradient(180deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:13px;padding:13px 16px;margin-bottom:10px;}
+@media(max-width:1200px){.rcc-host .rcc-kpis{grid-template-columns:repeat(3,1fr);}.rcc-host .col-4,.rcc-host .col-5,.rcc-host .col-3,.rcc-host .col-7{grid-column:span 12;}.rcc-host .col-6{grid-column:span 12;}}
 
-/* ═══ EXECUTIVE OVERVIEW COMPACTION — denser, premium, less scroll (layout only) ═══ */#pane-dash .dash-section{padding:14px 16px;margin-bottom:10px;border-radius:12px;transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease;}
-#pane-dash .dash-section:hover{box-shadow:0 6px 20px rgba(43,52,64,.10);border-color:rgba(109,129,150,.32);}
-#pane-dash .dash-hero{padding:13px 18px;margin-bottom:10px;border-radius:12px;}
-#pane-dash .dash-hero-l{font-size:19px;}
-#pane-dash .kpi-grid{gap:10px;margin-bottom:10px;}
-#pane-dash .kpi-card{padding:13px 15px;border-radius:11px;transition:box-shadow .18s ease,transform .18s ease;}
-#pane-dash .kpi-card:hover{box-shadow:0 6px 18px rgba(43,52,64,.12);transform:translateY(-2px);}
-#pane-dash .attn-panel{padding:13px 16px;margin-bottom:10px;border-radius:13px;}
-#pane-dash .dash-row{gap:10px;margin-bottom:10px;}
-#pane-dash .dash-sec-head{margin-bottom:10px;}
-#pane-dash .dash-sec-title{gap:8px;}
-#pane-dash .dash-sec-num{width:22px;height:22px;font-size:11px;}
-#pane-dash .dash-sec-name{font-size:12.5px;}
-#pane-dash .kpi-value{font-size:24px!important;}
-#pane-dash .kpi-label{font-size:10px;letter-spacing:.04em;}
+/* ═══ EXECUTIVE OVERVIEW COMPACTION — denser, premium, less scroll (layout only) ═══ */.rcc-host .dash-section{padding:14px 16px;margin-bottom:10px;border-radius:12px;transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease;}
+.rcc-host .dash-section:hover{box-shadow:0 6px 20px rgba(43,52,64,.10);border-color:rgba(109,129,150,.32);}
+.rcc-host .dash-hero{padding:13px 18px;margin-bottom:10px;border-radius:12px;}
+.rcc-host .dash-hero-l{font-size:19px;}
+.rcc-host .kpi-grid{gap:10px;margin-bottom:10px;}
+.rcc-host .kpi-card{padding:13px 15px;border-radius:11px;transition:box-shadow .18s ease,transform .18s ease;}
+.rcc-host .kpi-card:hover{box-shadow:0 6px 18px rgba(43,52,64,.12);transform:translateY(-2px);}
+.rcc-host .attn-panel{padding:13px 16px;margin-bottom:10px;border-radius:13px;}
+.rcc-host .dash-row{gap:10px;margin-bottom:10px;}
+.rcc-host .dash-sec-head{margin-bottom:10px;}
+.rcc-host .dash-sec-title{gap:8px;}
+.rcc-host .dash-sec-num{width:22px;height:22px;font-size:11px;}
+.rcc-host .dash-sec-name{font-size:12.5px;}
+.rcc-host .kpi-value{font-size:24px!important;}
+.rcc-host .kpi-label{font-size:10px;letter-spacing:.04em;}
 /* Collapsible heavy sections: show summary, detail behind a toggle */
-#pane-dash .ov-collapse{position:relative;overflow:hidden;transition:max-height .3s ease;}
-#pane-dash .ov-collapse.ov-closed{max-height:0;margin:0;padding-top:0;padding-bottom:0;border:none;}
-#pane-dash .ov-toggle{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--b1);color:var(--primary);font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;}
-#pane-dash .ov-toggle:hover{background:var(--primary-soft);border-color:var(--primary);}
+.rcc-host .ov-collapse{position:relative;overflow:hidden;transition:max-height .3s ease;}
+.rcc-host .ov-collapse.ov-closed{max-height:0;margin:0;padding-top:0;padding-bottom:0;border:none;}
+.rcc-host .ov-toggle{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--b1);color:var(--primary);font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;}
+.rcc-host .ov-toggle:hover{background:var(--primary-soft);border-color:var(--primary);}
 .dash-sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .dash-sec-title{display:flex;align-items:center;gap:9px;}
 .dash-sec-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--purple));color:white;font-size:11.5px;font-weight:700;}
@@ -1434,7 +1434,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <div class="greet-sub">Comprehensive view of all project portfolios</div>
       </div>
 
-      <div id="homeContent"></div>
+      <div id="homeContent" class="rcc-host"></div>
     </div>
 
     <!-- PORTFOLIO VIEW -->
@@ -1451,7 +1451,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <button class="btn btn-p" onclick="openProjModal()">+ Project</button>
         </div>
       </div>
-      <div id="portfolioContent"></div>
+      <div id="portfolioContent" class="rcc-host"></div>
     </div>
 
     <!-- PROJECT VIEW -->
@@ -1494,7 +1494,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
         </div>
       </div>
 
-      <div class="pane" id="pane-dash"><div id="dashContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><div class="et">Run analysis to view dashboard</div></div></div></div>
+      <div class="pane" id="pane-dash"><div id="dashContent" class="rcc-host"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><div class="et">Run analysis to view dashboard</div></div></div></div>
       <div class="pane" id="pane-reg"><div id="regContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><div class="et">No risk register yet</div></div></div></div>
       <div class="pane" id="pane-plan"><div id="planContent"></div></div>
       <div class="pane" id="pane-risklog"><div id="riskLogContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="et">No closed risks yet</div></div></div></div>
@@ -2632,60 +2632,73 @@ function renderHome(){
 
   el.innerHTML=`
     ${obHtml}
-    <div class="stat-grid">
-      <div class="stat-card cyan">
-        <div class="stat-icon">📁</div>
-        <div class="stat-l">Portfolios</div>
-        <div class="stat-v">${totalPortfolios}</div>
+    <!-- Command Bar -->
+    <div class="rcc-bar">
+      <div>
+        <div class="rcc-title">Risk Command Center</div>
+        <div class="rcc-meta">Organization-wide view · ${totalProjects} project${totalProjects===1?'':'s'} across ${totalPortfolios} portfolio${totalPortfolios===1?'':'s'}</div>
       </div>
-      <div class="stat-card pink">
-        <div class="stat-icon">📋</div>
-        <div class="stat-l">Total Projects</div>
-        <div class="stat-v">${totalProjects}</div>
+      <div class="rcc-actions">
+        <span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:${totalHigh>0?'var(--red)':'var(--grn)'};display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${totalHigh>0?'var(--red)':'var(--grn)'}"></span>${totalHigh>0?totalHigh+' high risks':'On track'}</span>
+        <button class="btn btn-g" style="padding:7px 13px;font-size:11.5px" onclick="showTodayTasks({mode:'all'})">Today's Tasks →</button>
+        <button class="btn btn-p" style="padding:7px 13px;font-size:11.5px" onclick="openProjModal()">+ New Project</button>
       </div>
-      <div class="stat-card red">
-        <div class="stat-icon">⚠</div>
-        <div class="stat-l">Total Risks</div>
-        <div class="stat-v" style="color:var(--red)">${totalRisks}</div>
-      </div>
-      ${expoFmt?`<div class="stat-card green">
-        <div class="stat-icon">＄</div>
-        <div class="stat-l">Cost Exposure</div>
-        <div class="stat-v" style="color:#a16207">${expoFmt}</div>
-      </div>`:`<div class="stat-card green">
-        <div class="stat-icon">▲</div>
-        <div class="stat-l">High Risk</div>
-        <div class="stat-v" style="color:var(--red)">${totalHigh}</div>
-      </div>`}
     </div>
 
+    <!-- KPI Strip -->
+    <div class="rcc-kpis" style="grid-template-columns:repeat(4,1fr)">
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📁 Portfolios</div><div class="k-v">${totalPortfolios}</div><div class="k-s">${totalProjects} projects total</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Total Risks</div><div class="k-v">${totalRisks}</div><div class="k-s">${totalHigh} high priority</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ High Risk</div><div class="k-v" style="color:var(--red)">${totalHigh}</div><div class="k-s">need attention</div></div>
+      ${expoFmt?`<div class="rcc-kpi"><span class="k-accent" style="background:#a16207"></span><div class="k-l">＄ Cost Exposure</div><div class="k-v" style="color:#a16207;font-size:21px;padding-top:2px">${expoFmt}</div><div class="k-s">expected (EMV)</div></div>`
+      :`<div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Projects</div><div class="k-v">${totalProjects}</div><div class="k-s">across all portfolios</div></div>`}
+    </div>
 
     ${portfolios.length?`
-      <div style="font-size:14px;font-weight:700;margin-bottom:11px;color:var(--t1)">Portfolios</div>
-      <div class="portfolio-card-grid">${portfolioCards}</div>
+      <div style="font-size:13px;font-weight:800;color:var(--t1);margin:4px 0 9px;letter-spacing:.01em">Portfolios</div>
+      <div class="rcc-grid">
+        ${portfolios.map(pf=>{
+          const pfProjects=projs.filter(p=>p.portfolio_id===pf.id);
+          const pfRisks=allRisks.filter(r=>pfProjects.some(p=>p.id===r.project_id));
+          const high=pfRisks.filter(r=>r.level==='high').length;
+          const opp=pfRisks.filter(r=>r.type==='opportunity').length;
+          return `<div class="rcc-card col-4" style="cursor:pointer;border-inline-start:4px solid ${pf.color||'var(--primary)'}" onclick="openPortfolio('${pf.id}')">
+            <div class="rcc-h"><span class="rcc-ht">${pf.name}</span>${high>0?`<span style="font-size:10px;font-weight:800;color:var(--red)">⚠ ${high}</span>`:`<span style="font-size:10px;color:var(--grn)">✓</span>`}</div>
+            <div class="rcc-hs">${pf.description||'Portfolio'}</div>
+            <div style="display:flex;gap:18px;margin-top:6px">
+              <div><div style="font-size:20px;font-weight:800;color:var(--t1)">${pfProjects.length}</div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">Projects</div></div>
+              <div><div style="font-size:20px;font-weight:800;color:var(--t1)">${pfRisks.length}</div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">Risks</div></div>
+              <div><div style="font-size:20px;font-weight:800;color:${high>0?'var(--red)':'var(--grn)'}">${high}</div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">High</div></div>
+              <div><div style="font-size:20px;font-weight:800;color:var(--grn)">${opp}</div><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase">Opp.</div></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
     `:''}
 
     ${unassigned.length?`
-      <div style="font-size:14px;font-weight:700;margin-bottom:11px;color:var(--t1)">Projects without portfolio</div>
-      <div class="card" style="padding:0;margin-bottom:18px">
+      <div style="font-size:13px;font-weight:800;color:var(--t1);margin:4px 0 9px;letter-spacing:.01em">Projects without a portfolio</div>
+      <div class="rcc-grid"><div class="rcc-card col-12" style="padding:0">
         <div style="overflow-x:auto">
           <table class="rt" style="font-size:12px">
-            <thead><tr><th>Project</th><th>Type</th><th>Value</th><th>Risks</th><th>Action</th></tr></thead>
+            <thead><tr><th>Project</th><th>Type</th><th>Value</th><th>Risks</th><th>High</th><th></th></tr></thead>
             <tbody>
               ${unassigned.map(p=>{
                 const r=allRisks.filter(x=>x.project_id===p.id);
+                const h=r.filter(x=>x.level==='high').length;
                 return `<tr style="cursor:pointer" onclick="selectProj('${p.id}')">
-                  <td><b>${p.name}</b></td>
+                  <td><b style="color:var(--t1)">${p.name}</b></td>
                   <td><span class="cb">${p.type||'—'}</span></td>
-                  <td style="color:var(--t2)">${p.value?p.value+' '+(p.currency||'USD'):'—'}</td>
+                  <td style="color:var(--t2);font-family:'IBM Plex Mono',monospace;font-size:11px">${p.value?p.value+' '+(p.currency||'USD'):'—'}</td>
                   <td><b>${r.length}</b></td>
-                  <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();assignToPortfolio('${p.id}')">Assign to Portfolio</button></td>
+                  <td>${h?`<span class="bdg b-h">${h}</span>`:'—'}</td>
+                  <td><button class="btn btn-g" style="padding:3px 10px;font-size:10.5px" onclick="event.stopPropagation();assignToPortfolio('${p.id}')">Assign</button></td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
         </div>
-      </div>
+      </div></div>
     `:''}
   `;
 }
@@ -3171,194 +3184,125 @@ async function renderPortfolio(pfId){
     </div>`:'';
 
   el.innerHTML=`
-    <!-- Hero -->
-    <div class="dash-hero">
+    <!-- ZONE 1: Command Bar -->
+    <div class="rcc-bar">
       <div>
-        <div class="dash-hero-l">${portf?portf.name:'Portfolio Overview'}</div>
-        <div class="dash-hero-s">${portf?portf.description||'Portfolio Dashboard':'Comprehensive view of all projects'}</div>
-        <button class="btn btn-g" style="margin-top:11px" onclick="showTodayTasks(${portf?`{mode:'portfolio',id:'${portf.id}'}`:`{mode:'all'}`})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Today's Tasks</button>
+        <div class="rcc-title">${portf?portf.name:'Portfolio Overview'}</div>
+        <div class="rcc-meta">${portf?(portf.description||'Portfolio Command Center'):'All projects across your organization'}</div>
       </div>
-      <div style="display:flex;gap:11px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="kpi-icon-circle blue" style="width:38px;height:38px;font-size:16px">📁</div>
-          <div>
-            <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;font-weight:600">Projects</div>
-            <div style="font-size:18px;font-weight:700">${list.length}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="kpi-icon-circle red" style="width:38px;height:38px;font-size:16px">⚠</div>
-          <div>
-            <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;font-weight:600">High Risk</div>
-            <div style="font-size:18px;font-weight:700;color:var(--red)">${totalHigh}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="kpi-icon-circle orange" style="width:38px;height:38px;font-size:16px">＄</div>
-          <div>
-            <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;font-weight:600">Exposure</div>
-            <div style="font-size:18px;font-weight:700">${(totalExposure/1000000).toFixed(1)}M</div>
-          </div>
-        </div>
+      <div class="rcc-actions">
+        <span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:${totalHigh>0?'var(--red)':'var(--grn)'};display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${totalHigh>0?'var(--red)':'var(--grn)'}"></span>${totalHigh>0?totalHigh+' high risks':'On track'}</span>
+        <button class="btn btn-g" style="padding:7px 13px;font-size:11.5px" onclick="showTodayTasks(${portf?`{mode:'portfolio',id:'${portf.id}'}`:`{mode:'all'}`})">Today's Tasks →</button>
+        <button class="btn btn-p" style="padding:7px 13px;font-size:11.5px" onclick="refreshAllPortfolio()">↻ Refresh All</button>
       </div>
     </div>
 
-    <!-- KPIs -->
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-info">
-          <div class="kpi-label">Total Projects</div>
-          <div class="kpi-value">${list.length}</div>
-          <div class="kpi-sub">${analyzed.length} analyzed · ${pending.length} pending</div>
-        </div>
-        <div class="kpi-icon-circle purple">📁</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-info">
-          <div class="kpi-label">Total Risks</div>
-          <div class="kpi-value">${totalRisks}</div>
-          <div class="kpi-sub">${totalHigh} high · ${totalOpps} opp</div>
-        </div>
-        <div class="kpi-icon-circle red">⚠</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-info">
-          <div class="kpi-label">Total Exposure</div>
-          <div class="kpi-value" style="font-size:22px;padding-top:4px">${(totalExposure/1000000).toFixed(1)}M</div>
-          <div class="kpi-sub">of ${(totalValue/1000000).toFixed(0)}M total value</div>
-        </div>
-        <div class="kpi-icon-circle pink">＄</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-info">
-          <div class="kpi-label">Avg per Project</div>
-          <div class="kpi-value" style="font-size:22px;padding-top:4px">${analyzed.length?(totalExposure/analyzed.length/1000000).toFixed(1):0}M</div>
-          <div class="kpi-sub">total cost exposure</div>
-        </div>
-        <div class="kpi-icon-circle green">📊</div>
-      </div>
+    <!-- ZONE 2: KPI Strip -->
+    <div class="rcc-kpis">
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📁 Projects</div><div class="k-v">${list.length}</div><div class="k-s">${analyzed.length} analyzed · ${pending.length} pending</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Total Risks</div><div class="k-v">${totalRisks}</div><div class="k-s">${totalThreats} threats · ${totalOpps} opp.</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ High Risk</div><div class="k-v" style="color:var(--red)">${totalHigh}</div><div class="k-s">across portfolio</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v">${(totalExposure/1000000).toFixed(1)}M</div><div class="k-s">of ${(totalValue/1000000).toFixed(0)}M value</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">★ Opportunities</div><div class="k-v" style="color:var(--grn)">${totalOpps}</div><div class="k-s">to capture</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📊 Avg / Project</div><div class="k-v" style="font-size:20px;padding-top:3px">${analyzed.length?(totalExposure/analyzed.length/1000000).toFixed(1):0}M</div><div class="k-s">cost exposure</div></div>
     </div>
 
-    <!-- Section 1: Best/Worst + Patterns -->
-    ${cmpTable}
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-      <div class="dash-section" style="background:${worstProj&&worstProj.score>70?'#fff5f5':'var(--s1)'};border-color:${worstProj&&worstProj.score>70?'rgba(246,78,96,.2)':'var(--b1)'}">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num" style="background:linear-gradient(135deg,var(--red),#f64e60)">1</span><span class="dash-sec-name" style="color:var(--red)">Highest Risk Project</span></div>
-        </div>
+    <!-- ZONE 3: Highest/Best/Patterns -->
+    <div class="rcc-grid">
+      <div class="rcc-card col-4" style="${worstProj&&worstProj.score>70?'border-color:rgba(192,57,43,.25)':''}">
+        <div class="rcc-h"><span class="rcc-ht" style="color:var(--red)">⚠ Highest Risk Project</span></div>
         ${worstProj?`
-          <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
-            <div class="kpi-icon-circle red" style="width:48px;height:48px;font-size:22px">⚠</div>
-            <div>
-              <div style="font-size:14px;font-weight:700;color:var(--t1)">${worstProj.name}</div>
-              <div style="font-size:11px;color:var(--t3)">${worstProj.type||'—'}</div>
-            </div>
+          <div style="display:flex;align-items:center;gap:11px;margin:6px 0 10px">
+            <div class="kpi-icon-circle red" style="width:44px;height:44px;font-size:20px">⚠</div>
+            <div><div style="font-size:14px;font-weight:700;color:var(--t1)">${worstProj.name}</div><div style="font-size:11px;color:var(--t3)">${worstProj.type||'—'}</div></div>
           </div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--b1)">
+          <div style="display:flex;gap:16px;padding-top:9px;border-top:1px solid var(--b1)">
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Score</div><div style="font-size:18px;font-weight:700;color:var(--red)">${worstProj.score}/100</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">High</div><div style="font-size:16px;font-weight:700;color:var(--red)">${worstProj.high}</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Total</div><div style="font-size:16px;font-weight:700">${worstProj.total}</div></div>
           </div>
-          <button class="btn btn-del" style="margin-top:11px;padding:5px 12px;font-size:11px;width:100%;justify-content:center" onclick="selectProj('${worstProj.id}')">Open Project</button>`
-          :`<div style="text-align:center;padding:30px 14px;color:var(--t3)">No analyzed projects</div>`}
+          <button class="btn btn-del" style="margin-top:11px;padding:6px 12px;font-size:11px;width:100%;justify-content:center" onclick="selectProj('${worstProj.id}')">Open Project</button>`
+          :`<div style="text-align:center;padding:28px 14px;color:var(--t3)">No analyzed projects</div>`}
       </div>
 
-      <div class="dash-section" style="background:${bestProj&&bestProj.score<=40?'#f0fdf4':'var(--s1)'};border-color:${bestProj&&bestProj.score<=40?'rgba(80,205,137,.2)':'var(--b1)'}">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num" style="background:linear-gradient(135deg,var(--grn),#50cd89)">2</span><span class="dash-sec-name" style="color:var(--grn)">Best Performing</span></div>
-        </div>
+      <div class="rcc-card col-4" style="${bestProj&&bestProj.score<=40?'border-color:rgba(46,125,82,.25)':''}">
+        <div class="rcc-h"><span class="rcc-ht" style="color:var(--grn)">★ Best Performing</span></div>
         ${bestProj?`
-          <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
-            <div class="kpi-icon-circle green" style="width:48px;height:48px;font-size:22px">★</div>
-            <div>
-              <div style="font-size:14px;font-weight:700;color:var(--t1)">${bestProj.name}</div>
-              <div style="font-size:11px;color:var(--t3)">${bestProj.type||'—'}</div>
-            </div>
+          <div style="display:flex;align-items:center;gap:11px;margin:6px 0 10px">
+            <div class="kpi-icon-circle green" style="width:44px;height:44px;font-size:20px">★</div>
+            <div><div style="font-size:14px;font-weight:700;color:var(--t1)">${bestProj.name}</div><div style="font-size:11px;color:var(--t3)">${bestProj.type||'—'}</div></div>
           </div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--b1)">
+          <div style="display:flex;gap:16px;padding-top:9px;border-top:1px solid var(--b1)">
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Score</div><div style="font-size:18px;font-weight:700;color:var(--grn)">${bestProj.score}/100</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">High</div><div style="font-size:16px;font-weight:700;color:var(--grn)">${bestProj.high}</div></div>
             <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Total</div><div style="font-size:16px;font-weight:700">${bestProj.total}</div></div>
           </div>
-          <button class="btn btn-ok" style="margin-top:11px;padding:5px 12px;font-size:11px;width:100%;justify-content:center" onclick="selectProj('${bestProj.id}')">Open Project</button>`
-          :`<div style="text-align:center;padding:30px 14px;color:var(--t3)">No analyzed projects</div>`}
+          <button class="btn btn-ok" style="margin-top:11px;padding:6px 12px;font-size:11px;width:100%;justify-content:center" onclick="selectProj('${bestProj.id}')">Open Project</button>`
+          :`<div style="text-align:center;padding:28px 14px;color:var(--t3)">No analyzed projects</div>`}
       </div>
 
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num" style="background:linear-gradient(135deg,var(--purple),#9333ea)">3</span><span class="dash-sec-name">Common Patterns</span></div>
-        </div>
-        <div class="dash-sec-sub">Most frequent categories</div>
-        ${topCats.map(([cat,cnt],i)=>`
-          <div class="cat-row">
-            <div class="cat-row-icon" style="background:${['#f3eeff','#dbeafe','#cffafe','#ffedd5','#fce7f3'][i%5]};color:${['var(--purple)','#6D8196','#4fc9da','#ffa800','#f64e8b'][i%5]}">${catIcons[cat]||'●'}</div>
-            <div class="cat-row-info">
-              <div class="cat-row-name">${cat}</div>
-            </div>
-            <div class="cat-row-bar-wrap" style="max-width:90px">
-              <div class="cat-row-bar"><div class="cat-row-fill" style="background:${['var(--purple)','#6D8196','#4fc9da','#ffa800','#f64e8b'][i%5]};width:${Math.round(cnt/topCats[0][1]*100)}%"></div></div>
-              <div class="cat-row-cnt">${cnt}</div>
-            </div>
-          </div>`).join('')}
+      <div class="rcc-card col-4">
+        <div class="rcc-h"><span class="rcc-ht">Common Patterns</span></div>
+        <div class="rcc-hs">Most frequent categories</div>
+        ${topCats.map(([cat,cnt],i)=>{
+          const pct=Math.round(cnt/topCats[0][1]*100);
+          return `<div class="rcc-catbar"><span class="cb-n" title="${cat}">${cat}</span><span class="cb-track"><span class="cb-fill" style="width:${pct}%;background:var(--primary)"></span></span><span class="cb-c">${cnt}</span></div>`;
+        }).join('')}
       </div>
     </div>
 
-    <!-- Section 4-5-6: Comparison + Exposure + Root Causes (3 columns) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">4</span><span class="dash-sec-name">Risk Comparison</span></div>
-        </div>
-        <canvas id="portfChart" height="140"></canvas>
+    <!-- ZONE 4: Project Comparison (full width) -->
+    ${cmpRows.length?`<div class="rcc-grid"><div class="rcc-card col-12">
+      <div class="rcc-h"><span class="rcc-ht">Project Comparison</span><span style="font-size:10px;color:var(--t3)">sorted by exposure</span></div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+        <tr style="text-align:left;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em"><th style="padding:7px 8px">Project</th><th style="padding:7px 8px">Cost Exposure</th><th style="padding:7px 8px">Trend</th><th style="padding:7px 8px">High Risks</th><th style="padding:7px 8px">Plan Progress</th></tr>
+        ${cmpRows.map(r=>`<tr style="border-top:1px solid var(--b1);cursor:pointer" onclick="selectProj('${r.p.id}')">
+          <td style="padding:9px 8px;font-weight:700;color:var(--t1)">${r.p.name}</td>
+          <td style="padding:9px 8px;font-weight:700;color:#a16207">${r.expo?fmtE(r.expo)+' '+r.cur:'—'}</td>
+          <td style="padding:9px 8px;color:${r.ac};font-weight:800">${r.arrow}</td>
+          <td style="padding:9px 8px;font-weight:700;color:${r.hi?'var(--red)':'var(--grn)'}">${r.hi}</td>
+          <td style="padding:9px 8px">${r.planPct===null?'<span style="color:var(--t3)">No plan</span>':`<div style="display:flex;align-items:center;gap:7px"><div style="width:74px;height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${r.planPct}%;background:var(--grn)"></div></div><span style="font-size:11px;color:var(--t2)">${r.planPct}%</span></div>`}</td>
+        </tr>`).join('')}
+      </table></div>
+    </div></div>`:''}
+
+    <!-- ZONE 5: Charts — Risk Comparison | Financial Exposure | Project Types -->
+    <div class="rcc-grid">
+      <div class="rcc-card col-4">
+        <div class="rcc-h"><span class="rcc-ht">Risk Comparison</span></div>
+        <div class="rcc-hs">Risk levels by project</div>
+        <div style="height:150px;position:relative"><canvas id="portfChart"></canvas></div>
       </div>
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">5</span><span class="dash-sec-name">Financial Exposure</span></div>
-        </div>
-        <canvas id="expChart" height="140"></canvas>
+      <div class="rcc-card col-4">
+        <div class="rcc-h"><span class="rcc-ht">Financial Exposure</span></div>
+        <div class="rcc-hs">Cost exposure by project</div>
+        <div style="height:150px;position:relative"><canvas id="expChart"></canvas></div>
       </div>
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">6</span><span class="dash-sec-name">Common Root Causes</span></div>
-        </div>
-        <div class="dash-sec-sub">High-risk recurring causes across portfolio</div>
-        ${topCauses.length?topCauses.map(([cause,cnt])=>{
-          return `<div class="metric-row" style="align-items:flex-start">
-            <div class="metric-icon o">🔍</div>
-            <div class="metric-info">
-              <div class="metric-name" style="line-height:1.5">${cause}</div>
-            </div>
-            <div class="metric-val" style="color:#ffa800">${cnt}×</div>
-          </div>`;
-        }).join(''):
-          `<div style="padding:30px 14px;text-align:center;color:var(--t3);font-size:12px">Insufficient data for analysis</div>`}
+      <div class="rcc-card col-4">
+        <div class="rcc-h"><span class="rcc-ht">Project Types</span></div>
+        <div class="rcc-hs">Portfolio composition</div>
+        <div style="height:150px;position:relative"><canvas id="typeChart"></canvas></div>
       </div>
     </div>
 
-    <!-- Section 7: Project Types -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-      <div class="dash-section">
-        <div class="dash-sec-head">
-          <div class="dash-sec-title"><span class="dash-sec-num">7</span><span class="dash-sec-name">Project Types</span></div>
-        </div>
-        <canvas id="typeChart" height="140"></canvas>
+    <!-- ZONE 6: Root Causes -->
+    ${topCauses.length?`<div class="rcc-grid"><div class="rcc-card col-12">
+      <div class="rcc-h"><span class="rcc-ht">Common Root Causes</span><span style="font-size:10px;color:var(--t3)">high-risk recurring causes</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${topCauses.map(([cause,cnt])=>`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 11px;border:1px solid var(--b1);border-radius:9px;background:var(--s2)">
+          <span style="width:22px;height:22px;border-radius:6px;background:rgba(255,168,0,.12);color:#a16207;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🔍</span>
+          <div style="flex:1;font-size:11.5px;color:var(--t1);line-height:1.5">${cause}</div>
+          <span style="font-weight:700;color:#a16207;font-size:12px;flex-shrink:0">${cnt}×</span>
+        </div>`).join('')}
       </div>
-    </div>
+    </div></div>`:''}
 
-    <!-- Refresh All Button for Portfolio -->
-    <div style="text-align:center;margin-bottom:14px">
-      <button class="btn btn-p" onclick="refreshAllPortfolio()" style="padding:10px 28px;font-size:13px">Refresh All — AI Report, Market Insights & Early Warning</button>
-    </div>
-
-    <!-- AI Report -->
-    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(109,129,150,.04),rgba(137,80,252,.02));border-color:rgba(109,129,150,.2)">
+    <!-- ZONE 7: AI Portfolio Report (collapsible, summary-first) -->
+    <div class="dash-section" style="margin-bottom:10px;background:linear-gradient(135deg,rgba(109,129,150,.04),rgba(137,80,252,.02));border-color:rgba(109,129,150,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
         <div style="display:flex;align-items:center;gap:11px">
-          <div class="kpi-icon-circle purple" style="width:42px;height:42px;font-size:18px">✦</div>
-          <div>
-            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">AI Portfolio Report</div>
-            <div style="font-size:11.5px;color:var(--t3)">Comprehensive Claude analysis with strategic recommendations</div>
-          </div>
+          <div class="kpi-icon-circle purple" style="width:38px;height:38px;font-size:16px">✦</div>
+          <div><div style="font-size:13px;font-weight:700;color:var(--t1)">AI Portfolio Report</div><div style="font-size:11px;color:var(--t3)">Comprehensive analysis with strategic recommendations</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <select id="pfReportLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
@@ -3371,15 +3315,12 @@ async function renderPortfolio(pfId){
     </div>
     <div id="portfReport"></div>
 
-    <!-- Portfolio Insights Section -->
-    <div class="dash-section" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(255,168,0,.04),rgba(245,158,11,.02));border-color:rgba(255,168,0,.2)">
+    <!-- Market & World Insights -->
+    <div class="dash-section" style="margin-bottom:10px;margin-top:10px;background:linear-gradient(135deg,rgba(255,168,0,.04),rgba(245,158,11,.02));border-color:rgba(255,168,0,.2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:11px">
         <div style="display:flex;align-items:center;gap:11px">
-          <div class="kpi-icon-circle yellow" style="width:42px;height:42px;font-size:18px">🌍</div>
-          <div>
-            <div style="font-size:13.5px;font-weight:700;color:var(--t1)">Market & World Insights</div>
-            <div style="font-size:11.5px;color:var(--t3)">Real-time intelligence affecting your portfolio</div>
-          </div>
+          <div class="kpi-icon-circle yellow" style="width:38px;height:38px;font-size:16px">🌍</div>
+          <div><div style="font-size:13px;font-weight:700;color:var(--t1)">Market & World Insights</div><div style="font-size:11px;color:var(--t3)">Intelligence affecting your portfolio</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <select id="pfInsightsLang" style="font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
@@ -3392,17 +3333,15 @@ async function renderPortfolio(pfId){
     </div>
     <div id="portfInsights"></div>
 
-    <!-- Project Table -->
-    <div class="dash-section" style="padding:0">
-      <div style="padding:15px 18px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
-        <div class="dash-sec-title"><span class="dash-sec-num">8</span><span class="dash-sec-name">Project Details</span></div>
-        <div style="font-size:11px;color:var(--t3)">${list.length} projects</div>
+    <!-- ZONE 8: Project Details table -->
+    <div class="rcc-grid"><div class="rcc-card col-12" style="padding:0">
+      <div style="padding:13px 16px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
+        <span class="rcc-ht">Project Details</span>
+        <span style="font-size:11px;color:var(--t3)">${list.length} projects</span>
       </div>
       <div style="overflow-x:auto">
         <table class="rt" style="font-size:12px">
-          <thead>
-            <tr><th>Project</th><th>Type</th><th>Value</th><th>Exposure</th><th>High</th><th>Med</th><th>Opp</th><th>Risk Score</th><th>Status</th><th></th></tr>
-          </thead>
+          <thead><tr><th>Project</th><th>Type</th><th>Value</th><th>Exposure</th><th>High</th><th>Med</th><th>Opp</th><th>Risk Score</th><th>Status</th><th></th></tr></thead>
           <tbody>
             ${projScores.sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>{
               const v=parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0;
@@ -3425,7 +3364,7 @@ async function renderPortfolio(pfId){
           </tbody>
         </table>
       </div>
-    </div>
+    </div></div>
   `;
 
   // Restore saved portfolio report & insights
@@ -3445,7 +3384,7 @@ async function renderPortfolio(pfId){
             {label:'Low',data:projWithRisks.map(p=>p.low),backgroundColor:'rgba(80,205,137,.75)',borderRadius:5}
           ]
         },
-        options:{plugins:{legend:{position:'top',labels:{color:'#5e6278',font:{size:10},padding:8}}},scales:{x:{stacked:true,ticks:{color:'#a1a5b7',font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{color:'#a1a5b7',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:5}}}
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#5e6278',font:{size:9},padding:6,boxWidth:10}}},scales:{x:{stacked:true,ticks:{color:'#a1a5b7',font:{size:9}},grid:{display:false}},y:{stacked:true,ticks:{color:'#a1a5b7',font:{size:9},stepSize:1},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:2}}}
       });
     }
 
@@ -3456,7 +3395,7 @@ async function renderPortfolio(pfId){
           labels:exposureByProj.map(p=>p.name.length>14?p.name.slice(0,14)+'...':p.name),
           datasets:[{label:'Cost Exposure',data:exposureByProj.map(p=>p.exposure),backgroundColor:'rgba(109,129,150,.65)',borderRadius:5}]
         },
-        options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#a1a5b7',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#a1a5b7',font:{size:10},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:5}}}
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#a1a5b7',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(228,231,239,.8)'}}},layout:{padding:{top:2}}}
       });
     } else if(document.getElementById('expChart')){
       document.getElementById('expChart').parentElement.innerHTML+='<div style="text-align:center;padding:20px;font-size:11.5px;color:var(--t3)">Enter contract values to see exposure</div>';
@@ -3466,7 +3405,7 @@ async function renderPortfolio(pfId){
       new Chart(document.getElementById('typeChart'),{
         type:'doughnut',
         data:{labels:Object.keys(typeDist),datasets:[{data:Object.values(typeDist),backgroundColor:['#6D8196','#88A0B4','#4fc9da','#f64e8b','#50cd89','#ffa800','#b5b7c8','#50cd89','#f64e60'],borderWidth:0}]},
-        options:{plugins:{legend:{position:'bottom',labels:{color:'#5e6278',font:{size:10},padding:8}}},cutout:'62%',layout:{padding:5}}
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#5e6278',font:{size:9},padding:6,boxWidth:10}}},cutout:'62%',layout:{padding:2}}
       });
     }
   },80);
@@ -3527,7 +3466,7 @@ function renderPortfolioReport(parsed,dateStr){
   const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.portfolio_health]||'Warning';
   const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   const sec=(num,color,name,rows)=>`<div class="dash-section"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num" style="background:${color}">${num}</span><span class="dash-sec-name">${name}</span></div></div>${rows}</div>`;
-  const li=(items,mark,mc)=>(items||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><span style="color:${mc};font-weight:700;margin-inline-end:6px">${mark}</span>${x}</div>`).join('');
+  const li=(items,mark,mc)=>(items||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><span style="color:${mc};font-weight:700;margin-inline-end:6px">${mark}</span>${linkifyRisks(x)}</div>`).join('');
   el.innerHTML=`
     <div class="dash-section" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -4417,6 +4356,32 @@ async function confirmVal(){
 }
 
 // ═══ EDIT RISK ═══
+// ═══ UNIFIED RISK NAVIGATION — Risk Exposure clicks, AI report, recommendations, What-If ═══
+function gotoRisk(ref){
+  if(!ref||!CP||!CP.risks)return;
+  const r=CP.risks.find(x=>(x.risk_id||'')===ref)||CP.risks.find(x=>x.id===ref)
+        ||CP.risks.find(x=>(x.risk_id||'').toUpperCase()===String(ref).toUpperCase());
+  if(!r){toast('Risk '+ref+' not found in this register');return;}
+  try{ST('risks');}catch(e){}
+  setTimeout(()=>{
+    const row=document.querySelector('[data-risk-id="'+r.id+'"]');
+    if(row){row.scrollIntoView({behavior:'smooth',block:'center'});
+      row.style.transition='background .3s';const prev=row.style.background;
+      row.style.background='var(--primary-soft)';
+      setTimeout(()=>{row.style.background=prev;},1600);
+    }
+    if(typeof openEdit==='function')openEdit(r.id);
+  },260);
+}
+function linkifyRisks(text){
+  if(text==null)return text;
+  return String(text).replace(/\b(R\d{2,4})\b/g,(m)=>{
+    const exists=CP&&CP.risks&&CP.risks.some(x=>(x.risk_id||'').toUpperCase()===m.toUpperCase());
+    if(!exists)return m;
+    return '<a onclick="gotoRisk(\''+m+'\')" style="color:var(--primary);font-weight:700;cursor:pointer;text-decoration:underline;text-decoration-style:dotted">'+m+'</a>';
+  });
+}
+
 function openEdit(riskDbId){
   const r=CP.risks.find(x=>x.id===riskDbId);if(!r)return;
   editRiskId=riskDbId;
@@ -4477,7 +4442,7 @@ function renderReg(){
   const fdate=v=>{if(!v)return '—';const d=new Date(v);return isNaN(d)?'—':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});};
   const detField=(label,val)=>`<div style="min-width:0"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;margin-bottom:3px">${label}</div><div style="font-size:11.5px;color:var(--t1);line-height:1.5;word-break:break-word">${val||'—'}</div></div>`;
   const buildRows=arr=>arr.map(r=>`
-    <tr class="${r.type==='opportunity'?'opp':'thr'} rrow" onclick="toggleRiskDetail(this)" style="cursor:pointer">
+    <tr class="${r.type==='opportunity'?'opp':'thr'} rrow" data-risk-id="${r.id}" onclick="toggleRiskDetail(this)" style="cursor:pointer">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-chk" data-rid="${r.id}" aria-label="Select risk" onchange="bulkBarRefresh()"/></td>
       <td><span style="display:inline-flex;align-items:center;gap:4px"><svg class="rchev" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.risk_id||r.id?.slice(0,6)}</span></span></td>
       ${_cc?'':`<td><span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'opportunity':'threat'}</span></td>
@@ -5337,18 +5302,29 @@ function renderRiskExposure(){
   }
   rexChart=new Chart(cv,{
     type:'bar',
-    data:{labels:ranked.map(x=>x.r.risk_id||'R?'),datasets:[{
+    data:{labels:ranked.map(x=>{
+        // full risk name wrapped onto two lines (no truncation)
+        const full=(x.r.description||x.r.risk_id||'R?').trim();
+        const words=full.split(/\s+/);let l1='',l2='';
+        for(const w of words){
+          if((l1+' '+w).trim().length<=26||!l1)l1=(l1+' '+w).trim();
+          else l2=(l2+' '+w).trim();
+        }
+        return l2?[l1,l2]:[l1];
+      }),datasets:[{
       label:'Exposure',
       data:ranked.map(x=>x.signed),
       backgroundColor:ranked.map(x=>x.isOpp?'rgba(80,205,137,.82)':'rgba(246,78,96,.78)'),
-      borderRadius:3,barPercentage:0.72
+      borderRadius:3,barPercentage:0.78
     }]},
     options:{indexAxis:'y',
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const x=ranked[ctx.dataIndex];return `${x.isOpp?'Opportunity':'Threat'}: ${rexFmt(x.signed,f)} ${unit}`;}}}},
-      scales:{x:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>rexFmt(v,f)},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{color:'#5e6278',font:{size:10,weight:'bold'}},grid:{display:false}}},
+      onClick:(evt,els)=>{if(els&&els.length){const x=ranked[els[0].index];if(x&&x.r)gotoRisk(x.r.risk_id||x.r.id);}},
+      onHover:(evt,els)=>{evt.native.target.style.cursor=els&&els.length?'pointer':'default';},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>{const x=ranked[items[0].dataIndex];return (x.r.risk_id?x.r.risk_id+' — ':'')+(x.r.description||'');},label:ctx=>{const x=ranked[ctx.dataIndex];return `${x.isOpp?'Opportunity':'Threat'}: ${rexFmt(x.signed,f)} ${unit} · tap to open`;}}}},
+      scales:{x:{ticks:{color:'#a1a5b7',font:{size:9},callback:v=>rexFmt(v,f)},grid:{color:'rgba(228,231,239,.5)'}},y:{ticks:{color:'#5e6278',font:{size:9.5},autoSkip:false},grid:{display:false}}},
       layout:{padding:{left:2,right:2}}}
   });
-  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em">Top ${ranked.length} · ${REX_LABELS[f]} <span style="color:var(--t3);font-weight:500">(${unit})</span></div>`+ranked.map(x=>`<div style="display:flex;gap:6px;padding:3px 0;font-size:10.5px;line-height:1.4;border-bottom:1px solid var(--b1)"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1">${(x.r.description||'').slice(0,50)}${(x.r.description||'').length>50?'…':''}</span><span style="font-weight:700;color:${x.isOpp?'var(--grn)':'var(--red)'};white-space:nowrap">${x.isOpp?'+':'−'}${rexFmt(x.signed,f)}</span></div>`).join('');
+  if(leg)leg.innerHTML=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:6px;letter-spacing:.05em">Top ${ranked.length} · ${REX_LABELS[f]} <span style="color:var(--t3);font-weight:500">(${unit})</span></div>`+ranked.map(x=>`<div onclick="gotoRisk('${x.r.risk_id||x.r.id}')" style="display:flex;gap:6px;padding:4px 0;font-size:10.5px;line-height:1.4;border-bottom:1px solid var(--b1);cursor:pointer" onmouseover="this.style.background='var(--primary-soft)'" onmouseout="this.style.background=''"><span style="font-weight:700;color:var(--primary);min-width:34px">${x.r.risk_id||'R?'}</span><span style="color:var(--t2);flex:1">${x.r.description||''}</span><span style="font-weight:700;color:${x.isOpp?'var(--grn)':'var(--red)'};white-space:nowrap">${x.isOpp?'+':'−'}${rexFmt(x.signed,f)}</span></div>`).join('');
 }
 
 // ═══ REFRESH ALL PORTFOLIO ═══
@@ -5653,7 +5629,7 @@ function renderSmartSuggestions(){
       ${smartSuggestions.map(s=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border:1px solid var(--b1);border-radius:9px;background:var(--s2)">
         <span style="width:24px;height:24px;border-radius:6px;background:${col[s.action]}1a;color:${col[s.action]};display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">${icon[s.action]||'•'}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600;color:var(--t1);line-height:1.4">${verb[s.action]||s.action}${s.risk_id?' · '+s.risk_id:''}: ${s.title}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--t1);line-height:1.4">${verb[s.action]||s.action}${s.risk_id?' · '+linkifyRisks(s.risk_id):''}: ${linkifyRisks(s.title)}</div>
           ${s.detail?`<div style="font-size:11px;color:var(--t3);line-height:1.45;margin-top:2px">${s.detail}</div>`:''}
           <div style="font-size:9.5px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.04em">from ${s.source}</div>
         </div>
@@ -5865,7 +5841,7 @@ function renderProjectReport(parsed,dateStr){
   const htext={good:'Healthy',warning:'Warning',critical:'Critical'}[parsed.project_health]||'Warning';
   const dateLabel=dateStr?new Date(dateStr).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   const sec=(num,color,name,rows)=>`<div class="dash-section"><div class="dash-sec-head"><div class="dash-sec-title"><span class="dash-sec-num" style="background:${color}">${num}</span><span class="dash-sec-name">${name}</span></div></div>${rows}</div>`;
-  const li=(items,mark,mc)=>(items||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><span style="color:${mc};font-weight:700;margin-inline-end:6px">${mark}</span>${x}</div>`).join('');
+  const li=(items,mark,mc)=>(items||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><span style="color:${mc};font-weight:700;margin-inline-end:6px">${mark}</span>${linkifyRisks(x)}</div>`).join('');
   el.innerHTML=`
     <div class="dash-section" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -6028,7 +6004,7 @@ function renderProjectInsights(parsed,dateStr){
       <div class="metric-info" style="flex:1">
         <div class="metric-name">${ins.title}</div>
         <div style="font-size:11px;color:var(--t3);line-height:1.6;margin-top:3px">${ins.description}</div>
-        ${ins.affected_risks?.length?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${ins.affected_risks.map(r=>`<span class="chip" style="font-size:9.5px">⚠ ${r}</span>`).join('')}</div>`:''}
+        ${ins.affected_risks?.length?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${ins.affected_risks.map(r=>`<span class="chip" style="font-size:9.5px;cursor:pointer" onclick="gotoRisk('${(r.match(/R\d{2,4}/)||[r])[0]}')">⚠ ${r}</span>`).join('')}</div>`:''}
         <div style="font-size:10.5px;color:var(--primary);margin-top:4px">${ins.recommendation||''}</div>
       </div>
       <span class="bdg ${ins.impact_probability==='high'?'b-h':ins.impact_probability==='medium'?'b-m':'b-l'}">${ins.impact_probability||'medium'}</span>
@@ -7771,11 +7747,14 @@ function renderSimulationResults(sim,baselineScore){
   // 4. Risk Changes
   const lvlClr={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   document.getElementById('wifRiskChanges').innerHTML=`
-    ${(sim.top_risk_changes||[]).map(r=>`
-      <div class="risk-change">
+    ${(sim.top_risk_changes||[]).map(r=>{
+      const _rid=(String(r.name||'').match(/R\d{2,4}/)||[])[0]||r.risk_id||'';
+      const _click=_rid?`onclick="gotoRisk('${_rid}')" style="cursor:pointer"`:'';
+      return `
+      <div class="risk-change" ${_click}>
         <div class="risk-change-icon">${r.icon||'⚠'}</div>
         <div class="risk-change-info">
-          <div class="risk-change-name">${r.name}</div>
+          <div class="risk-change-name">${linkifyRisks(r.name)}</div>
           <div class="risk-change-cat">${r.category||''}</div>
         </div>
         <div class="risk-change-arrows">
@@ -7790,7 +7769,7 @@ function renderSimulationResults(sim,baselineScore){
           </div>
         </div>
       </div>
-    `).join('')}
+    `;}).join('')}
   `;
 
   // 5. Trend Chart
