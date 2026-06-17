@@ -3420,39 +3420,59 @@ async function generatePortfolioReport(){
   showLoad('Generating portfolio report...');
   
   const projSummaries=list.map(p=>{
-    const r=allRisks.filter(x=>x.project_id===p.id);
+    const all=allRisks.filter(x=>x.project_id===p.id);
+    const r=all.filter(x=>x.status!=='closed');
+    const closed=all.filter(x=>x.status==='closed').length;
     const h=r.filter(x=>x.level==='high').length;
     const m=r.filter(x=>x.level==='medium').length;
     const lo=r.filter(x=>x.level==='low').length;
     const o=r.filter(x=>x.type==='opportunity').length;
-    return `${p.name} (${p.type}, ${p.value||'—'} ${p.currency||'USD'}): ${r.length} risks [${h} high, ${m} medium, ${lo} low, ${o} opp]`;
+    return `${p.name} (${p.type}, ${p.value||'—'} ${p.currency||'USD'}): ${r.length} OPEN risks [${h} high, ${m} medium, ${lo} low, ${o} opp]${closed?`, ${closed} closed`:''}`;
   }).join('\n');
-  const topRisks=allRisks.filter(r=>r.level==='high'&&list.some(p=>p.id===r.project_id)).slice(0,15).map(r=>{const proj=list.find(p=>p.id===r.project_id);return `[${proj?.name||'?'}] ${r.description} — ${r.category}`;}).join('\n');
+  // Only OPEN high risks are "top risks"; never flag a closed risk as a current threat.
+  const topRisks=allRisks.filter(r=>r.level==='high'&&r.status!=='closed'&&list.some(p=>p.id===r.project_id)).slice(0,15).map(r=>{const proj=list.find(p=>p.id===r.project_id);return `[${proj?.name||'?'}] ${r.risk_id||''} ${r.description} — ${r.category}`;}).join('\n');
+  // portfolio progress snapshot
+  const totalOpen=allRisks.filter(r=>r.status!=='closed'&&list.some(p=>p.id===r.project_id)).length;
+  const totalClosed=allRisks.filter(r=>r.status==='closed'&&list.some(p=>p.id===r.project_id)).length;
+  const pfPrev=currentPF.ai_report_meta||{};
+  let pfProgress='This is the first portfolio report.';
+  if(typeof pfPrev.openCount==='number'){
+    pfProgress=`Since the last report: ${totalClosed-(pfPrev.closedCount||0)>=0?totalClosed-(pfPrev.closedCount||0):0} risk(s) closed (now ${totalClosed} closed total), open risks moved from ${pfPrev.openCount} to ${totalOpen}.`;
+  }
   
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior portfolio risk manager. Provide a comprehensive portfolio report in English in JSON format only.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior portfolio risk manager reviewing an ACTIVE portfolio that is continuously monitored — risks are opened, mitigated, and closed over time. Provide a comprehensive portfolio report in English in JSON format only.
 
 Portfolio: ${currentPF.name}
 ${currentPF.description?'Description: '+currentPF.description:''}
 
-Projects (${list.length} project):
+Projects (${list.length}, counts are OPEN risks):
 ${projSummaries}
 
-Top Risks:
+Portfolio totals: ${totalOpen} OPEN risks, ${totalClosed} closed/resolved.
+PROGRESS SINCE LAST REPORT: ${pfProgress}
+
+TOP OPEN HIGH RISKS (the only active threats — focus here):
 ${topRisks}
 
-Provide a comprehensive report in the following format only:
-WRITING STANDARD: Write as a senior risk consultant briefing an executive committee. Be specific to this data (cite risk IDs, amounts, dates), decisive, and concise. No generic statements that could apply to any project, no repeated points, no filler.
+CRITICAL MINDSET — read carefully:
+- Analyze ONLY OPEN risks. NEVER describe a closed/resolved risk as a current threat.
+- This is a living portfolio actively being worked. Credit progress: if risks were closed since the last report, say so in the executive summary.
+- Make the report DYNAMIC — reflect the CURRENT state and what CHANGED, not a static restatement of a previous report.
+- Be specific (cite project names, open risk IDs). No generic filler, no repeated points.
+
+WRITING STANDARD: Write as a senior risk consultant briefing an executive committee on where the portfolio stands TODAY and how it moved since the last review.
 
 Respond ONLY with valid JSON:
-{"executive_summary":"4-5 sentence executive summary about overall portfolio health","portfolio_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4"],"top_concerns":["concern 1 with project name","concern 2","concern 3"],"cross_project_patterns":["shared pattern 1","pattern 2"],"strategic_recommendations":["recommendation 1","recommendation 2","recommendation 3","recommendation 4"],"priority_projects":["urgent project 1 with reason","project 2"]}`}]});
+{"executive_summary":"4-5 sentences. Open with the CURRENT status of OPEN portfolio risks, explicitly note progress (risks closed) since the last report, then outlook","portfolio_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4"],"top_concerns":["OPEN concern 1 with project name","concern 2","concern 3"],"cross_project_patterns":["shared pattern 1","pattern 2"],"strategic_recommendations":["recommendation 1","recommendation 2","recommendation 3","recommendation 4"],"priority_projects":["urgent project 1 with reason","project 2"],"progress_note":"1-2 sentences crediting what was closed/improved since last report (or noting this is the first report)"}`}]});
     hideLoad();
     if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}catch(e){toast('Analysis error');return;}
     const now=new Date().toISOString();
     currentPF.ai_report=parsed;currentPF.ai_report_date=now;
-    sb('portfolios?id=eq.'+currentPF.id,'PATCH',{ai_report:parsed,ai_report_date:now}).catch(()=>{});
+    currentPF.ai_report_meta={openCount:totalOpen,closedCount:totalClosed,date:now};
+    sb('portfolios?id=eq.'+currentPF.id,'PATCH',{ai_report:parsed,ai_report_date:now,ai_report_meta:currentPF.ai_report_meta}).catch(()=>{});
     renderPortfolioReport(parsed,now);
     document.getElementById('portfReport')?.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){hideLoad();toast('Error: '+e.message);}
@@ -3474,6 +3494,7 @@ function renderPortfolioReport(parsed,dateStr){
         <div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
+      ${parsed.progress_note?`<div style="margin-top:10px;padding:9px 12px;background:var(--grn-soft);border-radius:8px;font-size:12px;color:#15803d;line-height:1.55"><b>↗ Progress:</b> ${linkifyRisks(parsed.progress_note)}</div>`:''}
       <button class="ov-toggle" id="pfRepToggle" onclick="ovToggle('portfReport','pfRepToggle')" style="margin-top:11px">View Full Report ▼</button>
     </div>
     <div class="ov-rep-detail ov-collapse ov-closed">
@@ -5171,19 +5192,24 @@ function renderDash(){
             <option value="French">Français</option>
           </select>
           <button class="btn btn-g" onclick="translateInsights()" style="padding:9px 14px">Translate</button>
+          <button class="btn btn-p" onclick="loadProjectInsights(true)" style="padding:9px 14px">Analyze impact on my risks</button>
         </div>
       </div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:8px">Auto-refreshes every 3 days for monitoring. Risk recommendations appear only when you click "Analyze impact" — and only for genuinely new external risks.</div>
     </div>
     <div id="projMarketInsights"></div>
   `;
 
   // Restore saved AI report if exists
   if(CP.ai_report){renderProjectReport(CP.ai_report,CP.ai_report_date);if(CP.ai_report.suggestions)pushSuggestions(CP.ai_report.suggestions,'AI Report');}
-  if(CP.market_insights){renderProjectInsights(CP.market_insights,CP.market_insights_date);if(CP.market_insights.suggestions)pushSuggestions(CP.market_insights.suggestions,'Market Insights');}
+  if(CP.market_insights){renderProjectInsights(CP.market_insights,CP.market_insights_date);}
   if(CP.trend_data&&CP.trend_data.length){const _lt=CP.trend_data[CP.trend_data.length-1];if(_lt&&_lt.report&&_lt.report.suggestions)pushSuggestions(_lt.report.suggestions,'Trend Analysis');}
 
   // #2: Market & World Insights auto-refresh — keep external conditions current without a manual button.
   // Fetches automatically when missing or older than ~24h. Gated to one attempt per project per day.
+  // Market & World Insights auto-refresh — every 3 DAYS, DISPLAY ONLY (no risk suggestions).
+  // Recommendations are deliberately NOT auto-generated here to avoid flooding the register
+  // with daily "add risk" noise. The user requests them via the "Analyze impact" button.
   (function autoRefreshInsights(){
     try{
       if(!CP.risks||!CP.risks.length)return;            // nothing to analyse yet
@@ -5191,11 +5217,11 @@ function renderDash(){
       if(!GK().startsWith('sk-ant-'))return;
       const last=CP.market_insights_date?new Date(CP.market_insights_date).getTime():0;
       const ageH=(Date.now()-last)/3600000;
+      if(ageH<72)return;                                 // refresh only every 3 days
       const dayKey='mkt_auto_'+CID+'_'+new Date().toISOString().slice(0,10);
-      if(ageH<24)return;                                 // still fresh
       if(localStorage.getItem(dayKey))return;            // already tried today
       localStorage.setItem(dayKey,'1');
-      setTimeout(()=>{if(typeof loadProjectInsights==='function')loadProjectInsights();},1500);
+      setTimeout(()=>{if(typeof loadProjectInsights==='function')loadProjectInsights(false);},1500); // false = display only
     }catch(e){}
   })();
   // Charts
@@ -5739,25 +5765,51 @@ async function generateProjectReport(){
   if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Generating AI report...</div>';
   showLoad('Generating AI project report...');
   const risks=CP.risks;
-  const high=risks.filter(r=>r.level==='high').length;
-  const med=risks.filter(r=>r.level==='medium').length;
-  const low=risks.filter(r=>r.level==='low').length;
-  const risksCtx=risks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Cat: ${r.category} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation||'none'}`).join('\n');
+  const openRisks=risks.filter(r=>r.status!=='closed');
+  const closedRisks=risks.filter(r=>r.status==='closed');
+  const high=openRisks.filter(r=>r.level==='high').length;
+  const med=openRisks.filter(r=>r.level==='medium').length;
+  const low=openRisks.filter(r=>r.level==='low').length;
+  // progress context: exposure now vs the snapshot stored on the previous report (dynamic comparison)
+  const expoNow=(typeof rexValue==='function')?Math.round(openRisks.filter(r=>r.type!=='opportunity').reduce((s,r)=>s+rexValue(r,'cost'),0)):0;
+  const prev=CP.ai_report_meta||{};
+  const prevOpen=prev.openCount, prevClosed=prev.closedCount, prevExpo=prev.expo;
+  let progressLine='This is the first report for this project.';
+  if(typeof prevOpen==='number'){
+    const closedDelta=(closedRisks.length)-(prevClosed||0);
+    const openDelta=openRisks.length-prevOpen;
+    const expoDelta=(typeof prevExpo==='number')?expoNow-prevExpo:0;
+    progressLine=`Since the last report: closed ${closedDelta>=0?closedDelta:0} risk(s) (now ${closedRisks.length} closed total), open risks went from ${prevOpen} to ${openRisks.length}`+
+      ((typeof prevExpo==='number')?`, cost exposure changed by ${expoDelta>=0?'+':''}${(expoDelta/1000000).toFixed(2)}M (${prevExpo>0?Math.round(expoDelta/prevExpo*100):0}%).`:'.');
+  }
+  // ONLY open risks go to the AI as the active register; closed are summarized separately.
+  const risksCtx=openRisks.slice(0,20).map(r=>`${r.risk_id||'R?'}: ${r.description} | Level: ${r.level} | Cat: ${r.category} | Response: ${r.response_strategy} | Mitigation: ${r.mitigation||'none'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior project risk manager. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior project risk manager reviewing an ACTIVE project that the manager is continuously monitoring — opening, mitigating, and closing risks over time. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
 
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} ${curCode()}
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
-Total Risks: ${risks.length} [${high} high, ${med} medium, ${low} low]
 
-RISK REGISTER:
+ACTIVE (OPEN) RISKS: ${openRisks.length} [${high} high, ${med} medium, ${low} low]
+CLOSED/RESOLVED RISKS: ${closedRisks.length}
+Current open cost exposure: ${(expoNow/1000000).toFixed(2)}M ${curCode()}
+PROGRESS SINCE LAST REPORT: ${progressLine}
+
+OPEN RISK REGISTER (these are the ONLY active risks — focus your entire analysis here):
 ${risksCtx}
 
-Respond ONLY with valid JSON (text in the register's language):
-WRITING STANDARD: Write as a senior risk consultant briefing an executive committee. Be specific to this data (cite risk IDs, amounts, dates), decisive, and concise. No generic statements that could apply to any project, no repeated points, no filler.
+CRITICAL MINDSET — read carefully:
+- Analyze and prioritize ONLY the OPEN risks above. NEVER describe a closed/resolved risk as a current threat — they are done.
+- This is a living project. The manager is actively working the register. Acknowledge progress: if risks were closed or exposure dropped since last report, SAY SO and credit it in the executive summary.
+- Make this report DYNAMIC and different from any previous one — reflect the CURRENT state and what CHANGED, not a static restatement. If things improved, the tone should reflect improvement; if they worsened, flag it.
+- Be specific to this data (cite open risk IDs, amounts, dates). No generic statements, no filler, no repeating the same points.
+
+WRITING STANDARD: Write as a senior risk consultant briefing an executive committee on where the project stands TODAY and how it moved since the last review.
 
 Respond ONLY with valid JSON:
-{"executive_summary":"4-5 sentence executive summary about project risk health","project_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4","finding 5"],"top_concerns":["concern 1 with details","concern 2","concern 3","concern 4","concern 5"],"common_patterns":["pattern 1 with explanation","pattern 2","pattern 3","pattern 4","pattern 5"],"strategic_recommendations":["1. IMMEDIATE: recommendation","2. URGENT: recommendation","3. HIGH PRIORITY: recommendation","4. recommendation"],"areas_needing_attention":["area 1 with specific details","area 2"],"suggestions":[{"action":"add|close|adjust|reclassify","risk_id":"existing risk ID for close/adjust/reclassify, omit for add","title":"short risk title or what to change","reason":"1 sentence why, citing the data","level":"high|medium|low (for add/adjust)","probability":"1-5 (for add/adjust)","category":"category (for add)","response_strategy":"avoid|mitigate|transfer|accept|exploit|enhance (for reclassify)"}]}\n\nFor "suggestions": ONLY include concrete, high-confidence register actions the data justifies — e.g. add a clearly-missing risk, close an obsolete one, raise/lower a level that no longer matches, or fix a wrong response strategy. Maximum 4. If nothing is clearly warranted, return an empty array. Never invent risks just to fill the list.`}]});
+{"executive_summary":"4-5 sentences. Open with the CURRENT status of OPEN risks, explicitly note progress (risks closed, exposure change) since the last report, then the outlook.","project_health":"good|warning|critical","key_findings":["finding about an OPEN risk 1","2","3","4","5"],"top_concerns":["OPEN concern 1 with details","2","3","4","5"],"common_patterns":["pattern among OPEN risks 1","2","3","4","5"],"strategic_recommendations":["1. IMMEDIATE: recommendation","2. URGENT: recommendation","3. HIGH PRIORITY: recommendation","4. recommendation"],"areas_needing_attention":["area 1","area 2"],"progress_note":"1-2 sentences crediting what was closed/improved since last report (or noting this is the first report)","suggestions":[{"action":"add|close|adjust|reclassify","risk_id":"existing OPEN risk ID for close/adjust/reclassify, omit for add","title":"short risk title or what to change","reason":"1 sentence why, citing the data","level":"high|medium|low (for add/adjust)","probability":"1-5 (for add/adjust)","category":"category (for add)","response_strategy":"avoid|mitigate|transfer|accept|exploit|enhance (for reclassify)"}]}
+
+For "suggestions": ONLY concrete, high-confidence actions the data justifies on OPEN risks — add a clearly-missing risk, close one that looks resolved, raise/lower a mismatched level, or fix a wrong response strategy. Maximum 4. Empty array if nothing clearly warranted. Never invent risks to fill the list.`}]});
     hideLoad();
     if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
@@ -5766,7 +5818,8 @@ Respond ONLY with valid JSON:
     // Save to DB + local
     const now=new Date().toISOString();
     CP.ai_report=parsed;CP.ai_report_date=now;
-    sb('projects?id=eq.'+CID,'PATCH',{ai_report:parsed,ai_report_date:now}).catch(()=>{});
+    CP.ai_report_meta={openCount:openRisks.length,closedCount:closedRisks.length,expo:expoNow,date:now};
+    sb('projects?id=eq.'+CID,'PATCH',{ai_report:parsed,ai_report_date:now,ai_report_meta:CP.ai_report_meta}).catch(()=>{});
     renderProjectReport(parsed,now);
     if(parsed.suggestions)pushSuggestions(parsed.suggestions,'AI Report');
     document.getElementById('projAIReport')?.scrollIntoView({behavior:'smooth',block:'start'});
@@ -5885,6 +5938,7 @@ function renderProjectReport(parsed,dateStr){
         <div style="display:flex;align-items:center;gap:10px"><div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div><button class="btn btn-g" style="padding:5px 12px;font-size:11.5px" onclick="printProjectReport()">⬇ PDF</button></div>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
+      ${parsed.progress_note?`<div style="margin-top:10px;padding:9px 12px;background:var(--grn-soft);border-radius:8px;font-size:12px;color:#15803d;line-height:1.55"><b>↗ Progress:</b> ${linkifyRisks(parsed.progress_note)}</div>`:''}
     </div>
     <div class="ov-rep-detail">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
@@ -5904,7 +5958,8 @@ function renderProjectReport(parsed,dateStr){
 }
 
 // ═══ PROJECT MARKET INSIGHTS (#21) ═══
-async function loadProjectInsights(){
+async function loadProjectInsights(withSuggestions){
+  // withSuggestions: true only when the user explicitly asks ("Analyze impact"); auto-refresh passes false.
   if(!CP)return;
   if(!requireActiveAccess())return;
   if(!GK().startsWith('sk-ant-'))return;
@@ -5932,9 +5987,39 @@ Include 3-4 insights (local market conditions, material prices, economic indicat
       CP.market_insights=parsed;CP.market_insights_date=now;
       sb('projects?id=eq.'+CID,'PATCH',{market_insights:parsed,market_insights_date:now}).catch(()=>{});
       renderProjectInsights(parsed,now);
-      if(parsed.suggestions)pushSuggestions(parsed.suggestions,'Market Insights');
+      // Only surface register recommendations when explicitly requested (not on the 3-day auto-refresh).
+      if(withSuggestions&&parsed.suggestions){
+        const filtered=dedupeMarketSuggestions(parsed.suggestions);
+        if(filtered.length)pushSuggestions(filtered,'Market Insights');
+        else toast('No new register changes warranted — your risks already reflect current market conditions',{type:'ok'});
+      }
     }
   }catch(e){if(el)el.innerHTML=`<div class="ai ai-w">Error: ${e.message}</div>`;}
+}
+
+// Strict de-duplication: drop any market suggestion that matches an existing register risk
+// (by id or by similar wording) so the same external risk is never proposed twice.
+function dedupeMarketSuggestions(list){
+  if(!Array.isArray(list))return [];
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF ]/g,'').replace(/\s+/g,' ').trim();
+  const existingTitles=(CP.risks||[]).map(r=>norm(r.description));
+  const existingIds=(CP.risks||[]).map(r=>(r.risk_id||'').toUpperCase());
+  // also exclude anything already sitting in the advisor or previously dismissed
+  const dismissed=JSON.parse(localStorage.getItem('smart_dismissed_'+(CID||''))||'[]');
+  return list.filter(sug=>{
+    if(!sug||!sug.action)return false;
+    // adjust on a real existing risk is always allowed (it targets a known id)
+    if(sug.action==='adjust'&&sug.risk_id)return true;
+    const t=norm(sug.title||sug.description);
+    if(!t)return false;
+    // drop if an existing risk has the same/very similar wording
+    const dup=existingTitles.some(et=>et&&(et===t||et.includes(t)||t.includes(et)));
+    if(dup)return false;
+    // drop if already suggested before (same signature the advisor uses)
+    const sig=(sug.action+'|'+(sug.risk_id||'')+'|'+(sug.title||sug.description||'')).slice(0,80);
+    if(dismissed.includes(sig))return false;
+    return true;
+  });
 }
 
 // Translate the saved AI report to a chosen language (field-by-field, JSON-safe)
