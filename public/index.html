@@ -3464,7 +3464,7 @@ CRITICAL MINDSET — read carefully:
 WRITING STANDARD: Write as a senior risk consultant briefing an executive committee on where the portfolio stands TODAY and how it moved since the last review.
 
 Respond ONLY with valid JSON:
-{"executive_summary":"4-5 sentences. Open with the CURRENT status of OPEN portfolio risks, explicitly note progress (risks closed) since the last report, then outlook","portfolio_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4"],"top_concerns":["OPEN concern 1 with project name","concern 2","concern 3"],"cross_project_patterns":["shared pattern 1","pattern 2"],"strategic_recommendations":["recommendation 1","recommendation 2","recommendation 3","recommendation 4"],"priority_projects":["urgent project 1 with reason","project 2"],"progress_note":"1-2 sentences crediting what was closed/improved since last report (or noting this is the first report)"}`}]});
+{"executive_summary":"4-5 sentences. Open with the CURRENT status of OPEN portfolio risks, explicitly note progress (risks closed) since the last report, then outlook","portfolio_health":"good|warning|critical","key_findings":["finding 1","finding 2","finding 3","finding 4"],"top_concerns":["OPEN concern 1 with project name","concern 2","concern 3"],"cross_project_patterns":["shared pattern 1","pattern 2"],"priority_projects":["urgent project 1 with reason","project 2"],"progress_note":"1-2 sentences crediting what was closed/improved since last report (or noting this is the first report)"}`}]});
     hideLoad();
     if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
@@ -3502,9 +3502,8 @@ function renderPortfolioReport(parsed,dateStr){
       ${sec('1','linear-gradient(135deg,var(--red),#d8344a)','Critical Risks',li(parsed.top_concerns,'•','var(--red)'))}
       ${sec('2','linear-gradient(135deg,var(--primary),var(--purple))','Impact Analysis',li(parsed.key_findings,'▸','var(--primary)')+li(parsed.cross_project_patterns,'↔','var(--purple)'))}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      ${sec('3','linear-gradient(135deg,var(--grn),#3aad6e)','Recommended Actions',(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${linkifyRisks(r)}</div>`).join(''))}
-      ${sec('4','linear-gradient(135deg,var(--org),#e09600)','Emerging Risks / Priority Projects',li(parsed.priority_projects,'▲','var(--org)'))}
+    <div style="margin-bottom:14px">
+      ${sec('3','linear-gradient(135deg,var(--org),#e09600)','Priority Projects',li(parsed.priority_projects,'▲','var(--org)'))}
     </div>
     </div>`;
 }
@@ -5721,6 +5720,16 @@ function dismissAllSuggestions(){
 async function approveSuggestion(id){
   const s=smartSuggestions.find(x=>x.id===id);if(!s)return;
   if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot modify the register');return;}
+  // Retire the suggestion up-front (optimistic) so it always disappears from the UI on approve,
+  // even if the DB write later fails. Persist to dismissed + strip from saved arrays immediately.
+  const dismissed=JSON.parse(localStorage.getItem(smartSuggestKey())||'[]');
+  if(s.sig&&!dismissed.includes(s.sig)){dismissed.push(s.sig);localStorage.setItem(smartSuggestKey(),JSON.stringify(dismissed));}
+  const stripFrom=arr=>{if(Array.isArray(arr))for(let i=arr.length-1;i>=0;i--){const sg=(arr[i].action+'|'+(arr[i].risk_id||'')+'|'+(arr[i].title||arr[i].description||'')).slice(0,80);if(sg===s.sig)arr.splice(i,1);}};
+  if(CP.ai_report&&CP.ai_report.suggestions)stripFrom(CP.ai_report.suggestions);
+  if(CP.market_insights&&CP.market_insights.suggestions)stripFrom(CP.market_insights.suggestions);
+  if(CP.trend_data&&CP.trend_data.length){const lt=CP.trend_data[CP.trend_data.length-1];if(lt&&lt.report&&lt.report.suggestions)stripFrom(lt.report.suggestions);}
+  smartSuggestions=smartSuggestions.filter(x=>x.id!==id);
+  renderSmartSuggestions();
   const find=rid=>(CP.risks||[]).find(r=>(r.risk_id||'')===rid||r.id===rid);
   try{
     if(s.action==='add'){
@@ -5751,8 +5760,6 @@ async function approveSuggestion(id){
       if(typeof logRiskEvent==='function')logRiskEvent(r.id,'Adjusted via Smart Advisor',{source:s.source,...patch});
       toast('Updated: '+(r.risk_id||''),{type:'ok'});
     }
-    smartSuggestions=smartSuggestions.filter(x=>x.id!==id);
-    renderSmartSuggestions();
     if(typeof renderDash==='function')renderDash();
   }catch(e){toast('Could not apply: '+e.message);}
 }
@@ -5807,7 +5814,7 @@ CRITICAL MINDSET — read carefully:
 WRITING STANDARD: Write as a senior risk consultant briefing an executive committee on where the project stands TODAY and how it moved since the last review.
 
 Respond ONLY with valid JSON:
-{"executive_summary":"4-5 sentences. Open with the CURRENT status of OPEN risks, explicitly note progress (risks closed, exposure change) since the last report, then the outlook.","project_health":"good|warning|critical","key_findings":["finding about an OPEN risk 1","2","3","4","5"],"top_concerns":["OPEN concern 1 with details","2","3","4","5"],"common_patterns":["pattern among OPEN risks 1","2","3","4","5"],"strategic_recommendations":["1. IMMEDIATE: recommendation","2. URGENT: recommendation","3. HIGH PRIORITY: recommendation","4. recommendation"],"areas_needing_attention":["area 1","area 2"],"progress_note":"1-2 sentences crediting what was closed/improved since last report (or noting this is the first report)","suggestions":[{"action":"add|close|adjust|reclassify","risk_id":"existing OPEN risk ID for close/adjust/reclassify, omit for add","title":"short risk title or what to change","reason":"1 sentence why, citing the data","level":"high|medium|low (for add/adjust)","probability":"1-5 (for add/adjust)","category":"category (for add)","response_strategy":"avoid|mitigate|transfer|accept|exploit|enhance (for reclassify)"}]}
+{"executive_summary":"4-5 sentences. Open with the CURRENT status of OPEN risks, explicitly note progress (risks closed, exposure change) since the last report, then the outlook.","project_health":"good|warning|critical","key_findings":["finding about an OPEN risk 1","2","3"],"top_concerns":["OPEN concern 1 with details","2","3"],"common_patterns":["pattern among OPEN risks 1","2","3"],"progress_note":"1-2 sentences crediting what was closed/improved since last report (or noting this is the first report)","suggestions":[{"action":"add|close|adjust|reclassify","risk_id":"existing OPEN risk ID for close/adjust/reclassify, omit for add","title":"short risk title or what to change","reason":"1 sentence why, citing the data","level":"high|medium|low (for add/adjust)","probability":"1-5 (for add/adjust)","category":"category (for add)","response_strategy":"avoid|mitigate|transfer|accept|exploit|enhance (for reclassify)"}]}
 
 For "suggestions": ONLY concrete, high-confidence actions the data justifies on OPEN risks — add a clearly-missing risk, close one that looks resolved, raise/lower a mismatched level, or fix a wrong response strategy. Maximum 4. Empty array if nothing clearly warranted. Never invent risks to fill the list.`}]});
     hideLoad();
@@ -5944,10 +5951,6 @@ function renderProjectReport(parsed,dateStr){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       ${sec('1','linear-gradient(135deg,var(--red),#d8344a)','Critical Risks',li(parsed.top_concerns,'•','var(--red)'))}
       ${sec('2','linear-gradient(135deg,var(--primary),var(--purple))','Impact Analysis',li(parsed.key_findings,'▸','var(--primary)')+li(parsed.common_patterns,'↔','var(--purple)'))}
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      ${sec('3','linear-gradient(135deg,var(--grn),#3aad6e)','Recommended Actions',(parsed.strategic_recommendations||[]).map((r,i)=>`<div style="padding:9px 0;border-bottom:1px solid var(--b1);font-size:12.5px;color:var(--t2);line-height:1.6"><b style="color:var(--grn)">${i+1}.</b> ${r}</div>`).join(''))}
-      ${sec('4','linear-gradient(135deg,var(--org),#e09600)','Emerging Risks',li(parsed.areas_needing_attention,'▲','var(--org)'))}
     </div>
     </div>`;
   // Executive-first: collapse the detail, reveal the toggle
