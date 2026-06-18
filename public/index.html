@@ -234,6 +234,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .bdg{display:inline-block;padding:3px 9px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.03em;}
 .b-thr{background:var(--red-soft);color:var(--red);}
 .b-opp{background:#ccfbf1;color:#0d9488;}
+.tt-fbtn{font-size:11px;font-weight:600;padding:4px 11px;border-radius:20px;border:1px solid var(--b1);background:var(--s1);color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s}
+.tt-fbtn:hover{border-color:var(--primary);color:var(--primary)}
+.tt-fbtn.on{background:var(--primary);color:#fff;border-color:var(--primary)}
 .b-h{background:var(--red-soft);color:var(--red);}
 .b-m{background:var(--yel-soft);color:#ffa800;}
 .b-l{background:var(--grn-soft);color:var(--grn);}
@@ -2800,7 +2803,7 @@ function buildTodayTasks(scope){
           const col=overdue?'#f64e60':(a.priority===1?'#f64e60':a.priority===2?'#ffa800':'#6D8196');
           const rk=rs.find(r=>r.risk_id===a.risk_id);
           const followUp=!!a.last_update;
-          items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:followUp?('Follow up: '+a.title):a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id,risk_id:a.risk_id,riskDbId:rk?rk.id:'',risk_desc:rk?rk.description:'',mitigation:rk?rk.mitigation:'',due:a.due_date||'',last_update:a.last_update||'',d:d});
+          items.push({kind:'action',pr:overdue?1:(d===0?2:3),color:col,title:followUp?('Follow up: '+a.title):a.title,sub:`${p.name} · ${a.risk_id}${overdue?' · overdue':d===0?' · due today':` · in ${d}d`}`,projId:p.id,actionId:a.id,risk_id:a.risk_id,riskDbId:rk?rk.id:'',risk_desc:rk?rk.description:'',mitigation:rk?rk.mitigation:'',due:a.due_date||'',last_update:a.last_update||'',d:d,owner:(rk&&(rk.response_owner||rk.owner))||'',risk_owner:rk?rk.owner:'',response_owner:rk?rk.response_owner:''});
         }
       });
     }
@@ -2872,6 +2875,7 @@ function showTodayTasks(scope){
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45">${t.title}</div>
           <div class="tt-sub">${t.sub}</div>
+          ${t.owner?`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.2);border-radius:20px;padding:2px 9px;font-size:10.5px;color:var(--primary);font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t.owner}</div>`:`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;color:var(--t3);font-size:10.5px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Unassigned</div>`}
         </div>
         <svg class="rchev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0;margin-top:4px"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
@@ -2905,24 +2909,44 @@ function showTodayTasks(scope){
   const genRows=tasks.filter(t=>t.kind==='genplan');
   const navRows=tasks.filter(t=>t.kind==='nav');
   const subHead=txt=>`<div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:14px 2px 4px">${txt}</div>`;
+  // owner filter — defined before body so the rows can be filtered
+  const actionTasks=tasks.filter(t=>t.kind==='action');
+  const owners=[...new Set(actionTasks.map(t=>t.owner).filter(Boolean))].sort();
+  const myName=(currentUserProfile?.full_name||'').trim();
+  if(typeof window._ttOwner==='undefined')window._ttOwner='all';
+  const ownerFilter=window._ttOwner;
+  const matchOwner=t=>{
+    if(ownerFilter==='all')return true;
+    if(ownerFilter==='__me__')return myName&&((t.owner||'').toLowerCase()===myName.toLowerCase()||(t.risk_owner||'').toLowerCase()===myName.toLowerCase()||(t.response_owner||'').toLowerCase()===myName.toLowerCase());
+    return t.owner===ownerFilter;
+  };
   let body='';
-  if(dueActions.length)body+=dueActions.map(rowAction).join('');
-  if(signalRows.length)body+=(dueActions.length?subHead('Suggested by your data'):'')+signalRows.map(rowNav).join('');
-  if(genRows.length)body+=genRows.map(rowGen).join('');
-  if(navRows.length)body+=navRows.map(rowNav).join('');
-  if(soonActions.length)body+=subHead('Coming up this week')+soonActions.map(rowAction).join('');
-  if(!body)body=`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">You're all caught up</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">No actions due across your projects today.</div></div>`;
+  const _due=dueActions.filter(matchOwner);
+  const _soon=soonActions.filter(matchOwner);
+  if(_due.length)body+=_due.map(rowAction).join('');
+  if(signalRows.length&&ownerFilter==='all')body+=(_due.length?subHead('Suggested by your data'):'')+signalRows.map(rowNav).join('');
+  if(genRows.length&&ownerFilter==='all')body+=genRows.map(rowGen).join('');
+  if(navRows.length&&ownerFilter==='all')body+=navRows.map(rowNav).join('');
+  if(_soon.length)body+=subHead('Coming up this week')+_soon.map(rowAction).join('');
+  if(!body)body=`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">${ownerFilter==='all'?"You're all caught up":'No tasks for this filter'}</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">${ownerFilter==='all'?'No actions due across your projects today.':'Try a different filter or check back later.'}</div></div>`;
+  // owner filter UI uses the variables defined above
   const html=`<div class="modal-ov on" id="ttModal" onclick="if(event.target===this)closeTodayTasks()">
-    <div class="modal" style="max-width:470px">
+    <div class="modal" style="max-width:640px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div>
-          <div style="font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.02em">Today's Tasks</div>
+          <div style="font-size:20px;font-weight:800;color:var(--t1);letter-spacing:-.02em">Today's Tasks</div>
           <div style="font-size:12px;color:var(--t3)">${dateStr}${scopeName?' · '+scopeName:''}</div>
         </div>
         ${todayCount?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px">${todayCount}</span>`:''}
       </div>
-      <div style="font-size:12.5px;color:var(--t2);margin:8px 0 16px;line-height:1.55">${brief}</div>
+      <div style="font-size:12.5px;color:var(--t2);margin:8px 0 14px;line-height:1.55">${brief}</div>
       ${purposeBlock}
+      ${(owners.length||myName)?`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Filter:</span>
+        <button class="tt-fbtn${ownerFilter==='all'?' on':''}" onclick="window._ttOwner='all';showTodayTasks()">All</button>
+        ${myName?`<button class="tt-fbtn${ownerFilter==='__me__'?' on':''}" onclick="window._ttOwner='__me__';showTodayTasks()">My tasks</button>`:''}
+        ${owners.map(o=>`<button class="tt-fbtn${ownerFilter===o?' on':''}" onclick="window._ttOwner='${o.replace(/'/g,"\\'")}';showTodayTasks()">${o}</button>`).join('')}
+      </div>`:''}
       <div class="tt-list">${body}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
         <span style="font-size:11px;color:var(--t3)">Adjust your plan anytime via the AI Risk Manager.</span>
@@ -2995,6 +3019,7 @@ async function toggleActionDone(projId,actionId,checked){
   const p=(projs||[]).find(x=>x.id===projId);if(!p||!p.action_plan)return;
   const a=p.action_plan.actions.find(x=>x.id===actionId);if(!a)return;
   a.status=checked?'done':'todo';
+  if(checked)a.completed_at=new Date().toISOString();else delete a.completed_at;
   try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
   const fromPlan=document.getElementById('pane-plan')?.classList.contains('on')&&!document.getElementById('ttModal');
   const refresh=()=>{if(document.getElementById('ttModal'))showTodayTasks(true);else if(fromPlan)renderPlan();};
@@ -3802,12 +3827,14 @@ function renderPlan(){
   const pcol=a=>a._d<0?'var(--red)':(a.priority===1?'var(--red)':a.priority===2?'#ffa800':'var(--primary)');
   const row=a=>{
     const rk=(CP.risks||[]).find(r=>r.risk_id===a.risk_id);
+    const own=(rk&&(rk.response_owner||rk.owner))||'';
     return `<div class="tt-item" style="background:var(--s0,#fff);border:1px solid var(--b1);margin-bottom:8px">
       <input type="checkbox" class="tt-chk" ${a.status==='done'?'checked':''} aria-label="Mark action done" onchange="toggleActionDone('${CID}','${a.id}',this.checked)"/>
       <span style="width:8px;height:8px;border-radius:50%;background:${pcol(a)};flex-shrink:0"></span>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45;${a.status==='done'?'text-decoration:line-through;color:var(--t3)':''}">${a.title}</div>
-        <div class="tt-sub">${a.risk_id}${rk?' · '+(rk.description||'').slice(0,70)+((rk.description||'').length>70?'…':''):''}${a.due_date?' · due '+a.due_date:''}${a.last_update?' · last: '+a.last_update.slice(0,50):''}</div>
+        <div class="tt-sub">${a.risk_id}${rk?' · '+(rk.description||'').slice(0,70)+((rk.description||'').length>70?'…':''):''}${a.due_date?' · due '+a.due_date:''}${a.status==='done'&&a.completed_at?' · ✓ done '+new Date(a.completed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}${a.last_update?' · last: '+a.last_update.slice(0,50):''}</div>
+        ${own?`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.2);border-radius:20px;padding:2px 9px;font-size:10.5px;color:var(--primary);font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${own}</div>`:''}
       </div>
     </div>`;
   };
@@ -3828,7 +3855,17 @@ function renderPlan(){
     ${sec('Due today',buckets.today,'var(--red)')}
     ${sec('This week',buckets.week)}
     ${sec('Later',buckets.later)}
-    ${sec('Completed',buckets.done,'var(--grn)')}`;
+    ${buckets.done.length?`
+    <div style="margin-top:22px;border-top:2px solid var(--b1);padding-top:16px">
+      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.cmp-chev').style.transform=this.querySelector('.cmp-chev').style.transform?'':'rotate(90deg)'" style="display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:10px">
+        <svg class="cmp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2.5" style="transition:transform .2s"><polyline points="9 18 15 12 9 6"/></svg>
+        <span style="width:26px;height:26px;border-radius:50%;background:var(--grn-soft);color:var(--grn);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800">✓</span>
+        <span style="font-size:13px;font-weight:800;color:var(--grn)">Completed</span>
+        <span style="font-size:12px;font-weight:700;color:var(--grn);background:var(--grn-soft);padding:2px 9px;border-radius:20px">${buckets.done.length}</span>
+        <span style="font-size:11px;color:var(--t3)">— history log, kept for traceability</span>
+      </div>
+      <div style="display:block">${buckets.done.map(row).join('')}</div>
+    </div>`:''}`;
 }
 function ST(name){
   const grp=grpOf(name);
