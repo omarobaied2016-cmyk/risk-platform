@@ -792,6 +792,15 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .tt-title{font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tt-sub{font-size:11px;color:var(--t3);margin-top:1px;}
 .tt-chk{width:18px;height:18px;flex-shrink:0;accent-color:var(--primary);cursor:pointer;}
+/* Distinct controls in Today's Tasks: share-select (blue, share icon) vs complete (green, check) */
+.selbox{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--b1);background:var(--s1);color:var(--t3);transition:all .15s}
+.tt-selchk:checked + .selbox{background:var(--primary);border-color:var(--primary);color:#fff}
+.tt-selchk:hover + .selbox,label:hover .selbox{border-color:var(--primary);color:var(--primary)}
+.tt-selchk:checked:hover + .selbox{color:#fff}
+.donebox{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--b1);background:var(--s1);color:transparent;transition:all .15s}
+.tt-chk:checked + .donebox{background:var(--grn);border-color:var(--grn);color:#fff}
+.tt-chk:hover + .donebox,label:hover .donebox{border-color:var(--grn);color:var(--grn)}
+.tt-chk:checked:hover + .donebox{color:#fff}
 
 /* ═══ REGISTER TABLE COLUMN WIDTHS ═══ */
 .rt-reg{table-layout:fixed;width:100%;min-width:1366px;}
@@ -2869,8 +2878,14 @@ function showTodayTasks(scope){
   const rowAction=t=>`
     <div class="tt-item" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="toggleTaskDetail(this)">
       <div style="display:flex;align-items:flex-start;gap:11px">
-        <input type="checkbox" class="tt-selchk" data-action-id="${t.actionId}" title="Select to share" onclick="event.stopPropagation();updateShareBar()" style="margin-top:3px;width:16px;height:16px;cursor:pointer;accent-color:var(--primary)"/>
-        <input type="checkbox" class="tt-chk" style="margin-top:3px" onclick="event.stopPropagation()" onchange="toggleActionDone('${t.projId}','${t.actionId}',this.checked)"/>
+        <label title="Select to share with owner" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;justify-content:center;margin-top:1px;flex-shrink:0;cursor:pointer">
+          <input type="checkbox" class="tt-selchk" data-action-id="${t.actionId}" onchange="updateShareBar()" style="position:absolute;opacity:0;width:0;height:0"/>
+          <span class="selbox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg></span>
+        </label>
+        <label title="Mark as completed" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;margin-top:1px;flex-shrink:0;cursor:pointer">
+          <input type="checkbox" class="tt-chk" onchange="toggleActionDone('${t.projId}','${t.actionId}',this.checked)" style="position:absolute;opacity:0;width:0;height:0"/>
+          <span class="donebox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </label>
         <span role="img" aria-label="Priority" title="Priority" style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;margin-top:6px"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45">${t.title}</div>
@@ -2887,7 +2902,7 @@ function showTodayTasks(scope){
           <span style="font-size:11px;color:var(--t3)">Due: ${t.due||'—'}</span>
           <div style="display:flex;gap:7px">
             <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${t.actionId}','${(t.title||'').replace(/'/g,"\\'")}','${(t.owner||'').replace(/'/g,"\\'")}','${t.risk_id}','${(t.due||'').replace(/'/g,"\\'")}','${(t.risk_desc||'').replace(/['\n]/g,' ').slice(0,120)}')">↗ Share</button>
-            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();ttGo('${t.projId}','reg')">Open in register →</button>
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();ttGoRisk('${t.projId}','${t.risk_id}')">Open risk →</button>
           </div>
         </div>
         ${t.riskDbId?`<div style="display:flex;gap:7px;margin-top:9px" onclick="event.stopPropagation()">
@@ -3025,37 +3040,39 @@ async function shareSelectedTasks(){
 // Share a task with its assigned owner — native share sheet on mobile, clipboard + email fallback on desktop.
 async function shareTask(actionId,title,owner,riskId,due,riskDesc){
   const proj=(CP&&CP.name)?CP.name:'';
-  const lines=[
-    'Task assignment'+(owner?' for '+owner:''),
-    '',
-    '• Task: '+title,
-    riskId?('• Risk: '+riskId+(riskDesc?' — '+riskDesc:'')):'',
-    due?('• Due: '+due):'',
-    proj?('• Project: '+proj):'',
-    '',
-    'Please action this and update the register when done.'
-  ].filter(Boolean);
-  const msg=lines.join('\n');
-  // try to find the owner's email from Contacts (match by role/position or name)
+  // find the owner's email from Contacts (match by role/position or name)
   let email='';
   if(owner&&CP&&Array.isArray(CP.contacts)){
     const c=CP.contacts.find(x=>(x.role||'').toLowerCase()===owner.toLowerCase()||(x.name||'').toLowerCase()===owner.toLowerCase());
     if(c&&c.contact&&/@/.test(c.contact))email=c.contact.trim();
   }
-  // native share (mobile) first
+  // Preferred path: send the email DIRECTLY from the platform (same as consolidated share / verification emails)
+  if(email){
+    try{
+      const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({to:email,ownerName:owner,projectName:proj,senderName:(currentUserProfile?.full_name||'').trim(),
+          tasks:[{title,risk_id:riskId,risk_desc:riskDesc,due,overdue:false,dueToday:false}]})});
+      const data=await r.json().catch(()=>({}));
+      if(r.ok&&data.sent){toast('Task emailed to '+owner+' ('+email+')',{type:'ok'});return;}
+      toast('Could not send the email automatically. Check the email service.',{type:'warn'});
+    }catch(e){toast('Send failed: '+e.message,{type:'warn'});}
+    return;
+  }
+  // No email on file → build a shareable message
+  const lines=[
+    'Task assignment'+(owner?' for '+owner:''),'',
+    '• Task: '+title,
+    riskId?('• Risk: '+riskId+(riskDesc?' — '+riskDesc:'')):'',
+    due?('• Due: '+due):'',
+    proj?('• Project: '+proj):'','',
+    'Please action this and update the register when done.'
+  ].filter(Boolean);
+  const msg=lines.join('\n');
   if(navigator.share){
     try{await navigator.share({title:'Task: '+title,text:msg});return;}catch(e){if(e&&e.name==='AbortError')return;}
   }
-  // email fallback if we have an address
-  if(email){
-    const subject=encodeURIComponent('Task assignment: '+title);
-    const body=encodeURIComponent(msg);
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`,'_blank');
-    return;
-  }
-  // clipboard fallback
-  try{await navigator.clipboard.writeText(msg);toast(owner?('Task copied — paste it to '+owner):'Task copied to clipboard',{type:'ok'});}
-  catch(e){toast('Could not share automatically. Task:\n'+msg);}
+  try{await navigator.clipboard.writeText(msg);toast(owner?('No email on file for '+owner+'. Task copied — add their email in Stakeholders to send directly.'):'Task copied to clipboard',{type:'info'});}
+  catch(e){toast('Add '+(owner||'the owner')+"'s email in Stakeholders to share directly.",{type:'info'});}
 }
 function toggleTaskDetail(el){
   const d=el.querySelector('.ttx-det');if(!d)return;
@@ -3064,6 +3081,13 @@ function toggleTaskDetail(el){
   const ch=el.querySelector('.rchev');if(ch)ch.style.transform=open?'':'rotate(90deg)';
 }
 function ttGo(projId,tab){closeTodayTasks();selectProj(projId);setTimeout(()=>{try{ST(tab);}catch(e){}},450);}
+// Navigate from Today's Tasks straight to the specific risk in the register.
+function ttGoRisk(projId,riskId){
+  closeTodayTasks();
+  if(CID===projId){gotoRisk(riskId);return;}
+  selectProj(projId);
+  setTimeout(()=>{gotoRisk(riskId);},500);
+}
 
 // Log a progress update from Today's Tasks: saves to the risk, hides the action today, and sets up a follow-up
 async function logTaskUpdate(projId,actionId,text){
@@ -3079,6 +3103,35 @@ async function logTaskUpdate(projId,actionId,text){
   if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP)CP.action_plan=p.action_plan;
   try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
   showTodayTasks(true);
+}
+
+// ═══ ACTION PLAN OBJECTIVES — measurable goals that update as actions complete ═══
+function planObjectives(){
+  const risks=(CP&&CP.risks)||[];
+  const open=risks.filter(r=>r.status!=='closed');
+  const openThreats=open.filter(r=>r.type!=='opportunity');
+  const acts=(CP&&CP.action_plan&&CP.action_plan.actions)||[];
+  const doneActs=acts.filter(a=>a.status==='done').length;
+  const totalActs=acts.length;
+  const progPct=totalActs?Math.round(doneActs/totalActs*100):0;
+  // current exposure (cost EMV of open threats)
+  const expoNow=(typeof rexValue==='function')?Math.round(openThreats.reduce((s,r)=>s+rexValue(r,'cost'),0)):0;
+  // critical + high counts (open)
+  const critNow=openThreats.filter(r=>r.level==='critical').length;
+  const highNow=openThreats.filter(r=>r.level==='high').length;
+  // forecast probabilities at P80 — lightweight standalone version (mirrors completionForecast logic)
+  const pLevel=window._fcP||80;
+  const consAdj=(pLevel-80)*0.55;
+  let costP=92, schedP=92;
+  const pressure=highNow*9+critNow*13+openThreats.filter(r=>r.level==='medium').length*3.5;
+  costP-=pressure; schedP-=pressure*0.9;
+  if(totalActs){const recover=(doneActs/totalActs)*14;costP+=recover;schedP+=recover;}
+  costP-=consAdj; schedP-=consAdj;
+  const clamp=v=>Math.max(8,Math.min(96,Math.round(v)));
+  costP=clamp(costP); schedP=clamp(schedP);
+  // baseline snapshot stored on plan (captured at generation) to show movement
+  const base=(CP&&CP.action_plan&&CP.action_plan.baseline)||null;
+  return {expoNow,critNow,highNow,costP,schedP,pLevel,progPct,doneActs,totalActs,base};
 }
 
 async function generateActionPlan(projId,noPopup){
@@ -3107,7 +3160,14 @@ Respond ONLY with valid JSON:
     if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;try{parsed=pJSON(data.content[0].text);}catch(e){toast('Could not build the plan. Please try again.');return;}
     const actions=(parsed.actions||[]).map((a,i)=>({id:'ap'+Date.now().toString(36)+i,risk_id:a.risk_id||'',title:a.title||'',due_date:a.due_date||'',priority:a.priority||2,status:'todo'}));
-    const plan={generated_at:new Date().toISOString(),brief:parsed.brief||'',actions};
+    // capture a baseline snapshot so the plan can show measurable movement as actions complete
+    let baseline=null;
+    if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP){
+      const ot=(CP.risks||[]).filter(r=>r.status!=='closed'&&r.type!=='opportunity');
+      const expo=(typeof rexValue==='function')?Math.round(ot.reduce((s,r)=>s+rexValue(r,'cost'),0)):0;
+      baseline={expo,crit:ot.filter(r=>r.level==='critical').length,high:ot.filter(r=>r.level==='high').length,date:new Date().toISOString()};
+    }
+    const plan={generated_at:new Date().toISOString(),brief:parsed.brief||'',actions,baseline};
     p.action_plan=plan;
     if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP)CP.action_plan=plan;
     try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:plan});}
@@ -3928,17 +3988,52 @@ function renderPlan(){
   const row=a=>{
     const rk=(CP.risks||[]).find(r=>r.risk_id===a.risk_id);
     const own=(rk&&(rk.response_owner||rk.owner))||'';
-    return `<div class="tt-item" style="background:var(--s0,#fff);border:1px solid var(--b1);margin-bottom:8px">
-      <input type="checkbox" class="tt-chk" ${a.status==='done'?'checked':''} aria-label="Mark action done" onchange="toggleActionDone('${CID}','${a.id}',this.checked)"/>
-      <span style="width:8px;height:8px;border-radius:50%;background:${pcol(a)};flex-shrink:0"></span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45;${a.status==='done'?'text-decoration:line-through;color:var(--t3)':''}">${a.title}</div>
-        <div class="tt-sub">${a.risk_id}${rk?' · '+(rk.description||'').slice(0,70)+((rk.description||'').length>70?'…':''):''}${a.due_date?' · due '+a.due_date:''}${a.status==='done'&&a.completed_at?' · ✓ done '+new Date(a.completed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}${a.last_update?' · last: '+a.last_update.slice(0,50):''}</div>
-        ${own?`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.2);border-radius:20px;padding:2px 9px;font-size:10.5px;color:var(--primary);font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${own}</div>`:''}
+    const dueTxt=a.due_date?(a._d<0?'overdue · was '+a.due_date:a._d===0?'due today':'due '+a.due_date):'';
+    return `<div class="tt-item" style="flex-direction:column;align-items:stretch;background:var(--s0,#fff);border:1px solid var(--b1);margin-bottom:8px;cursor:pointer" onclick="toggleTaskDetail(this)">
+      <div style="display:flex;align-items:flex-start;gap:11px">
+        <label title="Mark as completed" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;margin-top:1px;flex-shrink:0;cursor:pointer">
+          <input type="checkbox" class="tt-chk" ${a.status==='done'?'checked':''} onchange="toggleActionDone('${CID}','${a.id}',this.checked)" style="position:absolute;opacity:0;width:0;height:0"/>
+          <span class="donebox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </label>
+        <span style="width:8px;height:8px;border-radius:50%;background:${pcol(a)};flex-shrink:0;margin-top:6px"></span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.45;${a.status==='done'?'text-decoration:line-through;color:var(--t3)':''}">${a.title}</div>
+          <div class="tt-sub">${a.risk_id}${rk?' · '+(rk.description||'').slice(0,70)+((rk.description||'').length>70?'…':''):''}${dueTxt?' · '+dueTxt:''}${a.status==='done'&&a.completed_at?' · ✓ done '+new Date(a.completed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}</div>
+          ${own?`<div style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.2);border-radius:20px;padding:2px 9px;font-size:10.5px;color:var(--primary);font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${own}</div>`:''}
+        </div>
+        <svg class="rchev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5" style="flex-shrink:0;margin-top:4px"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="ttx-det" style="display:none;margin-top:11px;padding-top:11px;border-top:1px solid var(--b1)">
+        <div style="font-size:11.5px;color:var(--t2);margin-bottom:7px;line-height:1.55"><b style="color:var(--t1)">Linked risk ${a.risk_id}:</b> ${rk?(rk.description||'—'):'—'}</div>
+        ${rk&&rk.mitigation?`<div style="font-size:11.5px;color:var(--t2);margin-bottom:7px;line-height:1.55"><b style="color:var(--t1)">Response plan:</b> ${rk.mitigation}</div>`:''}
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:9px 0">
+          <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Risk Owner</div><div style="font-size:11.5px;color:var(--t1);font-weight:600">${(rk&&rk.owner)||'—'}</div></div>
+          <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Response Owner</div><div style="font-size:11.5px;color:var(--t1);font-weight:600">${(rk&&rk.response_owner)||'—'}</div></div>
+          <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Due</div><div style="font-size:11.5px;color:var(--t1);font-weight:600">${a.due_date||'—'}</div></div>
+        </div>
+        ${a.last_update?`<div style="font-size:11.5px;color:var(--t1);margin-bottom:7px;line-height:1.55;background:var(--primary-soft);border:1px solid rgba(109,129,150,.18);border-radius:8px;padding:8px 10px"><b style="color:var(--primary)">Last update:</b> ${a.last_update}</div>`:''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:8px">
+          <span style="font-size:11px;color:var(--t3)">${a.status==='done'&&a.completed_at?'Completed '+new Date(a.completed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Status: '+(a.status==='done'?'done':'open')}</span>
+          <div style="display:flex;gap:7px">
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${a.id}','${(a.title||'').replace(/'/g,"\\'")}','${(own||'').replace(/'/g,"\\'")}','${a.risk_id}','${(a.due_date||'').replace(/'/g,"\\'")}','${((rk&&rk.description)||'').replace(/['\n]/g,' ').slice(0,120)}')">↗ Share</button>
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();gotoRisk('${a.risk_id}')">Open risk →</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:9px" onclick="event.stopPropagation()">
+          <input type="text" id="plupd_${a.id}" placeholder="Log a progress update (meeting, letter, reply…)" onkeydown="if(event.key==='Enter')logTaskUpdate('${CID}','${a.id}',this.value)" style="flex:1;font-size:11px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;font-family:inherit;outline:none"/>
+          <button class="btn btn-p" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="event.stopPropagation();logTaskUpdate('${CID}','${a.id}',document.getElementById('plupd_${a.id}').value)">Log</button>
+        </div>
       </div>
     </div>`;
   };
   const sec=(title,arr,color)=>arr.length?`<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${color||'var(--t3)'};margin:18px 2px 8px">${title} (${arr.length})</div>${arr.map(row).join('')}`:'';
+  const obj=planObjectives();
+  const fmtM=v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v;
+  const _b=obj.base;
+  const expoLine=_b?(()=>{const drop=_b.expo-obj.expoNow;const pct=_b.expo>0?Math.round(drop/_b.expo*100):0;return drop>0?`Reduced exposure by <b style="color:var(--grn)">${fmtM(drop)} ${curCode()} (${pct}%)</b> — from ${fmtM(_b.expo)} to ${fmtM(obj.expoNow)}`:`Hold exposure at <b>${fmtM(obj.expoNow)} ${curCode()}</b>; complete mitigations to drive it down`;})():`Current open exposure: <b>${fmtM(obj.expoNow)} ${curCode()}</b>`;
+  const critLine=_b?(()=>{const cd=(_b.crit+_b.high)-(obj.critNow+obj.highNow);return cd>0?`Cleared <b style="color:var(--grn)">${cd}</b> critical/high risk${cd>1?'s':''} — now ${obj.critNow} critical, ${obj.highNow} high open`:`Bring down the <b style="color:var(--red)">${obj.critNow} critical</b> & <b style="color:#a16207">${obj.highNow} high</b> open risks`;})():`Lower the ${obj.critNow} critical & ${obj.highNow} high open risks`;
+  const goalCard=(label,val,sub,color)=>`<div style="flex:1;min-width:130px"><div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">${label}</div><div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:20px;font-weight:800;color:${color}">${val}</span><span style="font-size:10.5px;color:var(--t3)">${sub}</span></div></div>`;
+  const objPanel=`<div style="background:linear-gradient(135deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:13px;padding:14px 16px;margin:10px 0 14px"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--primary);margin-bottom:9px">Plan Objectives — updates automatically as you complete actions</div><div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:11px">${goalCard('On-schedule (P'+obj.pLevel+')',obj.schedP+'%','',obj.schedP>=75?'var(--grn)':obj.schedP>=50?'#a16207':'var(--red)')}${goalCard('On-budget',obj.costP+'%','',obj.costP>=75?'var(--grn)':obj.costP>=50?'#a16207':'var(--red)')}${goalCard('Open Exposure',fmtM(obj.expoNow),curCode(),'var(--t1)')}${goalCard('Plan Progress',obj.progPct+'%',obj.doneActs+'/'+obj.totalActs+' done','var(--primary)')}</div><div style="border-top:1px solid rgba(109,129,150,.18);padding-top:9px;display:flex;flex-direction:column;gap:5px"><div style="font-size:11.5px;color:var(--t2);line-height:1.5">↓ ${expoLine}</div><div style="font-size:11.5px;color:var(--t2);line-height:1.5">⚠ ${critLine}</div><div style="font-size:11.5px;color:var(--t2);line-height:1.5">↑ Raise the P${obj.pLevel} probability of finishing <b>on schedule</b> (now ${obj.schedP}%) and <b>within budget</b> (now ${obj.costP}%) as mitigations land</div></div></div>`;
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px">
       <div>
@@ -3951,6 +4046,7 @@ function renderPlan(){
         <button class="btn btn-p" onclick="generateActionPlan(CID)">⟳ Regenerate</button>
       </div>
     </div>
+    ${objPanel}
     ${sec('Overdue',buckets.overdue,'var(--red)')}
     ${sec('Due today',buckets.today,'var(--red)')}
     ${sec('This week',buckets.week)}
@@ -4550,7 +4646,7 @@ function gotoRisk(ref){
   const r=CP.risks.find(x=>(x.risk_id||'')===ref)||CP.risks.find(x=>x.id===ref)
         ||CP.risks.find(x=>(x.risk_id||'').toUpperCase()===String(ref).toUpperCase());
   if(!r){toast('Risk '+ref+' not found in this register');return;}
-  try{ST('risks');}catch(e){}
+  try{ST('reg');}catch(e){}
   setTimeout(()=>{
     const row=document.querySelector('[data-risk-id="'+r.id+'"]');
     if(row){row.scrollIntoView({behavior:'smooth',block:'center'});
