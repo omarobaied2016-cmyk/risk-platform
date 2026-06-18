@@ -218,6 +218,53 @@ app.post('/api/email/reset', emailLimiter, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── Share assigned tasks with a team member (one consolidated email) ───
+function tplTasks(ownerName, projectName, senderName, tasks) {
+  const row = (t) => {
+    const color = t.overdue ? '#f64e60' : (t.dueToday ? '#ffa800' : BRAND.slate);
+    const tag = t.overdue ? 'overdue' : (t.dueToday ? 'due today' : (t.due ? 'due ' + t.due : ''));
+    return `<tr><td style="padding:12px 0;border-bottom:1px solid #eef1f5;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
+        <td width="16" valign="top" style="padding-top:5px;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};"></span></td>
+        <td style="font:600 14px/1.45 -apple-system,Helvetica,Arial;color:${BRAND.text};">${t.title}
+          <div style="font:400 12px/1.5 -apple-system,Helvetica,Arial;color:${BRAND.muted};margin-top:3px;">
+            ${[t.risk_id, t.risk_desc, tag].filter(Boolean).join(' · ')}
+          </div>
+        </td>
+      </tr></table>
+    </td></tr>`;
+  };
+  const n = tasks.length;
+  return emailShell(`Hi ${ownerName || 'there'}`, `
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${BRAND.sub};">
+      ${senderName ? senderName + ' has' : 'You have been'} assigned <b>${n} task${n > 1 ? 's' : ''}</b>${projectName ? ` on <b>${projectName}</b>` : ''}. Here's your consolidated list:
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 22px;">${tasks.map(row).join('')}</table>
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:${BRAND.cream};">
+      <a href="https://riskatlas.pro/app" style="display:inline-block;padding:13px 26px;font:700 14px -apple-system,Helvetica,Arial;color:${BRAND.ink};text-decoration:none;">Open RiskAtlas AI →</a>
+    </td></tr></table>
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:${BRAND.muted};">Please action these and update the register when done.</p>`);
+}
+
+app.post('/api/email/tasks', emailLimiter, async (req, res) => {
+  const { to, ownerName, projectName, senderName, tasks } = req.body || {};
+  if (!to || !Array.isArray(tasks) || !tasks.length) return res.status(400).json({ error: 'Missing recipient or tasks' });
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.status(400).json({ error: 'Invalid email' });
+  // cap to avoid abuse
+  const safeTasks = tasks.slice(0, 30).map(t => ({
+    title: String(t.title || '').slice(0, 200),
+    risk_id: String(t.risk_id || '').slice(0, 20),
+    risk_desc: String(t.risk_desc || '').slice(0, 160),
+    due: String(t.due || '').slice(0, 40),
+    overdue: !!t.overdue, dueToday: !!t.dueToday,
+  }));
+  try {
+    const subj = `Your assigned tasks${projectName ? ' — ' + String(projectName).slice(0, 60) : ''} (${safeTasks.length})`;
+    await sendEmail(to, subj, tplTasks(String(ownerName || '').slice(0, 80), String(projectName || '').slice(0, 80), String(senderName || '').slice(0, 80), safeTasks));
+    res.json({ sent: true, count: safeTasks.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/email/status', (req, res) => {
   res.json({ configured: !!RESEND_API_KEY });
 });
