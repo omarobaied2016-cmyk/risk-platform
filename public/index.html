@@ -1108,8 +1108,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-      <div class="fg"><label class="fl">Risk Owner</label><input type="text" class="fi" id="ar_owner" placeholder="optional"/></div>
-      <div class="fg"><label class="fl">Response Owner</label><input type="text" class="fi" id="ar_respowner" placeholder="optional"/></div>
+      <div class="fg"><label class="fl">Risk Owner</label><input type="text" class="fi" id="ar_owner" list="ar_owner_list" placeholder="select or type a position"/><datalist id="ar_owner_list"></datalist></div>
+      <div class="fg"><label class="fl">Response Owner</label><input type="text" class="fi" id="ar_respowner" list="ar_respowner_list" placeholder="select or type a position"/><datalist id="ar_respowner_list"></datalist></div>
     </div>
 
     <!-- AI options -->
@@ -1471,7 +1471,6 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn btn-g" id="ttBtnProj" onclick="showTodayTasks({mode:'project',id:CID})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="ttlbl">Today's Tasks</span></button>
           <button class="btn btn-g" id="btnSettings" onclick="openSettingsModal()">Settings</button>
-          <button class="btn btn-warn" onclick="showNotifModal()">Notifications</button>
           <button class="btn btn-g" onclick="showExportModal()">Export</button>
           <button class="btn btn-del" id="btnDelProj" onclick="delProj()">Delete</button>
           <span id="roleBadge" style="display:none;align-self:center;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:var(--t3);background:var(--s2);border:1px solid var(--b1);border-radius:12px;padding:4px 11px"></span>
@@ -2883,9 +2882,12 @@ function showTodayTasks(scope){
         <div style="font-size:11.5px;color:var(--t2);margin-bottom:7px;line-height:1.55"><b style="color:var(--t1)">Linked risk ${t.risk_id}:</b> ${t.risk_desc||'—'}</div>
         ${t.mitigation?`<div style="font-size:11.5px;color:var(--t2);margin-bottom:7px;line-height:1.55"><b style="color:var(--t1)">Response plan:</b> ${t.mitigation}</div>`:''}
         ${t.last_update?`<div style="font-size:11.5px;color:var(--t1);margin-bottom:7px;line-height:1.55;background:var(--primary-soft);border:1px solid rgba(109,129,150,.18);border-radius:8px;padding:8px 10px"><b style="color:var(--primary)">You last noted:</b> ${t.last_update}<br><span style="color:var(--t3)">What's the status now?</span></div>`:''}
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:8px">
           <span style="font-size:11px;color:var(--t3)">Due: ${t.due||'—'}</span>
-          <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();ttGo('${t.projId}','reg')">Open in register →</button>
+          <div style="display:flex;gap:7px">
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${t.actionId}','${(t.title||'').replace(/'/g,"\\'")}','${(t.owner||'').replace(/'/g,"\\'")}','${t.risk_id}','${(t.due||'').replace(/'/g,"\\'")}','${(t.risk_desc||'').replace(/['\n]/g,' ').slice(0,120)}')">↗ Share</button>
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();ttGo('${t.projId}','reg')">Open in register →</button>
+          </div>
         </div>
         ${t.riskDbId?`<div style="display:flex;gap:7px;margin-top:9px" onclick="event.stopPropagation()">
           <input type="text" id="ttupd_${t.actionId}" placeholder="${t.last_update?"What happened? Add the update…":"Log a progress update (meeting, letter, reply…)"}" onkeydown="if(event.key==='Enter')logTaskUpdate('${t.projId}','${t.actionId}',this.value)" style="flex:1;font-size:11px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;font-family:inherit;outline:none"/>
@@ -2957,6 +2959,42 @@ function showTodayTasks(scope){
   document.body.insertAdjacentHTML('beforeend',html);
 }
 function closeTodayTasks(){document.getElementById('ttModal')?.remove();}
+
+// Share a task with its assigned owner — native share sheet on mobile, clipboard + email fallback on desktop.
+async function shareTask(actionId,title,owner,riskId,due,riskDesc){
+  const proj=(CP&&CP.name)?CP.name:'';
+  const lines=[
+    'Task assignment'+(owner?' for '+owner:''),
+    '',
+    '• Task: '+title,
+    riskId?('• Risk: '+riskId+(riskDesc?' — '+riskDesc:'')):'',
+    due?('• Due: '+due):'',
+    proj?('• Project: '+proj):'',
+    '',
+    'Please action this and update the register when done.'
+  ].filter(Boolean);
+  const msg=lines.join('\n');
+  // try to find the owner's email from Contacts (match by role/position or name)
+  let email='';
+  if(owner&&CP&&Array.isArray(CP.contacts)){
+    const c=CP.contacts.find(x=>(x.role||'').toLowerCase()===owner.toLowerCase()||(x.name||'').toLowerCase()===owner.toLowerCase());
+    if(c&&c.contact&&/@/.test(c.contact))email=c.contact.trim();
+  }
+  // native share (mobile) first
+  if(navigator.share){
+    try{await navigator.share({title:'Task: '+title,text:msg});return;}catch(e){if(e&&e.name==='AbortError')return;}
+  }
+  // email fallback if we have an address
+  if(email){
+    const subject=encodeURIComponent('Task assignment: '+title);
+    const body=encodeURIComponent(msg);
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`,'_blank');
+    return;
+  }
+  // clipboard fallback
+  try{await navigator.clipboard.writeText(msg);toast(owner?('Task copied — paste it to '+owner):'Task copied to clipboard',{type:'ok'});}
+  catch(e){toast('Could not share automatically. Task:\n'+msg);}
+}
 function toggleTaskDetail(el){
   const d=el.querySelector('.ttx-det');if(!d)return;
   const open=d.style.display!=='none';
@@ -4491,6 +4529,7 @@ function openEdit(riskDbId){
   document.getElementById('ar_ai_smart').checked=false;
   document.getElementById('ar_ai_complete').checked=false;
   document.getElementById('addRiskMsg').style.display='none';
+  populateOwnerLists();
   updateArLevel();
   // switch modal into EDIT mode (title, subtitle, button label)
   const modal=document.getElementById('addRiskModal');
@@ -4725,6 +4764,14 @@ function updateArLevel(){
   if(el){el.textContent=(RL[lvl]||lvl)+' ('+score+')';el.style.color=colors[lvl];}
 }
 
+function populateOwnerLists(){
+  // Build position options from Contacts (role = position). Datalist allows free typing too.
+  const positions=[...new Set((CP?.contacts||[]).map(c=>(c.role||'').trim()).filter(Boolean))].sort();
+  const opts=positions.map(p=>`<option value="${p.replace(/"/g,'&quot;')}"></option>`).join('');
+  const ol=document.getElementById('ar_owner_list');if(ol)ol.innerHTML=opts;
+  const rl=document.getElementById('ar_respowner_list');if(rl)rl.innerHTML=opts;
+}
+
 function openAddRisk(){
   _editingRiskId=null;
   ['ar_description','ar_cause','ar_mitigation','ar_owner','ar_respowner'].forEach(id=>document.getElementById(id).value='');
@@ -4736,6 +4783,7 @@ function openAddRisk(){
   document.getElementById('ar_ai_smart').checked=false;
   document.getElementById('ar_ai_complete').checked=false;
   document.getElementById('addRiskMsg').style.display='none';
+  populateOwnerLists();
   updateArLevel();
   // restore ADD-mode labels (in case the modal was previously used for editing)
   const modal=document.getElementById('addRiskModal');
