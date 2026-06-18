@@ -1119,8 +1119,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
     </div>
 
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn btn-g" onclick="document.getElementById('addRiskModal').classList.remove('on')">Cancel</button>
-      <button class="btn btn-p" onclick="submitAddRisk()">Add Risk</button>
+      <button class="btn btn-g" onclick="_editingRiskId=null;document.getElementById('addRiskModal').classList.remove('on')">Cancel</button>
+      <button class="btn btn-p" id="arSubmitBtn" onclick="submitAddRisk()">Add Risk</button>
     </div>
   </div>
 </div>
@@ -4405,7 +4405,36 @@ function linkifyRisks(text){
   });
 }
 
+let _editingRiskId=null;
 function openEdit(riskDbId){
+  const r=CP.risks.find(x=>x.id===riskDbId);if(!r)return;
+  _editingRiskId=riskDbId;
+  // populate the full Add-Risk form with this risk's values
+  document.getElementById('ar_type').value=r.type||'threat';
+  document.getElementById('ar_category').value=r.category||'Schedule';
+  document.getElementById('ar_description').value=r.description||'';
+  document.getElementById('ar_cause').value=r.cause||'';
+  document.getElementById('ar_prob').value=r.probability||3;
+  document.getElementById('ar_ic').value=(r.impact_cost!=null?r.impact_cost:3);
+  document.getElementById('ar_is').value=(r.impact_schedule!=null?r.impact_schedule:3);
+  document.getElementById('ar_iq').value=(r.impact_qhse!=null?r.impact_qhse:1);
+  document.getElementById('ar_ir').value=(r.impact_reputation!=null?r.impact_reputation:1);
+  document.getElementById('ar_level').value=r.level||'medium';
+  document.getElementById('ar_response').value=r.response_strategy||'';
+  document.getElementById('ar_mitigation').value=r.mitigation||'';
+  document.getElementById('ar_owner').value=r.owner||'';
+  document.getElementById('ar_respowner').value=r.response_owner||'';
+  document.getElementById('ar_ai_smart').checked=false;
+  document.getElementById('ar_ai_complete').checked=false;
+  document.getElementById('addRiskMsg').style.display='none';
+  // switch modal into EDIT mode (title, subtitle, button label)
+  const modal=document.getElementById('addRiskModal');
+  modal.querySelector('.modal-t').textContent='Edit Risk · '+(r.risk_id||'');
+  modal.querySelector('.modal-sub').textContent='Update this risk. You can also let AI rewrite or complete it below.';
+  const btn=document.getElementById('arSubmitBtn');if(btn)btn.textContent='Save Changes';
+  modal.classList.add('on');
+}
+function openEdit_legacy(riskDbId){
   const r=CP.risks.find(x=>x.id===riskDbId);if(!r)return;
   editRiskId=riskDbId;
   document.getElementById('e_desc').value=r.description||'';
@@ -4616,6 +4645,7 @@ async function addRiskUpdate(riskDbId,textArg,ctx){
 
 // ═══ ADD RISK MANUALLY ═══
 function openAddRisk(){
+  _editingRiskId=null;
   ['ar_description','ar_cause','ar_mitigation','ar_owner','ar_respowner'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ar_type').value='threat';
   document.getElementById('ar_category').value='Schedule';
@@ -4626,6 +4656,11 @@ function openAddRisk(){
   document.getElementById('ar_ai_smart').checked=false;
   document.getElementById('ar_ai_complete').checked=false;
   document.getElementById('addRiskMsg').style.display='none';
+  // restore ADD-mode labels (in case the modal was previously used for editing)
+  const modal=document.getElementById('addRiskModal');
+  modal.querySelector('.modal-t').textContent='Add Risk Manually';
+  modal.querySelector('.modal-sub').textContent='Add a single risk or opportunity. Not sure about scoring? Upload documents in Files and let AI do it for you.';
+  const btn=document.getElementById('arSubmitBtn');if(btn)btn.textContent='Add Risk';
   document.getElementById('addRiskModal').classList.add('on');
 }
 
@@ -4692,7 +4727,25 @@ Return ONLY a valid JSON object with the same fields (type, category, descriptio
 
   if(!risk.response_strategy)risk.response_strategy='Mitigate';
 
-  // Save to DB
+  // ═══ EDIT MODE: update the existing risk in place ═══
+  if(_editingRiskId){
+    const updates={type:risk.type,category:risk.category,description:risk.description,cause:risk.cause||'',probability:risk.probability,impact_cost:risk.impact_cost,impact_schedule:risk.impact_schedule,impact_qhse:risk.impact_qhse,impact_reputation:risk.impact_reputation,level:risk.level,response_strategy:risk.response_strategy,mitigation:risk.mitigation||'',owner:risk.owner||'',response_owner:risk.response_owner||''};
+    showLoad('Saving changes...');
+    try{
+      await sb('risks?id=eq.'+_editingRiskId,'PATCH',updates);
+      const existing=CP.risks.find(x=>x.id===_editingRiskId);
+      if(existing)Object.assign(existing,updates);
+      if(typeof logRiskEvent==='function')logRiskEvent(_editingRiskId,'edited',{fields:Object.keys(updates)});
+      hideLoad();
+      document.getElementById('addRiskModal').classList.remove('on');
+      _editingRiskId=null;
+      renderReg();updateStats();
+      if(typeof renderDash==='function'&&document.getElementById('dashContent'))renderDash();
+    }catch(e){hideLoad();arMsg('Save error: '+e.message,false);}
+    return;
+  }
+
+  // ═══ ADD MODE: insert a new risk ═══
   const rid=nextRiskId();
   const ins={project_id:CID,risk_id:rid,type:risk.type,category:risk.category,description:risk.description,cause:risk.cause||'',probability:risk.probability,impact_cost:risk.impact_cost,impact_schedule:risk.impact_schedule,impact_qhse:risk.impact_qhse,impact_reputation:risk.impact_reputation,level:risk.level,response_strategy:risk.response_strategy,mitigation:risk.mitigation||'',owner:risk.owner||'',response_owner:risk.response_owner||'',status:'open',timing_type:'ongoing',expected_date:null};
   showLoad('Saving risk...');
