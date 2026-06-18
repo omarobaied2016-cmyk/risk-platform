@@ -235,6 +235,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .b-thr{background:var(--red-soft);color:var(--red);}
 .b-opp{background:#ccfbf1;color:#0d9488;}
 .tt-fbtn{font-size:11px;font-weight:600;padding:4px 11px;border-radius:20px;border:1px solid var(--b1);background:var(--s1);color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s}
+.shm-item{display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .14s}
+.shm-item:hover{background:var(--primary-soft)}
+.shm-ic{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;flex-shrink:0}
 .tt-fbtn:hover{border-color:var(--primary);color:var(--primary)}
 .tt-fbtn.on{background:var(--primary);color:#fff;border-color:var(--primary)}
 .b-h{background:var(--red-soft);color:var(--red);}
@@ -2901,7 +2904,7 @@ function showTodayTasks(scope){
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:8px">
           <span style="font-size:11px;color:var(--t3)">Due: ${t.due||'—'}</span>
           <div style="display:flex;gap:7px">
-            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${t.actionId}')">↗ Share</button>
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${t.actionId}',event)">↗ Share</button>
             <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();ttGoRisk('${t.projId}','${t.risk_id}')">Open risk →</button>
           </div>
         </div>
@@ -3038,10 +3041,9 @@ async function shareSelectedTasks(){
 }
 
 // Share a task with its assigned owner — native share sheet on mobile, clipboard + email fallback on desktop.
-async function shareTask(actionId){
+async function shareTask(actionId,ev){
   // Resolve full task details from data (avoids truncation and quoting issues in inline handlers).
-  let proj='', projName='', action=null, ownerProj=CP;
-  // find the action across the loaded projects (Today's Tasks can be cross-project)
+  let projName='', action=null, ownerProj=CP;
   for(const pr of (typeof projs!=='undefined'?projs:[CP])){
     if(pr&&pr.action_plan&&Array.isArray(pr.action_plan.actions)){
       const a=pr.action_plan.actions.find(x=>x.id===actionId);
@@ -3062,19 +3064,7 @@ async function shareTask(actionId){
     const c=ownerProj.contacts.find(x=>(x.role||'').toLowerCase()===owner.toLowerCase()||(x.name||'').toLowerCase()===owner.toLowerCase());
     if(c&&c.contact&&/@/.test(c.contact))email=c.contact.trim();
   }
-  // Preferred: send DIRECTLY from the platform (same as consolidated share / verification emails)
-  if(email){
-    try{
-      const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({to:email,ownerName:owner,projectName:projName,senderName:(currentUserProfile?.full_name||'').trim(),
-          tasks:[{title,risk_id:riskId,risk_desc:riskDesc,due,overdue:false,dueToday:false}]})});
-      const data=await r.json().catch(()=>({}));
-      if(r.ok&&data.sent){toast('Task emailed to '+owner+' ('+email+')',{type:'ok'});return;}
-      toast('Could not send the email automatically. Check the email service.',{type:'warn'});
-    }catch(e){toast('Send failed: '+e.message,{type:'warn'});}
-    return;
-  }
-  // No email on file → shareable message (full text)
+  // same message used for BOTH options
   const lines=[
     'Task assignment'+(owner?' for '+owner:''),'',
     '• Task: '+title,
@@ -3084,11 +3074,65 @@ async function shareTask(actionId){
     'Please action this and update the register when done.'
   ].filter(Boolean);
   const msg=lines.join('\n');
-  if(navigator.share){
-    try{await navigator.share({title:'Task: '+title,text:msg});return;}catch(e){if(e&&e.name==='AbortError')return;}
+  // stash payload for the menu actions
+  window._shareCtx={title,owner,email,riskId,riskDesc,due,projName,msg};
+  openShareMenu(ev);
+}
+
+function openShareMenu(ev){
+  closeShareMenu();
+  const c=window._shareCtx||{};
+  const menu=document.createElement('div');
+  menu.id='shareMenu';
+  menu.style.cssText='position:fixed;z-index:10000;background:var(--s1);border:1px solid var(--b1);border-radius:12px;box-shadow:0 12px 40px rgba(43,52,64,.22);padding:7px;min-width:230px;font-family:inherit';
+  menu.innerHTML=`
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);padding:6px 10px 4px">Share this task</div>
+    <button class="shm-item" onclick="shareViaPlatform()">
+      <span class="shm-ic" style="background:var(--primary-soft);color:var(--primary)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg></span>
+      <span style="flex:1;text-align:start"><span style="display:block;font-size:12.5px;font-weight:600;color:var(--t1)">Email via platform</span><span style="display:block;font-size:10.5px;color:var(--t3)">${c.email?('Send directly to '+c.email):(c.owner?('No email on file for '+c.owner):'No owner email on file')}</span></span>
+    </button>
+    <button class="shm-item" onclick="shareViaSystem()">
+      <span class="shm-ic" style="background:var(--grn-soft);color:var(--grn)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg></span>
+      <span style="flex:1;text-align:start"><span style="display:block;font-size:12.5px;font-weight:600;color:var(--t1)">Other apps</span><span style="display:block;font-size:10.5px;color:var(--t3)">WhatsApp, Mail, copy — system share</span></span>
+    </button>`;
+  document.body.appendChild(menu);
+  // position near the click
+  const mw=menu.offsetWidth, mh=menu.offsetHeight;
+  let x=20,y=80;
+  if(ev&&typeof ev.clientX==='number'){x=ev.clientX;y=ev.clientY;}
+  if(x+mw>window.innerWidth-10)x=window.innerWidth-mw-10;
+  if(y+mh>window.innerHeight-10)y=window.innerHeight-mh-10;
+  menu.style.left=Math.max(10,x)+'px';menu.style.top=Math.max(10,y)+'px';
+  setTimeout(()=>document.addEventListener('click',closeShareMenuOnOutside,{once:true}),0);
+}
+function closeShareMenuOnOutside(e){const m=document.getElementById('shareMenu');if(m&&!m.contains(e.target))closeShareMenu();else if(m)setTimeout(()=>document.addEventListener('click',closeShareMenuOnOutside,{once:true}),0);}
+function closeShareMenu(){document.getElementById('shareMenu')?.remove();}
+
+async function shareViaPlatform(){
+  closeShareMenu();
+  const c=window._shareCtx||{};
+  if(!c.email){
+    toast(c.owner?('No email on file for '+c.owner+'. Add it in Stakeholders to send directly.'):'No owner email on file. Add it in Stakeholders.',{type:'info'});
+    return;
   }
-  try{await navigator.clipboard.writeText(msg);toast(owner?('No email on file for '+owner+'. Task copied — add their email in Stakeholders to send directly.'):'Task copied to clipboard',{type:'info'});}
-  catch(e){toast('Add '+(owner||'the owner')+"'s email in Stakeholders to share directly.",{type:'info'});}
+  try{
+    const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to:c.email,ownerName:c.owner,projectName:c.projName,senderName:(currentUserProfile?.full_name||'').trim(),
+        tasks:[{title:c.title,risk_id:c.riskId,risk_desc:c.riskDesc,due:c.due,overdue:false,dueToday:false}]})});
+    const data=await r.json().catch(()=>({}));
+    if(r.ok&&data.sent){toast('Task emailed to '+c.owner+' ('+c.email+')',{type:'ok'});return;}
+    toast('Could not send the email. Check the email service.',{type:'warn'});
+  }catch(e){toast('Send failed: '+e.message,{type:'warn'});}
+}
+
+async function shareViaSystem(){
+  closeShareMenu();
+  const c=window._shareCtx||{};
+  if(navigator.share){
+    try{await navigator.share({title:'Task: '+c.title,text:c.msg});return;}catch(e){if(e&&e.name==='AbortError')return;}
+  }
+  try{await navigator.clipboard.writeText(c.msg);toast('Task copied to clipboard',{type:'ok'});}
+  catch(e){toast('Could not access system share. Task:\n'+c.msg);}
 }
 function toggleTaskDetail(el){
   const d=el.querySelector('.ttx-det');if(!d)return;
@@ -4031,7 +4075,7 @@ function renderPlan(){
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:8px">
           <span style="font-size:11px;color:var(--t3)">${a.status==='done'&&a.completed_at?'Completed '+new Date(a.completed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Status: '+(a.status==='done'?'done':'open')}</span>
           <div style="display:flex;gap:7px">
-            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${a.id}')">↗ Share</button>
+            <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();shareTask('${a.id}',event)">↗ Share</button>
             <button class="btn btn-g" style="padding:4px 11px;font-size:11px" onclick="event.stopPropagation();gotoRisk('${a.risk_id}')">Open risk →</button>
           </div>
         </div>
