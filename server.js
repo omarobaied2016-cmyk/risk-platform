@@ -254,7 +254,7 @@ app.post('/api/email/tasks', emailLimiter, async (req, res) => {
   const safeTasks = tasks.slice(0, 30).map(t => ({
     title: String(t.title || '').slice(0, 200),
     risk_id: String(t.risk_id || '').slice(0, 20),
-    risk_desc: String(t.risk_desc || '').slice(0, 160),
+    risk_desc: String(t.risk_desc || '').slice(0, 400),
     due: String(t.due || '').slice(0, 40),
     overdue: !!t.overdue, dueToday: !!t.dueToday,
   }));
