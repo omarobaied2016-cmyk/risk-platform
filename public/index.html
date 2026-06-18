@@ -212,6 +212,16 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 
 /* ═══ FORMS ═══ */
 .fg{display:flex;flex-direction:column;gap:5px;}
+.cmb{position:relative;}
+.cmb-in{width:100%;padding-inline-end:32px !important;box-sizing:border-box;}
+.cmb-arrow{position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);color:var(--t3);cursor:pointer;display:flex;pointer-events:auto;transition:transform .18s;}
+.cmb.open .cmb-arrow{transform:translateY(-50%) rotate(180deg);}
+.cmb-list{position:absolute;top:calc(100% + 4px);inset-inline:0;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);box-shadow:0 10px 30px rgba(43,52,64,.16);max-height:200px;overflow-y:auto;z-index:50;display:none;padding:4px;}
+.cmb.open .cmb-list{display:block;}
+.cmb-opt{padding:8px 11px;font-size:12.5px;color:var(--t1);border-radius:7px;cursor:pointer;transition:background .12s;}
+.cmb-opt:hover,.cmb-opt.active{background:var(--primary-soft);color:var(--primary);}
+.cmb-opt.cmb-empty{color:var(--t3);cursor:default;font-size:11.5px;}
+.cmb-opt.cmb-empty:hover{background:transparent;color:var(--t3);}
 .fl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;}
 .fi,.fs,.fta{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r-sm);padding:8px 11px;color:var(--t1);font-family:inherit;font-size:12.5px;outline:none;transition:all .15s;}
 .fi:focus,.fs:focus,.fta:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(109,129,150,.1);}
@@ -1120,8 +1130,20 @@ tr:hover td{background:rgba(109,129,150,.015);}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-      <div class="fg"><label class="fl">Risk Owner</label><input type="text" class="fi" id="ar_owner" list="ar_owner_list" placeholder="select or type a position"/><datalist id="ar_owner_list"></datalist></div>
-      <div class="fg"><label class="fl">Response Owner</label><input type="text" class="fi" id="ar_respowner" list="ar_respowner_list" placeholder="select or type a position"/><datalist id="ar_respowner_list"></datalist></div>
+      <div class="fg"><label class="fl">Risk Owner</label>
+        <div class="cmb" id="cmb_owner">
+          <input type="text" class="fi cmb-in" id="ar_owner" autocomplete="off" placeholder="Select or type a position" oninput="cmbFilter('owner')" onfocus="cmbOpen('owner')" onkeydown="cmbKey(event,'owner')"/>
+          <span class="cmb-arrow" onclick="cmbToggle('owner')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+          <div class="cmb-list" id="cmb_owner_list"></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Response Owner</label>
+        <div class="cmb" id="cmb_respowner">
+          <input type="text" class="fi cmb-in" id="ar_respowner" autocomplete="off" placeholder="Select or type a position" oninput="cmbFilter('respowner')" onfocus="cmbOpen('respowner')" onkeydown="cmbKey(event,'respowner')"/>
+          <span class="cmb-arrow" onclick="cmbToggle('respowner')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+          <div class="cmb-list" id="cmb_respowner_list"></div>
+        </div>
+      </div>
     </div>
 
     <!-- AI options -->
@@ -1495,6 +1517,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <div class="tab" onclick="STG('plan')" data-grp="plan" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Plan</div>
         <div class="tab" onclick="STG('monitor')" data-grp="monitor" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Monitor</div>
         <div class="tab" onclick="STG('intel')" data-grp="intel" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Intelligence</div>
+        <div class="tab" onclick="STG('setup')" data-grp="setup" role="tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Project Setup</div>
       </div>
       <div class="subtabs" id="subtabs"></div>
 
@@ -2973,7 +2996,7 @@ function showTodayTasks(scope){
       <div class="tt-list">${body}</div>
       <div id="ttShareBar" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:11px 13px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.25);border-radius:11px">
         <span id="ttShareInfo" style="font-size:12px;color:var(--t1);font-weight:600"></span>
-        <button class="btn btn-p" style="padding:7px 15px;font-size:12px" onclick="shareSelectedTasks()">↗ Share selected</button>
+        <button class="btn btn-p" style="padding:7px 15px;font-size:12px" onclick="shareSelectedTasks(event)">↗ Share selected</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
         <span style="font-size:11px;color:var(--t3)">Tip: tick tasks to email them to their owner.</span>
@@ -3000,44 +3023,37 @@ function updateShareBar(){
   bar.style.display='flex';
 }
 
-async function shareSelectedTasks(){
+function shareSelectedTasks(ev){
   const sel=[...document.querySelectorAll('.tt-selchk:checked')];
   if(!sel.length){toast('Select at least one task');return;}
   const map=window._ttTaskMap||{};
   // group selected tasks by owner
   const groups={};
   sel.forEach(c=>{const t=map[c.dataset.actionId];if(!t)return;const o=(t.owner||'').trim()||'__unassigned__';(groups[o]=groups[o]||[]).push(t);});
-  const senderName=(currentUserProfile?.full_name||'').trim();
-  const projectName=(CP&&CP.name)||'';
-  let sentCount=0, noEmail=[];
+  const projName=(CP&&CP.name)||'';
+  // build recipients (email resolved from Contacts) + a single consolidated message for system share
+  const recipients=[];
+  let msgBlocks=[];
   for(const owner in groups){
     const tasks=groups[owner];
-    // resolve owner email from Contacts (match position/role or name)
     let email='';
     if(owner!=='__unassigned__'&&CP&&Array.isArray(CP.contacts)){
       const ct=CP.contacts.find(x=>(x.role||'').toLowerCase()===owner.toLowerCase()||(x.name||'').toLowerCase()===owner.toLowerCase());
       if(ct&&ct.contact&&/@/.test(ct.contact))email=ct.contact.trim();
     }
-    if(!email){noEmail.push(owner==='__unassigned__'?'Unassigned':owner);continue;}
-    const payload={
-      to:email,
-      ownerName:owner,
-      projectName,
-      senderName,
-      tasks:tasks.map(t=>({title:t.title,risk_id:t.risk_id,risk_desc:t.risk_desc,due:t.due,overdue:t.d<0,dueToday:t.d===0}))
-    };
-    try{
-      const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const data=await r.json();
-      if(r.ok&&data.sent)sentCount++;
-      else noEmail.push(owner+' (send failed)');
-    }catch(e){noEmail.push(owner+' (error)');}
+    const ownerLabel=owner==='__unassigned__'?'Unassigned':owner;
+    recipients.push({owner:ownerLabel,email,tasks:tasks.map(t=>({title:t.title,risk_id:t.risk_id,risk_desc:t.risk_desc,due:t.due,overdue:t.d<0,dueToday:t.d===0}))});
+    // message block for this owner (same content as the email)
+    const tl=tasks.map(t=>{
+      const rk=(CP.risks||[]).find(r=>r.risk_id===t.risk_id);
+      const desc=(rk&&rk.description)||t.risk_desc||'';
+      return ['• Task: '+t.title,t.risk_id?('  Risk: '+t.risk_id+(desc?' — '+desc:'')):'',t.due?('  Due: '+t.due):''].filter(Boolean).join('\n');
+    }).join('\n');
+    msgBlocks.push(`Task assignment for ${ownerLabel}:\n${tl}`);
   }
-  if(sentCount)toast(`Sent ${sentCount} consolidated email${sentCount>1?'s':''}`,{type:'ok'});
-  if(noEmail.length)toast('No email on file for: '+noEmail.join(', ')+'. Add their email in Stakeholders.',{type:noEmail.length&&!sentCount?'warn':'info'});
-  // clear selection
-  document.querySelectorAll('.tt-selchk:checked').forEach(c=>c.checked=false);
-  updateShareBar();
+  const msg=`Tasks${projName?' — '+projName:''}\n\n`+msgBlocks.join('\n\n')+'\n\nPlease action these and update the register when done.';
+  window._shareCtx={recipients,projName,msg};
+  openShareMenu(ev);
 }
 
 // Share a task with its assigned owner — native share sheet on mobile, clipboard + email fallback on desktop.
@@ -3084,19 +3100,26 @@ function openShareMenu(ev){
   const c=window._shareCtx||{};
   const menu=document.createElement('div');
   menu.id='shareMenu';
-  menu.style.cssText='position:fixed;z-index:10000;background:var(--s1);border:1px solid var(--b1);border-radius:12px;box-shadow:0 12px 40px rgba(43,52,64,.22);padding:7px;min-width:230px;font-family:inherit';
+  menu.style.cssText='position:fixed;z-index:10000;background:var(--s1);border:1px solid var(--b1);border-radius:12px;box-shadow:0 12px 40px rgba(43,52,64,.22);padding:7px;min-width:240px;font-family:inherit';
+  // platform-email subline: single → recipient email; multi → N recipients with email
+  let emailSub;
+  if(c.recipients){
+    const withEmail=c.recipients.filter(r=>r.email).length;
+    emailSub=withEmail?`Send ${c.recipients.reduce((s,r)=>s+(r.email?r.tasks.length:0),0)} task(s) to ${withEmail} recipient${withEmail>1?'s':''}`:'No emails on file for selected owners';
+  }else{
+    emailSub=c.email?('Send directly to '+c.email):(c.owner?('No email on file for '+c.owner):'No owner email on file');
+  }
   menu.innerHTML=`
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);padding:6px 10px 4px">Share this task</div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);padding:6px 10px 4px">${c.recipients?'Share selected tasks':'Share this task'}</div>
     <button class="shm-item" onclick="shareViaPlatform()">
       <span class="shm-ic" style="background:var(--primary-soft);color:var(--primary)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg></span>
-      <span style="flex:1;text-align:start"><span style="display:block;font-size:12.5px;font-weight:600;color:var(--t1)">Email via platform</span><span style="display:block;font-size:10.5px;color:var(--t3)">${c.email?('Send directly to '+c.email):(c.owner?('No email on file for '+c.owner):'No owner email on file')}</span></span>
+      <span style="flex:1;text-align:start"><span style="display:block;font-size:12.5px;font-weight:600;color:var(--t1)">Email via platform</span><span style="display:block;font-size:10.5px;color:var(--t3)">${emailSub}</span></span>
     </button>
     <button class="shm-item" onclick="shareViaSystem()">
       <span class="shm-ic" style="background:var(--grn-soft);color:var(--grn)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg></span>
       <span style="flex:1;text-align:start"><span style="display:block;font-size:12.5px;font-weight:600;color:var(--t1)">Other apps</span><span style="display:block;font-size:10.5px;color:var(--t3)">WhatsApp, Mail, copy — system share</span></span>
     </button>`;
   document.body.appendChild(menu);
-  // position near the click
   const mw=menu.offsetWidth, mh=menu.offsetHeight;
   let x=20,y=80;
   if(ev&&typeof ev.clientX==='number'){x=ev.clientX;y=ev.clientY;}
@@ -3111,13 +3134,30 @@ function closeShareMenu(){document.getElementById('shareMenu')?.remove();}
 async function shareViaPlatform(){
   closeShareMenu();
   const c=window._shareCtx||{};
-  if(!c.email){
-    toast(c.owner?('No email on file for '+c.owner+'. Add it in Stakeholders to send directly.'):'No owner email on file. Add it in Stakeholders.',{type:'info'});
+  const senderName=(currentUserProfile?.full_name||'').trim();
+  // MULTI: one consolidated email per recipient with an email on file
+  if(c.recipients){
+    let sent=0, noEmail=[];
+    for(const rec of c.recipients){
+      if(!rec.email){noEmail.push(rec.owner);continue;}
+      try{
+        const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({to:rec.email,ownerName:rec.owner,projectName:c.projName,senderName,
+            tasks:rec.tasks.map(t=>({title:t.title,risk_id:t.risk_id,risk_desc:t.risk_desc,due:t.due,overdue:!!t.overdue,dueToday:!!t.dueToday}))})});
+        const data=await r.json().catch(()=>({}));
+        if(r.ok&&data.sent)sent++;else noEmail.push(rec.owner+' (send failed)');
+      }catch(e){noEmail.push(rec.owner+' (error)');}
+    }
+    if(sent)toast(`Sent ${sent} consolidated email${sent>1?'s':''}`,{type:'ok'});
+    if(noEmail.length)toast('No email sent for: '+noEmail.join(', ')+'. Add their email in the Project Setup → Stakeholders.',{type:sent?'info':'warn'});
+    document.querySelectorAll('.tt-selchk:checked').forEach(c=>c.checked=false);updateShareBar();
     return;
   }
+  // SINGLE
+  if(!c.email){toast(c.owner?('No email on file for '+c.owner+'. Add it in Project Setup → Stakeholders.'):'No owner email on file.',{type:'info'});return;}
   try{
     const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({to:c.email,ownerName:c.owner,projectName:c.projName,senderName:(currentUserProfile?.full_name||'').trim(),
+      body:JSON.stringify({to:c.email,ownerName:c.owner,projectName:c.projName,senderName,
         tasks:[{title:c.title,risk_id:c.riskId,risk_desc:c.riskDesc,due:c.due,overdue:false,dueToday:false}]})});
     const data=await r.json().catch(()=>({}));
     if(r.ok&&data.sent){toast('Task emailed to '+c.owner+' ('+c.email+')',{type:'ok'});return;}
@@ -3128,11 +3168,12 @@ async function shareViaPlatform(){
 async function shareViaSystem(){
   closeShareMenu();
   const c=window._shareCtx||{};
+  const shareTitle=c.recipients?('Tasks ('+c.recipients.reduce((s,r)=>s+r.tasks.length,0)+')'):('Task: '+c.title);
   if(navigator.share){
-    try{await navigator.share({title:'Task: '+c.title,text:c.msg});return;}catch(e){if(e&&e.name==='AbortError')return;}
+    try{await navigator.share({title:shareTitle,text:c.msg});if(c.recipients){document.querySelectorAll('.tt-selchk:checked').forEach(x=>x.checked=false);updateShareBar();}return;}catch(e){if(e&&e.name==='AbortError')return;}
   }
-  try{await navigator.clipboard.writeText(c.msg);toast('Task copied to clipboard',{type:'ok'});}
-  catch(e){toast('Could not access system share. Task:\n'+c.msg);}
+  try{await navigator.clipboard.writeText(c.msg);toast('Copied to clipboard',{type:'ok'});if(c.recipients){document.querySelectorAll('.tt-selchk:checked').forEach(x=>x.checked=false);updateShareBar();}}
+  catch(e){toast('Could not access system share.');}
 }
 function toggleTaskDetail(el){
   const d=el.querySelector('.ttx-det');if(!d)return;
@@ -4017,10 +4058,11 @@ async function selectProj(id){
 // ═══ NAVIGATION: 5 primary groups, panes routed beneath them ═══
 const NAV_GROUPS={
   overview:{panes:['dash'],labels:{}},
-  risks:{panes:['reg','risklog','files','tol'],labels:{reg:'Register',risklog:'Closed Risks',files:'Documents',tol:'Risk Appetite'}},
+  risks:{panes:['reg','risklog','files'],labels:{reg:'Register',risklog:'Closed Risks',files:'Documents'}},
   plan:{panes:['plan'],labels:{}},
   monitor:{panes:['warn','upd','whatif'],labels:{warn:'Early Warning',upd:'Trend Analysis',whatif:'What-If Simulator'}},
-  intel:{panes:['contacts','insights'],labels:{contacts:'Stakeholders',insights:'Market & World'}}
+  intel:{panes:['insights'],labels:{insights:'Market & World'}},
+  setup:{panes:['contacts','tol'],labels:{contacts:'Stakeholders',tol:'Risk Appetite'}}
 };
 function grpOf(pane){for(const g in NAV_GROUPS)if(NAV_GROUPS[g].panes.includes(pane))return g;return 'overview';}
 function STG(grp){ST(NAV_GROUPS[grp].panes[0]);}
@@ -4982,12 +5024,37 @@ function updateArLevel(){
   if(el){el.textContent=(RL[lvl]||lvl)+' ('+score+')';el.style.color=colors[lvl];}
 }
 
-function populateOwnerLists(){
-  // Build position options from Contacts (role = position). Datalist allows free typing too.
-  const positions=[...new Set((CP?.contacts||[]).map(c=>(c.role||'').trim()).filter(Boolean))].sort();
-  const opts=positions.map(p=>`<option value="${p.replace(/"/g,'&quot;')}"></option>`).join('');
-  const ol=document.getElementById('ar_owner_list');if(ol)ol.innerHTML=opts;
-  const rl=document.getElementById('ar_respowner_list');if(rl)rl.innerHTML=opts;
+// ═══ Owner combobox — styled like platform selects, allows pick-from-Contacts OR free typing ═══
+function cmbPositions(){return [...new Set((CP?.contacts||[]).map(c=>(c.role||'').trim()).filter(Boolean))].sort();}
+function populateOwnerLists(){cmbRender('owner');cmbRender('respowner');}
+function cmbRender(which,filter){
+  const list=document.getElementById('cmb_'+which+'_list');if(!list)return;
+  const positions=cmbPositions();
+  const q=(filter||'').toLowerCase().trim();
+  const shown=q?positions.filter(p=>p.toLowerCase().includes(q)):positions;
+  if(!positions.length){list.innerHTML='<div class="cmb-opt cmb-empty">No positions in Contacts yet — type to add a custom one</div>';return;}
+  if(!shown.length){list.innerHTML='<div class="cmb-opt cmb-empty">No match — keep typing to use a custom position</div>';return;}
+  list.innerHTML=shown.map(p=>`<div class="cmb-opt" onmousedown="event.preventDefault();cmbPick('${which}','${p.replace(/'/g,"\\'")}')">${p}</div>`).join('');
+}
+function cmbOpen(which){const c=document.getElementById('cmb_'+which);if(!c)return;cmbRender(which,document.getElementById('ar_'+which).value);c.classList.add('open');document.addEventListener('click',cmbOutside);}
+function cmbClose(which){const c=document.getElementById('cmb_'+which);if(c)c.classList.remove('open');}
+function cmbToggle(which){const c=document.getElementById('cmb_'+which);if(!c)return;if(c.classList.contains('open'))cmbClose(which);else{document.getElementById('ar_'+which).focus();cmbOpen(which);}}
+function cmbFilter(which){cmbRender(which,document.getElementById('ar_'+which).value);const c=document.getElementById('cmb_'+which);if(c)c.classList.add('open');}
+function cmbPick(which,val){document.getElementById('ar_'+which).value=val;cmbClose(which);}
+function cmbKey(e,which){
+  if(e.key==='Escape'){cmbClose(which);return;}
+  if(e.key==='Enter'){cmbClose(which);return;}
+  const list=document.getElementById('cmb_'+which+'_list');if(!list)return;
+  const opts=[...list.querySelectorAll('.cmb-opt:not(.cmb-empty)')];if(!opts.length)return;
+  let i=opts.findIndex(o=>o.classList.contains('active'));
+  if(e.key==='ArrowDown'){e.preventDefault();i=(i+1)%opts.length;}
+  else if(e.key==='ArrowUp'){e.preventDefault();i=(i-1+opts.length)%opts.length;}
+  else return;
+  opts.forEach(o=>o.classList.remove('active'));opts[i].classList.add('active');opts[i].scrollIntoView({block:'nearest'});
+}
+function cmbOutside(e){
+  ['owner','respowner'].forEach(w=>{const c=document.getElementById('cmb_'+w);if(c&&!c.contains(e.target))c.classList.remove('open');});
+  if(!document.querySelector('.cmb.open'))document.removeEventListener('click',cmbOutside);
 }
 
 function openAddRisk(){
