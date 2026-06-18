@@ -237,6 +237,10 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .b-h{background:var(--red-soft);color:var(--red);}
 .b-m{background:var(--yel-soft);color:#ffa800;}
 .b-l{background:var(--grn-soft);color:var(--grn);}
+.b-critical{background:#7f1d1d;color:#fff;}
+.b-high{background:var(--red-soft);color:var(--red);}
+.b-medium{background:var(--yel-soft);color:#ffa800;}
+.b-low{background:var(--grn-soft);color:var(--grn);}
 .cb{padding:3px 9px;border-radius:5px;font-size:10.5px;background:var(--s3);color:var(--t2);}
 .resp{padding:3px 9px;border-radius:5px;font-size:10px;font-weight:500;}
 .r-Avoid{background:var(--red-soft);color:var(--red);}
@@ -1076,16 +1080,16 @@ tr:hover td{background:rgba(109,129,150,.015);}
 
     <div class="fl-hint" style="margin-bottom:6px">Score each on a <b>1–5 scale</b> — Probability: 1 = rare, 5 = almost certain · Impact: 0 = none, 5 = critical.</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px">
-      <div class="fg"><label class="fl">Prob</label><input type="number" class="fi" id="ar_prob" min="1" max="5" value="3"/></div>
-      <div class="fg"><label class="fl">Cost</label><input type="number" class="fi" id="ar_ic" min="0" max="5" value="3"/></div>
-      <div class="fg"><label class="fl">Sched</label><input type="number" class="fi" id="ar_is" min="0" max="5" value="3"/></div>
-      <div class="fg"><label class="fl">QHSE</label><input type="number" class="fi" id="ar_iq" min="0" max="5" value="1"/></div>
-      <div class="fg"><label class="fl">Rep</label><input type="number" class="fi" id="ar_ir" min="0" max="5" value="1"/></div>
+      <div class="fg"><label class="fl">Prob</label><input type="number" class="fi" id="ar_prob" min="1" max="5" value="3" oninput="updateArLevel()"/></div>
+      <div class="fg"><label class="fl">Cost</label><input type="number" class="fi" id="ar_ic" min="0" max="5" value="3" oninput="updateArLevel()"/></div>
+      <div class="fg"><label class="fl">Sched</label><input type="number" class="fi" id="ar_is" min="0" max="5" value="3" oninput="updateArLevel()"/></div>
+      <div class="fg"><label class="fl">QHSE</label><input type="number" class="fi" id="ar_iq" min="0" max="5" value="1" oninput="updateArLevel()"/></div>
+      <div class="fg"><label class="fl">Rep</label><input type="number" class="fi" id="ar_ir" min="0" max="5" value="1" oninput="updateArLevel()"/></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-      <div class="fg"><label class="fl">Level</label>
-        <select class="fs" id="ar_level"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+      <div class="fg"><label class="fl">Calculated Level</label>
+        <div id="ar_level_display" style="display:flex;align-items:center;height:38px;padding:0 12px;border:1px solid var(--b1);border-radius:8px;background:var(--s2);font-size:13px;font-weight:700">—</div>
       </div>
       <div class="fg"><label class="fl">Response Strategy</label>
         <select class="fs" id="ar_response">
@@ -2240,7 +2244,31 @@ const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Mi
 const LC=['var(--red)','var(--org)','var(--yel)','var(--grn)','var(--cyan)'];
 const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
 const IL=['','Negligible','Minor','Moderate','Major','Critical'];
-const RL={high:'HIGH',medium:'MEDIUM',low:'LOW'};
+const RL={critical:'CRITICAL',high:'HIGH',medium:'MEDIUM',low:'LOW'};
+// ═══ UNIFIED RISK-LEVEL ENGINE — single source of truth for every add/edit path ═══
+// Level = Probability (1-5) × Highest Impact (0-5)  →  score 0-25  →  one of 4 levels.
+//   Critical: >16 (17-25) · High: 10-16 · Medium: 3-9 · Low: 1-2 · (0 → Low)
+function maxImpact(r){
+  return Math.max(
+    parseInt(r.impact_cost)||0,
+    parseInt(r.impact_schedule)||0,
+    parseInt(r.impact_qhse)||0,
+    parseInt(r.impact_reputation)||0
+  );
+}
+function computeLevel(prob,maxImp){
+  const p=parseInt(prob)||0, i=parseInt(maxImp)||0;
+  const score=p*i;
+  if(score>16)return 'critical';
+  if(score>=10)return 'high';
+  if(score>=3) return 'medium';
+  return 'low';
+}
+// Convenience: compute the level for a full risk record from its impact fields.
+function levelFromRisk(r){return computeLevel(r.probability, maxImpact(r));}
+// "High or above" = critical + high (critical is the most severe; user-facing "high risk" counts include it).
+function isSevere(r){return r&&(r.level==='critical'||r.level==='high');}
+function countSevere(arr){return (arr||[]).filter(isSevere).length;}
 const RESP_AR={Avoid:'Avoid',Mitigate:'Mitigate',Transfer:'Transfer',Accept:'Accept',Escalate:'Escalate',Exploit:'Exploit',Enhance:'Enhance',Share:'Share'};
 const CAT_AR={Schedule:'Schedule',Cost:'Cost',Scope:'Scope',Contract:'Contract',Design:'Design',Execution:'Execution',Suppliers:'Suppliers',QHSE:'QHSE',Quality:'Quality',Regulatory:'Regulatory',Financial:'Financial'};
 const PORTFOLIO_COLORS=['var(--primary)','var(--purple)','#f64e8b','var(--org)','var(--grn)','var(--grn)','var(--cyan)','var(--yel)','var(--red)','#0ea5e9'];
@@ -4234,7 +4262,7 @@ function showVal(risks){document.getElementById('valOv').classList.add('on');ren
 function renderValList(risks){
   const app=risks.filter(r=>r._a!==false).length;
   document.getElementById('valCtr').textContent=`${app}/${risks.length}`;
-  const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const lc={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   document.getElementById('valList').innerHTML=risks.map((r,i)=>`
     <div class="vc ${r._a===false?'rej':r._a?'app2':''}" id="vc${i}">
       <div class="vch">
@@ -4366,7 +4394,7 @@ async function confirmVal(){
   showLoad('Saving...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
-    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:r.level,response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',response_owner:r.response_owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null,source:r.source||''}));
+    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:computeLevel(r.probability,Math.max(parseInt(r.impact_cost)||0,parseInt(r.impact_schedule)||0,parseInt(r.impact_qhse)||0,parseInt(r.impact_reputation)||0)),response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',response_owner:r.response_owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null,source:r.source||''}));
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
@@ -4419,7 +4447,6 @@ function openEdit(riskDbId){
   document.getElementById('ar_is').value=(r.impact_schedule!=null?r.impact_schedule:3);
   document.getElementById('ar_iq').value=(r.impact_qhse!=null?r.impact_qhse:1);
   document.getElementById('ar_ir').value=(r.impact_reputation!=null?r.impact_reputation:1);
-  document.getElementById('ar_level').value=r.level||'medium';
   document.getElementById('ar_response').value=r.response_strategy||'';
   document.getElementById('ar_mitigation').value=r.mitigation||'';
   document.getElementById('ar_owner').value=r.owner||'';
@@ -4427,6 +4454,7 @@ function openEdit(riskDbId){
   document.getElementById('ar_ai_smart').checked=false;
   document.getElementById('ar_ai_complete').checked=false;
   document.getElementById('addRiskMsg').style.display='none';
+  updateArLevel();
   // switch modal into EDIT mode (title, subtitle, button label)
   const modal=document.getElementById('addRiskModal');
   modal.querySelector('.modal-t').textContent='Edit Risk · '+(r.risk_id||'');
@@ -4490,7 +4518,7 @@ function renderReg(){
   if(regFilters.response)risks=risks.filter(r=>r.response_strategy===regFilters.response);
   const hasFilter=regFilters.category||regFilters.level||regFilters.response;
 
-  const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const lc={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const fdate=v=>{if(!v)return '—';const d=new Date(v);return isNaN(d)?'—':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});};
   const detField=(label,val)=>`<div style="min-width:0"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;margin-bottom:3px">${label}</div><div style="font-size:11.5px;color:var(--t1);line-height:1.5;word-break:break-word">${val||'—'}</div></div>`;
   const buildRows=arr=>arr.map(r=>`
@@ -4548,7 +4576,7 @@ function renderReg(){
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
             <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Risk Owner</div><input type="text" value="${(r.owner||'').replace(/"/g,'&quot;')}" onchange="quickEditRisk('${r.id}','owner',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;width:150px;font-family:inherit;outline:none"/></div>
             <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Response Owner</div><input type="text" value="${(r.response_owner||'').replace(/"/g,'&quot;')}" onchange="quickEditRisk('${r.id}','response_owner',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;width:150px;font-family:inherit;outline:none"/></div>
-            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Level</div><select onchange="quickEditRisk('${r.id}','level',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;font-family:inherit;outline:none;cursor:pointer"><option value="high" ${r.level==='high'?'selected':''}>High</option><option value="medium" ${r.level==='medium'?'selected':''}>Medium</option><option value="low" ${r.level==='low'?'selected':''}>Low</option></select></div>
+            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Level <span style="text-transform:none;font-weight:500">(auto)</span></div><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span> <span style="font-size:10px;color:var(--t3)">P${r.probability||0}×I${Math.max(r.impact_cost||0,r.impact_schedule||0,r.impact_qhse||0,r.impact_reputation||0)}=${(r.probability||0)*Math.max(r.impact_cost||0,r.impact_schedule||0,r.impact_qhse||0,r.impact_reputation||0)}</span></div>
             <button class="btn btn-g" style="padding:6px 12px;font-size:11px" onclick="openEdit('${r.id}')">Full edit…</button>
           </div>
         </div>
@@ -4585,6 +4613,7 @@ function renderReg(){
       </select>
       <select onchange="applyRegFilter('level',this.value)" style="font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--b1);background:var(--s1);color:var(--t1);cursor:pointer;outline:none">
         <option value="">All Levels</option>
+        <option value="critical" ${regFilters.level==='critical'?'selected':''}>Critical</option>
         <option value="high" ${regFilters.level==='high'?'selected':''}>High</option>
         <option value="medium" ${regFilters.level==='medium'?'selected':''}>Medium</option>
         <option value="low" ${regFilters.level==='low'?'selected':''}>Low</option>
@@ -4644,6 +4673,21 @@ async function addRiskUpdate(riskDbId,textArg,ctx){
 }
 
 // ═══ ADD RISK MANUALLY ═══
+function updateArLevel(){
+  const prob=document.getElementById('ar_prob')?.value;
+  const mi=Math.max(
+    parseInt(document.getElementById('ar_ic')?.value)||0,
+    parseInt(document.getElementById('ar_is')?.value)||0,
+    parseInt(document.getElementById('ar_iq')?.value)||0,
+    parseInt(document.getElementById('ar_ir')?.value)||0
+  );
+  const lvl=computeLevel(prob,mi);
+  const score=(parseInt(prob)||0)*mi;
+  const colors={critical:'#7f1d1d',high:'var(--red)',medium:'#ffa800',low:'var(--grn)'};
+  const el=document.getElementById('ar_level_display');
+  if(el){el.textContent=(RL[lvl]||lvl)+' ('+score+')';el.style.color=colors[lvl];}
+}
+
 function openAddRisk(){
   _editingRiskId=null;
   ['ar_description','ar_cause','ar_mitigation','ar_owner','ar_respowner'].forEach(id=>document.getElementById(id).value='');
@@ -4651,11 +4695,11 @@ function openAddRisk(){
   document.getElementById('ar_category').value='Schedule';
   document.getElementById('ar_prob').value=3;
   document.getElementById('ar_ic').value=3;document.getElementById('ar_is').value=3;document.getElementById('ar_iq').value=1;document.getElementById('ar_ir').value=1;
-  document.getElementById('ar_level').value='medium';
   document.getElementById('ar_response').value='';
   document.getElementById('ar_ai_smart').checked=false;
   document.getElementById('ar_ai_complete').checked=false;
   document.getElementById('addRiskMsg').style.display='none';
+  updateArLevel();
   // restore ADD-mode labels (in case the modal was previously used for editing)
   const modal=document.getElementById('addRiskModal');
   modal.querySelector('.modal-t').textContent='Add Risk Manually';
@@ -4692,7 +4736,7 @@ async function submitAddRisk(){
     impact_schedule:parseInt(document.getElementById('ar_is').value)||0,
     impact_qhse:parseInt(document.getElementById('ar_iq').value)||0,
     impact_reputation:parseInt(document.getElementById('ar_ir').value)||0,
-    level:document.getElementById('ar_level').value,
+    level:computeLevel(document.getElementById('ar_prob').value,Math.max(parseInt(document.getElementById('ar_ic').value)||0,parseInt(document.getElementById('ar_is').value)||0,parseInt(document.getElementById('ar_iq').value)||0,parseInt(document.getElementById('ar_ir').value)||0)),
     response_strategy:document.getElementById('ar_response').value,
     mitigation:document.getElementById('ar_mitigation').value.trim(),
     owner:document.getElementById('ar_owner').value.trim(),
@@ -4726,6 +4770,8 @@ Return ONLY a valid JSON object with the same fields (type, category, descriptio
   }
 
   if(!risk.response_strategy)risk.response_strategy='Mitigate';
+  // ALWAYS (re)compute level from prob × highest impact — single source of truth, after any AI changes.
+  risk.level=computeLevel(risk.probability,Math.max(risk.impact_cost||0,risk.impact_schedule||0,risk.impact_qhse||0,risk.impact_reputation||0));
 
   // ═══ EDIT MODE: update the existing risk in place ═══
   if(_editingRiskId){
@@ -4915,12 +4961,14 @@ function renderDash(){
     return;
   }
 
-  const high=risks.filter(r=>r.level==='high').length;
+  const crit=risks.filter(r=>r.level==='critical').length;
+  const highOnly=risks.filter(r=>r.level==='high').length;
+  const high=risks.filter(r=>r.level==='high'||r.level==='critical').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
   const thr=risks.filter(r=>r.type==='threat'||!r.type).length;
   const opp=risks.filter(r=>r.type==='opportunity').length;
-  const riskScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
+  const riskScore=Math.min(100,Math.round((crit*15+highOnly*10+med*5+low*1)/(risks.length*15)*100));
   const val=parseFloat((CP.value||'0').replace(/[^0-9.]/g,''))||0;
   // Expected cost exposure (EMV): sum of probability × cost-impact value across THREATS only.
   // Uses the same principled calc as Risk Exposure Analysis, so it stays realistic (a fraction of contract value).
@@ -5013,8 +5061,8 @@ function renderDash(){
     <div class="rcc-kpis">
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v">${exposure?(exposure/1000000).toFixed(1)+'M':'—'}</div><div class="k-s">${exposure?'expected cost (EMV)':'add project value'}</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Total Risks</div><div class="k-v">${risks.length}</div><div class="k-s">${thr} threats · ${opp} opp.</div></div>
-      <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">✓ Closed Risks</div>${(()=>{const c=(CP?.risks||[]).filter(r=>r.status==='closed');const ch=c.filter(r=>r.level==='high').length;const cm=c.filter(r=>r.level==='medium').length;const cl=c.filter(r=>r.level==='low').length;return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center"><span class="k-v" style="color:var(--red);font-size:21px;text-align:center">${ch}</span><span class="k-v" style="color:#ffa800;font-size:21px;text-align:center;border-inline:1px solid var(--b1)">${cm}</span><span class="k-v" style="color:var(--grn);font-size:21px;text-align:center">${cl}</span></div>`;})()}<div class="k-s" style="display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center"><span>High</span><span>Medium</span><span>Low</span></div></div>
-      <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ Open Risks</div>${(()=>{const o=(CP?.risks||[]).filter(r=>r.status!=='closed'&&r.type!=='opportunity');const oh=o.filter(r=>r.level==='high').length;const om=o.filter(r=>r.level==='medium').length;const ol=o.filter(r=>r.level==='low').length;return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center"><span class="k-v" style="color:var(--red);font-size:21px;text-align:center">${oh}</span><span class="k-v" style="color:#ffa800;font-size:21px;text-align:center;border-inline:1px solid var(--b1)">${om}</span><span class="k-v" style="color:var(--grn);font-size:21px;text-align:center">${ol}</span></div>`;})()}<div class="k-s" style="display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center"><span>High</span><span>Medium</span><span>Low</span></div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">✓ Closed Risks</div>${(()=>{const c=(CP?.risks||[]).filter(r=>r.status==='closed');const cc=c.filter(r=>r.level==='critical').length;const ch=c.filter(r=>r.level==='high').length;const cm=c.filter(r=>r.level==='medium').length;const cl=c.filter(r=>r.level==='low').length;return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center"><span class="k-v" style="color:#7f1d1d;font-size:18px;text-align:center">${cc}</span><span class="k-v" style="color:var(--red);font-size:18px;text-align:center;border-inline-start:1px solid var(--b1)">${ch}</span><span class="k-v" style="color:#ffa800;font-size:18px;text-align:center;border-inline:1px solid var(--b1)">${cm}</span><span class="k-v" style="color:var(--grn);font-size:18px;text-align:center">${cl}</span></div>`;})()}<div class="k-s" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;text-align:center;font-size:8.5px"><span>Critical</span><span>High</span><span>Med</span><span>Low</span></div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ Open Risks</div>${(()=>{const o=(CP?.risks||[]).filter(r=>r.status!=='closed'&&r.type!=='opportunity');const oc=o.filter(r=>r.level==='critical').length;const oh=o.filter(r=>r.level==='high').length;const om=o.filter(r=>r.level==='medium').length;const ol=o.filter(r=>r.level==='low').length;return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center"><span class="k-v" style="color:#7f1d1d;font-size:18px;text-align:center">${oc}</span><span class="k-v" style="color:var(--red);font-size:18px;text-align:center;border-inline-start:1px solid var(--b1)">${oh}</span><span class="k-v" style="color:#ffa800;font-size:18px;text-align:center;border-inline:1px solid var(--b1)">${om}</span><span class="k-v" style="color:var(--grn);font-size:18px;text-align:center">${ol}</span></div>`;})()}<div class="k-s" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;text-align:center;font-size:8.5px"><span>Critical</span><span>High</span><span>Med</span><span>Low</span></div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">★ Opportunities</div><div class="k-v" style="color:var(--grn)">${opp}</div><div class="k-s">to capture</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:${riskScore>70?'var(--red)':riskScore>40?'#B8860B':'var(--grn)'}"></span><div class="k-l">● Health</div><div class="k-v" style="color:${riskScore>70?'var(--red)':riskScore>40?'#a16207':'var(--grn)'};font-size:19px;padding-top:3px">${riskScore>70?'Critical':riskScore>40?'Warning':'Healthy'}</div><div class="k-s">${noOwner.length+noAction.length} action items</div></div>
     </div>
@@ -5174,7 +5222,7 @@ function renderDash(){
     ${CP.trend_data?.length?(()=>{
       const latest=CP.trend_data[CP.trend_data.length-1];
       const al=latest.alert_level||'medium';
-      const alColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[al];
+      const alColor={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[al];
       const alIcon={high:'⚠',medium:'◆',low:'✓'}[al];
       const rpt=latest.report||{};
       return `<div class="rcc-grid">
@@ -5281,7 +5329,7 @@ function renderDash(){
     // Risk Levels - Bar Chart
     new Chart(document.getElementById('lvlC'),{
       type:'bar',
-      data:{labels:['High','Medium','Low','Opportunities'],datasets:[{data:[high,med,low,opp],backgroundColor:['#f64e60','#ffa800','#e4e6ef','#50cd89'],borderWidth:0,borderRadius:6,barPercentage:0.6}]},
+      data:{labels:['Critical','High','Medium','Low','Opportunities'],datasets:[{data:[crit,highOnly,med,low,opp],backgroundColor:['#7f1d1d','#f64e60','#ffa800','#e4e6ef','#50cd89'],borderWidth:0,borderRadius:6,barPercentage:0.6}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5e6278',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#a1a5b7',font:{size:10},stepSize:1},grid:{color:'rgba(228,231,239,.6)'}}},layout:{padding:2}}
     });
 
@@ -5787,10 +5835,11 @@ async function approveSuggestion(id){
   try{
     if(s.action==='add'){
       const p=s.payload;
+      const _prob=p.probability||3, _ic=p.impact_cost||3;
       const newRisk={project_id:CID,risk_id:p.risk_id||('R'+String((CP.risks||[]).length+1).padStart(3,'0')),
         description:p.title||p.description||'New risk',category:p.category||'External',
-        level:p.level||'medium',type:p.type||'threat',probability:p.probability||3,
-        impact_cost:p.impact_cost||3,response_strategy:p.response_strategy||'mitigate',
+        level:computeLevel(_prob,Math.max(parseInt(_ic)||0,parseInt(p.impact_schedule)||0,parseInt(p.impact_qhse)||0,parseInt(p.impact_reputation)||0)),type:p.type||'threat',probability:_prob,
+        impact_cost:_ic,response_strategy:p.response_strategy||'mitigate',
         mitigation:p.mitigation||'',owner:'',status:'open'};
       const res=await sb('risks','POST',newRisk);
       const saved=Array.isArray(res)?res[0]:newRisk;
@@ -5827,7 +5876,7 @@ async function generateProjectReport(){
   const risks=CP.risks;
   const openRisks=risks.filter(r=>r.status!=='closed');
   const closedRisks=risks.filter(r=>r.status==='closed');
-  const high=openRisks.filter(r=>r.level==='high').length;
+  const high=openRisks.filter(r=>r.level==='high'||r.level==='critical').length;
   const med=openRisks.filter(r=>r.level==='medium').length;
   const low=openRisks.filter(r=>r.level==='low').length;
   // progress context: exposure now vs the snapshot stored on the previous report (dynamic comparison)
@@ -6300,7 +6349,7 @@ function doExportExcel(){
   const ncol=fields.length;
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
-  const high=risks.filter(r=>r.level==='high').length;
+  const high=risks.filter(r=>r.level==='high'||r.level==='critical').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
 
@@ -6556,7 +6605,7 @@ function lessonsSheet(p){
 function doExportPDF(){
   const w=window.open('','_blank');
   const risks=CP?.risks||[];
-  const high=risks.filter(r=>r.level==='high').length;
+  const high=risks.filter(r=>r.level==='high'||r.level==='critical').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
   const opp=risks.filter(r=>r.type==='opportunity').length;
@@ -6844,7 +6893,7 @@ function renderResponseSchedule(sched){
   const maxD=new Date(Math.max(...tasks.map(t=>new Date(t.end_date))));
   minD.setHours(0,0,0,0);maxD.setHours(0,0,0,0);
   const span=Math.max(1,Math.round((maxD-minD)/dayMs));
-  const lc={high:'var(--red)',medium:'#ffa800',low:'var(--grn)'};
+  const lc={critical:'#7f1d1d',high:'var(--red)',medium:'#ffa800',low:'var(--grn)'};
   // Pixel timeline so long schedules become wide and scroll horizontally
   const LABEL_W=240, DUR_W=52, PX_PER_DAY=3.4;
   const timelineW=Math.max(640,Math.round(span*PX_PER_DAY));
@@ -6956,7 +7005,7 @@ function exportResponseSchedulePDF(){
   const LOGO='https://i.postimg.cc/3xNVb78N/89f6c180-112e-4627-b132-e471e46a8d2b-(1).png';
   const dayMs=86400000;
   const valid=sched.tasks.filter(t=>t.start_date&&t.end_date&&!isNaN(new Date(t.start_date))&&!isNaN(new Date(t.end_date))).slice().sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
-  const lc={high:'#f64e60',medium:'#ffa800',low:'#50cd89'};
+  const lc={critical:'#7f1d1d',high:'#f64e60',medium:'#ffa800',low:'#50cd89'};
   const GRAY='#a1a5b7';
   const riskById={};(CP?.risks||[]).forEach(r=>{if(r.risk_id)riskById[r.risk_id]=r;});
   function tState(t){const r=riskById[t.risk_id];if(t.risk_id&&!r)return 'removed';if(r&&r.status==='closed')return 'closed';return 'active';}
@@ -7042,7 +7091,7 @@ function ewOngoingCard(r){
   if(sig){
     const tIcon=sig.trend==='up'?'↑':sig.trend==='down'?'↓':'→';
     const tColor=sig.trend==='up'?'var(--red)':sig.trend==='down'?'var(--grn)':'var(--t3)';
-    const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[sig.severity]||'var(--t3)';
+    const sevColor={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'}[sig.severity]||'var(--t3)';
     const sigDate=sig.date?new Date(sig.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
     sigHtml=`<div style="margin-top:7px;padding:8px 10px;border-radius:8px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.16)">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
@@ -7453,8 +7502,8 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
 function showChangesModal(changes,updateType){
   const modal=document.getElementById('changesOv');
   const total=changes.added.length+changes.updated.length+changes.removed.length;
-  const lc={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
-  const lbg={high:'var(--red-soft)',medium:'var(--yel-soft)',low:'var(--grn-soft)'};
+  const lc={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const lbg={critical:'#7f1d1d',high:'var(--red-soft)',medium:'var(--yel-soft)',low:'var(--grn-soft)'};
 
   document.getElementById('changesContent').innerHTML=`
     <div style="background:linear-gradient(135deg,rgba(109,129,150,.05),rgba(137,80,252,.03));border:1px solid rgba(109,129,150,.2);border-radius:8px;padding:14px;margin-bottom:14px">
@@ -7570,7 +7619,7 @@ function renderWhatIf(){
   }
 
   // Calculate baseline metrics
-  const high=risks.filter(r=>r.level==='high').length;
+  const high=risks.filter(r=>r.level==='high'||r.level==='critical').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
   const baselineScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
@@ -7741,7 +7790,7 @@ async function runSimulation(){
 
   showLoad('Running AI simulation...');
 
-  const high=risks.filter(r=>r.level==='high').length;
+  const high=risks.filter(r=>r.level==='high'||r.level==='critical').length;
   const med=risks.filter(r=>r.level==='medium').length;
   const low=risks.filter(r=>r.level==='low').length;
   const baselineScore=Math.min(100,Math.round((high*10+med*5+low*1)/(risks.length*10)*100));
@@ -7922,7 +7971,7 @@ function renderSimulationResults(sim,baselineScore){
   `;
 
   // 4. Risk Changes
-  const lvlClr={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const lvlClr={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   document.getElementById('wifRiskChanges').innerHTML=`
     ${(sim.top_risk_changes||[]).map(r=>{
       const _rid=(String(r.name||'').match(/R\d{2,4}/)||[])[0]||r.risk_id||'';
@@ -8288,7 +8337,7 @@ function levelRank(l){return {low:1,medium:2,high:3,critical:4}[(l||'').toLowerC
 
 function renderInsights(data,articles){
   const srcCount=typeof articles==='number'?articles:(articles?.length||0);
-  const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const sevColor={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const sevBg={high:'#ffe8e8',medium:'#fef9c3',low:'#dcfce7'};
   const sevIcon={high:'⚠',medium:'◆',low:'✓'};
 
@@ -8603,7 +8652,7 @@ Analyze impact on the entire portfolio. Respond ONLY with valid JSON:
 
 function renderPortfolioInsights(data,articles){
   const srcCount=typeof articles==='number'?articles:(articles?.length||0);
-  const sevColor={high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
+  const sevColor={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const sevBg={high:'#ffe8e8',medium:'#fef9c3',low:'#dcfce7'};
   const sevIcon={high:'⚠',medium:'◆',low:'✓'};
 
