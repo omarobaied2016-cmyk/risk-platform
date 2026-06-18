@@ -2869,6 +2869,7 @@ function showTodayTasks(scope){
   const rowAction=t=>`
     <div class="tt-item" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="toggleTaskDetail(this)">
       <div style="display:flex;align-items:flex-start;gap:11px">
+        <input type="checkbox" class="tt-selchk" data-action-id="${t.actionId}" title="Select to share" onclick="event.stopPropagation();updateShareBar()" style="margin-top:3px;width:16px;height:16px;cursor:pointer;accent-color:var(--primary)"/>
         <input type="checkbox" class="tt-chk" style="margin-top:3px" onclick="event.stopPropagation()" onchange="toggleActionDone('${t.projId}','${t.actionId}',this.checked)"/>
         <span role="img" aria-label="Priority" title="Priority" style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;margin-top:6px"></span>
         <div style="flex:1;min-width:0">
@@ -2931,7 +2932,9 @@ function showTodayTasks(scope){
   if(navRows.length&&ownerFilter==='all')body+=navRows.map(rowNav).join('');
   if(_soon.length)body+=subHead('Coming up this week')+_soon.map(rowAction).join('');
   if(!body)body=`<div style="text-align:center;padding:30px 10px"><div style="font-size:40px;margin-bottom:10px">✅</div><div style="font-weight:700;color:var(--grn);font-size:15px">${ownerFilter==='all'?"You're all caught up":'No tasks for this filter'}</div><div style="font-size:12.5px;color:var(--t3);margin-top:5px">${ownerFilter==='all'?'No actions due across your projects today.':'Try a different filter or check back later.'}</div></div>`;
-  // owner filter UI uses the variables defined above
+  // index task details by actionId so the consolidated share can look them up
+  window._ttTaskMap={};
+  tasks.filter(t=>t.kind==='action').forEach(t=>{window._ttTaskMap[t.actionId]={title:t.title,owner:t.owner,risk_id:t.risk_id,due:t.due,risk_desc:t.risk_desc,projId:t.projId,d:t.d,sub:t.sub};});
   const html=`<div class="modal-ov on" id="ttModal" onclick="if(event.target===this)closeTodayTasks()">
     <div class="modal" style="max-width:640px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
@@ -2950,8 +2953,12 @@ function showTodayTasks(scope){
         ${owners.map(o=>`<button class="tt-fbtn${ownerFilter===o?' on':''}" onclick="window._ttOwner='${o.replace(/'/g,"\\'")}';showTodayTasks()">${o}</button>`).join('')}
       </div>`:''}
       <div class="tt-list">${body}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
-        <span style="font-size:11px;color:var(--t3)">Adjust your plan anytime via the AI Risk Manager.</span>
+      <div id="ttShareBar" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:11px 13px;background:var(--primary-soft);border:1px solid rgba(109,129,150,.25);border-radius:11px">
+        <span id="ttShareInfo" style="font-size:12px;color:var(--t1);font-weight:600"></span>
+        <button class="btn btn-p" style="padding:7px 15px;font-size:12px" onclick="shareSelectedTasks()">↗ Share selected</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+        <span style="font-size:11px;color:var(--t3)">Tip: tick tasks to email them to their owner.</span>
         <button class="btn btn-p" onclick="closeTodayTasks()">Got it</button>
       </div>
     </div>
@@ -2959,6 +2966,61 @@ function showTodayTasks(scope){
   document.body.insertAdjacentHTML('beforeend',html);
 }
 function closeTodayTasks(){document.getElementById('ttModal')?.remove();}
+
+function updateShareBar(){
+  const sel=[...document.querySelectorAll('.tt-selchk:checked')];
+  const bar=document.getElementById('ttShareBar');if(!bar)return;
+  if(!sel.length){bar.style.display='none';return;}
+  // group by owner to preview how many emails will go out
+  const map=window._ttTaskMap||{};
+  const owners={};
+  sel.forEach(c=>{const t=map[c.dataset.actionId];if(!t)return;const o=t.owner||'Unassigned';(owners[o]=owners[o]||0);owners[o]++;});
+  const ownerNames=Object.keys(owners);
+  const info=document.getElementById('ttShareInfo');
+  const totalSel=sel.length;
+  info.textContent=`${totalSel} task${totalSel>1?'s':''} selected · ${ownerNames.length} recipient${ownerNames.length>1?'s':''}`;
+  bar.style.display='flex';
+}
+
+async function shareSelectedTasks(){
+  const sel=[...document.querySelectorAll('.tt-selchk:checked')];
+  if(!sel.length){toast('Select at least one task');return;}
+  const map=window._ttTaskMap||{};
+  // group selected tasks by owner
+  const groups={};
+  sel.forEach(c=>{const t=map[c.dataset.actionId];if(!t)return;const o=(t.owner||'').trim()||'__unassigned__';(groups[o]=groups[o]||[]).push(t);});
+  const senderName=(currentUserProfile?.full_name||'').trim();
+  const projectName=(CP&&CP.name)||'';
+  let sentCount=0, noEmail=[];
+  for(const owner in groups){
+    const tasks=groups[owner];
+    // resolve owner email from Contacts (match position/role or name)
+    let email='';
+    if(owner!=='__unassigned__'&&CP&&Array.isArray(CP.contacts)){
+      const ct=CP.contacts.find(x=>(x.role||'').toLowerCase()===owner.toLowerCase()||(x.name||'').toLowerCase()===owner.toLowerCase());
+      if(ct&&ct.contact&&/@/.test(ct.contact))email=ct.contact.trim();
+    }
+    if(!email){noEmail.push(owner==='__unassigned__'?'Unassigned':owner);continue;}
+    const payload={
+      to:email,
+      ownerName:owner,
+      projectName,
+      senderName,
+      tasks:tasks.map(t=>({title:t.title,risk_id:t.risk_id,risk_desc:t.risk_desc,due:t.due,overdue:t.d<0,dueToday:t.d===0}))
+    };
+    try{
+      const r=await fetch('/api/email/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const data=await r.json();
+      if(r.ok&&data.sent)sentCount++;
+      else noEmail.push(owner+' (send failed)');
+    }catch(e){noEmail.push(owner+' (error)');}
+  }
+  if(sentCount)toast(`Sent ${sentCount} consolidated email${sentCount>1?'s':''}`,{type:'ok'});
+  if(noEmail.length)toast('No email on file for: '+noEmail.join(', ')+'. Add their email in Stakeholders.',{type:noEmail.length&&!sentCount?'warn':'info'});
+  // clear selection
+  document.querySelectorAll('.tt-selchk:checked').forEach(c=>c.checked=false);
+  updateShareBar();
+}
 
 // Share a task with its assigned owner — native share sheet on mobile, clipboard + email fallback on desktop.
 async function shareTask(actionId,title,owner,riskId,due,riskDesc){
