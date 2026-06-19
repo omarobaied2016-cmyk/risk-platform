@@ -934,7 +934,9 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .subtab{font-size:12px;font-weight:600;color:var(--t2);background:var(--s1);border:1px solid var(--b1);border-radius:18px;padding:6px 14px;cursor:pointer;transition:all .15s;}
 .subtab:hover{border-color:var(--primary);color:var(--primary);}
 .subtab.on{background:var(--primary);border-color:var(--primary);color:#fff;}
-.role-viewer .bulk-chk,.role-viewer #bulkBar,.role-viewer .btn-del,.role-viewer .tt-chk{display:none !important;}
+.role-viewer .bulk-chk,.role-viewer #bulkBar,.role-viewer .btn-del,.role-viewer .tt-chk,.role-viewer .tt-selchk,.role-viewer .selbox,.role-viewer .donebox,.role-viewer #ttShareBar,.role-viewer [onclick*="shareTask"],.role-viewer [onclick*="shareSelectedTasks"]{display:none !important;}
+/* Viewers keep the completion/share controls hidden; the progress-update field stays usable */
+.role-viewer label[title="Mark as completed"],.role-viewer label[title="Select to share with owner"]{display:none !important;}
 .role-viewer .rdet .btn-p,.role-viewer .rdet input,.role-viewer .rdet select{pointer-events:none;opacity:.5;}
 .role-viewer .status-sel,.role-viewer select[onchange*="changeRiskStatus"],.role-viewer .add-risk-btn,.role-viewer [onclick*="openAddRisk"],.role-viewer [onclick*="openEdit"],.role-viewer .edit-btn,.role-viewer [onclick*="addRiskUpdate"],.role-viewer [onclick*="generateActionPlan"]{pointer-events:none !important;opacity:.45 !important;cursor:not-allowed !important;}
 .role-viewer .btn-warn[onclick*="showNotif"]{opacity:.5;pointer-events:none;}
@@ -1505,6 +1507,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn btn-g" id="ttBtnProj" onclick="showTodayTasks({mode:'project',id:CID})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-inline-end:4px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="ttlbl">Today's Tasks</span></button>
           <button class="btn btn-g" id="btnSettings" onclick="openSettingsModal()">Settings</button>
+          <button class="btn btn-g" id="btnActivityLog" onclick="showActivityLog()">Activity Log</button>
           <button class="btn btn-g" onclick="showExportModal()">Export</button>
           <button class="btn btn-del" id="btnDelProj" onclick="delProj()">Delete</button>
           <span id="roleBadge" style="display:none;align-self:center;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:var(--t3);background:var(--s2);border:1px solid var(--b1);border-radius:12px;padding:4px 11px"></span>
@@ -3041,6 +3044,7 @@ function updateShareBar(){
 }
 
 function shareSelectedTasks(ev){
+  if(!canEdit('you cannot share tasks'))return;
   const sel=[...document.querySelectorAll('.tt-selchk:checked')];
   if(!sel.length){toast('Select at least one task');return;}
   const map=window._ttTaskMap||{};
@@ -3075,6 +3079,7 @@ function shareSelectedTasks(ev){
 
 // Share a task with its assigned owner — native share sheet on mobile, clipboard + email fallback on desktop.
 async function shareTask(actionId,ev){
+  if(!canEdit('you cannot share tasks'))return;
   // Resolve full task details from data (avoids truncation and quoting issues in inline handlers).
   let projName='', action=null, ownerProj=CP;
   for(const pr of (typeof projs!=='undefined'?projs:[CP])){
@@ -3207,7 +3212,82 @@ function ttGoRisk(projId,riskId){
   setTimeout(()=>{gotoRisk(riskId);},500);
 }
 
-// Log a progress update from Today's Tasks: saves to the risk, hides the action today, and sets up a follow-up
+// ═══ PROJECT ACTIVITY LOG / AUDIT TRAIL — full traceability for the Editor (owner) ═══
+async function showActivityLog(){
+  if(!CP){toast('Open a project first');return;}
+  let modal=document.getElementById('auditModal');
+  if(modal)modal.remove();
+  modal=document.createElement('div');
+  modal.className='modal-ov on';modal.id='auditModal';
+  modal.onclick=e=>{if(e.target===modal)modal.remove();};
+  modal.innerHTML=`<div class="modal" style="max-width:720px;max-height:84vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div><div style="font-size:19px;font-weight:800;color:var(--t1)">Activity Log</div>
+      <div style="font-size:12px;color:var(--t3)">${CP.name} · full audit trail — who changed what, and when</div></div>
+      <button class="btn btn-g" onclick="document.getElementById('auditModal').remove()" style="padding:5px 12px">Close</button>
+    </div>
+    <div id="auditFilters" style="display:flex;gap:7px;flex-wrap:wrap;margin:12px 0">
+      <button class="tt-fbtn on" data-af="all" onclick="filterAudit('all',this)">All</button>
+      <button class="tt-fbtn" data-af="risk" onclick="filterAudit('risk',this)">Risk changes</button>
+      <button class="tt-fbtn" data-af="task" onclick="filterAudit('task',this)">Tasks</button>
+      <button class="tt-fbtn" data-af="progress" onclick="filterAudit('progress',this)">Progress updates</button>
+      <button class="tt-fbtn" data-af="status" onclick="filterAudit('status',this)">Closures</button>
+    </div>
+    <div id="auditList" style="overflow-y:auto;flex:1">Loading…</div>
+  </div>`;
+  document.body.appendChild(modal);
+  let evs=null;
+  try{evs=await sb('risk_events?project_id=eq.'+CID+'&order=created_at.desc&limit=200&select=*');}catch(e){}
+  const list=document.getElementById('auditList');
+  if(evs===null){list.innerHTML='<div style="font-size:12px;color:var(--t3);padding:20px;text-align:center">The activity log isn\'t enabled yet. Run the <b>risk_events</b> migration (risk_history_migration.sql) in Supabase to turn on full audit tracking.</div>';return;}
+  if(!evs.length){list.innerHTML='<div style="font-size:12px;color:var(--t3);padding:20px;text-align:center">No recorded activity yet. Risk edits, task completions, progress updates, closures and plan changes will appear here.</div>';return;}
+  window._auditEvents=evs;
+  renderAuditList('all');
+}
+function filterAudit(f,btn){
+  document.querySelectorAll('#auditFilters .tt-fbtn').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  renderAuditList(f);
+}
+function renderAuditList(filter){
+  const evs=window._auditEvents||[];
+  const ICON={field_changed:'✎',edited:'✎',status_changed:'⊘',bulk_update:'✎',ai_update:'🤖',ai_closed:'⊘',created:'＋',task_completed:'✓',task_reopened:'↩',progress_update:'📝',action_plan_generated:'⟳'};
+  const LBL={field_changed:'Field changed',edited:'Risk edited',status_changed:'Status changed',bulk_update:'Bulk update',ai_update:'Updated by AI',ai_closed:'Closed by AI',created:'Risk created',task_completed:'Task completed',task_reopened:'Task reopened',progress_update:'Progress update',action_plan_generated:'Action plan generated'};
+  const COLOR={status_changed:'var(--red)',ai_closed:'var(--red)',task_completed:'var(--grn)',progress_update:'var(--primary)',action_plan_generated:'var(--primary)'};
+  const inGroup=(a)=>{
+    if(filter==='all')return true;
+    if(filter==='risk')return ['field_changed','edited','bulk_update','ai_update','created'].includes(a);
+    if(filter==='task')return ['task_completed','task_reopened'].includes(a);
+    if(filter==='progress')return a==='progress_update';
+    if(filter==='status')return ['status_changed','ai_closed'].includes(a);
+    return true;
+  };
+  const rows=evs.filter(e=>inGroup(e.action));
+  const list=document.getElementById('auditList');
+  if(!rows.length){list.innerHTML='<div style="font-size:12px;color:var(--t3);padding:20px;text-align:center">No entries for this filter.</div>';return;}
+  list.innerHTML=rows.map(e=>{
+    const d=e.details||{};
+    const when=e.created_at?new Date(e.created_at):null;
+    const whenTxt=when?when.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' · '+when.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    const who=e.actor_name||e.actor||'system';
+    let detail='';
+    if(e.action==='field_changed'&&d.field)detail=`${d.field}: <span style="color:var(--t3)">${d.old??'—'}</span> → <b>${d.new??'—'}</b>`;
+    else if(e.action==='status_changed')detail=`<span style="color:var(--t3)">${d.old||'—'}</span> → <b>${d.new||'—'}</b>`;
+    else if(e.action==='edited'&&d.fields)detail=`Changed: ${(d.fields||[]).join(', ')}`;
+    else if(e.action==='progress_update')detail=`${d.risk_id?d.risk_id+' · ':''}${d.note||d.task||''}`;
+    else if(e.action==='task_completed'||e.action==='task_reopened')detail=`${d.risk_id?d.risk_id+' · ':''}${d.task||''}`;
+    else if(e.action==='action_plan_generated')detail=`${d.actions||0} actions`;
+    else if(d.fields)detail=`Changed: ${(d.fields||[]).join(', ')}`;
+    const c=COLOR[e.action]||'var(--t2)';
+    return `<div style="display:flex;gap:11px;padding:10px 4px;border-bottom:1px solid var(--b1)">
+      <span style="width:26px;height:26px;border-radius:50%;background:var(--s2);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;color:${c}">${ICON[e.action]||'•'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;color:var(--t1)"><b>${LBL[e.action]||e.action}</b>${detail?' · '+detail:''}</div>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:2px">${who} · ${whenTxt}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 async function logTaskUpdate(projId,actionId,text){
   text=(text||'').trim();if(!text)return;
   const p=(projs||[]).find(x=>x.id===projId);if(!p||!p.action_plan)return;
@@ -3218,6 +3298,7 @@ async function logTaskUpdate(projId,actionId,text){
   const rk=(allRisks||[]).find(x=>x.risk_id===a.risk_id&&x.project_id===projId);
   if(rk&&rk.id){try{await sb('risks?id=eq.'+rk.id,'PATCH',{progress_log:rk.progress_log});}catch(e){console.error(e);}}
   a.last_update=text;a.last_touched=todayISO;
+  if(typeof logRiskEvent==='function'){const rk3=(allRisks||[]).find(x=>x.risk_id===a.risk_id&&x.project_id===projId);logRiskEvent(rk3?rk3.id:null,'progress_update',{task:a.title,risk_id:a.risk_id,note:text.slice(0,200)});}
   if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP)CP.action_plan=p.action_plan;
   try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
   showTodayTasks(true);
@@ -3290,14 +3371,17 @@ Respond ONLY with valid JSON:
     if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP)CP.action_plan=plan;
     try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:plan});}
     catch(e){console.error('save action_plan',e);toast('Plan built but could NOT save. Ensure the projects table has an "action_plan" jsonb column.');}
+    if(typeof logRiskEvent==='function')logRiskEvent(null,'action_plan_generated',{actions:actions.length});
     if(!noPopup)showTodayTasks(true);
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 async function toggleActionDone(projId,actionId,checked){
+  if(!canEdit('you cannot complete or close actions'))return;
   const p=(projs||[]).find(x=>x.id===projId);if(!p||!p.action_plan)return;
   const a=p.action_plan.actions.find(x=>x.id===actionId);if(!a)return;
   a.status=checked?'done':'todo';
   if(checked)a.completed_at=new Date().toISOString();else delete a.completed_at;
+  if(typeof logRiskEvent==='function'){const rk2=(allRisks||[]).find(x=>x.risk_id===a.risk_id&&x.project_id===projId);logRiskEvent(rk2?rk2.id:null,checked?'task_completed':'task_reopened',{task:a.title,risk_id:a.risk_id});}
   try{await sb('projects?id=eq.'+projId,'PATCH',{action_plan:p.action_plan});}catch(e){console.error(e);}
   const fromPlan=document.getElementById('pane-plan')?.classList.contains('on')&&!document.getElementById('ttModal');
   const refresh=()=>{if(document.getElementById('ttModal'))showTodayTasks(true);else if(fromPlan)renderPlan();};
@@ -3943,6 +4027,14 @@ async function teamRemove(id){
   }catch(e){toast('Could not remove member');}
 }
 // role of current user on the open project: 'owner' | 'editor' | 'viewer'
+// Viewers may ONLY view + add progress updates. Any data-modifying action must call this guard.
+function canEdit(action){
+  if(typeof myRole==='function'&&myRole()==='viewer'){
+    toast('View-only access — '+(action||'you cannot make this change')+'. Viewers can add progress updates only.',{type:'warn'});
+    return false;
+  }
+  return true;
+}
 function myRole(){
   if(!CP)return 'owner';
   if(isAdmin())return 'owner';
@@ -4659,7 +4751,7 @@ function toggleRiskDetail(tr){
 // ═══ RISK HISTORY (audit trail as a product feature) ═══
 function logRiskEvent(riskDbId,action,details){
   try{
-    sb('risk_events','POST',{risk_id:riskDbId,project_id:CID||null,actor:(currentUser?.email||'system'),action,details:details||{}}).catch(()=>{});
+    sb('risk_events','POST',{risk_id:riskDbId,project_id:CID||null,actor:(currentUser?.email||'system'),actor_name:(currentUserProfile?.full_name||'').trim()||null,action,details:details||{}}).catch(()=>{});
   }catch(e){}
 }
 async function loadRiskHistory(riskDbId,btn){
@@ -5109,6 +5201,7 @@ function nextRiskId(){
 }
 
 async function submitAddRisk(){
+  if(!canEdit('you cannot add or modify risks'))return;
   const desc=document.getElementById('ar_description').value.trim();
   if(!desc){arMsg('Risk description is required',false);return;}
   if(!requireActiveAccess())return;
