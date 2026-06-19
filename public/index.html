@@ -4363,10 +4363,6 @@ function renderLessonsLearned(parsed){
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
       <div style="font-size:11px;color:var(--t3)">${dateLabel?'Generated '+dateLabel:''}</div>
-      <div style="display:flex;gap:7px">
-        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportLessonsPDF()">Export PDF</button>
-        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportLessonsExcel()">Export Excel</button>
-      </div>
     </div>
     <div class="card" style="margin-bottom:12px;background:var(--primary-soft);border-color:rgba(109,129,150,.2)">
       <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px">Summary</div>
@@ -5098,7 +5094,7 @@ function renderReg(){
     ${thr.length?`<div class="sep" style="color:var(--red)">Threats (${thr.length})</div><div class="tw" style="margin-bottom:14px"><table class="rt rt-reg${_cc?' rt-compact':''}">${colg}<thead>${hdr}</thead><tbody>${buildRows(thr)}</tbody></table></div>`:''}
     ${opp.length?`<div class="sep" style="color:var(--teal)">Opportunities (${opp.length})</div><div class="tw"><table class="rt rt-reg${_cc?' rt-compact':''}">${colg}<thead>${hdr}</thead><tbody>${buildRows(opp)}</tbody></table></div>`:''}
     ${!thr.length&&!opp.length?`<div class="empty"><div class="empty-icon">○</div><div class="et">No risks match the selected filters</div></div>`:''}
-    <div class="ebar"><button class="btn btn-g" onclick="exportCSV()">Export CSV</button><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
+    <div class="ebar"><span style="font-size:11px;color:var(--t3)">${risks.length} active risks · ${CP.analyzed_at||'—'}</span></div>`;
 }
 
 // Update risk notes inline
@@ -7015,42 +7011,72 @@ function exportMarketInsights(){
 // ═══ 5. TREND ANALYSIS — analytical charts + commentary ═══
 function exportTrendAnalysis(){
   const td=(CP&&CP.trend_data)||[];
-  if(!td.length){toast('No trend data captured yet');return;}
+  if(!td.length){toast('No trend data captured yet — run a Trend Analysis first');return;}
   const m=exMeta();
-  // build a simple SVG line for exposure over snapshots
-  const pts=td.map((t,i)=>({i,open:(t.openCount!=null?t.openCount:(t.snapshot&&t.snapshot.open)||0),expo:(t.expo!=null?t.expo:(t.snapshot&&t.snapshot.expo)||0),date:t.date||t.created_at||''}));
-  const maxExpo=Math.max(...pts.map(p=>p.expo),1);
+  // trend_data entries: {date, iso, sv, burn_rate, change_requests, resource_util, vendor_delay, health_score, alert_level, forecast, report}
+  const pts=td.map((t,i)=>({i,
+    date:t.date||t.iso||'',
+    health:(t.health_score!=null?t.health_score:50),
+    sv:(t.sv!=null?t.sv:null),
+    burn:(t.burn_rate!=null?t.burn_rate:null),
+    cr:(t.change_requests!=null?t.change_requests:null),
+    ru:(t.resource_util!=null?t.resource_util:null),
+    vd:(t.vendor_delay!=null?t.vendor_delay:null),
+    alert:t.alert_level||'medium'
+  }));
+  // SVG: health score over time (0-100)
   const W=480,H=160,pad=30;
   const xStep=pts.length>1?(W-pad*2)/(pts.length-1):0;
-  const line=pts.map((p,i)=>`${pad+i*xStep},${H-pad-(p.expo/maxExpo)*(H-pad*2)}`).join(' ');
-  const dots=pts.map((p,i)=>`<circle cx="${pad+i*xStep}" cy="${H-pad-(p.expo/maxExpo)*(H-pad*2)}" r="3" fill="${EX_BRAND.primary}"/>`).join('');
+  const yOf=v=>H-pad-(Math.max(0,Math.min(100,v))/100)*(H-pad*2);
+  const line=pts.map((p,i)=>`${pad+i*xStep},${yOf(p.health)}`).join(' ');
+  const dots=pts.map((p,i)=>{const col=p.health>=70?EX_BRAND.grn:p.health>=45?EX_BRAND.med:EX_BRAND.crit;return `<circle cx="${pad+i*xStep}" cy="${yOf(p.health)}" r="3.5" fill="${col}"/>`;}).join('');
+  // gridlines at 25/50/75
+  const grid=[25,50,75].map(v=>`<line x1="${pad}" y1="${yOf(v)}" x2="${W-pad}" y2="${yOf(v)}" stroke="${EX_BRAND.line}" stroke-width="1" stroke-dasharray="3,3"/><text x="${pad-4}" y="${yOf(v)+3}" font-size="8" fill="#9aa2ad" text-anchor="end">${v}</text>`).join('');
+  const fmt=v=>v==null?'—':v;
   const rows=pts.map((p,i)=>{
     const prev=i>0?pts[i-1]:null;
-    const delta=prev?p.expo-prev.expo:0;
-    const arrow=delta<0?`<span style="color:${EX_BRAND.grn}">\u25bc ${exFmtMoney(Math.abs(delta))}</span>`:delta>0?`<span style="color:${EX_BRAND.crit}">\u25b2 ${exFmtMoney(delta)}</span>`:'—';
-    return `<tr><td>${p.date?new Date(p.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Snapshot '+(i+1)}</td><td style="text-align:center">${p.open}</td><td style="text-align:right">${exFmtMoney(p.expo)} ${m.currency}</td><td style="text-align:right">${arrow}</td></tr>`;
+    const delta=prev?p.health-prev.health:0;
+    const arrow=delta>0?`<span style="color:${EX_BRAND.grn}">\u25b2 ${delta}</span>`:delta<0?`<span style="color:${EX_BRAND.crit}">\u25bc ${Math.abs(delta)}</span>`:'—';
+    const ac={low:EX_BRAND.grn,medium:EX_BRAND.med,high:EX_BRAND.crit,critical:EX_BRAND.crit}[p.alert]||EX_BRAND.med;
+    return `<tr>
+      <td>${p.date?new Date(p.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Week '+(i+1)}</td>
+      <td style="text-align:center;font-weight:700">${p.health}</td>
+      <td style="text-align:center">${arrow}</td>
+      <td style="text-align:center">${fmt(p.sv)}</td>
+      <td style="text-align:center">${fmt(p.burn)}</td>
+      <td style="text-align:center">${fmt(p.cr)}</td>
+      <td style="text-align:center">${fmt(p.ru)}</td>
+      <td style="text-align:center">${fmt(p.vd)}</td>
+      <td><span class="lvl" style="background:${ac}">${p.alert}</span></td>
+    </tr>`;
   }).join('');
   const first=pts[0],last=pts[pts.length-1];
-  const overallDelta=last.expo-first.expo;
-  const commentary=overallDelta<0
-    ? `Over the tracked period, open risk exposure has <b>decreased by ${exFmtMoney(Math.abs(overallDelta))} ${m.currency}</b>, indicating effective mitigation and a strengthening risk posture.`
-    : overallDelta>0
-    ? `Over the tracked period, open risk exposure has <b>increased by ${exFmtMoney(overallDelta)} ${m.currency}</b>, signalling emerging threats that warrant management attention.`
-    : `Open risk exposure has remained broadly stable over the tracked period.`;
+  const hDelta=last.health-first.health;
+  const commentary=hDelta>0
+    ? `Over the tracked period, the project health score has <b>improved by ${hDelta} points</b> (from ${first.health} to ${last.health}), reflecting strengthening delivery indicators and effective risk control.`
+    : hDelta<0
+    ? `Over the tracked period, the project health score has <b>declined by ${Math.abs(hDelta)} points</b> (from ${first.health} to ${last.health}), signalling deteriorating indicators that warrant management attention.`
+    : `The project health score has held steady at ${last.health} over the tracked period.`;
+  // latest AI commentary if present
+  const latestReport=td[td.length-1]&&td[td.length-1].report;
+  const aiNote=latestReport&&latestReport.summary?latestReport.summary:(latestReport&&latestReport.executive_summary)||'';
   const body=`
-  ${exCover('Trend Analysis','Risk Trend Analysis','An analytical view of how the project\u2019s risk exposure and risk count have evolved over time.',EX_BRAND.primaryDark)}
+  ${exCover('Trend Analysis','Project Trend Analysis','An analytical view of how the project\u2019s health and delivery indicators have evolved over the tracking period.',EX_BRAND.primaryDark)}
   <div class="doc">
-    <div class="sechead"><span class="bar" style="background:${EX_BRAND.primaryDark}"></span><h2>Exposure Trend</h2></div>
-    <div class="chartwrap"><h3>Open Cost Exposure Over Time (${m.currency})</h3>
+    <div class="sechead"><span class="bar" style="background:${EX_BRAND.primaryDark}"></span><h2>Health Score Trend</h2></div>
+    <div class="chartwrap"><h3>Project Health Score Over Time (0\u2013100)</h3>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+        ${grid}
         <polyline points="${line}" fill="none" stroke="${EX_BRAND.primary}" stroke-width="2.5"/>
         ${dots}
-        <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="${EX_BRAND.line}" stroke-width="1"/>
+        <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="${EX_BRAND.ink}" stroke-width="1"/>
       </svg>
     </div>
     <div class="callout">${commentary}</div>
-    <div class="sechead"><span class="bar" style="background:${EX_BRAND.primaryDark}"></span><h2>Snapshot History</h2></div>
-    <table><thead><tr><th>Date</th><th style="text-align:center">Open Risks</th><th style="text-align:right">Exposure</th><th style="text-align:right">Change</th></tr></thead><tbody>${rows}</tbody></table>
+    ${aiNote?`<div class="callout" style="border-left-color:${EX_BRAND.mist}"><b>Latest analysis:</b> ${aiNote}</div>`:''}
+    <div class="sechead"><span class="bar" style="background:${EX_BRAND.primaryDark}"></span><h2>Indicator History</h2></div>
+    <div class="secsub">SV = Schedule Variance · Burn = Burn Rate · CR = Change Requests · RU = Resource Utilisation · VD = Vendor Delay</div>
+    <table><thead><tr><th>Date</th><th style="text-align:center">Health</th><th style="text-align:center">\u0394</th><th style="text-align:center">SV</th><th style="text-align:center">Burn</th><th style="text-align:center">CR</th><th style="text-align:center">RU</th><th style="text-align:center">VD</th><th>Alert</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="footer-note">RiskAtlas AI · ${m.project} · Trend Analysis · Generated ${m.dateStr} ${m.timeStr} · Confidential</div>
   </div>`;
   exPrint('Trend Analysis — '+m.project,EX_BRAND.primaryDark,body);
@@ -7418,10 +7444,7 @@ function renderResponseSchedule(sched){
     ${sched.summary?`<div class="ai ai-ok" style="margin-bottom:12px">${sched.summary}</div>`:''}
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
       <div style="font-size:11px;color:var(--t3)">${tasks.length} tasks${dateLabel?' · generated '+dateLabel:''} · scroll sideways to see the full timeline</div>
-      <div style="display:flex;gap:7px">
-        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportResponseScheduleCSV()">Export CSV</button>
-        <button class="btn btn-g" style="padding:5px 11px;font-size:11px" onclick="exportResponseSchedulePDF()">Export PDF</button>
-      </div>
+    </div>
     </div>
     <div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">
       <div style="min-width:${rowMinW}px">
