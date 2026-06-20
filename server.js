@@ -3,7 +3,11 @@ const fetch = require('node-fetch');
 const path = require('path');
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
+// Stripe webhook needs the RAW body for signature verification — exclude it from JSON parsing.
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/stripe/webhook') return next();
+  express.json({ limit: '50mb' })(req, res, next);
+});
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // ─────────────────────────────────────────────
@@ -452,6 +456,154 @@ app.get('/api/accounts/purge', async (req, res) => {
   app.get('/' + page, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', page + '.html'));
   });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  STRIPE — subscriptions & billing
+//  Required env vars (set in Railway when the bank account is approved):
+//    STRIPE_SECRET_KEY        = sk_live_... (or sk_test_... while testing)
+//    STRIPE_WEBHOOK_SECRET    = whsec_...   (from the Stripe webhook settings)
+//    STRIPE_PRICE_STARTER     = price_...   (the $49/mo price ID)
+//    STRIPE_PRICE_PROFESSIONAL= price_...   (the $149/mo price ID)
+//    STRIPE_PRICE_ENTERPRISE  = price_...   (the $399/mo price ID)
+//    APP_URL                  = https://riskatlas.pro  (for redirect URLs)
+//  The system stays fully dormant until STRIPE_SECRET_KEY is present.
+// ═══════════════════════════════════════════════════════════════════════
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const APP_URL = process.env.APP_URL || 'https://riskatlas.pro';
+let stripe = null;
+if (STRIPE_SECRET_KEY) {
+  try { stripe = require('stripe')(STRIPE_SECRET_KEY); }
+  catch (e) { console.error('Stripe init failed — run: npm install stripe', e.message); }
+}
+
+// Map our internal plan keys → Stripe price IDs (and back)
+const PLAN_TO_PRICE = {
+  starter: process.env.STRIPE_PRICE_STARTER || '',
+  professional: process.env.STRIPE_PRICE_PROFESSIONAL || '',
+  enterprise: process.env.STRIPE_PRICE_ENTERPRISE || ''
+};
+const PRICE_TO_PLAN = Object.fromEntries(
+  Object.entries(PLAN_TO_PRICE).filter(([, v]) => v).map(([k, v]) => [v, k])
+);
+
+// Patch the user's plan in Supabase (service-role) by Stripe customer id or email
+async function setUserPlan({ customerId, email, plan, subscriptionId, status }) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) { console.error('Supabase not configured for plan update'); return; }
+  const patch = {};
+  if (plan) patch.plan = plan;
+  if (subscriptionId !== undefined) patch.stripe_subscription_id = subscriptionId;
+  if (customerId) patch.stripe_customer_id = customerId;
+  if (status) patch.subscription_status = status;
+  if (plan) patch.plan_start = new Date().toISOString();
+  // prefer matching by stripe_customer_id, fall back to email
+  let filter = '';
+  if (customerId) filter = `stripe_customer_id=eq.${encodeURIComponent(customerId)}`;
+  else if (email) filter = `email=eq.${encodeURIComponent(email)}`;
+  else return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/users?${filter}`, {
+      method: 'PATCH',
+      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(patch)
+    });
+    // if matching by customer id found nothing and we have an email, retry by email (first purchase)
+    if (customerId && email) {
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(patch)
+      });
+      return;
+    }
+    if (!r.ok) console.error('setUserPlan failed', await r.text());
+  } catch (e) { console.error('setUserPlan error', e.message); }
+}
+
+// 1) Create a Checkout Session — frontend calls this when the user picks a plan
+app.post('/api/stripe/checkout', async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Billing is not enabled yet.' });
+  try {
+    const { plan, email, userId } = req.body || {};
+    const priceId = PLAN_TO_PRICE[plan];
+    if (!priceId) return res.status(400).json({ error: 'Unknown or unconfigured plan.' });
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: email || undefined,
+      client_reference_id: userId || undefined,
+      metadata: { plan, userId: userId || '', email: email || '' },
+      subscription_data: { metadata: { plan, userId: userId || '', email: email || '' } },
+      success_url: `${APP_URL}/app?billing=success`,
+      cancel_url: `${APP_URL}/app?billing=cancelled`,
+      allow_promotion_codes: true
+    });
+    res.json({ url: session.url });
+  } catch (e) { console.error('checkout error', e.message); res.status(500).json({ error: e.message }); }
+});
+
+// 2) Billing portal — lets a subscriber manage / cancel their plan
+app.post('/api/stripe/portal', async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Billing is not enabled yet.' });
+  try {
+    const { customerId } = req.body || {};
+    if (!customerId) return res.status(400).json({ error: 'Missing customer id.' });
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${APP_URL}/app`
+    });
+    res.json({ url: session.url });
+  } catch (e) { console.error('portal error', e.message); res.status(500).json({ error: e.message }); }
+});
+
+// 3) Webhook — Stripe calls this; we update the user's plan in Supabase.
+//    NOTE: must receive the RAW body for signature verification (configured below).
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe || !STRIPE_WEBHOOK_SECRET) return res.status(503).end();
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET);
+  } catch (e) {
+    console.error('webhook signature verification failed', e.message);
+    return res.status(400).send(`Webhook Error: ${e.message}`);
+  }
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const s = event.data.object;
+        const plan = (s.metadata && s.metadata.plan) || PRICE_TO_PLAN[s.line_items?.[0]?.price] || 'starter';
+        await setUserPlan({ customerId: s.customer, email: s.customer_email || (s.metadata && s.metadata.email), plan, subscriptionId: s.subscription, status: 'active' });
+        break;
+      }
+      case 'customer.subscription.updated': {
+        const sub = event.data.object;
+        const priceId = sub.items?.data?.[0]?.price?.id;
+        const plan = PRICE_TO_PLAN[priceId] || (sub.metadata && sub.metadata.plan);
+        const status = sub.status; // active, past_due, canceled, etc.
+        await setUserPlan({ customerId: sub.customer, plan: status === 'active' ? plan : undefined, subscriptionId: sub.id, status });
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object;
+        // subscription ended → drop them back to free_trial (expired) / no access
+        await setUserPlan({ customerId: sub.customer, plan: 'free_trial', subscriptionId: null, status: 'canceled' });
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const inv = event.data.object;
+        await setUserPlan({ customerId: inv.customer, status: 'past_due' });
+        break;
+      }
+      default: break;
+    }
+    res.json({ received: true });
+  } catch (e) { console.error('webhook handler error', e.message); res.status(500).end(); }
+});
+
+// Status probe for the frontend (so it knows whether billing is live)
+app.get('/api/stripe/status', (req, res) => {
+  res.json({ enabled: !!stripe, plans: Object.keys(PLAN_TO_PRICE).filter(k => PLAN_TO_PRICE[k]) });
 });
 
 // ─────────────────────────────────────────────
