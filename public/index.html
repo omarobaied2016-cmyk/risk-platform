@@ -2346,6 +2346,20 @@ window.onload=async()=>{
   // Load saved open portfolios
   try{const op=JSON.parse(localStorage.getItem('openPF')||'[]');openPortfolios=new Set(op);}catch(e){}
   initColorPicker();
+  // Handle return from Stripe Checkout
+  try{
+    const params=new URLSearchParams(window.location.search);
+    const billing=params.get('billing');
+    if(billing==='success'){
+      setTimeout(()=>toast('Subscription activated — welcome aboard! Your plan is now active.',{type:'ok',ms:6000}),1200);
+      // clean the URL + refresh profile shortly after (webhook needs a moment)
+      window.history.replaceState({},'',window.location.pathname);
+      setTimeout(()=>{if(typeof loadUserProfile==='function')loadUserProfile();},2500);
+    }else if(billing==='cancelled'){
+      setTimeout(()=>toast('Checkout cancelled — no charge was made.',{type:'info'}),800);
+      window.history.replaceState({},'',window.location.pathname);
+    }
+  }catch(e){}
   // Check auth session
   checkSession();
 };
@@ -6177,41 +6191,85 @@ function doPortfolioExportPDF(){
 }
 
 // ═══ PRICING PAGE (#23) ═══
-function showPricingPage(){
-  const html=`<div class="modal-ov on" id="pricingModal">
-    <div class="modal" style="max-width:800px">
-      <div class="modal-t">Upgrade Your Plan</div>
+async function showPricingPage(){
+  // check whether live billing is enabled on the server
+  let billingEnabled=false;
+  try{const r=await fetch('/api/stripe/status');const d=await r.json();billingEnabled=!!d.enabled;}catch(e){}
+  const curPlan=(currentUserProfile&&currentUserProfile.plan)||'free_trial';
+  const planBtn=(key,label)=>{
+    if(curPlan===key)return `<button class="btn btn-g" style="width:100%;padding:9px;font-size:12px" disabled>Current plan</button>`;
+    if(billingEnabled)return `<button class="btn btn-p" style="width:100%;padding:9px;font-size:12px" onclick="startCheckout('${key}')">Subscribe</button>`;
+    return `<button class="btn btn-g" style="width:100%;padding:9px;font-size:12px" onclick="window.location.href='mailto:support@riskatlas.pro?subject=Upgrade to ${label}'">Contact to upgrade</button>`;
+  };
+  const html=`<div class="modal-ov on" id="pricingModal" onclick="if(event.target===this)this.remove()">
+    <div class="modal" style="max-width:860px">
+      <div class="modal-t">Choose Your Plan</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px">Pick the plan that fits your portfolio. Upgrade, downgrade, or cancel anytime.</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
-        <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
+        <div style="border:1px solid var(--b1);border-radius:10px;padding:16px;text-align:center">
           <div style="font-size:10px;text-transform:uppercase;color:var(--t3);letter-spacing:.08em;margin-bottom:4px">Free Trial</div>
-          <div style="font-size:28px;font-weight:700;color:var(--t1)">$0</div>
+          <div style="font-size:28px;font-weight:800;color:var(--t1)">$0</div>
           <div style="font-size:10px;color:var(--t3);margin-bottom:12px">7 days</div>
-          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ 1 project<br>✓ Basic dashboard<br>✗ What-If Analysis<br>✗ Market Insights</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:1.9;min-height:120px">✓ 1 project<br>✓ Dashboard &amp; Register<br>✗ Portfolios<br>✗ What-If Analysis<br>✗ Market Insights</div>
+          ${curPlan==='free_trial'?'<button class="btn btn-g" style="width:100%;padding:9px;font-size:12px" disabled>Current plan</button>':''}
         </div>
-        <div style="border:2px solid var(--primary);border-radius:8px;padding:16px;text-align:center;background:rgba(109,129,150,.03)">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--primary);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Pro</div>
-          <div style="font-size:28px;font-weight:700;color:var(--primary)">$49</div>
+        <div style="border:2px solid var(--primary);border-radius:10px;padding:16px;text-align:center;background:rgba(109,129,150,.04);position:relative">
+          <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:8.5px;font-weight:700;padding:2px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em">Most popular</div>
+          <div style="font-size:10px;text-transform:uppercase;color:var(--primary);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Starter</div>
+          <div style="font-size:28px;font-weight:800;color:var(--primary)">$49</div>
           <div style="font-size:10px;color:var(--t3);margin-bottom:12px">/month</div>
-          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ 6 projects<br>✓ 1 portfolio<br>✓ What-If Analysis<br>✓ Market Insights<br>✓ All features</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:1.9;min-height:120px">✓ 3 projects<br>✓ 1 portfolio<br>✓ What-If Analysis<br>✓ Market Insights<br>✓ All core features</div>
+          ${planBtn('starter','Starter')}
         </div>
-        <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--cyan);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Organization</div>
-          <div style="font-size:28px;font-weight:700;color:var(--cyan)">$199</div>
+        <div style="border:1px solid var(--b1);border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--cyan);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Professional</div>
+          <div style="font-size:28px;font-weight:800;color:var(--cyan)">$149</div>
           <div style="font-size:10px;color:var(--t3);margin-bottom:12px">/month</div>
-          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ 6 portfolios<br>✓ 6 projects each<br>✓ All Pro features<br>✓ Priority support</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:1.9;min-height:120px">✓ 20 projects<br>✓ 5 portfolios<br>✓ All Starter features<br>✓ Priority support<br>✓ Advanced exports</div>
+          ${planBtn('professional','Professional')}
         </div>
-        <div style="border:1px solid var(--b1);border-radius:8px;padding:16px;text-align:center">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--purple);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Unlimited</div>
-          <div style="font-size:28px;font-weight:700;color:var(--purple)">Custom</div>
-          <div style="font-size:10px;color:var(--t3);margin-bottom:12px">contact us</div>
-          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:2">✓ Unlimited everything<br>✓ Dedicated support<br>✓ Custom integrations<br>✓ SLA guarantee</div>
+        <div style="border:1px solid var(--b1);border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--purple);letter-spacing:.08em;margin-bottom:4px;font-weight:700">Enterprise</div>
+          <div style="font-size:28px;font-weight:800;color:var(--purple)">$399</div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:12px">/month</div>
+          <div style="font-size:11px;color:var(--t2);text-align:left;line-height:1.9;min-height:120px">✓ 100 projects<br>✓ 25 portfolios<br>✓ All Pro features<br>✓ Dedicated support<br>✓ SLA &amp; custom options</div>
+          ${planBtn('enterprise','Enterprise')}
         </div>
       </div>
-      <div style="text-align:center;font-size:11.5px;color:var(--t3);margin-bottom:12px">Contact us at <b>support@riskatlas.ai</b> to upgrade your plan</div>
+      ${currentUserProfile&&currentUserProfile.stripe_customer_id?`<div style="text-align:center;margin-bottom:10px"><button class="btn btn-g" style="font-size:11px;padding:7px 14px" onclick="openBillingPortal()">Manage billing &amp; invoices</button></div>`:''}
+      <div style="text-align:center;font-size:11px;color:var(--t3);margin-bottom:12px">Questions? Contact <b>support@riskatlas.pro</b></div>
       <div style="text-align:right"><button class="btn btn-g" onclick="document.getElementById('pricingModal').remove()">Close</button></div>
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
+}
+
+// Kick off Stripe Checkout for the chosen plan
+async function startCheckout(plan){
+  if(!currentUser){toast('Please sign in first');return;}
+  showLoad('Opening secure checkout...');
+  try{
+    const r=await fetch('/api/stripe/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan,email:currentUser.email,userId:currentUser.id})});
+    const d=await r.json();
+    hideLoad();
+    if(d.url){window.location.href=d.url;}
+    else toast(d.error||'Could not start checkout',{type:'warn'});
+  }catch(e){hideLoad();toast('Checkout error: '+e.message,{type:'warn'});}
+}
+
+// Open the Stripe billing portal (manage/cancel subscription)
+async function openBillingPortal(){
+  const cid=currentUserProfile&&currentUserProfile.stripe_customer_id;
+  if(!cid){toast('No active subscription to manage');return;}
+  showLoad('Opening billing portal...');
+  try{
+    const r=await fetch('/api/stripe/portal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId:cid})});
+    const d=await r.json();
+    hideLoad();
+    if(d.url)window.location.href=d.url;
+    else toast(d.error||'Could not open billing portal',{type:'warn'});
+  }catch(e){hideLoad();toast('Error: '+e.message,{type:'warn'});}
 }
 
 // ═══ REFRESH ALL (#20) ═══
