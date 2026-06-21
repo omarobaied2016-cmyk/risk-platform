@@ -1612,8 +1612,13 @@ tr:hover td{background:rgba(109,129,150,.015);}
       <div class="pane" id="pane-tol">
         <div style="max-width:780px">
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">Risk Appetite & Tolerance</div>
-          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Define acceptable thresholds — Claude uses these to classify risks accurately</div>
-          
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Define your acceptable thresholds — Claude treats these as active limits and flags exposure that exceeds them across every report, insight, and recommendation.</div>
+
+          <div id="appetiteThresholds"></div>
+
+          <div style="font-size:13px;font-weight:700;margin:26px 0 4px;color:var(--t1)">Assessment Scales</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:14px">The 5-level scales used to score each risk's probability and impact.</div>
+
           <div class="tol-sec"><div class="tol-t">Cost Levels</div><div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each threshold as a % of contract value — adjust with the steppers or type directly.</div><div id="cost_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">Schedule Levels</div><div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each threshold in days of delay.</div><div id="sched_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">QHSE Levels</div><div id="qhse_lvl"></div></div>
@@ -3374,6 +3379,9 @@ async function generateActionPlan(projId,noPopup){
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:3800,messages:[{role:'user',content:`You are a project risk-management copilot. Today is ${todayISO}. For the project "${p.name}", turn each risk's response plan into concrete, scheduled ACTION ITEMS the manager should complete to mitigate the risk BEFORE it occurs. If the manager follows every action by its due date, the risks will be well managed by project end.
 
+${appetitePromptBlock()}
+Prioritise actions that address risks breaching the appetite thresholds above.
+
 Rules:
 - Break each risk's plan into 1-3 specific actions (start with a verb: Order, Inspect, Coordinate, Submit, Review, Secure, Pre-qualify...).
 - Each action's due_date MUST be on or after ${todayISO} and scheduled BEFORE the risk's expected date, leaving enough lead time to act. For ongoing risks or risks with no date, spread actions over the coming weeks starting from today.
@@ -4540,10 +4548,165 @@ function probScaleFrom(b){return [
   {l:'5 — Almost Certain',d:`More than ${b[3]}%`}
 ];}
 
+// ═══════════════════════════════════════════════════════════════════════
+//  RISK APPETITE THRESHOLDS — active limits fed into the analysis engine
+//  Stored on CP.risk_appetite. Cost & Schedule support percent OR absolute.
+// ═══════════════════════════════════════════════════════════════════════
+function defaultAppetite(){
+  return {
+    level:'moderate',
+    cost:{mode:'percent', percent:5, value:null},        // ±5% of contract value
+    schedule:{mode:'days', percent:null, days:15},        // 15 days slip
+    probability:{threshold:70},                           // min acceptable P-confidence
+    qhse:'No fatalities or permanent disability; injuries requiring hospitalization are not acceptable.',
+    reputation:'No national or regional negative media coverage is acceptable.'
+  };
+}
+function getAppetite(){
+  const a=Object.assign(defaultAppetite(),(CP&&CP.risk_appetite)||{});
+  // merge nested defaults safely
+  const d=defaultAppetite();
+  a.cost=Object.assign(d.cost,a.cost||{});
+  a.schedule=Object.assign(d.schedule,a.schedule||{});
+  a.probability=Object.assign(d.probability,a.probability||{});
+  return a;
+}
+// Resolve cost appetite to an absolute money figure (for comparisons)
+function costAppetiteAbsolute(){
+  const a=getAppetite();const cv=Number(CP&&CP.value)||0;
+  if(a.cost.mode==='value'&&a.cost.value!=null)return Number(a.cost.value);
+  if(a.cost.percent!=null&&cv)return cv*(a.cost.percent/100);
+  return 0;
+}
+function schedAppetiteDays(){
+  const a=getAppetite();
+  if(a.schedule.mode==='days'&&a.schedule.days!=null)return Number(a.schedule.days);
+  // percent of total duration
+  if(a.schedule.percent!=null&&CP&&CP.start_date&&CP.end_date){
+    const dur=(new Date(CP.end_date)-new Date(CP.start_date))/86400000;
+    if(dur>0)return Math.round(dur*(a.schedule.percent/100));
+  }
+  return 0;
+}
+// Build the appetite block injected into EVERY AI prompt
+function appetitePromptBlock(){
+  const a=getAppetite();const cur=(typeof curCode==='function'?curCode():'USD');
+  const costAbs=costAppetiteAbsolute();
+  const costStr=a.cost.mode==='value'
+    ? `${Number(a.cost.value||0).toLocaleString()} ${cur} (absolute)`
+    : `±${a.cost.percent}% of contract value${costAbs?` (≈ ${Math.round(costAbs).toLocaleString()} ${cur})`:''}`;
+  const schedStr=a.schedule.mode==='days'
+    ? `${a.schedule.days} days slip`
+    : `${a.schedule.percent}% of total duration${schedAppetiteDays()?` (≈ ${schedAppetiteDays()} days)`:''}`;
+  return `RISK APPETITE (the client's defined tolerance — treat these as HARD limits):
+- Overall posture: ${a.level}
+- COST appetite: ${costStr}. Any risk or scenario whose cost impact exceeds this is OVER tolerance and must be flagged explicitly.
+- SCHEDULE appetite: ${schedStr}. Any delay beyond this is unacceptable and must be flagged.
+- PROBABILITY appetite: minimum acceptable on-time/on-budget confidence is ${a.probability.threshold}%. If the predicted P80 (or stated confidence) completion probability falls below ${a.probability.threshold}%, state clearly that it is below appetite.
+- QHSE appetite (qualitative): ${a.qhse||'—'}
+- REPUTATION appetite (qualitative): ${a.reputation||'—'}
+
+In your narratives, executive summary, and recommendations you MUST explicitly state whether current exposure is WITHIN appetite or EXCEEDS it, name which dimension breaches tolerance, and explain the management implication. Do not treat these as reference values — they are decision thresholds.`;
+}
+
+// ── UI: threshold editor with percent/value toggles ──
+function renderAppetiteThresholds(){
+  const el=document.getElementById('appetiteThresholds');
+  if(!el)return;
+  const a=getAppetite();const cur=(typeof curCode==='function'?curCode():'USD');
+  const cv=Number(CP&&CP.value)||0;
+  const costAbs=costAppetiteAbsolute();
+  const schedDays=schedAppetiteDays();
+  const seg=(active,onP,onV,pLabel,vLabel)=>`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:8px;overflow:hidden;font-size:11px">
+    <button onclick="${onP}" style="padding:5px 12px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:${active==='percent'||active==='days'&&false?'var(--primary)':active!=='value'?'var(--primary)':'transparent'};color:${active!=='value'?'#fff':'var(--t2)'}">${pLabel}</button>
+    <button onclick="${onV}" style="padding:5px 12px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:${active==='value'?'var(--primary)':'transparent'};color:${active==='value'?'#fff':'var(--t2)'}">${vLabel}</button>
+  </div>`;
+  el.innerHTML=`
+  <div style="background:linear-gradient(135deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:13px;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="width:30px;height:30px;border-radius:8px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:15px">◎</span>
+      <div><div style="font-size:13px;font-weight:800;color:var(--t1)">Risk Appetite Thresholds</div>
+      <div style="font-size:10.5px;color:var(--t3)">Active limits — Claude flags any exposure that breaches these</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">
+      <!-- COST -->
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700;color:var(--t1)">💰 Cost Appetite</span>
+          ${seg(a.cost.mode,"setApMode('cost','percent')","setApMode('cost','value')",'Percent','Value')}
+        </div>
+        ${a.cost.mode==='value'
+          ? `<div style="display:flex;align-items:center;gap:8px"><input type="number" id="ap_cost_value" value="${a.cost.value!=null?a.cost.value:''}" oninput="setApVal('cost','value',this.value)" placeholder="100000" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">${cur}</span></div>
+             <div style="font-size:10px;color:var(--t3);margin-top:6px">Maximum acceptable cost overrun (absolute).</div>`
+          : `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--t3)">±</span><input type="number" step="0.5" id="ap_cost_pct" value="${a.cost.percent!=null?a.cost.percent:''}" oninput="setApVal('cost','percent',this.value)" placeholder="5" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">%</span></div>
+             <div style="font-size:10px;color:var(--t3);margin-top:6px">${cv?`≈ ${Math.round(costAbs).toLocaleString()} ${cur} of the ${cv.toLocaleString()} ${cur} contract.`:'% of contract value.'}</div>`}
+      </div>
+
+      <!-- SCHEDULE -->
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700;color:var(--t1)">📅 Schedule Appetite</span>
+          ${seg(a.schedule.mode==='days'?'percent':'value',"setApMode('schedule','days')","setApMode('schedule','percent')",'Days','Percent')}
+        </div>
+        ${a.schedule.mode==='percent'
+          ? `<div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.5" id="ap_sch_pct" value="${a.schedule.percent!=null?a.schedule.percent:''}" oninput="setApVal('schedule','percent',this.value)" placeholder="10" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">%</span></div>
+             <div style="font-size:10px;color:var(--t3);margin-top:6px">${schedDays?`≈ ${schedDays} days of the total duration.`:'% of total project duration.'}</div>`
+          : `<div style="display:flex;align-items:center;gap:8px"><input type="number" id="ap_sch_days" value="${a.schedule.days!=null?a.schedule.days:''}" oninput="setApVal('schedule','days',this.value)" placeholder="15" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">days</span></div>
+             <div style="font-size:10px;color:var(--t3);margin-top:6px">Maximum acceptable schedule slip (days).</div>`}
+      </div>
+    </div>
+
+    <!-- PROBABILITY -->
+    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px;margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:700;color:var(--t1)">🎯 Probability Appetite</span>
+        <span style="font-size:18px;font-weight:800;color:var(--primary)" id="ap_prob_disp">${a.probability.threshold}%</span>
+      </div>
+      <input type="range" min="50" max="95" step="5" value="${a.probability.threshold}" oninput="setApVal('probability','threshold',this.value);document.getElementById('ap_prob_disp').textContent=this.value+'%'" style="width:100%;accent-color:var(--primary);cursor:pointer"/>
+      <div style="font-size:10px;color:var(--t3);margin-top:6px">Minimum acceptable confidence of finishing on-time / on-budget. Claude flags when predicted P80 falls below this.</div>
+    </div>
+
+    <!-- QHSE + REPUTATION -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">🦺 QHSE Appetite</div>
+        <textarea id="ap_qhse" oninput="setApVal('qhse',null,this.value)" rows="3" placeholder="Describe what is unacceptable..." style="width:100%;border:1px solid var(--b1);border-radius:8px;padding:9px;font-family:inherit;font-size:11.5px;line-height:1.5;outline:none;resize:vertical">${a.qhse||''}</textarea>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">📢 Reputation Appetite</div>
+        <textarea id="ap_rep" oninput="setApVal('reputation',null,this.value)" rows="3" placeholder="Describe what is unacceptable..." style="width:100%;border:1px solid var(--b1);border-radius:8px;padding:9px;font-family:inherit;font-size:11.5px;line-height:1.5;outline:none;resize:vertical">${a.reputation||''}</textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-p" onclick="saveAppetite()" style="padding:8px 18px">Save Appetite</button>
+    </div>
+  </div>`;
+}
+// state setters (work on an in-memory draft, committed on save)
+function _apDraft(){ if(!CP._apDraft)CP._apDraft=getAppetite(); return CP._apDraft; }
+function setApMode(dim,mode){const d=_apDraft();d[dim].mode=mode;CP.risk_appetite=d;renderAppetiteThresholds();}
+function setApVal(dim,key,val){
+  const d=_apDraft();
+  const num=val===''?null:(isNaN(parseFloat(val))?val:parseFloat(val));
+  if(key===null)d[dim]=val; else d[dim][key]=num;
+  CP.risk_appetite=d;
+}
+async function saveAppetite(){
+  if(!canEdit('you cannot change risk appetite'))return;
+  const d=_apDraft();
+  CP.risk_appetite=d;
+  try{await sb('projects?id=eq.'+CID,'PATCH',{risk_appetite:d});toast('Risk appetite saved — now applied across all AI analysis',{type:'ok'});}
+  catch(e){toast('Saved locally but could not persist: '+e.message,{type:'warn'});}
+  delete CP._apDraft;
+}
+
 function renderTol(){
   if(!CP)return;
   const tl=CP.tolerance;
   const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
+  renderAppetiteThresholds();
   renderNumericTol('cost_lvl','cost',tl.cost_levels||costLevels(appetite),[2,5,10,15],'%','of contract value');
   renderNumericTol('sched_lvl','sched',tl.sched_levels||schedLevels(appetite),[7,15,30,45],' days','delay');
   renderLvls('qhse_lvl',tl.qhse||DQ,'qhse');
@@ -6552,6 +6715,8 @@ async function generateProjectReport(){
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} ${curCode()}
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
 
+${appetitePromptBlock()}
+
 ACTIVE (OPEN) RISKS: ${openRisks.length} [${high} high, ${med} medium, ${low} low]
 CLOSED/RESOLVED RISKS: ${closedRisks.length}
 Current open cost exposure: ${(expoNow/1000000).toFixed(2)}M ${curCode()}
@@ -6727,6 +6892,9 @@ async function loadProjectInsights(withSuggestions){
   const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the project's industry. Respond entirely in English. Project: ${CP.name} (${CP.type}). Location/region: ${CP.region||'(not specified — infer the most likely region from the project name and context)'}. Contract currency: ${curCode()}.
+
+${appetitePromptBlock()}
+When recommending actions, flag any market condition that could push exposure beyond these appetite thresholds.
 Current project risks: ${riskList}
 
 IMPORTANT: Tailor EVERY insight to this project's specific country/region and local market — local material prices, local labor market, local economic indicators (inflation, interest rates), local regulations, and the ${curCode()} currency. Do NOT give generic global commentary; ground it in the project's geography.
@@ -7504,6 +7672,8 @@ async function generateResponseSchedule(){
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project planner. Build an implementation SCHEDULE for executing the risk response plans below. Project: ${CP.name} (${CP.type}). Project end: ${CP.end_date||'unknown'}. Today: ${today}.
 
+${appetitePromptBlock()}
+
 RISKS & RESPONSE PLANS:
 ${ctx}
 
@@ -7868,6 +8038,8 @@ CURRENT PERIOD (${weekDate}):
 - Resource Utilization: ${ru}%
 - Vendor/Dependency Delay: ${vd||'none'}
 - Notes: ${notes||'none'}
+
+${appetitePromptBlock()}
 
 INTERPRETATION RULES (apply consistently): SPI < 1 = schedule underperformance; SPI > 1 = ahead of plan. CPI < 1 = cost overrun; CPI > 1 = cost efficiency. A value of 1.0 = exactly on plan. Treat values trending downward toward/below 1.0 as deteriorating, and upward above 1.0 as improving.
 
@@ -8458,6 +8630,9 @@ async function runSimulation(){
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project risk manager running a what-if scenario simulation.
+
+${appetitePromptBlock()}
+For each scenario, state whether the resulting cost and schedule exposure stays WITHIN or EXCEEDS the appetite thresholds.
 
 Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Baseline Risk Score: ${baselineScore}/100 | High: ${high}, Medium: ${med}, Low: ${low}
