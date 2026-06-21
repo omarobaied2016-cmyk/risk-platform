@@ -489,36 +489,35 @@ const PRICE_TO_PLAN = Object.fromEntries(
 );
 
 // Patch the user's plan in Supabase (service-role) by Stripe customer id or email
-async function setUserPlan({ customerId, email, plan, subscriptionId, status }) {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) { console.error('Supabase not configured for plan update'); return; }
+async function setUserPlan({ customerId, email, userId, plan, subscriptionId, status }) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) { console.error('[stripe] Supabase not configured for plan update'); return; }
   const patch = {};
   if (plan) patch.plan = plan;
   if (subscriptionId !== undefined) patch.stripe_subscription_id = subscriptionId;
   if (customerId) patch.stripe_customer_id = customerId;
   if (status) patch.subscription_status = status;
   if (plan) patch.plan_start = new Date().toISOString();
-  // prefer matching by stripe_customer_id, fall back to email
-  let filter = '';
-  if (customerId) filter = `stripe_customer_id=eq.${encodeURIComponent(customerId)}`;
-  else if (email) filter = `email=eq.${encodeURIComponent(email)}`;
-  else return;
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/users?${filter}`, {
-      method: 'PATCH',
-      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: JSON.stringify(patch)
-    });
-    // if matching by customer id found nothing and we have an email, retry by email (first purchase)
-    if (customerId && email) {
-      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}`, {
-        method: 'PATCH',
-        headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify(patch)
-      });
-      return;
-    }
-    if (!r.ok) console.error('setUserPlan failed', await r.text());
-  } catch (e) { console.error('setUserPlan error', e.message); }
+  const hdr = { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+  const patchBy = async (filter) => {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/users?${filter}`, { method: 'PATCH', headers: hdr, body: JSON.stringify(patch) });
+      const txt = await r.text();
+      let rows = [];
+      try { rows = JSON.parse(txt); } catch (e) {}
+      if (!r.ok) { console.error(`[stripe] setUserPlan PATCH ${filter} failed:`, txt); return 0; }
+      console.log(`[stripe] setUserPlan PATCH ${filter} → ${Array.isArray(rows) ? rows.length : 0} row(s) updated to plan=${plan || '(unchanged)'} status=${status || ''}`);
+      return Array.isArray(rows) ? rows.length : 0;
+    } catch (e) { console.error('[stripe] setUserPlan error', e.message); return 0; }
+  };
+  let updated = 0;
+  // 1) most reliable: match by the platform user id (passed as client_reference_id)
+  if (userId) updated = await patchBy(`id=eq.${encodeURIComponent(userId)}`);
+  // 2) by stripe_customer_id (returning subscribers)
+  if (!updated && customerId) updated = await patchBy(`stripe_customer_id=eq.${encodeURIComponent(customerId)}`);
+  // 3) fall back to email (first purchase — no customer id stored yet)
+  if (!updated && email) updated = await patchBy(`email=eq.${encodeURIComponent(email)}`);
+  if (!updated) console.error(`[stripe] setUserPlan: NO ROW MATCHED (userId=${userId || '-'}, customerId=${customerId || '-'}, email=${email || '-'}). Check the email matches the signup email exactly.`);
+  return updated;
 }
 
 // 1) Create a Checkout Session — frontend calls this when the user picks a plan
@@ -573,7 +572,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       case 'checkout.session.completed': {
         const s = event.data.object;
         const plan = (s.metadata && s.metadata.plan) || PRICE_TO_PLAN[s.line_items?.[0]?.price] || 'starter';
-        await setUserPlan({ customerId: s.customer, email: s.customer_email || (s.metadata && s.metadata.email), plan, subscriptionId: s.subscription, status: 'active' });
+        const email = s.customer_email || s.customer_details?.email || (s.metadata && s.metadata.email);
+        const userId = s.client_reference_id || (s.metadata && s.metadata.userId);
+        console.log(`[stripe] checkout.session.completed: plan=${plan} customer=${s.customer} email=${email || '-'} userId=${userId || '-'}`);
+        await setUserPlan({ customerId: s.customer, email, userId, plan, subscriptionId: s.subscription, status: 'active' });
         break;
       }
       case 'customer.subscription.updated': {
