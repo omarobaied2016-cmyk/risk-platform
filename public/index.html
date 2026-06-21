@@ -318,6 +318,21 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--t1)
 .tol-t{font-size:13px;font-weight:600;margin-bottom:11px;color:var(--t1);}
 .tg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
 .tlv{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--s2);border-radius:5px;border:1px solid var(--b1);margin-bottom:4px;}
+.ntol{display:flex;flex-direction:column;gap:2px;}
+.ntol-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 4px;border-bottom:1px solid var(--b1);flex-wrap:wrap;}
+.ntol-band{display:flex;align-items:center;gap:8px;min-width:150px;}
+.ntol-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ntol-bl{font-size:12px;font-weight:600;color:var(--t1);}
+.ntol-rng{font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace;}
+.ntol-ctrl{display:flex;align-items:center;gap:5px;}
+.ntol-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--b1);background:var(--s1);color:var(--primary);font-size:16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:all .12s;font-family:inherit;}
+.ntol-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+.ntol-btn:active{transform:scale(.92);}
+.ntol-inp{width:60px;text-align:center;padding:5px 6px;border:1px solid var(--b1);border-radius:7px;font-size:13px;font-weight:600;color:var(--t1);font-family:inherit;background:var(--s1);outline:none;}
+.ntol-inp:focus{border-color:var(--primary);}
+.ntol-inp::-webkit-outer-spin-button,.ntol-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.ntol-inp{-moz-appearance:textfield;}
+.ntol-unit{font-size:11px;color:var(--t3);min-width:14px;}
 .tlv input{background:transparent;border:none;color:var(--t1);font-family:inherit;font-size:12px;flex:1;outline:none;}
 .tlv-l{font-size:10.5px;font-weight:700;min-width:100px;white-space:nowrap;}
 
@@ -1599,12 +1614,13 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">Risk Appetite & Tolerance</div>
           <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Define acceptable thresholds — Claude uses these to classify risks accurately</div>
           
-          <div class="tol-sec"><div class="tol-t">Cost Levels</div><div id="cost_lvl"></div></div>
-          <div class="tol-sec"><div class="tol-t">Schedule Levels</div><div id="sched_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t">Cost Levels</div><div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each threshold as a % of contract value — adjust with the steppers or type directly.</div><div id="cost_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t">Schedule Levels</div><div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each threshold in days of delay.</div><div id="sched_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">QHSE Levels</div><div id="qhse_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">Reputation Levels</div><div id="rep_lvl"></div></div>
           <div class="tol-sec">
             <div class="tol-t">Probability Scale</div>
+            <div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each probability threshold as a percentage.</div>
             <div id="prob_lvl"></div>
           </div>
         </div>
@@ -4492,15 +4508,110 @@ function renderUFP(){
 function remUF(i){UF.splice(i,1);renderUFP();}
 
 // ═══ TOLERANCE ═══
+// Extract the numeric boundaries [b0,b1,b2,b3] from a 5-level scale's text,
+// so we can render intuitive numeric controls and rebuild the descriptive text.
+function tolBounds(levels,fallback){
+  if(!Array.isArray(levels))return fallback.slice();
+  const nums=[];
+  levels.forEach(lv=>{const m=(lv.d||'').match(/\d+(?:\.\d+)?/g);if(m)m.forEach(n=>nums.push(parseFloat(n)));});
+  // unique ascending, take first 4 distinct boundary values
+  const uniq=[...new Set(nums)].sort((a,b)=>a-b);
+  return uniq.length>=4?uniq.slice(0,4):fallback.slice();
+}
+function costScaleFrom(b){return [
+  {l:'1 — Very Low',d:`Up to ${b[0]}% of contract value`},
+  {l:'2 — Low',d:`${b[0]}-${b[1]}% of contract value`},
+  {l:'3 — Medium',d:`${b[1]}-${b[2]}% of contract value`},
+  {l:'4 — High',d:`${b[2]}-${b[3]}% of contract value`},
+  {l:'5 — Critical',d:`More than ${b[3]}% of contract value`}
+];}
+function schedScaleFrom(b){return [
+  {l:'1 — Very Low',d:`Up to ${b[0]} days delay`},
+  {l:'2 — Low',d:`${b[0]}-${b[1]} days delay`},
+  {l:'3 — Medium',d:`${b[1]}-${b[2]} days delay`},
+  {l:'4 — High',d:`${b[2]}-${b[3]} days delay`},
+  {l:'5 — Critical',d:`More than ${b[3]} days delay`}
+];}
+function probScaleFrom(b){return [
+  {l:'1 — Rare',d:`Less than ${b[0]}%`},
+  {l:'2 — Unlikely',d:`${b[0]}-${b[1]}%`},
+  {l:'3 — Possible',d:`${b[1]}-${b[2]}%`},
+  {l:'4 — Likely',d:`${b[2]}-${b[3]}%`},
+  {l:'5 — Almost Certain',d:`More than ${b[3]}%`}
+];}
+
 function renderTol(){
   if(!CP)return;
   const tl=CP.tolerance;
   const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
-  renderLvls('cost_lvl',tl.cost_levels||costLevels(appetite),'cost_levels');
-  renderLvls('sched_lvl',tl.sched_levels||schedLevels(appetite),'sched_levels');
+  renderNumericTol('cost_lvl','cost',tl.cost_levels||costLevels(appetite),[2,5,10,15],'%','of contract value');
+  renderNumericTol('sched_lvl','sched',tl.sched_levels||schedLevels(appetite),[7,15,30,45],' days','delay');
   renderLvls('qhse_lvl',tl.qhse||DQ,'qhse');
   renderLvls('rep_lvl',tl.rep||DR,'rep');
-  renderLvls('prob_lvl',tl.prob||DP,'prob');
+  renderNumericTol('prob_lvl','prob',tl.prob||DP,[10,30,50,70],'%','probability');
+}
+
+// Numeric editor for Cost / Schedule / Probability — edit 4 boundaries with steppers + a live preview of the 5 levels
+function renderNumericTol(cid,kind,levels,fallback,unit,suffix){
+  const el=document.getElementById(cid);
+  if(!el)return;
+  const b=tolBounds(levels,fallback);
+  const labels=kind==='cost'?['Very Low','Low','Medium','High','Critical']
+    :kind==='sched'?['Very Low','Low','Medium','High','Critical']
+    :['Rare','Unlikely','Possible','Likely','Almost Certain'];
+  const isPct=unit==='%';
+  const step=kind==='sched'?1:(kind==='prob'?5:0.5);
+  const max=kind==='prob'?100:(kind==='cost'?100:365);
+  // four boundary steppers
+  const steppers=b.map((val,i)=>`
+    <div class="ntol-row">
+      <div class="ntol-band"><span class="ntol-dot" style="background:${LC[i]}"></span><span class="ntol-bl">${i+1} ${labels[i]}</span><span class="ntol-rng" id="${cid}_rng${i}"></span></div>
+      <div class="ntol-ctrl">
+        <button type="button" class="ntol-btn" onclick="bumpTol('${cid}','${kind}',${i},-1)">−</button>
+        <input type="number" class="ntol-inp" id="${cid}_b${i}" value="${val}" min="0" max="${max}" step="${step}" oninput="commitTol('${cid}','${kind}',false)" onchange="commitTol('${cid}','${kind}',true)"/>
+        <span class="ntol-unit">${unit.trim()}</span>
+        <button type="button" class="ntol-btn" onclick="bumpTol('${cid}','${kind}',${i},1)">+</button>
+      </div>
+    </div>`).join('');
+  el.innerHTML=`<div class="ntol">${steppers}
+    <div class="ntol-row" style="border:none;padding-top:4px">
+      <div class="ntol-band"><span class="ntol-dot" style="background:${LC[4]}"></span><span class="ntol-bl">5 ${labels[4]}</span></div>
+      <div class="ntol-ctrl"><span style="font-size:11px;color:var(--t3)">Above the highest threshold</span></div>
+    </div>
+  </div>`;
+  updateTolRanges(cid,kind);
+}
+// live "1–5 → range" hints under each band
+function updateTolRanges(cid,kind){
+  const b=[0,1,2,3].map(i=>parseFloat(document.getElementById(`${cid}_b${i}`)?.value)||0);
+  const unit=kind==='sched'?'d':'%';
+  const fmt=(a,z)=>`${a}–${z}${unit}`;
+  const set=(i,txt)=>{const e=document.getElementById(`${cid}_rng${i}`);if(e)e.textContent=txt;};
+  set(0,`≤ ${b[0]}${unit}`);set(1,fmt(b[0],b[1]));set(2,fmt(b[1],b[2]));set(3,fmt(b[2],b[3]));
+}
+function bumpTol(cid,kind,idx,dir){
+  const inp=document.getElementById(`${cid}_b${idx}`);
+  if(!inp)return;
+  const step=kind==='sched'?1:(kind==='prob'?5:0.5);
+  let v=(parseFloat(inp.value)||0)+dir*step;
+  if(v<0)v=0;
+  inp.value=kind==='cost'?Math.round(v*10)/10:Math.round(v);
+  commitTol(cid,kind,true);
+}
+// read the 4 boundaries, optionally enforce ascending order, rebuild the scale text, save
+function commitTol(cid,kind,enforce){
+  let b=[0,1,2,3].map(i=>parseFloat(document.getElementById(`${cid}_b${i}`)?.value)||0);
+  if(enforce){
+    // on commit (blur/stepper): keep strictly ascending so the bands make sense
+    for(let i=1;i<4;i++){if(b[i]<=b[i-1])b[i]=b[i-1]+(kind==='cost'?0.5:1);}
+    for(let i=0;i<4;i++){const inp=document.getElementById(`${cid}_b${i}`);if(inp&&parseFloat(inp.value)!==b[i])inp.value=b[i];}
+  }
+  if(!CP.tolerance)CP.tolerance={};
+  if(kind==='cost')CP.tolerance.cost_levels=costScaleFrom(b);
+  else if(kind==='sched')CP.tolerance.sched_levels=schedScaleFrom(b);
+  else if(kind==='prob')CP.tolerance.prob=probScaleFrom(b);
+  updateTolRanges(cid,kind);
+  dbTol();
 }
 function renderLvls(cid,lvs,key){
   const el=document.getElementById(cid);
@@ -5728,8 +5839,8 @@ function renderDash(){
           <div class="rcc-h"><span class="rcc-ht">Trend Analysis Report <span class="scenario-tag ${al==='high'?'st-bad':al==='medium'?'st-warn':'st-good'}">${alIcon} ${(RL[al]||al).toUpperCase()}</span></span><span style="font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</span></div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:6px 0 9px">
             <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Health</div><div style="font-size:16px;font-weight:700;color:${alColor}">${latest.health_score||'—'}</div></div>
-            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">SV</div><div style="font-size:14px;font-weight:600;color:${(latest.sv||0)<0?'var(--red)':'var(--grn)'}">${latest.sv||0}%</div></div>
-            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">CV</div><div style="font-size:14px;font-weight:600">${latest.burn_rate||0}%</div></div>
+            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">SPI</div><div style="font-size:14px;font-weight:600;color:${(latest.sv||1)<0.9?'var(--red)':(latest.sv||1)<1?'#a16207':'var(--grn)'}">${latest.sv!=null?latest.sv:'—'}</div></div>
+            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">CPI</div><div style="font-size:14px;font-weight:600;color:${(latest.burn_rate||1)<0.9?'var(--red)':(latest.burn_rate||1)<1?'#a16207':'var(--grn)'}">${latest.burn_rate!=null?latest.burn_rate:'—'}</div></div>
             <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Changes</div><div style="font-size:14px;font-weight:600">${latest.change_requests||0}</div></div>
             <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Resources</div><div style="font-size:14px;font-weight:600">${latest.resource_util||0}%</div></div>
           </div>
@@ -5744,7 +5855,7 @@ function renderDash(){
     })():`<div class="rcc-card col-12" style="margin-bottom:10px">
       <div class="rcc-h"><span class="rcc-ht">Risk Trend</span></div>
       <canvas id="trendC" height="60"></canvas>
-      <div style="text-align:center;margin-top:9px;font-size:11.5px;color:var(--t3)">Enter period indicators (SV, CV, resources…) in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Trend Analysis</a> to build a report with forecast</div>
+      <div style="text-align:center;margin-top:9px;font-size:11.5px;color:var(--t3)">Enter period indicators (SPI, CPI, resources…) in <a onclick="ST('upd')" style="color:var(--primary);cursor:pointer">Trend Analysis</a> to build a report with forecast</div>
     </div>`}
 
     <!-- ZONE 6: AI Project Report (summary-first, collapsible) -->
@@ -7133,8 +7244,8 @@ function exportTrendAnalysis(){
     <div class="callout">${commentary}</div>
     ${aiNote?`<div class="callout" style="border-left-color:${EX_BRAND.mist}"><b>Latest analysis:</b> ${aiNote}</div>`:''}
     <div class="sechead"><span class="bar" style="background:${EX_BRAND.primaryDark}"></span><h2>Indicator History</h2></div>
-    <div class="secsub">SV = Schedule Variance · Burn = Burn Rate · CR = Change Requests · RU = Resource Utilisation · VD = Vendor Delay</div>
-    <table><thead><tr><th>Date</th><th style="text-align:center">Health</th><th style="text-align:center">\u0394</th><th style="text-align:center">SV</th><th style="text-align:center">Burn</th><th style="text-align:center">CR</th><th style="text-align:center">RU</th><th style="text-align:center">VD</th><th>Alert</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="secsub">SPI = Schedule Performance Index (&lt;1 behind, &gt;1 ahead) · CPI = Cost Performance Index (&lt;1 over budget, &gt;1 efficient) · CR = Change Requests · RU = Resource Utilisation · VD = Vendor Delay</div>
+    <table><thead><tr><th>Date</th><th style="text-align:center">Health</th><th style="text-align:center">\u0394</th><th style="text-align:center">SPI</th><th style="text-align:center">CPI</th><th style="text-align:center">CR</th><th style="text-align:center">RU</th><th style="text-align:center">VD</th><th>Alert</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="footer-note">RiskAtlas AI · ${m.project} · Trend Analysis · Generated ${m.dateStr} ${m.timeStr} · Confidential</div>
   </div>`;
   exPrint('Trend Analysis — '+m.project,EX_BRAND.primaryDark,body);
@@ -7672,8 +7783,8 @@ function renderWeeklyIndicators(){
         <div style="font-size:11px;color:var(--t3);margin-bottom:11px">Enter indicators for a period. Set the date to backfill past weeks/months — the more history, the better the forecast.</div>
         <div class="ind-grid">
           <div class="ind-item"><label class="ind-lbl">Period Date</label><input type="date" class="ind-inp" id="ind_date" value="${new Date().toISOString().slice(0,10)}"/></div>
-          <div class="ind-item"><label class="ind-lbl">Schedule Variance SV (%)</label><input type="number" class="ind-inp" id="ind_sv" placeholder="e.g. -5 means behind"/></div>
-          <div class="ind-item"><label class="ind-lbl">Cost Variance CV (%)</label><input type="number" class="ind-inp" id="ind_br" placeholder="e.g. -3 means over budget"/></div>
+          <div class="ind-item"><label class="ind-lbl">Schedule Performance Index (SPI)</label><input type="number" step="0.01" class="ind-inp" id="ind_sv" placeholder="e.g. 0.95 (&lt;1 behind, &gt;1 ahead)"/></div>
+          <div class="ind-item"><label class="ind-lbl">Cost Performance Index (CPI)</label><input type="number" step="0.01" class="ind-inp" id="ind_br" placeholder="e.g. 0.92 (&lt;1 over budget, &gt;1 efficient)"/></div>
           <div class="ind-item"><label class="ind-lbl">Change Requests</label><input type="number" class="ind-inp" id="ind_cr" placeholder="count"/></div>
           <div class="ind-item"><label class="ind-lbl">Resource Utilization (%)</label><input type="number" class="ind-inp" id="ind_ru" placeholder="e.g. 80" min="0" max="100"/></div>
           <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Vendor / Dependency Delays</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="e.g. Steel delivery delayed 5 days"></textarea></div>
@@ -7683,8 +7794,8 @@ function renderWeeklyIndicators(){
       </div>
 
       ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px;margin-top:12px"><div class="card-t">Period Indicators History</div>
-        <table class="exp-tbl"><thead><tr><th>Date</th><th>SV%</th><th>CV%</th><th>Changes</th><th>Resources</th><th>Vendor</th><th>Health</th><th>Alert</th></tr></thead>
-        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||0)<-10?'var(--red)':(w.sv||0)<0?'#a16207':'var(--grn)'}">${w.sv||0}%</td><td style="color:${(w.burn_rate||0)<-5?'var(--red)':(w.burn_rate||0)<0?'#a16207':'var(--grn)'}">${w.burn_rate||0}%</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'OK'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table></div>
+        <table class="exp-tbl"><thead><tr><th>Date</th><th>SPI</th><th>CPI</th><th>Changes</th><th>Resources</th><th>Vendor</th><th>Health</th><th>Alert</th></tr></thead>
+        <tbody>${CP.trend_data.slice(-8).reverse().map(w=>`<tr><td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${w.date}</td><td style="color:${(w.sv||1)<0.9?'var(--red)':(w.sv||1)<1?'#a16207':'var(--grn)'}">${(w.sv!=null?w.sv:'—')}</td><td style="color:${(w.burn_rate||1)<0.9?'var(--red)':(w.burn_rate||1)<1?'#a16207':'var(--grn)'}">${(w.burn_rate!=null?w.burn_rate:'—')}</td><td>${w.change_requests||0}</td><td>${w.resource_util||0}%</td><td style="font-size:10px;color:${w.vendor_delay?'var(--red)':'var(--grn)'};max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.vendor_delay||''}">${w.vendor_delay?(w.vendor_delay.length>15?w.vendor_delay.slice(0,15)+'...':w.vendor_delay):'OK'}</td><td><b>${w.health_score||'—'}</b></td><td><span class="bdg ${w.alert_level==='high'?'b-h':w.alert_level==='medium'?'b-m':'b-l'}">${RL[w.alert_level]||'OK'}</span></td></tr>`).join('')}</tbody></table></div>
         <div class="card" style="margin-bottom:12px"><div class="card-t">Project Health Trend & Forecast</div><div style="font-size:11px;color:var(--t3);margin:-8px 0 10px">Solid = actual health score · Dashed = AI forecast · Grey = healthy threshold</div><canvas id="trendIndC" height="${window.innerWidth<700?150:75}"></canvas></div>`:''}
 
       <div id="trendAnalysis"></div>
@@ -7743,7 +7854,7 @@ async function analyzeTrend(){
 
   const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
   const sorted=(CP.trend_data||[]).slice().sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
-  const history=sorted.slice(-6).map(w=>`${w.date}: SV=${w.sv}%, CV=${w.burn_rate}%, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Health=${w.health_score||'?'}`).join('\n')||'No prior history';
+  const history=sorted.slice(-6).map(w=>`${w.date}: SPI=${w.sv}, CPI=${w.burn_rate}, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Health=${w.health_score||'?'}`).join('\n')||'No prior history';
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior project risk manager. Generate ALL output in ENGLISH.
@@ -7751,17 +7862,19 @@ Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
 Existing Risks:\n${existing}
 Trend history (chronological):\n${history}
 CURRENT PERIOD (${weekDate}):
-- SV (Schedule Variance): ${sv}% ${sv<0?'(behind schedule)':sv>0?'(ahead)':'(on track)'}
-- CV (Cost Variance): ${br}% ${br<0?'(over budget)':br>0?'(under budget)':'(on budget)'}
+- SPI (Schedule Performance Index): ${sv} ${sv<1?'(behind schedule — underperforming)':sv>1?'(ahead of plan)':'(exactly on schedule)'}
+- CPI (Cost Performance Index): ${br} ${br<1?'(cost overrun — over budget)':br>1?'(cost efficient — under budget)':'(exactly on budget)'}
 - Change Requests: ${cr}
 - Resource Utilization: ${ru}%
 - Vendor/Dependency Delay: ${vd||'none'}
 - Notes: ${notes||'none'}
 
+INTERPRETATION RULES (apply consistently): SPI < 1 = schedule underperformance; SPI > 1 = ahead of plan. CPI < 1 = cost overrun; CPI > 1 = cost efficiency. A value of 1.0 = exactly on plan. Treat values trending downward toward/below 1.0 as deteriorating, and upward above 1.0 as improving.
+
 Analyze the TREND across the history plus this period. Each indicator analysis = 2-4 sentences: meaning, trend direction, specific risks triggered (reference risk IDs), quantified impact. Then FORECAST the project's health score for the next 3 periods based on the trajectory so far (consider whether the trend is improving or deteriorating).
 
 Respond ONLY with valid JSON in English:
-{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative of the TREND and trajectory","indicators_analysis":{"schedule_variance":"...","cost_variance":"...","change_requests":"...","resource_utilization":"...","vendor_delay":"..."},"forecast":[{"label":"+1","health_score":72},{"label":"+2","health_score":68},{"label":"+3","health_score":65}],"forecast_narrative":"2-3 sentences predicting what will happen to the project if the current trend continues","warnings":["..."],"predicted_risks":["..."],"actions":["...","...","...","..."],"suggestions":[{"action":"add|adjust|close","risk_id":"existing ID for adjust/close, omit for add","title":"short risk title or change","reason":"1 sentence linking the trend to this action","level":"high|medium|low","probability":"1-5","category":"category for add"}]}
+{"alert_level":"high|medium|low","health_score":75,"executive_summary":"3-4 sentence narrative of the TREND and trajectory, referencing SPI and CPI","indicators_analysis":{"spi":"analysis of the Schedule Performance Index trend","cpi":"analysis of the Cost Performance Index trend","change_requests":"...","resource_utilization":"...","vendor_delay":"..."},"forecast":[{"label":"+1","health_score":72},{"label":"+2","health_score":68},{"label":"+3","health_score":65}],"forecast_narrative":"2-3 sentences predicting what will happen to the project if the current SPI/CPI trend continues","warnings":["..."],"predicted_risks":["..."],"actions":["...","...","...","..."],"suggestions":[{"action":"add|adjust|close","risk_id":"existing ID for adjust/close, omit for add","title":"short risk title or change","reason":"1 sentence linking the trend to this action","level":"high|medium|low","probability":"1-5","category":"category for add"}]}
 
 For "suggestions": ONLY register actions the trend clearly justifies — e.g. add a risk the declining trend reveals, raise a level as variance worsens, or close one the trend shows resolved. Maximum 3. Empty array if none clearly warranted. Never fabricate.`}]});
     hideLoad();
@@ -7810,8 +7923,8 @@ function renderTrendReport(entry){
       <div class="card" style="margin-bottom:10px">
         <div class="card-t" style="color:var(--primary)">Detailed Indicator Analysis</div>
         ${[
-          {k:'schedule_variance',label:'Schedule Variance (SV)',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
-          {k:'cost_variance',label:'Cost Variance (CV)',val:`${br}%`,color:br<-5?'var(--red)':br<0?'#a16207':'var(--grn)'},
+          {k:'spi',label:'Schedule Performance Index (SPI)',val:`${sv}`,color:sv<0.9?'var(--red)':sv<1?'#a16207':'var(--grn)'},
+          {k:'cpi',label:'Cost Performance Index (CPI)',val:`${br}`,color:br<0.9?'var(--red)':br<1?'#a16207':'var(--grn)'},
           {k:'change_requests',label:'Change Requests',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
           {k:'resource_utilization',label:'Resource Utilization',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
           {k:'vendor_delay',label:'Vendor Delays',val:vd?'Reported':'None',color:vd?'var(--red)':'var(--grn)'}
@@ -7836,8 +7949,8 @@ function renderTrendReport(entry){
     <div class="card" style="margin-bottom:10px">
       <div class="card-t" style="color:var(--primary)">Detailed Indicator Analysis</div>
       ${[
-        {k:'schedule_variance',label:'Schedule Variance (SV)',val:`${sv}%`,color:sv<0?'var(--red)':'var(--grn)'},
-        {k:'cost_variance',label:'Cost Variance (CV)',val:`${br}%`,color:br<-5?'var(--red)':br<0?'#a16207':'var(--grn)'},
+        {k:'spi',label:'Schedule Performance Index (SPI)',val:`${sv}`,color:sv<0.9?'var(--red)':sv<1?'#a16207':'var(--grn)'},
+        {k:'cpi',label:'Cost Performance Index (CPI)',val:`${br}`,color:br<0.9?'var(--red)':br<1?'#a16207':'var(--grn)'},
         {k:'change_requests',label:'Change Requests',val:cr,color:cr>3?'var(--red)':cr>0?'#a16207':'var(--grn)'},
         {k:'resource_utilization',label:'Resource Utilization',val:`${ru}%`,color:ru>90||ru<50?'var(--red)':ru>80||ru<60?'#a16207':'var(--grn)'},
         {k:'vendor_delay',label:'Vendor Delays',val:vd?'Reported':'None',color:vd?'var(--red)':'var(--grn)'}
