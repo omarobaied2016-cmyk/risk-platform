@@ -1612,15 +1612,10 @@ tr:hover td{background:rgba(109,129,150,.015);}
       <div class="pane" id="pane-tol">
         <div style="max-width:780px">
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--t1)">Risk Appetite & Tolerance</div>
-          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Define your acceptable thresholds — Claude treats these as active limits and flags exposure that exceeds them across every report, insight, and recommendation.</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:18px">Define your 5-level assessment scales — Claude uses the top (Critical) threshold of each as your appetite limit and flags exposure that exceeds it across every report, insight, and recommendation.</div>
 
-          <div id="appetiteThresholds"></div>
-
-          <div style="font-size:13px;font-weight:700;margin:26px 0 4px;color:var(--t1)">Assessment Scales</div>
-          <div style="font-size:11px;color:var(--t3);margin-bottom:14px">The 5-level scales used to score each risk's probability and impact.</div>
-
-          <div class="tol-sec"><div class="tol-t">Cost Levels</div><div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each threshold as a % of contract value — adjust with the steppers or type directly.</div><div id="cost_lvl"></div></div>
-          <div class="tol-sec"><div class="tol-t">Schedule Levels</div><div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each threshold in days of delay.</div><div id="sched_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t">Cost Levels</div><div id="cost_lvl"></div></div>
+          <div class="tol-sec"><div class="tol-t">Schedule Levels</div><div id="sched_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">QHSE Levels</div><div id="qhse_lvl"></div></div>
           <div class="tol-sec"><div class="tol-t">Reputation Levels</div><div id="rep_lvl"></div></div>
           <div class="tol-sec">
@@ -4521,8 +4516,11 @@ function remUF(i){UF.splice(i,1);renderUFP();}
 function tolBounds(levels,fallback){
   if(!Array.isArray(levels))return fallback.slice();
   const nums=[];
-  levels.forEach(lv=>{const m=(lv.d||'').match(/\d+(?:\.\d+)?/g);if(m)m.forEach(n=>nums.push(parseFloat(n)));});
-  // unique ascending, take first 4 distinct boundary values
+  levels.forEach(lv=>{
+    // strip thousands separators so "100,000 SAR" reads as 100000, not 100 & 000
+    const clean=(lv.d||'').replace(/(\d),(?=\d{3}\b)/g,'$1');
+    const m=clean.match(/\d+(?:\.\d+)?/g);if(m)m.forEach(n=>nums.push(parseFloat(n)));
+  });
   const uniq=[...new Set(nums)].sort((a,b)=>a-b);
   return uniq.length>=4?uniq.slice(0,4):fallback.slice();
 }
@@ -4552,234 +4550,197 @@ function probScaleFrom(b){return [
 //  RISK APPETITE THRESHOLDS — active limits fed into the analysis engine
 //  Stored on CP.risk_appetite. Cost & Schedule support percent OR absolute.
 // ═══════════════════════════════════════════════════════════════════════
-function defaultAppetite(){
-  return {
-    level:'moderate',
-    cost:{mode:'percent', percent:5, value:null},        // ±5% of contract value
-    schedule:{mode:'days', percent:null, days:15},        // 15 days slip
-    probability:{threshold:70},                           // min acceptable P-confidence
-    qhse:'No fatalities or permanent disability; injuries requiring hospitalization are not acceptable.',
-    reputation:'No national or regional negative media coverage is acceptable.'
-  };
-}
-function getAppetite(){
-  const a=Object.assign(defaultAppetite(),(CP&&CP.risk_appetite)||{});
-  // merge nested defaults safely
-  const d=defaultAppetite();
-  a.cost=Object.assign(d.cost,a.cost||{});
-  a.schedule=Object.assign(d.schedule,a.schedule||{});
-  a.probability=Object.assign(d.probability,a.probability||{});
-  return a;
-}
-// Resolve cost appetite to an absolute money figure (for comparisons)
-function costAppetiteAbsolute(){
-  const a=getAppetite();const cv=Number(CP&&CP.value)||0;
-  if(a.cost.mode==='value'&&a.cost.value!=null)return Number(a.cost.value);
-  if(a.cost.percent!=null&&cv)return cv*(a.cost.percent/100);
-  return 0;
-}
-function schedAppetiteDays(){
-  const a=getAppetite();
-  if(a.schedule.mode==='days'&&a.schedule.days!=null)return Number(a.schedule.days);
-  // percent of total duration
-  if(a.schedule.percent!=null&&CP&&CP.start_date&&CP.end_date){
-    const dur=(new Date(CP.end_date)-new Date(CP.start_date))/86400000;
-    if(dur>0)return Math.round(dur*(a.schedule.percent/100));
-  }
-  return 0;
-}
-// Build the appetite block injected into EVERY AI prompt
+// Build the appetite block injected into EVERY AI prompt — derived from the
+// Assessment Scales (the top "High/Critical" threshold is the appetite limit).
 function appetitePromptBlock(){
-  const a=getAppetite();const cur=(typeof curCode==='function'?curCode():'USD');
-  const costAbs=costAppetiteAbsolute();
-  const costStr=a.cost.mode==='value'
-    ? `${Number(a.cost.value||0).toLocaleString()} ${cur} (absolute)`
-    : `±${a.cost.percent}% of contract value${costAbs?` (≈ ${Math.round(costAbs).toLocaleString()} ${cur})`:''}`;
-  const schedStr=a.schedule.mode==='days'
-    ? `${a.schedule.days} days slip`
-    : `${a.schedule.percent}% of total duration${schedAppetiteDays()?` (≈ ${schedAppetiteDays()} days)`:''}`;
-  return `RISK APPETITE (the client's defined tolerance — treat these as HARD limits):
-- Overall posture: ${a.level}
-- COST appetite: ${costStr}. Any risk or scenario whose cost impact exceeds this is OVER tolerance and must be flagged explicitly.
-- SCHEDULE appetite: ${schedStr}. Any delay beyond this is unacceptable and must be flagged.
-- PROBABILITY appetite: minimum acceptable on-time/on-budget confidence is ${a.probability.threshold}%. If the predicted P80 (or stated confidence) completion probability falls below ${a.probability.threshold}%, state clearly that it is below appetite.
-- QHSE appetite (qualitative): ${a.qhse||'—'}
-- REPUTATION appetite (qualitative): ${a.reputation||'—'}
+  if(!CP)return '';
+  const tl=CP.tolerance||{};
+  const cur=(typeof curCode==='function'?curCode():'USD');
+  const cv=Number(CP.value)||0;
+  const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
+  // cost: 4th boundary (High→Critical) is the tolerance ceiling
+  const costMode=tl.cost_mode||'percent';
+  const cb=tolBounds(tl.cost_levels||costLevels(appetite),[2,5,10,15]);
+  const costCeil=cb[3];
+  const costStr=costMode==='value'
+    ? `${Math.round(costCeil).toLocaleString()} ${cur} (absolute)`
+    : `${costCeil}% of contract value${cv?` (≈ ${Math.round(cv*costCeil/100).toLocaleString()} ${cur})`:''}`;
+  // schedule
+  const schedMode=tl.sched_mode||'days';
+  const sb=tolBounds(tl.sched_levels||schedLevels(appetite),[7,15,30,45]);
+  const schedCeil=sb[3];
+  const dur=(CP.start_date&&CP.end_date)?(new Date(CP.end_date)-new Date(CP.start_date))/86400000:0;
+  const schedStr=schedMode==='percent'
+    ? `${schedCeil}% of total duration${dur>0?` (≈ ${Math.round(dur*schedCeil/100)} days)`:''}`
+    : `${schedCeil} days slip`;
+  // probability ceiling (Likely→Almost Certain boundary)
+  const pb=tolBounds(tl.prob||DP,[10,30,50,70]);
+  const probCeil=pb[3]||70;
+  // QHSE + Reputation: most severe level descriptions
+  const qhse=(tl.qhse&&tl.qhse[0]&&tl.qhse[0].d)||'No fatalities or permanent disability acceptable.';
+  const rep=(tl.rep&&tl.rep[0]&&tl.rep[0].d)||'No national/regional negative media coverage acceptable.';
+  return `RISK APPETITE (the client's defined tolerance — treat these as HARD limits, not reference values):
+- Overall posture: ${appetite}
+- COST tolerance ceiling: ${costStr}. Any risk or scenario whose cost impact exceeds this is OVER appetite and must be flagged explicitly.
+- SCHEDULE tolerance ceiling: ${schedStr}. Any delay beyond this is unacceptable and must be flagged.
+- PROBABILITY appetite: the highest acceptable likelihood band tops out at ${probCeil}%. If the predicted P80 completion confidence falls below appetite, state it clearly.
+- QHSE — most severe / unacceptable level: "${qhse}". Flag any risk reaching this severity.
+- REPUTATION — most severe / unacceptable level: "${rep}". Flag any risk reaching this severity.
 
-In your narratives, executive summary, and recommendations you MUST explicitly state whether current exposure is WITHIN appetite or EXCEEDS it, name which dimension breaches tolerance, and explain the management implication. Do not treat these as reference values — they are decision thresholds.`;
-}
-
-// ── UI: threshold editor with percent/value toggles ──
-function renderAppetiteThresholds(){
-  const el=document.getElementById('appetiteThresholds');
-  if(!el)return;
-  const a=getAppetite();const cur=(typeof curCode==='function'?curCode():'USD');
-  const cv=Number(CP&&CP.value)||0;
-  const costAbs=costAppetiteAbsolute();
-  const schedDays=schedAppetiteDays();
-  const seg=(active,onP,onV,pLabel,vLabel)=>`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:8px;overflow:hidden;font-size:11px">
-    <button onclick="${onP}" style="padding:5px 12px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:${active==='percent'||active==='days'&&false?'var(--primary)':active!=='value'?'var(--primary)':'transparent'};color:${active!=='value'?'#fff':'var(--t2)'}">${pLabel}</button>
-    <button onclick="${onV}" style="padding:5px 12px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:${active==='value'?'var(--primary)':'transparent'};color:${active==='value'?'#fff':'var(--t2)'}">${vLabel}</button>
-  </div>`;
-  el.innerHTML=`
-  <div style="background:linear-gradient(135deg,var(--primary-soft),transparent);border:1px solid rgba(109,129,150,.2);border-radius:13px;padding:18px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span style="width:30px;height:30px;border-radius:8px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:15px">◎</span>
-      <div><div style="font-size:13px;font-weight:800;color:var(--t1)">Risk Appetite Thresholds</div>
-      <div style="font-size:10.5px;color:var(--t3)">Active limits — Claude flags any exposure that breaches these</div></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">
-      <!-- COST -->
-      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:12px;font-weight:700;color:var(--t1)">💰 Cost Appetite</span>
-          ${seg(a.cost.mode,"setApMode('cost','percent')","setApMode('cost','value')",'Percent','Value')}
-        </div>
-        ${a.cost.mode==='value'
-          ? `<div style="display:flex;align-items:center;gap:8px"><input type="number" id="ap_cost_value" value="${a.cost.value!=null?a.cost.value:''}" oninput="setApVal('cost','value',this.value)" placeholder="100000" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">${cur}</span></div>
-             <div style="font-size:10px;color:var(--t3);margin-top:6px">Maximum acceptable cost overrun (absolute).</div>`
-          : `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--t3)">±</span><input type="number" step="0.5" id="ap_cost_pct" value="${a.cost.percent!=null?a.cost.percent:''}" oninput="setApVal('cost','percent',this.value)" placeholder="5" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">%</span></div>
-             <div style="font-size:10px;color:var(--t3);margin-top:6px">${cv?`≈ ${Math.round(costAbs).toLocaleString()} ${cur} of the ${cv.toLocaleString()} ${cur} contract.`:'% of contract value.'}</div>`}
-      </div>
-
-      <!-- SCHEDULE -->
-      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:12px;font-weight:700;color:var(--t1)">📅 Schedule Appetite</span>
-          ${seg(a.schedule.mode==='days'?'percent':'value',"setApMode('schedule','days')","setApMode('schedule','percent')",'Days','Percent')}
-        </div>
-        ${a.schedule.mode==='percent'
-          ? `<div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.5" id="ap_sch_pct" value="${a.schedule.percent!=null?a.schedule.percent:''}" oninput="setApVal('schedule','percent',this.value)" placeholder="10" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">%</span></div>
-             <div style="font-size:10px;color:var(--t3);margin-top:6px">${schedDays?`≈ ${schedDays} days of the total duration.`:'% of total project duration.'}</div>`
-          : `<div style="display:flex;align-items:center;gap:8px"><input type="number" id="ap_sch_days" value="${a.schedule.days!=null?a.schedule.days:''}" oninput="setApVal('schedule','days',this.value)" placeholder="15" style="flex:1;border:1px solid var(--b1);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;outline:none"/><span style="font-size:12px;color:var(--t3);font-weight:600">days</span></div>
-             <div style="font-size:10px;color:var(--t3);margin-top:6px">Maximum acceptable schedule slip (days).</div>`}
-      </div>
-    </div>
-
-    <!-- PROBABILITY -->
-    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px;margin-top:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:12px;font-weight:700;color:var(--t1)">🎯 Probability Appetite</span>
-        <span style="font-size:18px;font-weight:800;color:var(--primary)" id="ap_prob_disp">${a.probability.threshold}%</span>
-      </div>
-      <input type="range" min="50" max="95" step="5" value="${a.probability.threshold}" oninput="setApVal('probability','threshold',this.value);document.getElementById('ap_prob_disp').textContent=this.value+'%'" style="width:100%;accent-color:var(--primary);cursor:pointer"/>
-      <div style="font-size:10px;color:var(--t3);margin-top:6px">Minimum acceptable confidence of finishing on-time / on-budget. Claude flags when predicted P80 falls below this.</div>
-    </div>
-
-    <!-- QHSE + REPUTATION -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
-      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
-        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">🦺 QHSE Appetite</div>
-        <textarea id="ap_qhse" oninput="setApVal('qhse',null,this.value)" rows="3" placeholder="Describe what is unacceptable..." style="width:100%;border:1px solid var(--b1);border-radius:8px;padding:9px;font-family:inherit;font-size:11.5px;line-height:1.5;outline:none;resize:vertical">${a.qhse||''}</textarea>
-      </div>
-      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px">
-        <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:8px">📢 Reputation Appetite</div>
-        <textarea id="ap_rep" oninput="setApVal('reputation',null,this.value)" rows="3" placeholder="Describe what is unacceptable..." style="width:100%;border:1px solid var(--b1);border-radius:8px;padding:9px;font-family:inherit;font-size:11.5px;line-height:1.5;outline:none;resize:vertical">${a.reputation||''}</textarea>
-      </div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:14px">
-      <button class="btn btn-p" onclick="saveAppetite()" style="padding:8px 18px">Save Appetite</button>
-    </div>
-  </div>`;
-}
-// state setters (work on an in-memory draft, committed on save)
-function _apDraft(){ if(!CP._apDraft)CP._apDraft=getAppetite(); return CP._apDraft; }
-function setApMode(dim,mode){const d=_apDraft();d[dim].mode=mode;CP.risk_appetite=d;renderAppetiteThresholds();}
-function setApVal(dim,key,val){
-  const d=_apDraft();
-  const num=val===''?null:(isNaN(parseFloat(val))?val:parseFloat(val));
-  if(key===null)d[dim]=val; else d[dim][key]=num;
-  CP.risk_appetite=d;
-}
-async function saveAppetite(){
-  if(!canEdit('you cannot change risk appetite'))return;
-  const d=_apDraft();
-  CP.risk_appetite=d;
-  try{await sb('projects?id=eq.'+CID,'PATCH',{risk_appetite:d});toast('Risk appetite saved — now applied across all AI analysis',{type:'ok'});}
-  catch(e){toast('Saved locally but could not persist: '+e.message,{type:'warn'});}
-  delete CP._apDraft;
+In your narratives, executive summary, and recommendations you MUST explicitly state whether current exposure is WITHIN appetite or EXCEEDS it, name which dimension breaches tolerance, and explain the management implication.`;
 }
 
 function renderTol(){
   if(!CP)return;
   const tl=CP.tolerance;
   const appetite=CP.risk_appetite?.level||tl.appetite||'moderate';
-  renderAppetiteThresholds();
-  renderNumericTol('cost_lvl','cost',tl.cost_levels||costLevels(appetite),[2,5,10,15],'%','of contract value');
-  renderNumericTol('sched_lvl','sched',tl.sched_levels||schedLevels(appetite),[7,15,30,45],' days','delay');
+  const costMode=tl.cost_mode||'percent';   // 'percent' | 'value'
+  const schedMode=tl.sched_mode||'days';     // 'days' | 'percent'
+  renderNumericTol('cost_lvl','cost',tl.cost_levels||costLevels(appetite),[2,5,10,15],costMode);
+  renderNumericTol('sched_lvl','sched',tl.sched_levels||schedLevels(appetite),[7,15,30,45],schedMode);
   renderLvls('qhse_lvl',tl.qhse||DQ,'qhse');
   renderLvls('rep_lvl',tl.rep||DR,'rep');
-  renderNumericTol('prob_lvl','prob',tl.prob||DP,[10,30,50,70],'%','probability');
+  renderNumericTol('prob_lvl','prob',tl.prob||DP,[10,30,50,70],'percent');
 }
 
 // Numeric editor for Cost / Schedule / Probability — edit 4 boundaries with steppers + a live preview of the 5 levels
-function renderNumericTol(cid,kind,levels,fallback,unit,suffix){
+function renderNumericTol(cid,kind,levels,fallback,mode){
   const el=document.getElementById(cid);
   if(!el)return;
   const b=tolBounds(levels,fallback);
   const labels=kind==='cost'?['Very Low','Low','Medium','High','Critical']
     :kind==='sched'?['Very Low','Low','Medium','High','Critical']
     :['Rare','Unlikely','Possible','Likely','Almost Certain'];
-  const isPct=unit==='%';
-  const step=kind==='sched'?1:(kind==='prob'?5:0.5);
-  const max=kind==='prob'?100:(kind==='cost'?100:365);
-  // four boundary steppers
+  // resolve current unit + bounds for the active mode
+  // cost: percent(%) | value(currency) · sched: days | percent(%) · prob: percent only
+  const cur=(typeof curCode==='function'?curCode():'USD');
+  let unit, step, max, subtitle, toggle='';
+  if(kind==='cost'){
+    if(mode==='value'){unit=cur;step=1000;max=1e12;subtitle='Set each threshold as an absolute amount.';}
+    else {unit='%';step=0.5;max=100;subtitle='Set each threshold as a % of contract value.';}
+    toggle=tolToggle(cid,kind,mode,'percent','% of value','value',cur+' value');
+  } else if(kind==='sched'){
+    if(mode==='percent'){unit='%';step=0.5;max=100;subtitle='Set each threshold as a % of total project duration.';}
+    else {unit='days';step=1;max=365;subtitle='Set each threshold in days of delay.';}
+    toggle=tolToggle(cid,kind,mode,'days','Days','percent','% of duration');
+  } else {
+    unit='%';step=5;max=100;subtitle='Set each probability threshold as a percentage.';
+  }
   const steppers=b.map((val,i)=>`
     <div class="ntol-row">
       <div class="ntol-band"><span class="ntol-dot" style="background:${LC[i]}"></span><span class="ntol-bl">${i+1} ${labels[i]}</span><span class="ntol-rng" id="${cid}_rng${i}"></span></div>
       <div class="ntol-ctrl">
-        <button type="button" class="ntol-btn" onclick="bumpTol('${cid}','${kind}',${i},-1)">−</button>
-        <input type="number" class="ntol-inp" id="${cid}_b${i}" value="${val}" min="0" max="${max}" step="${step}" oninput="commitTol('${cid}','${kind}',false)" onchange="commitTol('${cid}','${kind}',true)"/>
-        <span class="ntol-unit">${unit.trim()}</span>
-        <button type="button" class="ntol-btn" onclick="bumpTol('${cid}','${kind}',${i},1)">+</button>
+        <button type="button" class="ntol-btn" onclick="bumpTol('${cid}','${kind}',${i},-1,'${mode}')">−</button>
+        <input type="number" class="ntol-inp" id="${cid}_b${i}" value="${val}" min="0" max="${max}" step="${step}" oninput="commitTol('${cid}','${kind}',false,'${mode}')" onchange="commitTol('${cid}','${kind}',true,'${mode}')"/>
+        <span class="ntol-unit">${unit}</span>
+        <button type="button" class="ntol-btn" onclick="bumpTol('${cid}','${kind}',${i},1,'${mode}')">+</button>
       </div>
     </div>`).join('');
-  el.innerHTML=`<div class="ntol">${steppers}
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:-2px 0 10px;gap:10px">
+      <div style="font-size:10.5px;color:var(--t3)">${subtitle}</div>
+      ${toggle}
+    </div>
+    <div class="ntol">${steppers}
     <div class="ntol-row" style="border:none;padding-top:4px">
       <div class="ntol-band"><span class="ntol-dot" style="background:${LC[4]}"></span><span class="ntol-bl">5 ${labels[4]}</span></div>
       <div class="ntol-ctrl"><span style="font-size:11px;color:var(--t3)">Above the highest threshold</span></div>
     </div>
   </div>`;
-  updateTolRanges(cid,kind);
+  updateTolRanges(cid,kind,mode);
+}
+// Value / Percentage segmented toggle for a scale
+function tolToggle(cid,kind,active,modeA,labelA,modeB,labelB){
+  const btn=(m,l)=>`<button type="button" onclick="setTolMode('${kind}','${m}')" style="padding:4px 11px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:10.5px;background:${active===m?'var(--primary)':'transparent'};color:${active===m?'#fff':'var(--t2)'}">${l}</button>`;
+  return `<div style="display:inline-flex;border:1px solid var(--b1);border-radius:7px;overflow:hidden;flex-shrink:0">${btn(modeA,labelA)}${btn(modeB,labelB)}</div>`;
+}
+// Switch a scale's unit mode, converting existing values where sensible
+function setTolMode(kind,mode){
+  if(!canEdit('you cannot change risk appetite'))return;
+  const tl=CP.tolerance;
+  const cv=Number(CP.value)||0;
+  const key=kind==='cost'?'cost_mode':'sched_mode';
+  const cur=tl[key]||(kind==='cost'?'percent':'days');
+  if(cur===mode)return;
+  // convert the stored boundary levels between units
+  const lvKey=kind==='cost'?'cost_levels':'sched_levels';
+  const levels=tl[lvKey]||(kind==='cost'?costLevels(tl.appetite||'moderate'):schedLevels(tl.appetite||'moderate'));
+  const bounds=tolBounds(levels,kind==='cost'?[2,5,10,15]:[7,15,30,45]);
+  let conv=bounds;
+  if(kind==='cost'){
+    if(cur==='percent'&&mode==='value'&&cv)conv=bounds.map(p=>Math.round(cv*p/100));
+    else if(cur==='value'&&mode==='percent'&&cv)conv=bounds.map(v=>Math.round(v/cv*1000)/10);
+  } else { // sched
+    const dur=(CP.start_date&&CP.end_date)?(new Date(CP.end_date)-new Date(CP.start_date))/86400000:0;
+    if(cur==='days'&&mode==='percent'&&dur>0)conv=bounds.map(d=>Math.round(d/dur*1000)/10);
+    else if(cur==='percent'&&mode==='days'&&dur>0)conv=bounds.map(p=>Math.round(dur*p/100));
+  }
+  tl[key]=mode;
+  tl[lvKey]=boundsToLevels(conv,kind,mode);
+  renderTol();
+  persistTol();
 }
 // live "1–5 → range" hints under each band
-function updateTolRanges(cid,kind){
+function updateTolRanges(cid,kind,mode){
   const b=[0,1,2,3].map(i=>parseFloat(document.getElementById(`${cid}_b${i}`)?.value)||0);
-  const unit=kind==='sched'?'d':'%';
-  const fmt=(a,z)=>`${a}–${z}${unit}`;
+  const cur=(typeof curCode==='function'?curCode():'USD');
+  let unit;
+  if(kind==='cost')unit=mode==='value'?(' '+cur):'%';
+  else if(kind==='sched')unit=mode==='percent'?'%':'d';
+  else unit='%';
+  const fmtV=v=>kind==='cost'&&mode==='value'?Math.round(v).toLocaleString():v;
+  const fmt=(a,z)=>`${fmtV(a)}–${fmtV(z)}${unit}`;
   const set=(i,txt)=>{const e=document.getElementById(`${cid}_rng${i}`);if(e)e.textContent=txt;};
-  set(0,`≤ ${b[0]}${unit}`);set(1,fmt(b[0],b[1]));set(2,fmt(b[1],b[2]));set(3,fmt(b[2],b[3]));
+  set(0,`≤ ${fmtV(b[0])}${unit}`);set(1,fmt(b[0],b[1]));set(2,fmt(b[1],b[2]));set(3,fmt(b[2],b[3]));
 }
-function bumpTol(cid,kind,idx,dir){
+function bumpTol(cid,kind,idx,dir,mode){
   const inp=document.getElementById(`${cid}_b${idx}`);
   if(!inp)return;
-  const step=kind==='sched'?1:(kind==='prob'?5:0.5);
+  const step=kind==='sched'?(mode==='percent'?0.5:1):(kind==='prob'?5:(kind==='cost'&&mode==='value'?1000:0.5));
   let v=(parseFloat(inp.value)||0)+dir*step;
   if(v<0)v=0;
-  inp.value=kind==='cost'?Math.round(v*10)/10:Math.round(v);
-  commitTol(cid,kind,true);
+  inp.value=(kind==='cost'&&mode!=='value')?Math.round(v*10)/10:(kind==='sched'&&mode==='percent'?Math.round(v*10)/10:Math.round(v));
+  commitTol(cid,kind,true,mode);
+}
+// turn 4 numeric boundaries into the 5-level scale objects, respecting the unit mode
+function boundsToLevels(b,kind,mode){
+  const cur=(typeof curCode==='function'?curCode():'USD');
+  if(kind==='cost'){
+    if(mode==='value'){const f=v=>Math.round(v).toLocaleString()+' '+cur;
+      return [{l:'1 — Very Low',d:`Up to ${f(b[0])}`},{l:'2 — Low',d:`${f(b[0])}-${f(b[1])}`},{l:'3 — Medium',d:`${f(b[1])}-${f(b[2])}`},{l:'4 — High',d:`${f(b[2])}-${f(b[3])}`},{l:'5 — Critical',d:`More than ${f(b[3])}`}];}
+    return costScaleFrom(b);
+  }
+  if(kind==='sched'){
+    if(mode==='percent'){return [{l:'1 — Very Low',d:`Up to ${b[0]}% of duration`},{l:'2 — Low',d:`${b[0]}-${b[1]}% of duration`},{l:'3 — Medium',d:`${b[1]}-${b[2]}% of duration`},{l:'4 — High',d:`${b[2]}-${b[3]}% of duration`},{l:'5 — Critical',d:`More than ${b[3]}% of duration`}];}
+    return schedScaleFrom(b);
+  }
+  return probScaleFrom(b);
 }
 // read the 4 boundaries, optionally enforce ascending order, rebuild the scale text, save
-function commitTol(cid,kind,enforce){
+function commitTol(cid,kind,enforce,mode){
   let b=[0,1,2,3].map(i=>parseFloat(document.getElementById(`${cid}_b${i}`)?.value)||0);
+  const minStep=(kind==='cost'&&mode==='value')?1000:(kind==='cost'||(kind==='sched'&&mode==='percent')?0.5:1);
   if(enforce){
-    // on commit (blur/stepper): keep strictly ascending so the bands make sense
-    for(let i=1;i<4;i++){if(b[i]<=b[i-1])b[i]=b[i-1]+(kind==='cost'?0.5:1);}
+    for(let i=1;i<4;i++){if(b[i]<=b[i-1])b[i]=b[i-1]+minStep;}
     for(let i=0;i<4;i++){const inp=document.getElementById(`${cid}_b${i}`);if(inp&&parseFloat(inp.value)!==b[i])inp.value=b[i];}
   }
   if(!CP.tolerance)CP.tolerance={};
-  if(kind==='cost')CP.tolerance.cost_levels=costScaleFrom(b);
-  else if(kind==='sched')CP.tolerance.sched_levels=schedScaleFrom(b);
+  if(kind==='cost'){CP.tolerance.cost_levels=boundsToLevels(b,'cost',mode);CP.tolerance.cost_mode=mode;}
+  else if(kind==='sched'){CP.tolerance.sched_levels=boundsToLevels(b,'sched',mode);CP.tolerance.sched_mode=mode;}
   else if(kind==='prob')CP.tolerance.prob=probScaleFrom(b);
-  updateTolRanges(cid,kind);
+  updateTolRanges(cid,kind,mode);
   dbTol();
 }
+function persistTol(){dbTol();}
 function renderLvls(cid,lvs,key){
   const el=document.getElementById(cid);
   if(!el)return;
-  el.innerHTML=lvs.map((lv,i)=>`<div class="tlv" style="border-inline-start:3px solid ${LC[i]}"><span class="tlv-l" style="color:${LC[i]}">${lv.l}</span><input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)"/></div>`).join('');
+  el.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px">${lvs.map((lv,i)=>`
+    <div style="display:flex;align-items:center;gap:11px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:10px 13px;transition:border-color .15s" onmouseover="this.style.borderColor='${LC[i]}'" onmouseout="this.style.borderColor='var(--b1)'">
+      <span style="width:26px;height:26px;border-radius:7px;background:${LC[i]}1a;color:${LC[i]};display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">${i+1}</span>
+      <span style="font-size:11px;font-weight:700;color:${LC[i]};min-width:92px;white-space:nowrap">${lv.l.replace(/^\d+\s*—\s*/,'')}</span>
+      <input type="text" value="${lv.d}" oninput="updLvl('${key}',${i},this.value)" placeholder="Describe this level…" style="flex:1;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--t1);font-family:inherit;font-size:12px;outline:none;padding:3px 0;transition:border-color .15s" onfocus="this.style.borderBottomColor='${LC[i]}'" onblur="this.style.borderBottomColor='transparent'"/>
+    </div>`).join('')}</div>`;
 }
 function updLvl(key,idx,val){if(!CP)return;if(!CP.tolerance[key])CP.tolerance[key]=[];CP.tolerance[key][idx].d=val;dbTol();}
 let tolT=null;
@@ -5741,7 +5702,7 @@ function renderDash(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type).length;
   const opp=risks.filter(r=>r.type==='opportunity').length;
   const riskScore=Math.min(100,Math.round((crit*15+highOnly*10+med*5+low*1)/(risks.length*15)*100));
-  const val=parseFloat((CP.value||'0').replace(/[^0-9.]/g,''))||0;
+  const val=parseFloat(String(CP.value||'0').replace(/[^0-9.]/g,''))||0;
   // Expected cost exposure (EMV): sum of probability × cost-impact value across THREATS only.
   // Uses the same principled calc as Risk Exposure Analysis, so it stays realistic (a fraction of contract value).
   const exposure=val>0?Math.round((risks.filter(r=>r.type!=='opportunity'&&r.status!=='closed').reduce((s,r)=>s+(typeof rexValue==='function'?rexValue(r,'cost'):0),0))):null;
