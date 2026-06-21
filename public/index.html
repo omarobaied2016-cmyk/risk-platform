@@ -6137,7 +6137,9 @@ const REX_UNIT={overall:'score',cost:'SAR',schedule:'days',qhse:'score',reputati
 const PROB_PCT={1:0.05,2:0.20,3:0.40,4:0.60,5:0.85}; // probability level → representative probability
 function rexContractValue(){const n=parseFloat(String(CP?.value||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;}
 function rexBandMid(text,isFirst,isLast){
-  const nums=(String(text||'').match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+  // strip thousands separators so "2,000,000 SAR" reads as 2000000, not 2/000/000
+  const clean=String(text||'').replace(/(\d),(?=\d{3}\b)/g,'$1');
+  const nums=(clean.match(/\d+(?:\.\d+)?/g)||[]).map(Number);
   if(!nums.length)return 0;
   if(nums.length>=2)return (nums[0]+nums[1])/2;
   if(isLast)return nums[0]*1.4;   // "More than X" band
@@ -6154,14 +6156,22 @@ function rexValue(r,f,proj){
   if(f==='cost'){
     const lv=r.impact_cost||0;if(!lv)return 0;
     const levels=tl.cost_levels||costLevels(tl.appetite||'moderate');
-    const pct=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
-    return P*(pct/100)*cv();                          // SAR
+    const mid=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
+    // Decide unit: explicit value mode, OR auto-detect (a "percent" over 100 can't be a %, so it's absolute)
+    const isValue=(tl.cost_mode==='value')||mid>100;
+    if(isValue)return P*mid;                                       // SAR (absolute)
+    return P*(mid/100)*cv();                                       // SAR (% of contract)
   }
   if(f==='schedule'){
     const lv=r.impact_schedule||0;if(!lv)return 0;
     const levels=tl.sched_levels||schedLevels(tl.appetite||'moderate');
-    const days=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
-    return P*days;                                    // days
+    const mid=rexBandMid(levels[lv-1]&&levels[lv-1].d,lv===1,lv===5);
+    // percent mode = % of total duration → convert to days; otherwise mid is already days
+    if(tl.sched_mode==='percent'){
+      const dur=(proj&&proj.start_date&&proj.end_date)?(new Date(proj.end_date)-new Date(proj.start_date))/86400000:0;
+      return P*(mid/100)*dur;                                      // days
+    }
+    return P*mid;                                                  // days
   }
   if(f==='qhse')return P*(r.impact_qhse||0);          // score
   if(f==='reputation')return P*(r.impact_reputation||0);
