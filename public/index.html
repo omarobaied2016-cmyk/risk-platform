@@ -2054,6 +2054,7 @@ function enterApp(){
   document.getElementById('authScreen').style.display='none';
   document.querySelector('.app').style.display='grid';
   if(typeof armShowFab==='function')armShowFab();
+  if(typeof honorPendingPlan==='function')honorPendingPlan();
   const userName=currentUserProfile?.full_name||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
@@ -2376,9 +2377,29 @@ window.onload=async()=>{
       window.history.replaceState({},'',window.location.pathname);
     }
   }catch(e){}
+  // Came from the landing page with a chosen plan? Remember it; start checkout after sign-in.
+  try{
+    const planParam=new URLSearchParams(window.location.search).get('plan');
+    if(planParam&&['starter','professional','enterprise'].includes(planParam)){
+      sessionStorage.setItem('pendingPlan',planParam);
+      window.history.replaceState({},'',window.location.pathname);
+    }
+  }catch(e){}
   // Check auth session
   checkSession();
 };
+// After a user is signed in and their profile is loaded, honor any plan they picked on the landing page.
+async function honorPendingPlan(){
+  try{
+    const plan=sessionStorage.getItem('pendingPlan');
+    if(!plan||!currentUser)return;
+    sessionStorage.removeItem('pendingPlan');
+    // only start checkout if they're not already on a paid plan
+    const cur=(currentUserProfile&&currentUserProfile.plan)||'free_trial';
+    if(cur===plan)return;
+    if(typeof startCheckout==='function')setTimeout(()=>startCheckout(plan),600);
+  }catch(e){}
+}
 
 function initColorPicker(){
   const el=document.getElementById('pf_colors');
