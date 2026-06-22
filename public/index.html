@@ -1983,14 +1983,14 @@ function getUserPlan(){
 
 function getPlanLimits(plan){
   const limits={
-    free_trial:{label:'Free Trial',projects:1,portfolios:0,whatif:false,insights:false,days:7},
-    starter:{label:'Starter',projects:3,portfolios:1,whatif:true,insights:true,days:null},
-    professional:{label:'Professional',projects:20,portfolios:5,whatif:true,insights:true,days:null},
-    enterprise:{label:'Enterprise',projects:100,portfolios:25,whatif:true,insights:true,days:null},
-    unlimited:{label:'Unlimited',projects:99999,portfolios:99999,whatif:true,insights:true,days:null},
+    free_trial:{label:'Free Trial',projects:1,portfolios:0,whatif:true,insights:true,team:false,audit:false,multilang:false,days:7},
+    starter:{label:'Starter',projects:3,portfolios:1,whatif:true,insights:true,team:false,audit:false,multilang:false,days:null},
+    professional:{label:'Professional',projects:20,portfolios:5,whatif:true,insights:true,team:true,audit:true,multilang:true,days:null},
+    enterprise:{label:'Enterprise',projects:100,portfolios:25,whatif:true,insights:true,team:true,audit:true,multilang:true,days:null},
+    unlimited:{label:'Unlimited',projects:99999,portfolios:99999,whatif:true,insights:true,team:true,audit:true,multilang:true,days:null},
     // legacy aliases (old plan names still in DB)
-    pro:{label:'Starter',projects:3,portfolios:1,whatif:true,insights:true,days:null},
-    organization:{label:'Professional',projects:20,portfolios:5,whatif:true,insights:true,days:null}
+    pro:{label:'Starter',projects:3,portfolios:1,whatif:true,insights:true,team:false,audit:false,multilang:false,days:null},
+    organization:{label:'Professional',projects:20,portfolios:5,whatif:true,insights:true,team:true,audit:true,multilang:true,days:null}
   };
   return limits[plan]||limits.free_trial;
 }
@@ -2040,11 +2040,23 @@ function checkPlanLimit(type){
     return false;
   }
   if(type==='whatif'&&!limits.whatif){
-    toast('What-If Analysis is not available on Free Trial. Upgrade to Pro or higher.');
+    toast('What-If Analysis is not available on your current plan. Upgrade to unlock it.');
     return false;
   }
   if(type==='insights'&&!limits.insights){
-    toast('Market Insights is not available on Free Trial. Upgrade to Pro or higher.');
+    toast('Market Insights is not available on your current plan. Upgrade to unlock it.');
+    return false;
+  }
+  if(type==='team'&&!limits.team){
+    toast('Team sharing & role permissions require the Professional plan or higher.');
+    return false;
+  }
+  if(type==='audit'&&!limits.audit){
+    toast('The Activity Log & audit trail require the Professional plan or higher.');
+    return false;
+  }
+  if(type==='multilang'&&!limits.multilang){
+    toast('Multi-language reports require the Professional plan or higher.');
     return false;
   }
   return true;
@@ -3266,6 +3278,7 @@ function ttGoRisk(projId,riskId){
 // ═══ PROJECT ACTIVITY LOG / AUDIT TRAIL — full traceability for the Editor (owner) ═══
 async function showActivityLog(){
   if(!CP){toast('Open a project first');return;}
+  if(!checkPlanLimit('audit'))return;
   let modal=document.getElementById('auditModal');
   if(modal)modal.remove();
   modal=document.createElement('div');
@@ -3978,6 +3991,7 @@ function renderPortfolioReport(parsed,dateStr){
 }
 
 async function translatePortfolioReport(){
+  if(!checkPlanLimit('multilang'))return;
   if(!currentPF||!currentPF.ai_report){toast('Generate a report first');return;}
   const lang=document.getElementById('pfReportLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
@@ -4060,6 +4074,7 @@ function teamRender(){
     </div>`).join('');
 }
 async function teamAdd(){
+  if(!checkPlanLimit('team'))return;
   const email=(document.getElementById('team_email').value||'').trim().toLowerCase();
   const role=document.getElementById('team_role').value;
   if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Enter a valid email address');return;}
@@ -5566,6 +5581,7 @@ Return ONLY a valid JSON object with the same fields (type, category, descriptio
 
 // Translate the entire risk register to a chosen language
 async function translateRegister(){
+  if(!checkPlanLimit('multilang'))return;
   const lang=document.getElementById('translateLang')?.value||'English';
   const risks=(CP?.risks||[]);
   if(!risks.length){toast('No risks to translate');return;}
@@ -6877,6 +6893,7 @@ async function loadProjectInsights(withSuggestions){
   // withSuggestions: true only when the user explicitly asks ("Analyze impact"); auto-refresh passes false.
   if(!CP)return;
   if(!requireActiveAccess())return;
+  if(withSuggestions&&!checkPlanLimit('insights'))return;
   if(!GK().startsWith('sk-ant-'))return;
   const el=document.getElementById('projMarketInsights');
   if(el)el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Loading market insights...</div>';
@@ -6942,6 +6959,7 @@ function dedupeMarketSuggestions(list){
 
 // Translate the saved AI report to a chosen language (field-by-field, JSON-safe)
 async function translateReport(){
+  if(!checkPlanLimit('multilang'))return;
   if(!CP||!CP.ai_report){toast('Generate a report first');return;}
   const lang=document.getElementById('reportLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
@@ -6965,6 +6983,7 @@ async function translateReport(){
 
 // Translate the saved market insights (field-by-field, JSON-safe)
 async function translateInsights(){
+  if(!checkPlanLimit('multilang'))return;
   if(!CP||!CP.market_insights){toast('Load insights first');return;}
   const lang=document.getElementById('insightsLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
@@ -8588,6 +8607,7 @@ function updLever(key,val){wifLevers[key]=val;}
 
 async function runSimulation(){
   if(!requireActiveAccess())return;
+  if(!checkPlanLimit('whatif'))return;
   const risks=CP?.risks||[];
   if(!risks.length){toast('No risks to simulate');return;}
   if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
@@ -8970,6 +8990,7 @@ async function loadInsights(){
 }
 
 async function translateMainInsights(){
+  if(!checkPlanLimit('multilang'))return;
   if(!CP||!CP.insights_data){toast('Generate insights first');return;}
   const lang=document.getElementById('mainInsightsLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
@@ -9526,6 +9547,7 @@ function renderPortfolioInsights(data,articles){
 }
 
 async function translatePortfolioInsights(){
+  if(!checkPlanLimit('multilang'))return;
   if(!currentPF||!currentPF.market_insights){toast('Generate insights first');return;}
   const lang=document.getElementById('pfInsightsLang')?.value||'English';
   if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
