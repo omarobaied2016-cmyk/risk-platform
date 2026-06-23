@@ -971,22 +971,29 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .welcome-btn-ghost:hover{background:var(--s2,#f7f8f9)}
 .welcome-btn-text{background:transparent;color:var(--t3,#9aa4af);border:none;padding:6px;font-size:12px;cursor:pointer;font-family:inherit}
 .welcome-btn-text:hover{color:var(--t2,#4a5560)}
-/* tour */
-.tour-ov{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-end;padding:24px}
-.tour-card{pointer-events:auto;background:var(--s1,#fff);border-radius:16px;padding:22px 24px;max-width:380px;box-shadow:0 18px 56px rgba(43,52,64,.3);border:1px solid var(--b1,#e3e6ea);animation:onbRise .35s cubic-bezier(.2,.8,.2,1)}
-.tour-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.tour-icon{width:34px;height:34px;border-radius:9px;background:var(--primary,#6D8196);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px}
+/* tour — interactive spotlight + arrow */
+.tour-layer{position:fixed;inset:0;z-index:9999;pointer-events:none;animation:onbFade .25s ease}
+.tour-dim-full{position:absolute;inset:0;background:rgba(43,52,64,.55);backdrop-filter:blur(2px);pointer-events:auto}
+.tour-spot{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(43,52,64,.58);pointer-events:none;transition:all .35s cubic-bezier(.2,.8,.2,1);outline:2px solid rgba(255,255,255,.85);outline-offset:1px}
+.tour-pop{position:fixed;pointer-events:auto;background:var(--s1,#fff);border-radius:16px;padding:20px 22px;width:340px;box-shadow:0 18px 56px rgba(43,52,64,.34);border:1px solid var(--b1,#e3e6ea);animation:onbRise .3s cubic-bezier(.2,.8,.2,1);transition:left .3s cubic-bezier(.2,.8,.2,1),top .3s cubic-bezier(.2,.8,.2,1)}
+.tour-arrow{position:absolute;width:14px;height:14px;background:var(--s1,#fff);transform:rotate(45deg);border:1px solid var(--b1,#e3e6ea)}
+.tour-arrow-left{left:-7px;clip-path:polygon(0 0,100% 100%,0 100%);border-right:none;border-top:none}
+.tour-arrow-right{right:-7px;clip-path:polygon(100% 0,100% 100%,0 100%);border-left:none;border-bottom:none}
+.tour-arrow-top{top:-7px;clip-path:polygon(0 0,100% 0,50% 100%);border-bottom:none;border-right:none}
+.tour-arrow-bottom{bottom:-7px;clip-path:polygon(50% 0,100% 100%,0 100%);border-top:none;border-left:none}
+.tour-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.tour-icon{width:32px;height:32px;border-radius:9px;background:var(--primary,#6D8196);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
 .tour-step{font-size:11px;font-weight:700;color:var(--t3,#9aa4af);letter-spacing:.04em;text-transform:uppercase}
-.tour-title{font-size:17px;font-weight:800;color:var(--t1,#2B3440);margin-bottom:8px;letter-spacing:-.01em}
-.tour-body{font-size:13px;line-height:1.6;color:var(--t2,#4a5560);margin-bottom:16px}
-.tour-progress{height:4px;background:var(--b1,#e3e6ea);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.tour-title{font-size:16px;font-weight:800;color:var(--t1,#2B3440);margin-bottom:7px;letter-spacing:-.01em}
+.tour-body{font-size:12.5px;line-height:1.6;color:var(--t2,#4a5560);margin-bottom:15px}
+.tour-progress{height:4px;background:var(--b1,#e3e6ea);border-radius:3px;overflow:hidden;margin-bottom:14px}
 .tour-progress-fill{height:100%;background:var(--primary,#6D8196);border-radius:3px;transition:width .4s cubic-bezier(.2,.8,.2,1)}
 .tour-actions{display:flex;align-items:center;justify-content:space-between}
-.tour-btn-skip{background:transparent;border:none;color:var(--t3,#9aa4af);font-size:12.5px;cursor:pointer;font-family:inherit;font-weight:500}
+.tour-btn-skip{background:transparent;border:none;color:var(--t3,#9aa4af);font-size:12px;cursor:pointer;font-family:inherit;font-weight:500}
 .tour-btn-skip:hover{color:var(--t2,#4a5560)}
-.tour-btn-ghost{background:transparent;border:1px solid var(--b1,#e3e6ea);color:var(--t2,#4a5560);border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.tour-btn-ghost{background:transparent;border:1px solid var(--b1,#e3e6ea);color:var(--t2,#4a5560);border-radius:9px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 .tour-btn-ghost:hover{background:var(--s2,#f7f8f9)}
-.tour-btn-next{background:var(--primary,#6D8196);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.tour-btn-next{background:var(--primary,#6D8196);color:#fff;border:none;border-radius:9px;padding:7px 17px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
 .tour-btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(109,129,150,.35)}
 /* help center */
 .help-modal{animation:onbRise .3s ease}
@@ -1521,7 +1528,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b1);color:var(--sb-text-3);padding:3px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Sign out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
       <div style="margin-bottom:8px">
-        <button onclick="openHelpCenter()" style="width:100%;padding:9px;background:transparent;color:var(--sb-text-2);border:1px solid var(--sb-border);border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px" onmouseover="this.style.background='var(--sb-hover)';this.style.color='var(--sb-text)'" onmouseout="this.style.background='transparent';this.style.color='var(--sb-text-2)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help &amp; Tour</button>
+        <button id="helpBtnSidebar" onclick="openHelpCenter()" style="width:100%;padding:9px;background:transparent;color:var(--sb-text-2);border:1px solid var(--sb-border);border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px" onmouseover="this.style.background='var(--sb-hover)';this.style.color='var(--sb-text)'" onmouseout="this.style.background='transparent';this.style.color='var(--sb-text-2)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help &amp; Tour</button>
       </div>
       <div style="margin-bottom:8px">
       </div>
@@ -10068,35 +10075,52 @@ function mtip(text){return `<span class="metric-help">?<span class="metric-tip">
 function onbState(){try{return JSON.parse(localStorage.getItem(ONB_KEY)||'{}');}catch(e){return {};}}
 function onbSet(k,v){try{const s=onbState();s[k]=v;localStorage.setItem(ONB_KEY,JSON.stringify(s));}catch(e){}}
 
-// ── Tour steps: each anchors to a real nav group/pane and explains what/why/benefit ──
+// ── Tour steps: each targets a REAL element (spotlight + arrow) and explains what/why/benefit ──
 const TOUR_STEPS=[
-  {tab:null,title:'Your command center',body:'This is your dashboard — overall project health, KPIs, completion probability, and portfolio visibility at a glance. <b>Why it matters:</b> one screen tells you if your project is on track or needs attention.',icon:'◆'},
-  {tab:'reg',title:'Risk Register',body:'Create and manage risks here — set probability and impact, assign risk owners and response owners. <b>Why it matters:</b> this is the backbone. Every AI insight, report, and forecast is built from your register.',icon:'▦'},
-  {tab:'dash',title:'AI Reports',body:'AI generates executive insights, your top concerns, and strategic recommendations — written like a senior risk manager would. <b>Benefit:</b> board-ready analysis in seconds, not hours.',icon:'✦'},
-  {tab:'insights',title:'Market & World Insights',body:'Live material prices, construction news, geopolitical events, and currency impacts — tied to your specific risks. <b>Benefit:</b> catch external threats before they hit your project.',icon:'◉'},
-  {tab:'upd',title:'Trend Analysis',body:'Track weekly performance — SPI &amp; CPI, change requests, resource utilization, and vendor delays — with AI forecasting. <b>Benefit:</b> see where the project is heading, not just where it is.',icon:'◬'},
-  {tab:'whatif',title:'What-If Simulator',body:'Test scenarios before they happen — model the impact of delays and cost changes on your risk exposure. <b>Benefit:</b> make decisions with data, not gut feel.',icon:'◈'},
-  {tab:'plan',title:'Response Plans',body:'AI turns each risk into concrete, scheduled mitigation actions with goals and expected outcomes. <b>Benefit:</b> always know exactly what to do today to stay ahead.',icon:'❖'},
-  {tab:'contacts',title:'Stakeholders &amp; Risk Appetite',body:'Manage team members and their roles, then define your risk appetite — the tolerance thresholds the AI uses to flag what exceeds acceptable limits. <b>Benefit:</b> the AI analyzes risks against YOUR limits, not generic ones.',icon:'◎'},
-  {tab:null,title:'Export Center',body:'Export polished PDF &amp; Excel reports — dashboards, register, AI reports, market insights, and response plans. <b>Benefit:</b> professional deliverables for clients and stakeholders in one click. Find it via the Export button on any project.',icon:'⤓'}
+  {target:'.tab[data-grp="overview"]',tab:'dash',title:'Dashboard',body:'Your command center — overall project health, KPIs, completion probability, and portfolio visibility at a glance. <b>Why it matters:</b> one screen tells you if your project is on track.',icon:'◆'},
+  {target:'.tab[data-grp="risks"]',tab:'reg',title:'Risk Register',body:'Create and manage risks — set probability and impact, assign owners. <b>Why it matters:</b> this is the backbone. Every AI insight, report, and forecast is built from your register.',icon:'▦'},
+  {target:'.tab[data-grp="plan"]',tab:'plan',title:'Response Plans',body:'AI turns each risk into concrete, scheduled mitigation actions with goals and expected outcomes. <b>Benefit:</b> always know exactly what to do today to stay ahead.',icon:'❖'},
+  {target:'.tab[data-grp="monitor"]',tab:'upd',title:'Monitor — Trend & What-If',body:'Track weekly SPI/CPI and forecasts, get early warnings, and run What-If scenarios to test delays and cost changes. <b>Benefit:</b> see where the project is heading and model decisions safely.',icon:'◬'},
+  {target:'.tab[data-grp="intel"]',tab:'insights',title:'Market & World Insights',body:'Live material prices, construction news, geopolitical events, and currency impacts — tied to your specific risks. <b>Benefit:</b> catch external threats before they hit your project.',icon:'◉'},
+  {target:'.tab[data-grp="setup"]',tab:'contacts',title:'Project Setup — Team & Appetite',body:'Manage stakeholders and roles, then define your risk appetite — the tolerance thresholds the AI treats as hard limits. <b>Benefit:</b> the AI analyzes risks against YOUR limits, not generic ones.',icon:'◎'},
+  {target:'#btnActivityLog',tab:null,title:'Activity Log',body:'A full audit trail of every change — who did what and when. <b>Benefit:</b> complete accountability and history for your team.',icon:'◷'},
+  {target:'[onclick="showExportModal()"]',tab:null,title:'Export Center',body:'Export polished PDF &amp; Excel reports — dashboards, register, AI reports, market insights, and response plans. <b>Benefit:</b> professional deliverables for clients in one click.',icon:'⤓'},
+  {target:'#helpBtnSidebar',tab:null,title:'Help is always here',body:'Reopen this tour anytime, browse feature guides, follow tutorials, or search the help center. <b>You\'re all set</b> — start by creating a project and uploading documents to let AI build your first risk register.',icon:'✦'}
 ];
 
 function startTour(){
   onbSet('tourStarted',true);
   closeWelcome();
   window._tourIdx=0;
+  window.addEventListener('resize',_tourReflow);
   renderTourStep();
 }
 function renderTourStep(){
   const i=window._tourIdx||0;
   const step=TOUR_STEPS[i];
   if(!step){finishTour();return;}
-  // switch to the relevant tab so the user sees it live (non-blocking)
+  // switch to the relevant tab so the target & content are visible
   if(step.tab&&typeof ST==='function'&&CID){try{ST(step.tab);}catch(e){}}
-  document.getElementById('tourOverlay')?.remove();
+  document.getElementById('tourLayer')?.remove();
+  // wait a tick for tab switch / layout, then position
+  setTimeout(()=>positionTourStep(step,i),step.tab?180:40);
+}
+function positionTourStep(step,i){
   const total=TOUR_STEPS.length;
-  const html=`<div id="tourOverlay" class="tour-ov">
-    <div class="tour-card">
+  const el=step.target?document.querySelector(step.target):null;
+  const rect=el?el.getBoundingClientRect():null;
+  // if target missing/hidden, fall back to a centered card (no spotlight)
+  const hasTarget=rect&&rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<window.innerHeight;
+  const pad=8;
+  const sx=hasTarget?rect.left-pad:0, sy=hasTarget?rect.top-pad:0,
+        sw=hasTarget?rect.width+pad*2:0, sh=hasTarget?rect.height+pad*2:0;
+  // build overlay with a "hole" using box-shadow trick
+  const layer=document.createElement('div');
+  layer.id='tourLayer';
+  layer.className='tour-layer';
+  layer.innerHTML=`
+    ${hasTarget?`<div class="tour-spot" style="left:${sx}px;top:${sy}px;width:${sw}px;height:${sh}px"></div>`:`<div class="tour-dim-full"></div>`}
+    <div class="tour-pop" id="tourPop">
       <div class="tour-head"><span class="tour-icon">${step.icon}</span><span class="tour-step">${i+1} of ${total}</span></div>
       <div class="tour-title">${step.title}</div>
       <div class="tour-body">${step.body}</div>
@@ -10108,13 +10132,40 @@ function renderTourStep(){
           <button class="tour-btn-next" onclick="tourNext()">${i===total-1?'Finish':'Next'}</button>
         </div>
       </div>
-    </div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend',html);
+      <div class="tour-arrow" id="tourArrow"></div>
+    </div>`;
+  document.body.appendChild(layer);
+  // scroll target into view if needed
+  if(hasTarget&&(rect.top<60||rect.bottom>window.innerHeight-60)){el.scrollIntoView({behavior:'smooth',block:'center'});}
+  // position the popover near the target with an arrow
+  const pop=document.getElementById('tourPop');
+  const arrow=document.getElementById('tourArrow');
+  const pw=pop.offsetWidth, ph=pop.offsetHeight, gap=16, vw=window.innerWidth, vh=window.innerHeight;
+  if(!hasTarget){
+    pop.style.left=(vw/2-pw/2)+'px'; pop.style.top=(vh/2-ph/2)+'px'; arrow.style.display='none';
+    return;
+  }
+  const tcx=rect.left+rect.width/2, tcy=rect.top+rect.height/2;
+  let left,top,dir;
+  // prefer right of target (sidebar items), else below, else above, else left
+  if(rect.right+gap+pw<vw-12){ left=rect.right+gap; top=tcy-ph/2; dir='left'; }
+  else if(rect.bottom+gap+ph<vh-12){ left=tcx-pw/2; top=rect.bottom+gap; dir='top'; }
+  else if(rect.top-gap-ph>12){ left=tcx-pw/2; top=rect.top-gap-ph; dir='bottom'; }
+  else { left=rect.left-gap-pw; top=tcy-ph/2; dir='right'; }
+  // clamp to viewport
+  left=Math.max(12,Math.min(left,vw-pw-12));
+  top=Math.max(12,Math.min(top,vh-ph-12));
+  pop.style.left=left+'px'; pop.style.top=top+'px';
+  // arrow position points toward target
+  arrow.className='tour-arrow tour-arrow-'+dir;
+  if(dir==='left'||dir==='right'){ arrow.style.top=Math.max(14,Math.min(tcy-top,ph-14))+'px'; }
+  else { arrow.style.left=Math.max(14,Math.min(tcx-left,pw-14))+'px'; }
 }
 function tourNext(){window._tourIdx=(window._tourIdx||0)+1;renderTourStep();}
 function tourPrev(){window._tourIdx=Math.max(0,(window._tourIdx||0)-1);renderTourStep();}
-function finishTour(){onbSet('tourDone',true);document.getElementById('tourOverlay')?.remove();}
+function finishTour(){onbSet('tourDone',true);document.getElementById('tourLayer')?.remove();window.removeEventListener('resize',_tourReflow);}
+// reposition on resize so the spotlight stays aligned
+function _tourReflow(){const i=window._tourIdx;if(document.getElementById('tourLayer')&&TOUR_STEPS[i])positionTourStep(TOUR_STEPS[i],i);}
 
 // ── Welcome screen (first login) ──
 function showWelcome(){
