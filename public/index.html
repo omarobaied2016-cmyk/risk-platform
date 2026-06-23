@@ -955,6 +955,73 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .role-viewer .rdet .btn-p,.role-viewer .rdet input,.role-viewer .rdet select{pointer-events:none;opacity:.5;}
 .role-viewer .status-sel,.role-viewer select[onchange*="changeRiskStatus"],.role-viewer .add-risk-btn,.role-viewer [onclick*="openAddRisk"],.role-viewer [onclick*="openEdit"],.role-viewer .edit-btn,.role-viewer [onclick*="addRiskUpdate"],.role-viewer [onclick*="generateActionPlan"]{pointer-events:none !important;opacity:.45 !important;cursor:not-allowed !important;}
 .role-viewer .btn-warn[onclick*="showNotif"]{opacity:.5;pointer-events:none;}
+/* ═══ ONBOARDING & HELP ═══ */
+.welcome-ov,.tour-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;animation:onbFade .3s ease}
+.welcome-ov{background:rgba(43,52,64,.55);backdrop-filter:blur(8px)}
+@keyframes onbFade{from{opacity:0}to{opacity:1}}
+@keyframes onbRise{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.welcome-card{background:var(--s1,#fff);border-radius:20px;padding:42px 38px;max-width:440px;text-align:center;box-shadow:0 24px 70px rgba(43,52,64,.28);animation:onbRise .4s cubic-bezier(.2,.8,.2,1)}
+.welcome-logo{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:22px;color:var(--t1,#2B3440)}
+.welcome-title{font-size:25px;font-weight:800;letter-spacing:-.02em;color:var(--t1,#2B3440);margin-bottom:12px}
+.welcome-sub{font-size:13.5px;line-height:1.65;color:var(--t3,#6b7785);margin-bottom:28px}
+.welcome-actions{display:flex;flex-direction:column;gap:9px}
+.welcome-btn-primary{background:var(--primary,#6D8196);color:#fff;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 14px rgba(109,129,150,.32)}
+.welcome-btn-primary:hover{transform:translateY(-1px);box-shadow:0 7px 20px rgba(109,129,150,.4)}
+.welcome-btn-ghost{background:transparent;color:var(--t2,#4a5560);border:1px solid var(--b1,#e3e6ea);border-radius:11px;padding:12px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.welcome-btn-ghost:hover{background:var(--s2,#f7f8f9)}
+.welcome-btn-text{background:transparent;color:var(--t3,#9aa4af);border:none;padding:6px;font-size:12px;cursor:pointer;font-family:inherit}
+.welcome-btn-text:hover{color:var(--t2,#4a5560)}
+/* tour */
+.tour-ov{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-end;padding:24px}
+.tour-card{pointer-events:auto;background:var(--s1,#fff);border-radius:16px;padding:22px 24px;max-width:380px;box-shadow:0 18px 56px rgba(43,52,64,.3);border:1px solid var(--b1,#e3e6ea);animation:onbRise .35s cubic-bezier(.2,.8,.2,1)}
+.tour-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tour-icon{width:34px;height:34px;border-radius:9px;background:var(--primary,#6D8196);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px}
+.tour-step{font-size:11px;font-weight:700;color:var(--t3,#9aa4af);letter-spacing:.04em;text-transform:uppercase}
+.tour-title{font-size:17px;font-weight:800;color:var(--t1,#2B3440);margin-bottom:8px;letter-spacing:-.01em}
+.tour-body{font-size:13px;line-height:1.6;color:var(--t2,#4a5560);margin-bottom:16px}
+.tour-progress{height:4px;background:var(--b1,#e3e6ea);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.tour-progress-fill{height:100%;background:var(--primary,#6D8196);border-radius:3px;transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.tour-actions{display:flex;align-items:center;justify-content:space-between}
+.tour-btn-skip{background:transparent;border:none;color:var(--t3,#9aa4af);font-size:12.5px;cursor:pointer;font-family:inherit;font-weight:500}
+.tour-btn-skip:hover{color:var(--t2,#4a5560)}
+.tour-btn-ghost{background:transparent;border:1px solid var(--b1,#e3e6ea);color:var(--t2,#4a5560);border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.tour-btn-ghost:hover{background:var(--s2,#f7f8f9)}
+.tour-btn-next{background:var(--primary,#6D8196);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.tour-btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(109,129,150,.35)}
+/* help center */
+.help-modal{animation:onbRise .3s ease}
+.help-sec{margin-bottom:22px}
+.help-sec-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3,#9aa4af);margin-bottom:10px}
+.help-card{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--b1,#e3e6ea);border-radius:11px;margin-bottom:7px;cursor:pointer;transition:all .15s}
+.help-card:hover{border-color:var(--primary,#6D8196);background:var(--s2,#f7f8f9);transform:translateX(2px)}
+.help-card-i{width:30px;height:30px;border-radius:8px;background:rgba(109,129,150,.1);color:var(--primary,#6D8196);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.help-card-t{font-size:13px;font-weight:600;color:var(--t1,#2B3440)}
+.help-card-s{font-size:11.5px;color:var(--t3,#9aa4af);margin-top:1px}
+.help-faq{border-bottom:1px solid var(--b1,#e3e6ea)}
+.help-faq-q{display:flex;justify-content:space-between;align-items:center;padding:13px 2px;font-size:13px;font-weight:600;color:var(--t1,#2B3440);cursor:pointer}
+.help-faq-x{color:var(--primary,#6D8196);font-size:17px;font-weight:400;transition:transform .2s}
+.help-faq.open .help-faq-x{transform:rotate(45deg)}
+.help-faq-a{max-height:0;overflow:hidden;font-size:12.5px;line-height:1.6;color:var(--t2,#4a5560);transition:max-height .25s ease,padding .25s ease;padding:0 2px}
+.help-faq.open .help-faq-a{max-height:200px;padding:0 2px 14px}
+.help-result{padding:13px;border:1px solid var(--b1,#e3e6ea);border-radius:11px;margin-bottom:8px}
+.help-tag{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary,#6D8196);background:rgba(109,129,150,.1);padding:2px 8px;border-radius:5px;margin-bottom:6px}
+.help-result-t{font-size:13px;font-weight:600;color:var(--t1,#2B3440);margin-bottom:3px}
+.help-result-b{font-size:12px;line-height:1.55;color:var(--t2,#4a5560)}
+.help-back{background:transparent;border:none;color:var(--primary,#6D8196);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;padding:0 0 14px}
+.help-detail-t{font-size:19px;font-weight:800;color:var(--t1,#2B3440);margin-bottom:16px;letter-spacing:-.01em}
+.help-detail-row{margin-bottom:14px}
+.help-detail-l{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary,#6D8196);margin-bottom:4px}
+.help-detail-row>div:last-child{font-size:13px;line-height:1.6;color:var(--t2,#4a5560)}
+.help-steps{display:flex;flex-direction:column;gap:10px}
+.help-step{display:flex;align-items:flex-start;gap:12px}
+.help-step-n{width:24px;height:24px;border-radius:50%;background:var(--primary,#6D8196);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.help-step>div:last-child{font-size:13px;line-height:1.5;color:var(--t2,#4a5560);padding-top:2px}
+/* metric tooltip */
+.metric-help{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--b1,#e3e6ea);color:var(--t3,#9aa4af);font-size:9px;font-weight:700;cursor:help;margin-inline-start:5px;position:relative;vertical-align:middle}
+.metric-help:hover{background:var(--primary,#6D8196);color:#fff}
+.metric-help:hover .metric-tip{opacity:1;visibility:visible;transform:translateY(0)}
+.metric-tip{position:absolute;bottom:130%;left:50%;transform:translateX(-50%) translateY(4px);background:var(--t1,#2B3440);color:#fff;font-size:11px;font-weight:400;line-height:1.5;padding:8px 11px;border-radius:8px;width:200px;opacity:0;visibility:hidden;transition:all .2s;z-index:100;text-align:left;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+
 </style>
 </head>
 <body>
@@ -1454,7 +1521,9 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b1);color:var(--sb-text-3);padding:3px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit" title="Sign out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
       <div style="margin-bottom:8px">
-        <button onclick="showPricingPage()" style="width:100%;padding:9px;background:white;color:var(--t1);border:1px solid var(--b1);border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">Upgrade Plan</button>
+        <button onclick="openHelpCenter()" style="width:100%;padding:9px;background:transparent;color:var(--sb-text-2);border:1px solid var(--sb-border);border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px" onmouseover="this.style.background='var(--sb-hover)';this.style.color='var(--sb-text)'" onmouseout="this.style.background='transparent';this.style.color='var(--sb-text-2)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help &amp; Tour</button>
+      </div>
+      <div style="margin-bottom:8px">
       </div>
       <div class="fg admin-only" style="margin-bottom:8px;display:none">
         <label style="font-size:10px;color:var(--sb-text-3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Claude API Key</label>
@@ -2067,6 +2136,7 @@ function enterApp(){
   document.querySelector('.app').style.display='grid';
   if(typeof armShowFab==='function')armShowFab();
   if(typeof honorPendingPlan==='function')honorPendingPlan();
+  if(typeof maybeShowOnboarding==='function')maybeShowOnboarding();
   const userName=currentUserProfile?.full_name||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'User';
   const userEl=document.getElementById('userDisplayName');
   if(userEl)userEl.textContent=userName;
@@ -6000,8 +6070,8 @@ function renderDash(){
           <div class="rcc-h"><span class="rcc-ht">Trend Analysis Report <span class="scenario-tag ${al==='high'?'st-bad':al==='medium'?'st-warn':'st-good'}">${alIcon} ${(RL[al]||al).toUpperCase()}</span></span><span style="font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${latest.date||'—'}</span></div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:6px 0 9px">
             <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Health</div><div style="font-size:16px;font-weight:700;color:${alColor}">${latest.health_score||'—'}</div></div>
-            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">SPI</div><div style="font-size:14px;font-weight:600;color:${(latest.sv||1)<0.9?'var(--red)':(latest.sv||1)<1?'#a16207':'var(--grn)'}">${latest.sv!=null?latest.sv:'—'}</div></div>
-            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">CPI</div><div style="font-size:14px;font-weight:600;color:${(latest.burn_rate||1)<0.9?'var(--red)':(latest.burn_rate||1)<1?'#a16207':'var(--grn)'}">${latest.burn_rate!=null?latest.burn_rate:'—'}</div></div>
+            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">SPI${mtip('Schedule Performance Index. Below 1.0 = behind schedule, above 1.0 = ahead. It normalizes schedule performance so you can track the trend over time.')}</div><div style="font-size:14px;font-weight:600;color:${(latest.sv||1)<0.9?'var(--red)':(latest.sv||1)<1?'#a16207':'var(--grn)'}">${latest.sv!=null?latest.sv:'—'}</div></div>
+            <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">CPI${mtip('Cost Performance Index. Below 1.0 = over budget, above 1.0 = under budget (efficient). It normalizes cost performance for easy trend tracking.')}</div><div style="font-size:14px;font-weight:600;color:${(latest.burn_rate||1)<0.9?'var(--red)':(latest.burn_rate||1)<1?'#a16207':'var(--grn)'}">${latest.burn_rate!=null?latest.burn_rate:'—'}</div></div>
             <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Changes</div><div style="font-size:14px;font-weight:600">${latest.change_requests||0}</div></div>
             <div><div style="font-size:8.5px;color:var(--t3);text-transform:uppercase;margin-bottom:2px">Resources</div><div style="font-size:14px;font-weight:600">${latest.resource_util||0}%</div></div>
           </div>
@@ -9986,6 +10056,193 @@ async function armApprove(){
   armMsgs.push({role:'sys',text:msg});
   armRender();
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ONBOARDING & HELP SYSTEM — guided tour, help center, contextual tooltips
+//  Premium, non-blocking, fully restartable. Designed for first-time users.
+// ═══════════════════════════════════════════════════════════════════════
+const ONB_KEY='riskatlas_onboarding_v1';
+// Metric tooltip helper — inline "?" with hover explanation for non-experts
+function mtip(text){return `<span class="metric-help">?<span class="metric-tip">${text}</span></span>`;}
+function onbState(){try{return JSON.parse(localStorage.getItem(ONB_KEY)||'{}');}catch(e){return {};}}
+function onbSet(k,v){try{const s=onbState();s[k]=v;localStorage.setItem(ONB_KEY,JSON.stringify(s));}catch(e){}}
+
+// ── Tour steps: each anchors to a real nav group/pane and explains what/why/benefit ──
+const TOUR_STEPS=[
+  {tab:null,title:'Your command center',body:'This is your dashboard — overall project health, KPIs, completion probability, and portfolio visibility at a glance. <b>Why it matters:</b> one screen tells you if your project is on track or needs attention.',icon:'◆'},
+  {tab:'reg',title:'Risk Register',body:'Create and manage risks here — set probability and impact, assign risk owners and response owners. <b>Why it matters:</b> this is the backbone. Every AI insight, report, and forecast is built from your register.',icon:'▦'},
+  {tab:'dash',title:'AI Reports',body:'AI generates executive insights, your top concerns, and strategic recommendations — written like a senior risk manager would. <b>Benefit:</b> board-ready analysis in seconds, not hours.',icon:'✦'},
+  {tab:'insights',title:'Market & World Insights',body:'Live material prices, construction news, geopolitical events, and currency impacts — tied to your specific risks. <b>Benefit:</b> catch external threats before they hit your project.',icon:'◉'},
+  {tab:'upd',title:'Trend Analysis',body:'Track weekly performance — SPI &amp; CPI, change requests, resource utilization, and vendor delays — with AI forecasting. <b>Benefit:</b> see where the project is heading, not just where it is.',icon:'◬'},
+  {tab:'whatif',title:'What-If Simulator',body:'Test scenarios before they happen — model the impact of delays and cost changes on your risk exposure. <b>Benefit:</b> make decisions with data, not gut feel.',icon:'◈'},
+  {tab:'plan',title:'Response Plans',body:'AI turns each risk into concrete, scheduled mitigation actions with goals and expected outcomes. <b>Benefit:</b> always know exactly what to do today to stay ahead.',icon:'❖'},
+  {tab:'contacts',title:'Stakeholders &amp; Risk Appetite',body:'Manage team members and their roles, then define your risk appetite — the tolerance thresholds the AI uses to flag what exceeds acceptable limits. <b>Benefit:</b> the AI analyzes risks against YOUR limits, not generic ones.',icon:'◎'},
+  {tab:null,title:'Export Center',body:'Export polished PDF &amp; Excel reports — dashboards, register, AI reports, market insights, and response plans. <b>Benefit:</b> professional deliverables for clients and stakeholders in one click. Find it via the Export button on any project.',icon:'⤓'}
+];
+
+function startTour(){
+  onbSet('tourStarted',true);
+  closeWelcome();
+  window._tourIdx=0;
+  renderTourStep();
+}
+function renderTourStep(){
+  const i=window._tourIdx||0;
+  const step=TOUR_STEPS[i];
+  if(!step){finishTour();return;}
+  // switch to the relevant tab so the user sees it live (non-blocking)
+  if(step.tab&&typeof ST==='function'&&CID){try{ST(step.tab);}catch(e){}}
+  document.getElementById('tourOverlay')?.remove();
+  const total=TOUR_STEPS.length;
+  const html=`<div id="tourOverlay" class="tour-ov">
+    <div class="tour-card">
+      <div class="tour-head"><span class="tour-icon">${step.icon}</span><span class="tour-step">${i+1} of ${total}</span></div>
+      <div class="tour-title">${step.title}</div>
+      <div class="tour-body">${step.body}</div>
+      <div class="tour-progress"><div class="tour-progress-fill" style="width:${((i+1)/total)*100}%"></div></div>
+      <div class="tour-actions">
+        <button class="tour-btn-skip" onclick="finishTour()">Skip tour</button>
+        <div style="display:flex;gap:8px">
+          ${i>0?`<button class="tour-btn-ghost" onclick="tourPrev()">Previous</button>`:''}
+          <button class="tour-btn-next" onclick="tourNext()">${i===total-1?'Finish':'Next'}</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function tourNext(){window._tourIdx=(window._tourIdx||0)+1;renderTourStep();}
+function tourPrev(){window._tourIdx=Math.max(0,(window._tourIdx||0)-1);renderTourStep();}
+function finishTour(){onbSet('tourDone',true);document.getElementById('tourOverlay')?.remove();}
+
+// ── Welcome screen (first login) ──
+function showWelcome(){
+  if(document.getElementById('welcomeOverlay'))return;
+  const html=`<div id="welcomeOverlay" class="welcome-ov">
+    <div class="welcome-card">
+      <div class="welcome-logo">RiskAtlas<span style="color:var(--primary)"> AI</span></div>
+      <div class="welcome-title">Welcome to RiskAtlas AI</div>
+      <div class="welcome-sub">We'll guide you through the platform and show you how AI can help you manage project and portfolio risks throughout the entire lifecycle.</div>
+      <div class="welcome-actions">
+        <button class="welcome-btn-primary" onclick="startTour()">Start Tour</button>
+        <button class="welcome-btn-ghost" onclick="closeWelcome()">Skip for Now</button>
+        <button class="welcome-btn-text" onclick="neverShowOnboarding()">Never Show Again</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function closeWelcome(){document.getElementById('welcomeOverlay')?.remove();}
+function neverShowOnboarding(){onbSet('neverShow',true);closeWelcome();}
+
+// Trigger on first entry into the app
+function maybeShowOnboarding(){
+  const s=onbState();
+  if(s.neverShow||s.tourDone||s.tourStarted)return;
+  setTimeout(showWelcome,900);
+}
+
+// ═══ HELP CENTER ═══
+const HELP_CONTENT={
+  features:[
+    {id:'dashboard',name:'Dashboard',what:'Your project health command center showing KPIs, completion probability, risk exposure, and portfolio overview.',why:'Gives you an instant read on whether the project is on track without digging through data.',how:'Open any project — the dashboard loads automatically. Click metrics to drill into details.',best:'Check it daily. Watch the completion forecast and exposure trend over time.',workflow:'Create project → AI builds register → dashboard populates with live health scores.'},
+    {id:'register',name:'Risk Register',what:'The central list of all project risks, each scored by probability and impact, with assigned owners.',why:'Every report, forecast, and AI recommendation is built from the register — it is the foundation of the platform.',how:'Upload project documents and let AI generate risks, or add them manually. Edit probability/impact to refine scoring.',best:'Keep it current — close resolved risks and add new ones as they emerge. Assign a clear owner to each.',workflow:'Upload docs → AI extracts risks → review &amp; refine → assign owners → monitor.'},
+    {id:'aireports',name:'AI Reports',what:'AI-generated executive analysis — top concerns, strategic recommendations, and an overall risk narrative.',why:'Turns raw risk data into board-ready insight written like a senior risk manager.',how:'Open the dashboard and generate the AI report. It reads your register, appetite, and project context.',best:'Regenerate after major register changes. Use the PDF export for stakeholder meetings.',workflow:'Build register → set risk appetite → generate report → export PDF.'},
+    {id:'insights',name:'Market &amp; World Insights',what:'Live external intelligence — material prices, construction news, geopolitical events, and currency impacts tied to your risks.',why:'Many project risks come from outside — catching them early prevents surprises.',how:'Open Market &amp; World insights. The AI links current events to your specific risks.',best:'Review regularly. Use the signals to update risk probabilities proactively.',workflow:'Generate insights → AI links events to risks → adjust register accordingly.'},
+    {id:'trend',name:'Trend Analysis',what:'Weekly performance tracking — SPI, CPI, change requests, resource utilization, and vendor delays — with AI forecasting.',why:'Shows the trajectory of your project, not just a snapshot, so you can act before problems compound.',how:'Enter weekly indicators (SPI, CPI, etc.). The AI analyzes the trend and forecasts the health score.',best:'Update weekly for the most accurate forecasts. Watch for SPI/CPI dropping below 1.0.',workflow:'Enter weekly data → AI analyzes trend → forecast next periods → act on warnings.'},
+    {id:'whatif',name:'What-If Analysis',what:'Scenario modeling — test the impact of delays and cost changes on your risk exposure before committing.',why:'Lets you make decisions with data by simulating outcomes safely.',how:'Open the What-If Simulator, adjust scenario parameters, and run the simulation.',best:'Model your worst-case and most-likely scenarios before key decisions.',workflow:'Define scenario → run simulation → compare exposure → decide.'},
+    {id:'response',name:'Response Plans',what:'AI-generated mitigation actions for each risk, with goals, expected outcomes, and schedules.',why:'Bridges the gap between knowing a risk and actually doing something about it.',how:'Generate the action plan — AI breaks each risk response into concrete, dated tasks.',best:'Review and follow the schedule. Mark actions done to track progress.',workflow:'Build register → generate action plan → work the schedule → track completion.'},
+    {id:'tasks',name:"Today's Tasks",what:'Your daily priorities pulled from response plans, with progress updates and team collaboration.',why:'Keeps execution on track by surfacing what needs doing today.',how:'Open Today\'s Tasks. Update progress and share with team members.',best:'Check daily. Keep progress current so the team stays aligned.',workflow:'Generate plan → tasks appear → update daily → collaborate.'},
+    {id:'appetite',name:'Contacts &amp; Risk Appetite',what:'Team members and their roles, plus your risk appetite — the tolerance thresholds the AI treats as hard limits.',why:'The AI flags exposure that exceeds YOUR defined limits, making analysis specific to your project.',how:'Add stakeholders with roles. Set cost, schedule, probability, QHSE, and reputation thresholds.',best:'Define appetite early — every AI report then references whether exposure is within or exceeds it.',workflow:'Add team → set appetite thresholds → AI uses them across all analysis.'},
+    {id:'export',name:'Export Center',what:'Polished PDF and Excel exports — dashboards, register, AI reports, market insights, and response plans.',why:'Professional deliverables for clients and stakeholders without manual formatting.',how:'Click Export on any project and pick the report template you need.',best:'Use PDF for presentations, Excel for data handoffs. Export after major updates.',workflow:'Complete analysis → open Export Center → pick template → download.'}
+  ],
+  faq:[
+    {q:'What documents should I upload?',a:'Project schedules, contracts, scope documents, BOQs, and risk-related reports. The more context, the better the AI identifies risks.'},
+    {q:'How does AI generate risks?',a:'It reads your uploaded documents and project details, then extracts likely risks with suggested probability and impact based on construction risk patterns.'},
+    {q:'How often do Market Insights update?',a:'Insights are generated on demand and reflect current external conditions — material prices, news, and events — at the time you run them.'},
+    {q:'How are completion probabilities calculated?',a:'The AI combines your risk exposure, schedule/cost performance, and trend data to forecast the likelihood of finishing on time and on budget.'},
+    {q:'Can I customize risk appetite?',a:'Yes. Set cost and schedule thresholds (as percentage or absolute value), probability tolerance, and qualitative QHSE/reputation limits. The AI treats these as hard limits.'},
+    {q:'Can I export reports?',a:'Yes — the Export Center produces PDF and Excel versions of dashboards, the register, AI reports, market insights, and response plans.'},
+    {q:'How does AI recommend response actions?',a:'For each risk it generates concrete mitigation actions with schedules, prioritizing risks that breach your appetite thresholds.'}
+  ],
+  tutorials:[
+    {t:'Create a Risk Register',s:['Open or create a project','Upload project documents (schedule, contract, scope)','Let AI generate the initial risk register','Review each risk and refine probability/impact','Assign risk owners and response owners']},
+    {t:'Generate AI Reports',s:['Build your risk register first','Set your risk appetite thresholds','Open the dashboard and generate the AI report','Review concerns and recommendations','Export to PDF for stakeholders']},
+    {t:'Perform What-If Analysis',s:['Open the What-If Simulator','Set the scenario parameters (delays, cost changes)','Run the simulation','Compare the resulting exposure','Use the insight to guide your decision']},
+    {t:'Configure Risk Appetite',s:['Go to Risk Appetite under Setup','Set cost threshold (% or value)','Set schedule threshold (days or %)','Set probability tolerance','Define QHSE and reputation limits, then save']},
+    {t:'Export Reports',s:['Complete your analysis','Click Export on the project','Choose the report template','Pick PDF or Excel','Download and share']}
+  ]
+};
+
+function openHelpCenter(initial){
+  document.getElementById('helpModal')?.remove();
+  const html=`<div class="modal-ov on" id="helpModal" onclick="if(event.target===this)this.remove()">
+    <div class="modal help-modal" style="max-width:760px;max-height:86vh;display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="modal-t" style="margin:0">Help Center</div>
+        <button class="btn btn-g" style="padding:5px 12px;font-size:12px" onclick="document.getElementById('helpModal').remove()">Close</button>
+      </div>
+      <input type="text" id="helpSearch" placeholder="Search help — e.g. &quot;how to export&quot;, &quot;what is SPI&quot;…" oninput="renderHelpResults(this.value)" style="width:100%;border:1px solid var(--b1);border-radius:10px;padding:11px 14px;font-family:inherit;font-size:13px;outline:none;margin-bottom:14px"/>
+      <div id="helpBody" style="overflow-y:auto;flex:1;padding-right:4px"></div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+  renderHelpResults('');
+  if(initial==='tour'){document.getElementById('helpModal').remove();window._tourIdx=0;startTour();}
+}
+
+function renderHelpResults(q){
+  const body=document.getElementById('helpBody');if(!body)return;
+  q=(q||'').trim().toLowerCase();
+  if(q){
+    // search across features, faq, tutorials
+    const hits=[];
+    HELP_CONTENT.features.forEach(f=>{if((f.name+f.what+f.why+f.how).toLowerCase().includes(q))hits.push({type:'Feature',title:f.name,body:f.what});});
+    HELP_CONTENT.faq.forEach(f=>{if((f.q+f.a).toLowerCase().includes(q))hits.push({type:'FAQ',title:f.q,body:f.a});});
+    HELP_CONTENT.tutorials.forEach(t=>{if(t.t.toLowerCase().includes(q))hits.push({type:'Tutorial',title:t.t,body:t.s.join(' → ')});});
+    body.innerHTML=hits.length?hits.map(h=>`<div class="help-result"><span class="help-tag">${h.type}</span><div class="help-result-t">${h.title}</div><div class="help-result-b">${h.body}</div></div>`).join(''):`<div style="text-align:center;color:var(--t3);padding:30px;font-size:13px">No results for "${q}". Try "export", "risk", "SPI", or "appetite".</div>`;
+    return;
+  }
+  // default: sectioned view
+  body.innerHTML=`
+    <div class="help-sec">
+      <div class="help-sec-h">Getting Started</div>
+      <div class="help-card" onclick="document.getElementById('helpModal').remove();window._tourIdx=0;startTour()"><span class="help-card-i">▶</span><div><div class="help-card-t">Interactive Tour</div><div class="help-card-s">Take the guided walkthrough of every feature</div></div></div>
+      <div class="help-card" onclick="renderHelpResults('register')"><span class="help-card-i">＋</span><div><div class="help-card-t">First Project Setup</div><div class="help-card-s">Create a project and build your first register</div></div></div>
+    </div>
+    <div class="help-sec">
+      <div class="help-sec-h">Feature Guides</div>
+      ${HELP_CONTENT.features.map(f=>`<div class="help-card" onclick="showHelpFeature('${f.id}')"><span class="help-card-i">◆</span><div><div class="help-card-t">${f.name}</div><div class="help-card-s">${f.what.slice(0,70)}…</div></div></div>`).join('')}
+    </div>
+    <div class="help-sec">
+      <div class="help-sec-h">Step-by-Step Tutorials</div>
+      ${HELP_CONTENT.tutorials.map((t,i)=>`<div class="help-card" onclick="showHelpTutorial(${i})"><span class="help-card-i">›</span><div><div class="help-card-t">${t.t}</div></div></div>`).join('')}
+    </div>
+    <div class="help-sec">
+      <div class="help-sec-h">Frequently Asked Questions</div>
+      ${HELP_CONTENT.faq.map((f,i)=>`<div class="help-faq"><div class="help-faq-q" onclick="this.parentElement.classList.toggle('open')">${f.q}<span class="help-faq-x">+</span></div><div class="help-faq-a">${f.a}</div></div>`).join('')}
+    </div>`;
+}
+function showHelpFeature(id){
+  const f=HELP_CONTENT.features.find(x=>x.id===id);if(!f)return;
+  const body=document.getElementById('helpBody');
+  body.innerHTML=`<button class="help-back" onclick="renderHelpResults('')">← Back to Help</button>
+    <div class="help-detail-t">${f.name}</div>
+    <div class="help-detail-row"><span class="help-detail-l">What it does</span><div>${f.what}</div></div>
+    <div class="help-detail-row"><span class="help-detail-l">Why it exists</span><div>${f.why}</div></div>
+    <div class="help-detail-row"><span class="help-detail-l">How to use it</span><div>${f.how}</div></div>
+    <div class="help-detail-row"><span class="help-detail-l">Best practices</span><div>${f.best}</div></div>
+    <div class="help-detail-row"><span class="help-detail-l">Typical workflow</span><div>${f.workflow}</div></div>`;
+}
+function showHelpTutorial(i){
+  const t=HELP_CONTENT.tutorials[i];if(!t)return;
+  const body=document.getElementById('helpBody');
+  body.innerHTML=`<button class="help-back" onclick="renderHelpResults('')">← Back to Help</button>
+    <div class="help-detail-t">${t.t}</div>
+    <div class="help-steps">${t.s.map((s,n)=>`<div class="help-step"><span class="help-step-n">${n+1}</span><div>${s}</div></div>`).join('')}</div>`;
+}
+
 </script>
 <style id="armStyle">
 .arm-fab{position:fixed;bottom:24px;inset-inline-end:24px;z-index:900;display:flex;align-items:center;gap:9px;background:var(--primary);color:#fff;border:none;border-radius:30px;padding:13px 18px;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 22px rgba(109,129,150,.38);transition:transform .15s,box-shadow .15s;font-family:inherit}
