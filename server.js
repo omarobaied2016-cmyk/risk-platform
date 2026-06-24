@@ -611,6 +611,15 @@ app.get('/api/stripe/status', (req, res) => {
 // ─────────────────────────────────────────────
 //  Routing: landing at /, platform at /app
 // ─────────────────────────────────────────────
+// SEO: sitemap + robots (must come before the catch-all)
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
