@@ -3462,9 +3462,11 @@ function planObjectives(){
   // forecast probabilities at P80 — lightweight standalone version (mirrors completionForecast logic)
   const pLevel=window._fcP||80;
   const consAdj=(pLevel-80)*0.55;
-  let costP=92, schedP=92;
-  const pressure=highNow*9+critNow*13+openThreats.filter(r=>r.level==='medium').length*3.5;
-  costP-=pressure; schedP-=pressure*0.9;
+  let costP=90, schedP=90;
+  // saturating pressure curve (matches completionForecast) — degrades gracefully, never collapses
+  const rawPressure=critNow*5+highNow*3+openThreats.filter(r=>r.level==='medium').length*1.2;
+  const pressure=55*(1-Math.exp(-rawPressure/40));
+  costP-=pressure; schedP-=pressure*0.92;
   if(totalActs){const recover=(doneActs/totalActs)*14;costP+=recover;schedP+=recover;}
   costP-=consAdj; schedP-=consAdj;
   const clamp=v=>Math.max(8,Math.min(96,Math.round(v)));
@@ -5744,10 +5746,17 @@ function renderDash(){
     const openThreats=rs.filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
     const highT=openThreats.filter(r=>r.level==='high').length;
     const medT=openThreats.filter(r=>r.level==='medium').length;
-    // Base: start optimistic, erode by weighted open-threat pressure
-    let costP=92, schedP=92;
-    const pressure=highT*9+medT*3.5;
-    costP-=pressure; schedP-=pressure*0.9;
+    const critT=openThreats.filter(r=>r.level==='critical').length;
+    const totalThreats=openThreats.length;
+    // Base: start optimistic, erode by threat pressure.
+    // Use a SATURATING curve (not linear) so confidence degrades gracefully and
+    // never collapses just because a new project naturally has many identified risks.
+    // Weighted severity, but scaled by how concentrated the high/critical risks are.
+    let costP=90, schedP=90;
+    const rawPressure=critT*5+highT*3+medT*1.2;
+    // saturating: pressure asymptotically approaches a max erosion of ~55 pts
+    const pressure=55*(1-Math.exp(-rawPressure/40));
+    costP-=pressure; schedP-=pressure*0.92;
     // Mitigation progress recovers confidence
     const acts=(CP&&CP.action_plan&&CP.action_plan.actions)||[];
     if(acts.length){
