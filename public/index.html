@@ -5022,11 +5022,20 @@ Description: ${CP.description||'—'}
 ${tolCtx}
 ${hasSched?'Schedule uploaded.':'No schedule.'}
 
-Assess project complexity from files and contract value (in the project's own currency):
-- Simple (under ~5M): 8 threats + 2 opportunities = 10 total
-- Medium (~5-50M): 16 threats + 4 opportunities = 20 total  
-- Large (~50-500M): 24 threats + 6 opportunities = 30 total
-- Mega (over ~500M): 32 threats + 8 opportunities = 40 total
+Identify EVERY genuine, distinct risk the documents and project context actually support — let the real content drive the count, not a target.
+
+The following are TYPICAL ranges for each complexity tier — use them only as a sanity check on whether you have looked broadly enough, NOT as a quota to hit:
+- Simple (under ~5M): typically ~8-12 risks
+- Medium (~5-50M): typically ~15-22 risks
+- Large (~50-500M): typically ~22-32 risks
+- Mega (over ~500M): typically ~30-42 risks
+
+QUANTITY RULES (critical for register integrity — the forecast and exposure math depend on it):
+- NEVER invent, pad, or duplicate risks just to reach a number. A generic, vague, or speculative risk that is not grounded in the documents or genuine domain reasoning HARMS the register — omit it.
+- NEVER drop or omit a real, well-grounded risk just because you have "enough" or hit a range. If the project genuinely has more risks than the typical range, include them all.
+- If the documents only support fewer risks than the typical range, return fewer — quality and traceability over quantity. It is correct to return 6 strong risks instead of 16 weak ones.
+- Each risk must be DISTINCT (no two risks describing the same underlying cause-effect). Merge near-duplicates.
+- Balance threats and opportunities naturally based on what the project actually presents; do not force a fixed ratio.
 
 CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 1. DESCRIPTION must follow ONE of these two formats:
@@ -5739,25 +5748,43 @@ function renderDash(){
   // Not a guarantee — a live, explainable indicator that shifts as the project changes.
   function completionForecast(){
     // Confidence level (P-value): higher P = more conservative forecast (you demand more certainty).
-    // P80 is the baseline. P70 is more optimistic; P90/P100 more conservative.
     const pLevel=window._fcP||80;
-    const consAdj=(pLevel-80)*0.55; // each step above 80 trims confidence; below 80 lifts it
+    const consAdj=(pLevel-80)*0.55;
     const rs=(CP&&CP.risks)||[];
     const openThreats=rs.filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
     const highT=openThreats.filter(r=>r.level==='high').length;
     const medT=openThreats.filter(r=>r.level==='medium').length;
     const critT=openThreats.filter(r=>r.level==='critical').length;
     const totalThreats=openThreats.length;
-    // Base: start optimistic, erode by threat pressure.
-    // Use a SATURATING curve (not linear) so confidence degrades gracefully and
-    // never collapses just because a new project naturally has many identified risks.
-    // Weighted severity, but scaled by how concentrated the high/critical risks are.
-    let costP=90, schedP=90;
-    const rawPressure=critT*5+highT*3+medT*1.2;
-    // saturating: pressure asymptotically approaches a max erosion of ~55 pts
-    const pressure=55*(1-Math.exp(-rawPressure/40));
-    costP-=pressure; schedP-=pressure*0.92;
-    // Mitigation progress recovers confidence
+    // ── PRIMARY: Monte Carlo simulation on individual register risks (true P-analysis) ──
+    // Confidence = probability the simulated total impact stays within the risk appetite ceiling.
+    let costP=null, schedP=null, mc=null;
+    try{
+      const cv=parseFloat(String((CP&&CP.value)||'').replace(/[^\d.]/g,''))||0;
+      const tl=(CP&&CP.tolerance)||{};
+      // cost appetite ceiling (top High→Critical boundary), in real units
+      const cb=tolBounds(tl.cost_levels||costLevels(tl.appetite||'moderate'),[2,5,10,15]);
+      const costCeil=(tl.cost_mode==='value'||cb[3]>100)?cb[3]:(cv?cv*cb[3]/100:0);
+      const sb=tolBounds(tl.sched_levels||schedLevels(tl.appetite||'moderate'),[7,15,30,45]);
+      let schedCeil=sb[3];
+      if(tl.sched_mode==='percent'&&CP.start_date&&CP.end_date){const dur=(new Date(CP.end_date)-new Date(CP.start_date))/86400000;schedCeil=dur*sb[3]/100;}
+      const mcCost=monteCarloForecast('cost',4000);
+      const mcSched=monteCarloForecast('schedule',4000);
+      mc={cost:mcCost,sched:mcSched,costCeil,schedCeil};
+      if(mcCost&&costCeil>0){costP=Math.round(mcCost.withinAppetite(costCeil)*100);}
+      if(mcSched&&schedCeil>0){schedP=Math.round(mcSched.withinAppetite(schedCeil)*100);}
+    }catch(e){mc=null;}
+    window._fcMC=mc;
+    // ── FALLBACK: if no appetite ceiling set or no risks, use the saturating heuristic ──
+    if(costP===null||schedP===null){
+      let cP=90, sP=90;
+      const rawPressure=critT*5+highT*3+medT*1.2;
+      const pressure=55*(1-Math.exp(-rawPressure/40));
+      cP-=pressure; sP-=pressure*0.92;
+      if(costP===null)costP=cP;
+      if(schedP===null)schedP=sP;
+    }
+    // ── Mitigation progress, trend, and overdue actions adjust the simulated confidence ──
     const acts=(CP&&CP.action_plan&&CP.action_plan.actions)||[];
     if(acts.length){
       const done=acts.filter(a=>a.status==='done').length;
@@ -6307,6 +6334,89 @@ function rexFmt(v,f){
   if(f==='schedule')return a>=10?Math.round(a).toString():a.toFixed(1);
   return a.toFixed(1);
 }
+// ═══════════════════════════════════════════════════════════════════════
+//  MONTE CARLO COMPLETION FORECAST — true P80 from individual register risks
+//  Each iteration: for every open threat, "roll" its probability; if it occurs,
+//  sample its impact from a PERT distribution derived from its severity band.
+//  Runs entirely client-side (no API, no server) — ~90ms for 5000 iterations.
+// ═══════════════════════════════════════════════════════════════════════
+// PERT-weighted sample from a triangular-ish Beta. min/likely/max in real units.
+function pertSample(min,likely,max){
+  if(max<=min)return min;
+  if(likely<min)likely=min; if(likely>max)likely=max;
+  const mu=(min+4*likely+max)/6;
+  let a=6*((mu-min)/(max-min)), b=6*((max-mu)/(max-min));
+  a=Math.max(a,0.1); b=Math.max(b,0.1);
+  const beta=_betaSample(a,b);
+  return min+beta*(max-min);
+}
+function _gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function _gammaSample(k){
+  if(k<1){return _gammaSample(1+k)*Math.pow(Math.random(),1/k);}
+  const d=k-1/3,c=1/Math.sqrt(9*d);let x,v;
+  for(;;){do{x=_gauss();v=1+c*x;}while(v<=0);v=v*v*v;const u=Math.random();
+    if(u<1-0.0331*x*x*x*x)return d*v;
+    if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v;}
+}
+function _betaSample(a,b){const x=_gammaSample(a),y=_gammaSample(b);return x/(x+y);}
+
+// Resolve a risk's impact band (in real units) for a dimension → {min, likely, max}
+// Reuses the same tolerance-band logic as exposure so the forecast stays consistent.
+function riskImpactRange(r,f,proj){
+  proj=proj||CP;
+  const tl=(proj&&proj.tolerance)||{};
+  const cv=()=>{const n=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
+  let lv,levels,toUnits;
+  if(f==='cost'){
+    lv=r.impact_cost||0;if(!lv)return null;
+    levels=tl.cost_levels||costLevels(tl.appetite||'moderate');
+    const isValue=(tl.cost_mode==='value');
+    toUnits=(x)=>{const asVal=isValue||x>100;return asVal?x:(x/100)*cv();};
+  } else if(f==='schedule'){
+    lv=r.impact_schedule||0;if(!lv)return null;
+    levels=tl.sched_levels||schedLevels(tl.appetite||'moderate');
+    const isPct=(tl.sched_mode==='percent');
+    const dur=(proj&&proj.start_date&&proj.end_date)?(new Date(proj.end_date)-new Date(proj.start_date))/86400000:0;
+    toUnits=(x)=>isPct?(x/100)*dur:x;
+  } else return null;
+  // band lower/upper for this severity level → PERT min/likely/max
+  const bounds=tolBounds(levels,f==='cost'?[2,5,10,15]:[7,15,30,45]); // 4 boundaries
+  // level lv (1..5): band is [bounds[lv-2] .. bounds[lv-1]], with ends extrapolated
+  let lo,hi;
+  if(lv===1){lo=0;hi=bounds[0];}
+  else if(lv===5){lo=bounds[3];hi=bounds[3]*1.6;}
+  else {lo=bounds[lv-2];hi=bounds[lv-1];}
+  const min=toUnits(lo), max=toUnits(hi), likely=toUnits((lo+hi)/2);
+  // allow user override if they've set explicit estimates on the risk
+  if(r.pert_cost&&f==='cost')return r.pert_cost;
+  if(r.pert_schedule&&f==='schedule')return r.pert_schedule;
+  return {min,likely,max};
+}
+
+// Run the simulation. Returns percentile exposures + the probability the project
+// stays within its risk appetite (used for the "completion confidence").
+function monteCarloForecast(f,iterations,proj){
+  proj=proj||CP;
+  iterations=iterations||5000;
+  const risks=((proj&&proj.risks)||[]).filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
+  const specs=risks.map(r=>({p:PROB_PCT[r.probability]||0,range:riskImpactRange(r,f,proj)})).filter(s=>s.range);
+  if(!specs.length)return null;
+  const out=new Array(iterations);
+  for(let it=0;it<iterations;it++){
+    let total=0;
+    for(let i=0;i<specs.length;i++){
+      if(Math.random()<specs[i].p)total+=pertSample(specs[i].range.min,specs[i].range.likely,specs[i].range.max);
+    }
+    out[it]=total;
+  }
+  out.sort((a,b)=>a-b);
+  const pct=p=>out[Math.min(out.length-1,Math.floor(p/100*out.length))];
+  const mean=out.reduce((a,b)=>a+b,0)/out.length;
+  return {p10:pct(10),p50:pct(50),p80:pct(80),p90:pct(90),mean,iterations,n:specs.length,
+          // probability that total impact stays within appetite ceiling
+          withinAppetite:(ceil)=>ceil>0?out.filter(v=>v<=ceil).length/out.length:null};
+}
+
 function rexRanked(){
   const f=document.getElementById('rexFilter')?.value||'overall';
   const st=document.getElementById('rexStatus')?.value||window._rexStatus||'all';
