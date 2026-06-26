@@ -5757,22 +5757,28 @@ function renderDash(){
     const critT=openThreats.filter(r=>r.level==='critical').length;
     const totalThreats=openThreats.length;
     // ── PRIMARY: Monte Carlo simulation on individual register risks (true P-analysis) ──
-    // Confidence = probability the simulated total impact stays within the risk appetite ceiling.
+    // Pure, explainable method — NO invented curves:
+    //   1. Simulate total cost/schedule exposure across all open threats (PERT-sampled).
+    //   2. Confidence = P( simulated exposure ≤ contingency reserve ).
+    // The reserve is the project's declared tolerance for aggregate risk. It defaults to a
+    // standard contingency (% of contract value / duration) but is fully transparent and
+    // can be overridden per-project via CP.cost_reserve_pct / CP.sched_reserve_pct.
+    // This is the textbook definition of "probability of completing within budget/schedule".
     let costP=null, schedP=null, mc=null;
     try{
       const cv=parseFloat(String((CP&&CP.value)||'').replace(/[^\d.]/g,''))||0;
-      const tl=(CP&&CP.tolerance)||{};
-      // cost appetite ceiling (top High→Critical boundary), in real units
-      const cb=tolBounds(tl.cost_levels||costLevels(tl.appetite||'moderate'),[2,5,10,15]);
-      const costCeil=(tl.cost_mode==='value'||cb[3]>100)?cb[3]:(cv?cv*cb[3]/100:0);
-      const sb=tolBounds(tl.sched_levels||schedLevels(tl.appetite||'moderate'),[7,15,30,45]);
-      let schedCeil=sb[3];
-      if(tl.sched_mode==='percent'&&CP.start_date&&CP.end_date){const dur=(new Date(CP.end_date)-new Date(CP.start_date))/86400000;schedCeil=dur*sb[3]/100;}
-      const mcCost=monteCarloForecast('cost',4000);
-      const mcSched=monteCarloForecast('schedule',4000);
-      mc={cost:mcCost,sched:mcSched,costCeil,schedCeil};
-      if(mcCost&&costCeil>0){costP=Math.round(mcCost.withinAppetite(costCeil)*100);}
-      if(mcSched&&schedCeil>0){schedP=Math.round(mcSched.withinAppetite(schedCeil)*100);}
+      const dur=(CP.start_date&&CP.end_date)?(new Date(CP.end_date)-new Date(CP.start_date))/86400000:0;
+      // declared contingency reserves (transparent, overridable)
+      const costReservePct=(CP&&CP.cost_reserve_pct!=null)?CP.cost_reserve_pct:10;   // % of contract value
+      const schedReservePct=(CP&&CP.sched_reserve_pct!=null)?CP.sched_reserve_pct:10; // % of duration
+      const costReserve=cv*costReservePct/100;
+      const schedReserve=dur*schedReservePct/100;
+      const mcCost=monteCarloForecast('cost',5000);
+      const mcSched=monteCarloForecast('schedule',5000);
+      mc={cost:mcCost,sched:mcSched,cv,dur,costReserve,schedReserve,costReservePct,schedReservePct};
+      // Confidence = probability the simulated exposure stays within the reserve.
+      if(mcCost&&costReserve>0){costP=Math.round(mcCost.withinAppetite(costReserve)*100);}
+      if(mcSched&&schedReserve>0){schedP=Math.round(mcSched.withinAppetite(schedReserve)*100);}
     }catch(e){mc=null;}
     window._fcMC=mc;
     // ── FALLBACK: if no appetite ceiling set or no risks, use the saturating heuristic ──
