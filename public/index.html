@@ -1027,7 +1027,11 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .metric-help{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--b1,#e3e6ea);color:var(--t3,#9aa4af);font-size:9px;font-weight:700;cursor:help;margin-inline-start:5px;position:relative;vertical-align:middle}
 .metric-help:hover{background:var(--primary,#6D8196);color:#fff}
 .metric-help:hover .metric-tip{opacity:1;visibility:visible;transform:translateY(0)}
-.metric-tip{position:absolute;bottom:130%;left:50%;transform:translateX(-50%) translateY(4px);background:var(--t1,#2B3440);color:#fff;font-size:11px;font-weight:400;line-height:1.5;padding:8px 11px;border-radius:8px;width:200px;opacity:0;visibility:hidden;transition:all .2s;z-index:100;text-align:left;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+/* allow tooltips to escape the KPI card's overflow:hidden when hovered */
+.rcc-host .rcc-kpi:has(.metric-help:hover){overflow:visible;z-index:50}
+.metric-tip{position:absolute;bottom:140%;left:50%;transform:translateX(-50%) translateY(4px);background:var(--t1,#2B3440);color:#fff;font-size:11px;font-weight:400;line-height:1.5;padding:9px 12px;border-radius:8px;width:210px;opacity:0;visibility:hidden;transition:all .2s;z-index:9999;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.28);pointer-events:none;white-space:normal}
+/* arrow under the tooltip pointing to the icon */
+.metric-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--t1,#2B3440)}
 
 </style>
 </head>
@@ -10288,7 +10292,33 @@ async function armApprove(){
 // ═══════════════════════════════════════════════════════════════════════
 const ONB_KEY='riskatlas_onboarding_v1';
 // Metric tooltip helper — inline "?" with hover explanation for non-experts
-function mtip(text){return `<span class="metric-help">?<span class="metric-tip">${text}</span></span>`;}
+function mtip(text){
+  const safe=String(text).replace(/"/g,'&quot;');
+  return `<span class="metric-help" onmouseenter="showMetricTip(this,&quot;${safe}&quot;)" onmouseleave="hideMetricTip()">?</span>`;
+}
+// Render the tooltip as a fixed-position element so it never gets clipped by a
+// parent's overflow:hidden (e.g. KPI cards). Positions above the icon, flips below if needed.
+function showMetricTip(el,text){
+  hideMetricTip();
+  const tip=document.createElement('div');
+  tip.id='metricTipFloat';
+  tip.textContent=text;
+  tip.style.cssText='position:fixed;background:var(--t1,#2B3440);color:#fff;font-size:11px;font-weight:400;line-height:1.5;padding:9px 12px;border-radius:8px;width:210px;z-index:99999;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.28);pointer-events:none;opacity:0;transition:opacity .18s';
+  document.body.appendChild(tip);
+  const r=el.getBoundingClientRect();
+  const tw=tip.offsetWidth, th=tip.offsetHeight;
+  let left=r.left+r.width/2-tw/2;
+  left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
+  let top=r.top-th-8, below=false;
+  if(top<8){top=r.bottom+8;below=true;} // flip below if no room above
+  tip.style.left=left+'px'; tip.style.top=top+'px';
+  // arrow
+  const ar=document.createElement('div');
+  ar.style.cssText=`position:absolute;${below?'bottom':'top'}:100%;left:${Math.max(10,Math.min(r.left+r.width/2-left,tw-10))}px;transform:translateX(-50%);border:5px solid transparent;border-${below?'bottom':'top'}-color:var(--t1,#2B3440)`;
+  tip.appendChild(ar);
+  requestAnimationFrame(()=>{tip.style.opacity='1';});
+}
+function hideMetricTip(){document.getElementById('metricTipFloat')?.remove();}
 function onbState(){try{return JSON.parse(localStorage.getItem(ONB_KEY)||'{}');}catch(e){return {};}}
 function onbSet(k,v){try{const s=onbState();s[k]=v;localStorage.setItem(ONB_KEY,JSON.stringify(s));}catch(e){}}
 
