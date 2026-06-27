@@ -5710,20 +5710,48 @@ async function changeRiskStatus(riskId,status){
   if(myRole()==='viewer'){toast('View-only access — you cannot change risks in this project');return;}
   const risk=CP.risks.find(r=>r.id===riskId);
   if(!risk)return;
+  if(status==='closed'){
+    // styled closure modal (matches platform theme) instead of a browser prompt
+    showClosureModal(riskId);
+    return;
+  }
   const _oldStatus=risk.status||'open';
   if(_oldStatus!==status)logRiskEvent(riskId,'status_changed',{old:_oldStatus,new:status});
-  if(status==='closed'){
-    const notes=prompt('Add closure notes (lessons learned, resolution details):',risk.notes||'');
-    if(notes===null)return; // cancelled
-    risk.status='closed';
-    risk.notes=notes;
-    risk.closed_at=new Date().toISOString();
-    try{await sb('risks?id=eq.'+riskId,'PATCH',{status:'closed',notes:notes,closed_at:risk.closed_at});}catch(e){}
-  }else{
-    risk.status='open';
-    risk.closed_at=null;
-    try{await sb('risks?id=eq.'+riskId,'PATCH',{status:'open',closed_at:null});}catch(e){}
-  }
+  risk.status='open';
+  risk.closed_at=null;
+  try{await sb('risks?id=eq.'+riskId,'PATCH',{status:'open',closed_at:null});}catch(e){}
+  renderReg();renderRiskLog();updateStats();
+}
+function showClosureModal(riskId){
+  const risk=CP.risks.find(r=>r.id===riskId);if(!risk)return;
+  const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  document.getElementById('closureModal')?.remove();
+  const html=`<div class="modal-ov on" id="closureModal" onclick="if(event.target===this)this.remove()">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-t" style="margin-bottom:6px">Close Risk — ${esc(risk.risk_id||'')}</div>
+      <div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-bottom:14px">${esc((risk.description||'').slice(0,120))}${(risk.description||'').length>120?'…':''}</div>
+      <label style="display:block;font-size:11.5px;font-weight:600;color:var(--t2);margin-bottom:6px">Closure notes <span style="font-weight:400;color:var(--t3)">— lessons learned, resolution details</span></label>
+      <textarea id="closureNotes" rows="4" placeholder="How was this risk resolved? What was learned? (optional)" style="width:100%;border:1px solid var(--b1);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;color:var(--t1);background:var(--s1)">${esc(risk.notes||'')}</textarea>
+      <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-g" onclick="document.getElementById('closureModal').remove()">Cancel</button>
+        <button class="btn btn-p" onclick="confirmCloseRisk('${riskId}')">Close Risk</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+  setTimeout(()=>document.getElementById('closureNotes')?.focus(),50);
+}
+async function confirmCloseRisk(riskId){
+  const risk=CP.risks.find(r=>r.id===riskId);if(!risk)return;
+  const notes=(document.getElementById('closureNotes')?.value||'').trim();
+  const _oldStatus=risk.status||'open';
+  if(_oldStatus!=='closed')logRiskEvent(riskId,'status_changed',{old:_oldStatus,new:'closed'});
+  risk.status='closed';
+  risk.notes=notes;
+  risk.closed_at=new Date().toISOString();
+  try{await sb('risks?id=eq.'+riskId,'PATCH',{status:'closed',notes:notes,closed_at:risk.closed_at});}catch(e){}
+  document.getElementById('closureModal')?.remove();
+  toast('Risk '+(risk.risk_id||'')+' closed');
   renderReg();renderRiskLog();updateStats();
 }
 
