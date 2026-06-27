@@ -1378,6 +1378,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
         <select class="fs" id="np_pf"></select>
       </div>
       <div class="fg"><label class="fl">Project Name <span style="color:var(--red)">*</span></label><input type="text" class="fi" id="np_n" oninput="this.classList.remove('fi-err')" placeholder="e.g. Riyadh Tower — Phase 2"/><div class="fl-err" id="np_n_err">Project name is required</div></div>
+      <div class="fg"><label class="fl">Location</label><input type="text" class="fi" id="np_loc" placeholder="e.g. London, United Kingdom"/><div class="fl-hint">Country &amp; city — used for accurate market &amp; world insights. Auto-detected from documents if left blank.</div></div>
       <div class="fg"><label class="fl">Contract No.</label><input type="text" class="fi" id="np_c" placeholder="C-2024-001"/></div>
       <div class="fg"><label class="fl">Contract Value</label><input type="text" class="fi" id="np_v" inputmode="numeric" oninput="fmtMoney(this)" placeholder="15,000,000"/><div class="fl-hint">Used to calculate cost exposure (recommended)</div></div>
       <div class="fg"><label class="fl">Currency</label><select class="fs" id="np_cur"><option value="USD">USD ($)</option><option value="SAR">SAR (ر.س)</option><option value="AED">AED (د.إ)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="EGP">EGP</option><option value="KWD">KWD</option><option value="QAR">QAR</option><option value="OMR">OMR</option><option value="BHD">BHD</option><option value="JOD">JOD</option><option value="Other">Other</option></select><div class="fl-hint">Auto-detected from your documents on analysis</div></div>
@@ -1451,6 +1452,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
     <div class="modal-t">⚙ Project Settings</div>
     <div class="fgrid">
       <div class="fg"><label class="fl">Project Name *</label><input type="text" class="fi" id="set_n"/></div>
+      <div class="fg"><label class="fl">Location</label><input type="text" class="fi" id="set_loc" placeholder="e.g. London, United Kingdom"/><div class="fl-hint">Country &amp; city — drives accurate market &amp; world insights</div></div>
+      <div class="fg"><label class="fl">Currency</label><select class="fs" id="set_cur"><option value="USD">USD ($)</option><option value="SAR">SAR (ر.س)</option><option value="AED">AED (د.إ)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="EGP">EGP</option><option value="KWD">KWD</option><option value="QAR">QAR</option><option value="OMR">OMR</option><option value="BHD">BHD</option><option value="JOD">JOD</option><option value="Other">Other</option></select></div>
       <div class="fg"><label class="fl">Contract No.</label><input type="text" class="fi" id="set_c"/></div>
       <div class="fg"><label class="fl">Contract Value</label><input type="text" class="fi" id="set_v"/></div>
       <div class="fg"><label class="fl">Project Type</label>
@@ -4123,11 +4126,13 @@ async function createProj(){
     const pfId=document.getElementById('np_pf').value;
     const cleanVal=(document.getElementById('np_v').value||'').replace(/,/g,'').trim();
     const cur=(document.getElementById('np_cur')?.value)||'USD';
+    const userRegion=(document.getElementById('np_loc')?.value||'').trim();
     const d={name,contract:document.getElementById('np_c').value,value:cleanVal,currency:cur,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
+    if(userRegion)d.region=userRegion;
     if(pfId)d.portfolio_id=pfId;
     const res=await sb('projects','POST',d);
     hideLoad();closeProjModal();
-    ['np_n','np_c','np_v','np_d','np_s','np_e'].forEach(id=>document.getElementById(id).value='');
+    ['np_n','np_c','np_v','np_d','np_s','np_e','np_loc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     if(pfId)openPortfolios.add(pfId);
     await loadAll();
     if(res&&res[0])selectProj(res[0].id);
@@ -4206,6 +4211,8 @@ function myRole(){
 function openSettingsModal(){
   if(!CP)return;
   document.getElementById('set_n').value=CP.name||'';
+  document.getElementById('set_loc').value=CP.region||'';
+  if(document.getElementById('set_cur'))document.getElementById('set_cur').value=CP.currency||'USD';
   document.getElementById('set_c').value=CP.contract||'';
   document.getElementById('set_v').value=CP.value||'';
   document.getElementById('set_t').value=CP.type||'Residential';
@@ -4232,6 +4239,8 @@ async function saveSettings(){
     }
     const updates={
       name:document.getElementById('set_n').value.trim(),
+      region:(document.getElementById('set_loc')?.value||'').trim(),
+      currency:(document.getElementById('set_cur')?.value)||CP.currency||'USD',
       contract:document.getElementById('set_c').value,
       value:document.getElementById('set_v').value,
       type:document.getElementById('set_t').value,
@@ -5075,9 +5084,10 @@ Respond ONLY with valid JSON:
     try{parsed=pJSON(data.content[0].text);}
     catch(e){toast('Analysis error: '+data.content[0].text.slice(0,300));return;}
     CP.summary=parsed.summary||'';CP.has_schedule=parsed.has_schedule!==false;
-    // Currency & geography detected from the documents
-    if(parsed.currency&&typeof parsed.currency==='string'){const cc=parsed.currency.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
-    if(parsed.region&&typeof parsed.region==='string'&&parsed.region.trim()){CP.region=parsed.region.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
+    // Currency & geography detected from the documents — but NEVER override an explicit user choice.
+    // Only fill them in if the user left them at the default/blank.
+    if(parsed.currency&&typeof parsed.currency==='string'&&(!CP.currency||CP.currency==='USD')){const cc=parsed.currency.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
+    if(parsed.region&&typeof parsed.region==='string'&&parsed.region.trim()&&!(CP.region&&CP.region.trim())){CP.region=parsed.region.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
     PR=parsed.risks||[];showVal(PR);
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
@@ -7198,7 +7208,7 @@ ${appetitePromptBlock()}
 When recommending actions, flag any market condition that could push exposure beyond these appetite thresholds.
 Current project risks: ${riskList}
 
-IMPORTANT: Tailor EVERY insight to this project's specific country/region and local market — local material prices, local labor market, local economic indicators (inflation, interest rates), local regulations, and the ${curCode()} currency. Do NOT give generic global commentary; ground it in the project's geography.
+IMPORTANT: This project is located in ${CP.region||'a region you must infer from the project name, documents, and the contract currency ('+curCode()+')'} and its contract currency is ${curCode()}. Tailor EVERY insight to THIS specific country/region and local market — local material prices, local labor market, local economic indicators (inflation, interest rates), local regulations, and the ${curCode()} currency. The currency ${curCode()} is a strong signal of the country — never analyze a different country's market. Do NOT give generic global commentary, and do NOT default to any other region; ground everything strictly in this project's stated geography.
 
 Provide market & world insights in JSON (all text in the detected language):
 {"executive_brief":"3-4 sentence executive brief on the current market and geopolitical situation in this project's region relevant to the project","insights":[{"title":"signal title (local market conditions, material prices, or economic indicator)","description":"2 sentences","affected_risks":["which project risks could be affected"],"impact_probability":"high|medium|low","recommendation":"1 sentence action"}],"keep_eye_on":[{"event":"emerging threat (geopolitical event or regulatory change relevant to the region)","risk_connection":"project/portfolio impact","probability":"high|medium|low"}],"suggestions":[{"action":"add|adjust","risk_id":"existing risk ID for adjust, omit for add","title":"short risk title or change","reason":"1 sentence linking the market signal to this register action","level":"high|medium|low","probability":"1-5","category":"category for add"}]}
