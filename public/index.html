@@ -5741,6 +5741,53 @@ function ovToggle(targetId,btnId){
     : (closed?'Show detail ▼':'Hide detail ▲');
 }
 
+// ═══ DATA SUFFICIENCY GUARD (global) ═══
+// Honest analysis principle: if a key input is missing, say "insufficient data" and tell
+// the user EXACTLY what to provide — never fabricate a number, forecast, or analysis.
+function dataSufficiency(feature, proj){
+  proj=proj||CP;
+  const miss=[];
+  const cv=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''))||0;
+  const dur=(proj&&proj.start_date&&proj.end_date)?(new Date(proj.end_date)-new Date(proj.start_date))/86400000:0;
+  const risks=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
+  const threats=risks.filter(r=>r.type==='threat'||!r.type);
+  const scored=threats.filter(r=>(r.probability>0)&&((r.impact_cost>0)||(r.impact_schedule>0)));
+  if(feature==='forecast_cost'){
+    if(!cv)miss.push({k:'Contract value',why:'needed as the budget baseline to compute cost confidence'});
+    if(!threats.length)miss.push({k:'Identified risks',why:'the forecast simulates risk exposure — generate or add risks first'});
+    else if(!scored.length)miss.push({k:'Risk scoring (probability & cost impact)',why:'risks must be scored to simulate their financial impact'});
+  }
+  if(feature==='forecast_schedule'){
+    if(!dur)miss.push({k:'Project start & end dates',why:'needed as the schedule baseline to compute schedule confidence'});
+    if(!threats.length)miss.push({k:'Identified risks',why:'the forecast simulates risk exposure — generate or add risks first'});
+    else if(!threats.filter(r=>r.probability>0&&r.impact_schedule>0).length)miss.push({k:'Schedule impact scoring',why:'risks need a schedule impact to simulate delay exposure'});
+  }
+  if(feature==='whatif'){
+    if(!threats.length)miss.push({k:'Identified risks',why:'What-If models how changes affect your existing risks — add risks first'});
+    else if(!scored.length)miss.push({k:'Risk scoring (probability & impact)',why:'scenarios adjust scored risks — score them first'});
+  }
+  if(feature==='trend'){
+    const td=(proj&&proj.trend_data)||[];
+    if(td.length<2)miss.push({k:'At least 2 monitoring updates',why:'a trend needs multiple data points over time — log weekly updates (SPI, CPI, etc.) first'});
+  }
+  if(feature==='insights'){
+    const region=(proj&&proj.region)||'';
+    if(!region&&!proj.currency)miss.push({k:'Project location or currency',why:'market insights are tied to your region and currency — set them in project details'});
+    if(!threats.length)miss.push({k:'Identified risks',why:'insights link external events to your risks — generate risks first'});
+  }
+  return miss.length?{ok:false,missing:miss}:{ok:true};
+}
+function insufficientDataHTML(res, title){
+  const items=res.missing.map(m=>`<li style="margin-bottom:7px"><b style="color:var(--t1)">${m.k}</b><br><span style="font-size:11.5px;color:var(--t3)">${m.why}</span></li>`).join('');
+  return `<div style="border:1px dashed var(--b2,#d0d4d9);border-radius:12px;padding:18px 20px;background:var(--s2,#f7f8f9)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="width:26px;height:26px;border-radius:7px;background:#FEF3C7;color:#B8860B;display:flex;align-items:center;justify-content:center;font-size:15px">⚠</span>
+      <span style="font-size:13.5px;font-weight:700;color:var(--t1)">Insufficient data${title?' — '+title:''}</span>
+    </div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:10px">To give you an accurate result instead of a misleading estimate, we need:</div>
+    <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--t2)">${items}</ul>
+  </div>`;
+}
 function renderDash(){
   // ═══ PREDICTIVE COMPLETION MODEL ═══
   // Probability of finishing within approved schedule & cost, derived dynamically from:
@@ -5756,6 +5803,16 @@ function renderDash(){
     const medT=openThreats.filter(r=>r.level==='medium').length;
     const critT=openThreats.filter(r=>r.level==='critical').length;
     const totalThreats=openThreats.length;
+    // ── DATA SUFFICIENCY: don't fabricate a forecast when key inputs are missing ──
+    const suffCost=dataSufficiency('forecast_cost',CP);
+    const suffSched=dataSufficiency('forecast_schedule',CP);
+    if(!suffCost.ok&&!suffSched.ok){
+      // merge unique missing items
+      const seen={},merged=[];
+      [...suffCost.missing,...suffSched.missing].forEach(m=>{if(!seen[m.k]){seen[m.k]=1;merged.push(m);}});
+      return {insufficient:true,missing:merged,overall:null,costP:null,schedP:null,
+              band:{w:'Insufficient data',c:'#B8860B'},mc:null};
+    }
     // ── PRIMARY: Monte Carlo simulation on individual register risks (true P-analysis) ──
     // Pure, explainable method — NO invented curves:
     //   1. Simulate total cost/schedule exposure across all open threats (PERT-sampled).
@@ -5969,7 +6026,8 @@ function renderDash(){
               <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
             </div>
           </div>
-          <div class="rcc-hs">Probability of finishing on schedule &amp; budget at P${_fc.pLevel} confidence — updates live</div>
+          <div class="rcc-hs">Probability of finishing on schedule &amp; budget at P${_fc.pLevel||80} confidence — updates live</div>
+          ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
               <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall}%</div>
@@ -5987,7 +6045,7 @@ function renderDash(){
             </div>
           </div>
           <canvas id="scurveC" height="74"></canvas>
-          <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>`}
         </div>
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
@@ -6241,7 +6299,7 @@ function renderDash(){
 
     // ═══ S-CURVE: cumulative completion-probability curve ═══
     const scEl=document.getElementById('scurveC');
-    if(scEl&&window._fc){
+    if(scEl&&window._fc&&!window._fc.insufficient){
       const fc=window._fc;
       // Build an S-shaped cumulative confidence curve that lands at the current overall%.
       // X = project timeline (0→100%), Y = cumulative probability of staying within plan.
@@ -8810,8 +8868,14 @@ function updLever(key,val){wifLevers[key]=val;}
 async function runSimulation(){
   if(!requireActiveAccess())return;
   if(!checkPlanLimit('whatif'))return;
+  const suff=dataSufficiency('whatif',CP);
+  if(!suff.ok){
+    const el=document.getElementById('wifImpact')||document.getElementById('whatifContent');
+    if(el)el.innerHTML=insufficientDataHTML(suff,'What-If Simulation');
+    else toast('Insufficient data: '+suff.missing.map(m=>m.k).join(', '));
+    return;
+  }
   const risks=CP?.risks||[];
-  if(!risks.length){toast('No risks to simulate');return;}
   if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
 
   // Collect text inputs
