@@ -2448,6 +2448,29 @@ function computeLevel(prob,maxImp){
   if(score>=3) return 'medium';
   return 'low';
 }
+// ── Derive a 1-5 level from a REAL value, using the project's appetite scale. ──
+// Keeps the matrix/level consistent with the actual quantitative estimate (no contradiction).
+function pctToProbLevel(pct,appetite){
+  const b=tolBounds(probLevels(appetite||'moderate'),[15,40,65,90]); // 4 boundaries
+  const v=parseFloat(pct)||0;
+  if(v<=b[0])return 1; if(v<=b[1])return 2; if(v<=b[2])return 3; if(v<=b[3])return 4; return 5;
+}
+function costToImpactLevel(amount,proj,appetite){
+  const cv=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''))||0;
+  if(!amount||amount<=0)return 0;
+  if(!cv)return 3; // no contract value → neutral
+  const pct=(amount/cv)*100;
+  const b=tolBounds(costLevels(appetite||'moderate'),[2,5,10,15]);
+  if(pct<=b[0])return 1; if(pct<=b[1])return 2; if(pct<=b[2])return 3; if(pct<=b[3])return 4; return 5;
+}
+function daysToSchedLevel(days,proj,appetite){
+  if(!days||days<=0)return 0;
+  const b=tolBounds(schedLevels(appetite||'moderate'),[7,15,30,45]);
+  const tl=(proj&&proj.tolerance)||{};
+  let d=days;
+  if(tl.sched_mode==='percent'&&proj&&proj.start_date&&proj.end_date){const dur=(new Date(proj.end_date)-new Date(proj.start_date))/86400000;if(dur>0)d=(days/dur)*100;}
+  if(d<=b[0])return 1; if(d<=b[1])return 2; if(d<=b[2])return 3; if(d<=b[3])return 4; return 5;
+}
 // Convenience: compute the level for a full risk record from its impact fields.
 function levelFromRisk(r){return computeLevel(r.probability, maxImpact(r));}
 // "High or above" = critical + high (critical is the most severe; user-facing "high risk" counts include it).
@@ -5072,13 +5095,13 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
 6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — section X: specific stated constraint", or "Schedule — a specific activity or work package"). If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words.
 
-TIMING CLASSIFICATION (critical for early warning):
+
 - "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. a key milestone, delivery, installation, test, or commissioning) that occurs at a defined point in the timeline (e.g. a delivery, installation, milestone, test, or commissioning). Use "ongoing" for continuous risks with no single date (e.g. price inflation, staffing shortage, currency fluctuation, regulatory climate).
 - "activity_ref": for scheduled risks, name the specific schedule activity it is linked to (from the uploaded schedule if available). Empty for ongoing risks.
 - "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability":3,"impact_cost":3,"impact_schedule":4,"impact_qhse":1,"impact_reputation":2,"level":"high","response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability_pct":40,"cost_min":80000,"cost_likely":120000,"cost_max":200000,"sched_min":3,"sched_likely":8,"sched_max":15,"impact_qhse":1,"impact_reputation":2,"response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -5239,7 +5262,7 @@ async function confirmVal(){
   showLoad('Saving...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
-    const ins=app.map(r=>({project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',probability:r.probability,impact_cost:r.impact_cost,impact_schedule:r.impact_schedule,impact_qhse:r.impact_qhse,impact_reputation:r.impact_reputation,level:computeLevel(r.probability,Math.max(parseInt(r.impact_cost)||0,parseInt(r.impact_schedule)||0,parseInt(r.impact_qhse)||0,parseInt(r.impact_reputation)||0)),response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,owner:r.owner||'',response_owner:r.response_owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null,source:r.source||''}));
+
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
@@ -5803,16 +5826,20 @@ function dataSufficiency(feature, proj){
   const dur=(proj&&proj.start_date&&proj.end_date)?(new Date(proj.end_date)-new Date(proj.start_date))/86400000:0;
   const risks=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
   const threats=risks.filter(r=>r.type==='threat'||!r.type);
-  const scored=threats.filter(r=>(r.probability>0)&&((r.impact_cost>0)||(r.impact_schedule>0)));
+  // a risk is "scored" if it has either a legacy level OR a real quantitative estimate
+  const hasProb=r=>(r.probability>0)||(r.probability_pct>0);
+  const hasCost=r=>(r.impact_cost>0)||(r.pert_cost&&r.pert_cost.likely>0);
+  const hasSched=r=>(r.impact_schedule>0)||(r.pert_schedule&&r.pert_schedule.likely>0);
+  const scored=threats.filter(r=>hasProb(r)&&(hasCost(r)||hasSched(r)));
   if(feature==='forecast_cost'){
     if(!cv)miss.push({k:'Contract value',why:'needed as the budget baseline to compute cost confidence'});
     if(!threats.length)miss.push({k:'Identified risks',why:'the forecast simulates risk exposure — generate or add risks first'});
-    else if(!scored.length)miss.push({k:'Risk scoring (probability & cost impact)',why:'risks must be scored to simulate their financial impact'});
+    else if(!threats.filter(r=>hasProb(r)&&hasCost(r)).length)miss.push({k:'Risk scoring (probability & cost impact)',why:'risks must be scored to simulate their financial impact'});
   }
   if(feature==='forecast_schedule'){
     if(!dur)miss.push({k:'Project start & end dates',why:'needed as the schedule baseline to compute schedule confidence'});
     if(!threats.length)miss.push({k:'Identified risks',why:'the forecast simulates risk exposure — generate or add risks first'});
-    else if(!threats.filter(r=>r.probability>0&&r.impact_schedule>0).length)miss.push({k:'Schedule impact scoring',why:'risks need a schedule impact to simulate delay exposure'});
+    else if(!threats.filter(r=>hasProb(r)&&hasSched(r)).length)miss.push({k:'Schedule impact scoring',why:'risks need a schedule impact to simulate delay exposure'});
   }
   if(feature==='whatif'){
     if(!threats.length)miss.push({k:'Identified risks',why:'What-If models how changes affect your existing risks — add risks first'});
@@ -6481,6 +6508,10 @@ function _betaSample(a,b){const x=_gammaSample(a),y=_gammaSample(b);return x/(x+
 // Reuses the same tolerance-band logic as exposure so the forecast stays consistent.
 function riskImpactRange(r,f,proj){
   proj=proj||CP;
+  // ── PRIORITY: use the AI's real three-point estimate when available ──
+  if(f==='cost'&&r.pert_cost&&r.pert_cost.likely>0)return r.pert_cost;
+  if(f==='schedule'&&r.pert_schedule&&r.pert_schedule.likely>0)return r.pert_schedule;
+  // ── FALLBACK: derive a money/days range from the legacy 1-5 level ──
   const tl=(proj&&proj.tolerance)||{};
   const cv=()=>{const n=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
   let lv,levels,toUnits;
@@ -6504,9 +6535,6 @@ function riskImpactRange(r,f,proj){
   else if(lv===5){lo=bounds[3];hi=bounds[3]*1.6;}
   else {lo=bounds[lv-2];hi=bounds[lv-1];}
   const min=toUnits(lo), max=toUnits(hi), likely=toUnits((lo+hi)/2);
-  // allow user override if they've set explicit estimates on the risk
-  if(r.pert_cost&&f==='cost')return r.pert_cost;
-  if(r.pert_schedule&&f==='schedule')return r.pert_schedule;
   return {min,likely,max};
 }
 
@@ -6516,7 +6544,7 @@ function monteCarloForecast(f,iterations,proj){
   proj=proj||CP;
   iterations=iterations||5000;
   const risks=((proj&&proj.risks)||[]).filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
-  const specs=risks.map(r=>({p:PROB_PCT[r.probability]||0,range:riskImpactRange(r,f,proj)})).filter(s=>s.range);
+  const specs=risks.map(r=>({p:(r.probability_pct!=null?r.probability_pct/100:(PROB_PCT[r.probability]||0)),range:riskImpactRange(r,f,proj)})).filter(s=>s.range);
   if(!specs.length)return null;
   const out=new Array(iterations);
   for(let it=0;it<iterations;it++){
