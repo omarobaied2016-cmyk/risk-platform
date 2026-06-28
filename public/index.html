@@ -7172,7 +7172,7 @@ function renderProjectReport(parsed,dateStr){
     <div class="dash-section" style="background:${hbg};border-color:${hc}40;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <div class="dash-sec-title"><span class="dash-sec-num" style="background:${hc}">✦</span><span class="dash-sec-name" style="color:${hc}">Executive Summary — ${htext}</span></div>
-        <div style="display:flex;align-items:center;gap:10px"><div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div><button class="btn btn-g" style="padding:5px 12px;font-size:11.5px" onclick="printProjectReport()">⬇ PDF</button></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Generated ${dateLabel}</div></div>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_summary||'—'}</div>
       ${parsed.progress_note?`<div style="margin-top:10px;padding:9px 12px;background:var(--grn-soft);border-radius:8px;font-size:12px;color:#15803d;line-height:1.55"><b>↗ Progress:</b> ${linkifyRisks(parsed.progress_note)}</div>`:''}
@@ -7350,7 +7350,7 @@ function renderProjectInsights(parsed,dateStr){
     html+=`<div class="card" style="background:var(--primary-soft);border-color:rgba(109,129,150,.18);margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
         <div style="font-size:12px;font-weight:700;color:var(--primary)">Executive Brief</div>
-        <button class="ov-toggle" id="mktToggle" onclick="ovToggle('projMarketInsights','mktToggle')">Show detail ▼</button>
+        <button class="btn btn-p" onclick="loadProjectInsights(true)" style="padding:7px 13px;font-size:11.5px">Analyze impact on my risks</button>
       </div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7">${parsed.executive_brief}</div>
     </div>`;
@@ -7388,7 +7388,7 @@ function renderProjectInsights(parsed,dateStr){
   html+='</div>';/* close ov-mkt-detail */
   el.innerHTML=html;
   const _md=el.querySelector('.ov-mkt-detail');
-  if(_md){_md.classList.add('ov-collapse','ov-closed');}
+  if(_md){/* detail shown by default — toggle replaced by Analyze button */}
 }
 
 // ═══ EXPORT WITH CHECKLIST (#22 #25 #26) ═══
@@ -8263,7 +8263,7 @@ function renderWeeklyIndicators(){
       <div class="ew-sec-t"><span style="background:var(--primary-soft);color:var(--primary);padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">Trend Analysis</span> Weekly Indicator Analysis</div>
       <div class="trend-form">
         <div style="font-size:12px;font-weight:600;margin-bottom:3px">Period Trend Indicators</div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:11px">Enter indicators for a period. Set the date to backfill past weeks/months — the more history, the better the forecast.</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:11px">Enter indicators for a period and set its date. <b style="color:var(--t2)">Save</b> each period to build history (you can backfill several weeks), then <b style="color:var(--t2)">Analyze Trend</b> to get the AI report and forecast across all of them.</div>
         <div class="ind-grid">
           <div class="ind-item"><label class="ind-lbl">Period Date</label><input type="date" class="ind-inp" id="ind_date" value="${new Date().toISOString().slice(0,10)}"/></div>
           <div class="ind-item"><label class="ind-lbl">Schedule Performance Index (SPI)</label><input type="number" step="0.01" class="ind-inp" id="ind_sv" placeholder="e.g. 0.95 (&lt;1 behind, &gt;1 ahead)"/></div>
@@ -8273,7 +8273,7 @@ function renderWeeklyIndicators(){
           <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Vendor / Dependency Delays</label><textarea class="ind-inp" id="ind_vd" rows="2" style="min-height:50px;font-family:inherit" placeholder="e.g. Steel delivery delayed 5 days"></textarea></div>
           <div class="ind-item" style="grid-column:1/-1"><label class="ind-lbl">Additional Notes (optional)</label><textarea class="ind-inp" id="ind_notes" rows="2" style="min-height:50px;font-family:inherit" placeholder="Any notes this period"></textarea></div>
         </div>
-        <div style="margin-top:10px;display:flex;gap:8px;align-items:center"><button class="btn btn-p" onclick="analyzeTrend()">Analyze Trend</button><span style="font-size:11px;color:var(--t3)">${CP.trend_data?.length?CP.trend_data.length+' weeks recorded':''}</span></div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-p" onclick="saveTrendEntry()">＋ Save Period</button><button class="btn btn-g" onclick="analyzeTrend()">Analyze Trend</button><span style="font-size:11px;color:var(--t3)">${CP.trend_data?.length?CP.trend_data.length+' period'+(CP.trend_data.length>1?'s':'')+' recorded':'No periods yet'}</span></div>
       </div>
 
       ${CP.trend_data?.length?`<div class="card" style="margin-bottom:12px;margin-top:12px"><div class="card-t">Period Indicators History</div>
@@ -8321,8 +8321,11 @@ function ewCard(r,days){
   </div>`;
 }
 
-async function analyzeTrend(){
+// Save a period's indicators WITHOUT running AI — lets the user backfill several
+// weeks first, then analyze the whole trend in one go.
+async function saveTrendEntry(){
   if(!requireActiveAccess())return;
+  if(myRole()==='viewer'){toast('View-only access — you cannot add indicators');return;}
   const sv=parseFloat(document.getElementById('ind_sv').value)||0;
   const br=parseFloat(document.getElementById('ind_br').value)||0;
   const cr=parseInt(document.getElementById('ind_cr').value)||0;
@@ -8330,14 +8333,46 @@ async function analyzeTrend(){
   const vd=document.getElementById('ind_vd').value.trim()||'';
   const notes=document.getElementById('ind_notes').value.trim()||'';
   const dateInp=document.getElementById('ind_date')?.value;
-  const dObj=dateInp?new Date(dateInp+'T00:00:00'):new Date();
+  if(!dateInp){toast('Please choose the period date');return;}
+  if(!sv&&!br&&!cr&&!ru&&!vd){toast('Enter at least one indicator before saving');return;}
+  const dObj=new Date(dateInp+'T00:00:00');
   const iso=dObj.toISOString().slice(0,10);
   const weekDate=dObj.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  showLoad('Analyzing trend indicators...');
+  // lightweight health score (no AI): SPI & CPI drive it, penalize change requests & vendor delays
+  const base=Math.round(((Math.min(sv||1,1.2)/1.2)*0.5+(Math.min(br||1,1.2)/1.2)*0.5)*100);
+  const health=Math.max(10,Math.min(100,base-(cr>5?10:cr>2?5:0)-(vd?8:0)));
+  const entry={date:weekDate,iso,sv,burn_rate:br,change_requests:cr,resource_util:ru,vendor_delay:vd,notes,
+    alert_level:health>=70?'low':health>=45?'medium':'high',health_score:health,forecast:[],report:null};
+  if(!CP.trend_data)CP.trend_data=[];
+  CP.trend_data=CP.trend_data.filter(w=>w.iso!==iso); // replace same-date
+  CP.trend_data.push(entry);
+  CP.trend_data.sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
+  try{await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});}
+  catch(e){toast('Saved locally but could NOT persist. Ensure the projects table has a "trend_data" jsonb column.');}
+  ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  // advance the date by 7 days for quick multi-week entry
+  const next=new Date(dObj.getTime()+7*86400000).toISOString().slice(0,10);
+  renderWeeklyIndicators();
+  const dEl=document.getElementById('ind_date');if(dEl)dEl.value=next;
+  toast('Period '+weekDate+' saved · '+CP.trend_data.length+' recorded',{type:'ok'});
+}
+
+async function analyzeTrend(){
+  if(!requireActiveAccess())return;
+  // If the form has indicators entered, save them first so they're included.
+  const _hasInput=['ind_sv','ind_br','ind_cr','ind_ru','ind_vd'].some(id=>{const e=document.getElementById(id);return e&&e.value.trim();});
+  if(_hasInput)await saveTrendEntry();
+  if(!CP.trend_data||!CP.trend_data.length){toast('Add at least one period of indicators first, then analyze the trend');return;}
+  // Analyze across all saved periods; the latest period is the "current" focus.
+  const _sorted0=(CP.trend_data||[]).slice().sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
+  const _cur=_sorted0[_sorted0.length-1];
+  const sv=_cur.sv||0, br=_cur.burn_rate||0, cr=_cur.change_requests||0, ru=_cur.resource_util||0, vd=_cur.vendor_delay||'', notes=_cur.notes||'';
+  const iso=_cur.iso; const weekDate=_cur.date;
+  showLoad('Analyzing trend across '+_sorted0.length+' period'+(_sorted0.length>1?'s':'')+'...');
 
   const existing=(CP.risks||[]).map(r=>`${r.risk_id}: ${r.description} [${r.level}]`).join('\n');
-  const sorted=(CP.trend_data||[]).slice().sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
-  const history=sorted.slice(-6).map(w=>`${w.date}: SPI=${w.sv}, CPI=${w.burn_rate}, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Health=${w.health_score||'?'}`).join('\n')||'No prior history';
+  const sorted=_sorted0;
+  const history=sorted.slice(-12).map(w=>`${w.date}: SPI=${w.sv}, CPI=${w.burn_rate}, CR=${w.change_requests||0}, RU=${w.resource_util||0}%, Health=${w.health_score||'?'}`).join('\n')||'No prior history';
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior project risk manager. Generate ALL output in ENGLISH.
