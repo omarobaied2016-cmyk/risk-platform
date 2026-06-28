@@ -2386,16 +2386,30 @@ async function sb(path,method='GET',body=null){
 // ═══ DEFAULTS ═══
 const DQ=[{l:'1 — Zero Tolerance',d:'Fatality or permanent disability'},{l:'2 — Critical',d:'Serious injury requiring hospitalization'},{l:'3 — High',d:'Injury requiring medical treatment'},{l:'4 — Medium',d:'First aid only'},{l:'5 — Low',d:'Near miss only'}];
 const DR=[{l:'1 — Zero Tolerance',d:'Company image impact'},{l:'2 — National',d:'National media coverage'},{l:'3 — Regional',d:'Regional impact'},{l:'4 — Local',d:'City-level impact'},{l:'5 — Internal',d:'Project team only'}];
-const DP=[{l:'1 — Rare',d:'Less than 10%'},{l:'2 — Unlikely',d:'10-30%'},{l:'3 — Possible',d:'30-50%'},{l:'4 — Likely',d:'50-70%'},{l:'5 — Almost Certain',d:'More than 70%'}];
-// Cost & Schedule 5-level scales that adapt to appetite
-function costLevels(appetite){
-  const base={conservative:[1,3,5,8,12],moderate:[2,5,10,15,20],aggressive:[5,10,18,28,40]};
+const DP=[{l:'1 — Rare',d:'Less than 10%'},{l:'2 — Unlikely',d:'10-35%'},{l:'3 — Possible',d:'35-60%'},{l:'4 — Likely',d:'60-85%'},{l:'5 — Almost Certain',d:'More than 85%'}];
+// Probability scale adapts to appetite. Constraints honored across all three:
+//   Almost Certain ≥ 85% always (a near-certain event can't be labelled below 85%)
+//   Rare ceiling ≥ 10% always. Conservative = more sensitive (lower thresholds).
+function probLevels(appetite){
+  const base={conservative:[10,35,60,85],moderate:[15,40,65,90],aggressive:[20,45,70,95]};
   const v=base[appetite]||base.moderate;
   return [
-    {l:'1 — Very Low',d:`Up to ${v[0]}% of contract value`},
-    {l:'2 — Low',d:`${v[0]}-${v[1]}% of contract value`},
-    {l:'3 — Medium',d:`${v[1]}-${v[2]}% of contract value`},
-    {l:'4 — High',d:`${v[2]}-${v[3]}% of contract value`},
+    {l:'1 — Rare',d:`Up to ${v[0]}%`},
+    {l:'2 — Unlikely',d:`${v[0]}-${v[1]}%`},
+    {l:'3 — Possible',d:`${v[1]}-${v[2]}%`},
+    {l:'4 — Likely',d:`${v[2]}-${v[3]}%`},
+    {l:'5 — Almost Certain',d:`More than ${v[3]}%`}
+  ];
+}
+// Cost & Schedule 5-level scales that adapt to appetite
+function costLevels(appetite){
+  const base={conservative:[1,2,5,10],moderate:[2,5,10,15],aggressive:[3,7,12,20]};
+  const v=base[appetite]||base.moderate;
+  return [
+    {l:'1 — Negligible',d:`Up to ${v[0]}% of contract value`},
+    {l:'2 — Minor',d:`${v[0]}-${v[1]}% of contract value`},
+    {l:'3 — Moderate',d:`${v[1]}-${v[2]}% of contract value`},
+    {l:'4 — Major',d:`${v[2]}-${v[3]}% of contract value`},
     {l:'5 — Critical',d:`More than ${v[3]}% of contract value`}
   ];
 }
@@ -4122,7 +4136,7 @@ async function createProj(){
   showLoad('Creating...');
   try{
     const appetite=document.getElementById('np_ra_level').value;
-    const tol={appetite:appetite,cost_levels:costLevels(appetite),sched_levels:schedLevels(appetite),qhse:DQ,rep:DR,prob:DP,imp:DI};
+    const tol={appetite:appetite,cost_levels:costLevels(appetite),sched_levels:schedLevels(appetite),qhse:DQ,rep:DR,prob:probLevels(appetite),imp:DI};
     const pfId=document.getElementById('np_pf').value;
     const cleanVal=(document.getElementById('np_v').value||'').replace(/,/g,'').trim();
     const cur=(document.getElementById('np_cur')?.value)||'USD';
@@ -4236,6 +4250,7 @@ async function saveSettings(){
     if(newAppetite!==oldAppetite){
       tol.cost_levels=costLevels(newAppetite);
       tol.sched_levels=schedLevels(newAppetite);
+      tol.prob=probLevels(newAppetite);
     }
     const updates={
       name:document.getElementById('set_n').value.trim(),
@@ -4702,7 +4717,7 @@ function appetitePromptBlock(){
     ? `${schedCeil}% of total duration${dur>0?` (≈ ${Math.round(dur*schedCeil/100)} days)`:''}`
     : `${schedCeil} days slip`;
   // probability ceiling (Likely→Almost Certain boundary)
-  const pb=tolBounds(tl.prob||DP,[10,30,50,70]);
+  const pb=tolBounds(tl.prob||probLevels(appetite),[15,40,65,90]);
   const probCeil=pb[3]||70;
   // QHSE + Reputation: most severe level descriptions
   const qhse=(tl.qhse&&tl.qhse[0]&&tl.qhse[0].d)||'No fatalities or permanent disability acceptable.';
@@ -4728,7 +4743,7 @@ function renderTol(){
   renderNumericTol('sched_lvl','sched',tl.sched_levels||schedLevels(appetite),[7,15,30,45],schedMode);
   renderLvls('qhse_lvl',tl.qhse||DQ,'qhse');
   renderLvls('rep_lvl',tl.rep||DR,'rep');
-  renderNumericTol('prob_lvl','prob',tl.prob||DP,[10,30,50,70],'percent');
+  renderNumericTol('prob_lvl','prob',tl.prob||probLevels(appetite),[15,40,65,90],'percent');
 }
 
 // Numeric editor for Cost / Schedule / Probability — edit 4 boundaries with steppers + a live preview of the 5 levels
