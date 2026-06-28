@@ -8488,8 +8488,15 @@ function renderTrendChart(canvasId){
   const td=CP.trend_data.slice(-12);
   const labels=td.map(w=>w.date);
   const health=td.map(w=>w.health_score||0);
+  // Forecast comes from the most recent entry that actually HAS one — entries saved
+  // via "Save Period" (no AI) have an empty forecast, so don't let those hide the
+  // forecast line produced by the latest "Analyze Trend".
+  let fc=[];
+  for(let i=CP.trend_data.length-1;i>=0;i--){
+    const f=CP.trend_data[i].forecast;
+    if(Array.isArray(f)&&f.length){fc=f;break;}
+  }
   const last=td[td.length-1];
-  const fc=(last&&Array.isArray(last.forecast))?last.forecast:[];
   const fcLabels=fc.map((f,i)=>f.label||('+'+(i+1)));
   const allLabels=[...labels,...fcLabels];
   const actualData=[...health,...fc.map(()=>null)];
