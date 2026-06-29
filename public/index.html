@@ -5147,7 +5147,20 @@ Respond ONLY with valid JSON:
     // Only fill them in if the user left them at the default/blank.
     if(parsed.currency&&typeof parsed.currency==='string'&&(!CP.currency||CP.currency==='USD')){const cc=parsed.currency.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
     if(parsed.region&&typeof parsed.region==='string'&&parsed.region.trim()&&!(CP.region&&CP.region.trim())){CP.region=parsed.region.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
-    PR=parsed.risks||[];showVal(PR);
+    // Enrich each risk with derived 1-5 levels from its real quantitative values,
+    // so the review screen shows proper Probability/Cost/Schedule (not "undefined").
+    const _ap=(CP&&(CP.risk_appetite?.level||CP.tolerance?.appetite))||'moderate';
+    PR=(parsed.risks||[]).map(r=>{
+      const probPct=(r.probability_pct!=null)?Math.max(1,Math.min(99,parseFloat(r.probability_pct))):null;
+      const cLik=parseFloat(r.cost_likely), sLik=parseFloat(r.sched_likely);
+      const probLvl=(probPct!=null)?pctToProbLevel(probPct,_ap):(parseInt(r.probability)||3);
+      const costLvl=!isNaN(cLik)?costToImpactLevel(cLik,CP,_ap):(parseInt(r.impact_cost)||0);
+      const schedLvl=!isNaN(sLik)?daysToSchedLevel(sLik,CP,_ap):(parseInt(r.impact_schedule)||0);
+      const qhse=parseInt(r.impact_qhse)||0, rep=parseInt(r.impact_reputation)||0;
+      const maxImp=Math.max(costLvl,schedLvl,qhse,rep);
+      return {...r,probability:probLvl,impact_cost:costLvl,impact_schedule:schedLvl,impact_qhse:qhse,impact_reputation:rep,level:computeLevel(probLvl,maxImp)};
+    });
+    showVal(PR);
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
