@@ -5994,9 +5994,13 @@ function renderDash(){
       const mcSched=showRes?mcSchedRes:mcSchedInh;
       mc={cost:mcCost,sched:mcSched,cv,dur,costReserve,schedReserve,costReservePct,schedReservePct,
           inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
-      const pLv=window._fcP||80;
-      if(mcCost){const held=Math.max(costReserve,mcCost.percentile(pLv));costP=Math.round(mcCost.withinAppetite(held)*100);}
-      if(mcSched){const held=Math.max(schedReserve,mcSched.percentile(pLv));schedP=Math.round(mcSched.withinAppetite(held)*100);}
+      // ── Confidence = probability of finishing within the approved budget (contract
+      //    value + contingency reserve). This is a SINGLE, fixed number — the textbook
+      //    "probability of budget/schedule success" from the simulation. It does NOT
+      //    depend on the P-level slider (that would be circular). The P-level only
+      //    controls which raw exposure percentile is DISPLAYED below (P80 cost = X).
+      if(mcCost&&costReserve>0){costP=Math.round(mcCost.withinAppetite(costReserve)*100);}
+      if(mcSched&&schedReserve>0){schedP=Math.round(mcSched.withinAppetite(schedReserve)*100);}
     }catch(e){mc=null;}
     window._fcMC=mc;
     // ── FALLBACK: if no appetite ceiling set or no risks, use the saturating heuristic ──
@@ -6035,8 +6039,8 @@ function renderDash(){
     // Recent market high-impact signal erodes a little (external uncertainty)
     const mi=CP&&CP.market_insights;
     if(mi&&Array.isArray(mi.insights)&&mi.insights.some(x=>x.impact_probability==='high')){costP-=4;schedP-=3;}
-    // Apply confidence-level conservatism
-    costP-=consAdj; schedP-=consAdj;
+    // (P-level no longer adjusts confidence — it only controls the exposure figure shown.
+    //  Confidence is the fixed simulation result: P(exposure ≤ approved budget/schedule).)
     const clamp=v=>Math.max(8,Math.min(96,Math.round(v)));
     costP=clamp(costP); schedP=clamp(schedP);
     const overall=clamp((costP+schedP)/2);
@@ -6191,7 +6195,7 @@ function renderDash(){
               <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
             </div>
           </div>
-          <div class="rcc-hs">Probability of finishing on schedule &amp; budget at P${_fc.pLevel||80} confidence — ${(window._fcResidual!==false)?'after applying your response plans':'before any response (inherent risk)'}</div>
+
           ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
@@ -6217,17 +6221,7 @@ function renderDash(){
             const fmtD=v=>v==null?'—':Math.round(v)+'d';
             const inhC=mc.inherent&&mc.inherent.cost, resC=mc.residual&&mc.residual.cost;
             const inhS=mc.inherent&&mc.inherent.sched, resS=mc.residual&&mc.residual.sched;
-            const cur80=mc.cost?mc.cost.p80:null, sch80=mc.sched?mc.sched.p80:null;
-            // before→after delta on P80 (shows the value of the response plans)
-            const cDelta=(inhC&&resC)?(inhC.p80-resC.p80):null;
-            const sDelta=(inhS&&resS)?(inhS.p80-resS.p80):null;
-            const row=(label,p50,p80,unit)=>`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:2px 0"><span>${label}</span><span style="color:var(--t1)"><b>P50</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(p50):fmtD(p50)} &nbsp;·&nbsp; <b>P80</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(p80):fmtD(p80)}</span></div>`;
-            return `<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
-              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Simulated exposure (${(window._fcResidual!==false)?'after response':'before response'})</div>
-              ${mc.cost?row('Cost overrun',mc.cost.p50,mc.cost.p80,'money'):''}
-              ${mc.sched?row('Schedule delay',mc.sched.p50,mc.sched.p80,'days'):''}
-              ${(cDelta!=null&&cDelta>0)||(sDelta!=null&&sDelta>0)?`<div style="font-size:10px;color:var(--grn);margin-top:4px">↓ Response plans cut P80 exposure by ${cDelta>0?cur+' '+fmtM(cDelta):''}${cDelta>0&&sDelta>0?' and ':''}${sDelta>0?fmtD(sDelta):''}</div>`:''}
-            </div>`;
+
           })()}
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>`}
         </div>
