@@ -6215,13 +6215,23 @@ function renderDash(){
           </div>
           <canvas id="scurveC" height="74"></canvas>
           ${(()=>{
-            const mc=window._fcMC; if(!mc||!mc.cost&&!mc.sched)return '';
+            const mc=window._fcMC; if(!mc||(!mc.cost&&!mc.sched))return '';
             const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
             const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
             const fmtD=v=>v==null?'—':Math.round(v)+'d';
             const inhC=mc.inherent&&mc.inherent.cost, resC=mc.residual&&mc.residual.cost;
             const inhS=mc.inherent&&mc.inherent.sched, resS=mc.residual&&mc.residual.sched;
-
+            const pLv=window._fcP||80;
+            // before→after delta at the selected P-level (value of the response plans)
+            const cDelta=(inhC&&resC)?(inhC.percentile(pLv)-resC.percentile(pLv)):null;
+            const sDelta=(inhS&&resS)?(inhS.percentile(pLv)-resS.percentile(pLv)):null;
+            const row=(label,p50,pSel,unit)=>`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:2px 0"><span>${label}</span><span style="color:var(--t1)"><b>P50</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(p50):fmtD(p50)} &nbsp;·&nbsp; <b>P${pLv}</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(pSel):fmtD(pSel)}</span></div>`;
+            return `<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
+              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Simulated exposure (${(window._fcResidual!==false)?'after response':'before response'})</div>
+              ${mc.cost?row('Cost overrun',mc.cost.p50,mc.cost.percentile(pLv),'money'):''}
+              ${mc.sched?row('Schedule delay',mc.sched.p50,mc.sched.percentile(pLv),'days'):''}
+              ${(cDelta!=null&&cDelta>0)||(sDelta!=null&&sDelta>0)?`<div style="font-size:10px;color:var(--grn);margin-top:4px">↓ Response plans cut P${pLv} exposure by ${cDelta>0?cur+' '+fmtM(cDelta):''}${cDelta>0&&sDelta>0?' and ':''}${sDelta>0?fmtD(sDelta):''}</div>`:''}
+            </div>`;
           })()}
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>`}
         </div>
