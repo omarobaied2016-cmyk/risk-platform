@@ -5960,7 +5960,18 @@ function renderDash(){
       const schedReservePct=(CP&&CP.sched_reserve_pct!=null)?CP.sched_reserve_pct:10; // % of duration
       const costReserve=cv*costReservePct/100;
       const schedReserve=dur*schedReservePct/100;
-
+      const mcCostInh=monteCarloForecast('cost',5000,CP,'inherent');
+      const mcSchedInh=monteCarloForecast('schedule',5000,CP,'inherent');
+      const mcCostRes=monteCarloForecast('cost',5000,CP,'residual');
+      const mcSchedRes=monteCarloForecast('schedule',5000,CP,'residual');
+      const showRes=(window._fcResidual!==false);
+      const mcCost=showRes?mcCostRes:mcCostInh;
+      const mcSched=showRes?mcSchedRes:mcSchedInh;
+      mc={cost:mcCost,sched:mcSched,cv,dur,costReserve,schedReserve,costReservePct,schedReservePct,
+          inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
+      const pLv=window._fcP||80;
+      if(mcCost){const held=Math.max(costReserve,mcCost.percentile(pLv));costP=Math.round(mcCost.withinAppetite(held)*100);}
+      if(mcSched){const held=Math.max(schedReserve,mcSched.percentile(pLv));schedP=Math.round(mcSched.withinAppetite(held)*100);}
     }catch(e){mc=null;}
     window._fcMC=mc;
     // ── FALLBACK: if no appetite ceiling set or no risks, use the saturating heuristic ──
@@ -6174,6 +6185,25 @@ function renderDash(){
             </div>
           </div>
           <canvas id="scurveC" height="74"></canvas>
+          ${(()=>{
+            const mc=window._fcMC; if(!mc||!mc.cost&&!mc.sched)return '';
+            const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
+            const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
+            const fmtD=v=>v==null?'—':Math.round(v)+'d';
+            const inhC=mc.inherent&&mc.inherent.cost, resC=mc.residual&&mc.residual.cost;
+            const inhS=mc.inherent&&mc.inherent.sched, resS=mc.residual&&mc.residual.sched;
+            const cur80=mc.cost?mc.cost.p80:null, sch80=mc.sched?mc.sched.p80:null;
+            // before→after delta on P80 (shows the value of the response plans)
+            const cDelta=(inhC&&resC)?(inhC.p80-resC.p80):null;
+            const sDelta=(inhS&&resS)?(inhS.p80-resS.p80):null;
+            const row=(label,p50,p80,unit)=>`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:2px 0"><span>${label}</span><span style="color:var(--t1)"><b>P50</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(p50):fmtD(p50)} &nbsp;·&nbsp; <b>P80</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(p80):fmtD(p80)}</span></div>`;
+            return `<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
+              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Simulated exposure (${(window._fcResidual!==false)?'after response':'before response'})</div>
+              ${mc.cost?row('Cost overrun',mc.cost.p50,mc.cost.p80,'money'):''}
+              ${mc.sched?row('Schedule delay',mc.sched.p50,mc.sched.p80,'days'):''}
+              ${(cDelta!=null&&cDelta>0)||(sDelta!=null&&sDelta>0)?`<div style="font-size:10px;color:var(--grn);margin-top:4px">↓ Response plans cut P80 exposure by ${cDelta>0?cur+' '+fmtM(cDelta):''}${cDelta>0&&sDelta>0?' and ':''}${sDelta>0?fmtD(sDelta):''}</div>`:''}
+            </div>`;
+          })()}
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>`}
         </div>
         <div class="rcc-card">
