@@ -5095,13 +5095,39 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
 6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — section X: specific stated constraint", or "Schedule — a specific activity or work package"). If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words.
 
+QUANTITATIVE IMPACT ESTIMATION (drives the Monte Carlo forecast — be realistic, NEVER inflate):
+For EVERY risk, estimate impact as REAL VALUES with a three-point range, not a 1-5 level:
+- "probability_pct": the actual probability the risk/opportunity occurs (1-99). For a THREAT this is the chance the negative event happens; for an OPPORTUNITY the chance the positive event happens.
+- COST as absolute amounts in the project currency: "cost_min", "cost_likely", "cost_max". For a THREAT this is the EXTRA cost (overrun) if it occurs; for an OPPORTUNITY this is the COST SAVING (a positive number — the engine subtracts it).
+- SCHEDULE in DAYS: "sched_min", "sched_likely", "sched_max". For a THREAT this is the DELAY; for an OPPORTUNITY this is the time SAVED (positive number — engine subtracts it).
+RULES:
+1. If the documents state an actual figure (a Change Order value, quoted cost, stated delay), USE IT to anchor the estimate. Best source.
+2. If no figure is stated, estimate realistically from the risk's nature, the contract value/duration, and professional experience. A single moderate risk is a SMALL fraction of contract value, not a large one. Do NOT default to large percentages.
+3. min < likely < max (genuine uncertainty). If a risk has no cost impact, set cost values to 0; if no schedule impact, set sched values to 0.
+4. NEVER inflate. Sanity-check: the TOTAL of all threat cost_likely values should be a believable contingency (typically well under ~25-35% of contract value). If higher, revise down.
+
+RESIDUAL IMPACT — AFTER THE RESPONSE PLAN (this is the key realism feature):
+Estimate what REMAINS after the response plan in "mitigation" is applied, based on the response_strategy:
+- "residual_probability_pct": the probability AFTER the response. 
+- "residual_cost_likely" and "residual_sched_likely": the most-likely cost/schedule impact AFTER the response.
+Apply the strategy honestly:
+- AVOID: the risk is eliminated → residual ≈ 0 (set residual_probability_pct very low, residual costs ~0).
+- TRANSFER: the burden moves to another party → residual cost on THIS project ≈ 0 (or just a small retained portion).
+- MITIGATE: the risk REMAINS but is reduced → residual probability and/or residual cost are LOWER than inherent, but NOT zero (be realistic — mitigation rarely removes a risk entirely).
+- ACCEPT / ESCALATE: no reduction → residual ≈ inherent (set residual values equal to the inherent ones).
+For OPPORTUNITIES the response INCREASES them: EXPLOIT/ENHANCE → residual probability and/or saving are HIGHER than inherent; SHARE → partial; ACCEPT → unchanged.
+Residual values must be consistent: a threat's residual_cost_likely ≤ its cost_likely; an opportunity's residual saving ≥ its inherent saving.
+5. impact_qhse and impact_reputation remain 1-5 qualitative levels (NOT part of the cost/schedule forecast — tracked separately).
+
+
+
 
 - "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. a key milestone, delivery, installation, test, or commissioning) that occurs at a defined point in the timeline (e.g. a delivery, installation, milestone, test, or commissioning). Use "ongoing" for continuous risks with no single date (e.g. price inflation, staffing shortage, currency fluctuation, regulatory climate).
 - "activity_ref": for scheduled risks, name the specific schedule activity it is linked to (from the uploaded schedule if available). Empty for ongoing risks.
 - "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability_pct":40,"cost_min":80000,"cost_likely":120000,"cost_max":200000,"sched_min":3,"sched_likely":8,"sched_max":15,"impact_qhse":1,"impact_reputation":2,"response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability_pct":40,"cost_min":80000,"cost_likely":120000,"cost_max":200000,"sched_min":3,"sched_likely":8,"sched_max":15,"residual_probability_pct":20,"residual_cost_likely":60000,"residual_sched_likely":4,"impact_qhse":1,"impact_reputation":2,"response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`}];
 
   for(const f of files){
     if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
@@ -5262,12 +5288,37 @@ async function confirmVal(){
   showLoad('Saving...');
   try{
     await sb('risks?project_id=eq.'+CID,'DELETE');
-
+    const _appetite=(CP&&(CP.risk_appetite?.level||CP.tolerance?.appetite))||'moderate';
+    const ins=app.map(r=>{
+      // ── Quantitative model: prefer REAL three-point values; fall back to 1-5 levels ──
+      const probPct=(r.probability_pct!=null)?Math.max(1,Math.min(99,parseFloat(r.probability_pct))):null;
+      const cMin=parseFloat(r.cost_min),cLik=parseFloat(r.cost_likely),cMax=parseFloat(r.cost_max);
+      const sMin=parseFloat(r.sched_min),sLik=parseFloat(r.sched_likely),sMax=parseFloat(r.sched_max);
+      const hasCost=!isNaN(cLik),hasSched=!isNaN(sLik);
+      // residual (after response plan)
+      const rProbPct=(r.residual_probability_pct!=null)?Math.max(0,Math.min(99,parseFloat(r.residual_probability_pct))):null;
+      const rCost=(r.residual_cost_likely!=null)?parseFloat(r.residual_cost_likely):null;
+      const rSched=(r.residual_sched_likely!=null)?parseFloat(r.residual_sched_likely):null;
+      // derive 1-5 levels from real values (keeps matrix consistent), else use given
+      const probLvl=(probPct!=null)?pctToProbLevel(probPct,_appetite):(parseInt(r.probability)||3);
+      const costLvl=hasCost?costToImpactLevel(cLik,CP,_appetite):(parseInt(r.impact_cost)||0);
+      const schedLvl=hasSched?daysToSchedLevel(sLik,CP,_appetite):(parseInt(r.impact_schedule)||0);
+      const qhse=parseInt(r.impact_qhse)||0,rep=parseInt(r.impact_reputation)||0;
+      const maxImp=Math.max(costLvl,schedLvl,qhse,rep);
+      return {project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category,description:r.description,cause:r.cause||'',
+        probability:probLvl,impact_cost:costLvl,impact_schedule:schedLvl,impact_qhse:qhse,impact_reputation:rep,
+        probability_pct:probPct,
+        pert_cost:hasCost?{min:isNaN(cMin)?cLik:cMin,likely:cLik,max:isNaN(cMax)?cLik:cMax}:null,
+        pert_schedule:hasSched?{min:isNaN(sMin)?sLik:sMin,likely:sLik,max:isNaN(sMax)?sLik:sMax}:null,
+        residual_probability_pct:rProbPct,residual_cost_likely:rCost,residual_sched_likely:rSched,
+        level:computeLevel(probLvl,maxImp),response_strategy:r.response_strategy||'Mitigate',mitigation:r.mitigation,
+        owner:r.owner||'',response_owner:r.response_owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,
+        timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null,source:r.source||'',status:'open'};
+    });
     await sb('risks','POST',ins);
     await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
     hideLoad();document.getElementById('valOv').classList.remove('on');
     await loadAll();await selectProj(CID);
-    // Capture the momentum: the hottest moment to funnel users into the action-plan loop
     const _hasPlan=CP&&CP.action_plan&&Array.isArray(CP.action_plan.actions)&&CP.action_plan.actions.length;
     if(_hasPlan)toast(`Register saved — ${app.length} risks`,{type:'ok'});
     else toast(`Register saved — ${app.length} risks. Next: turn it into a daily plan.`,{type:'ok',actionLabel:'Generate Action Plan',action:()=>{ST('plan');generateActionPlan(CID);}});
@@ -5909,12 +5960,7 @@ function renderDash(){
       const schedReservePct=(CP&&CP.sched_reserve_pct!=null)?CP.sched_reserve_pct:10; // % of duration
       const costReserve=cv*costReservePct/100;
       const schedReserve=dur*schedReservePct/100;
-      const mcCost=monteCarloForecast('cost',5000);
-      const mcSched=monteCarloForecast('schedule',5000);
-      mc={cost:mcCost,sched:mcSched,cv,dur,costReserve,schedReserve,costReservePct,schedReservePct};
-      // Confidence = probability the simulated exposure stays within the reserve.
-      if(mcCost&&costReserve>0){costP=Math.round(mcCost.withinAppetite(costReserve)*100);}
-      if(mcSched&&schedReserve>0){schedP=Math.round(mcSched.withinAppetite(schedReserve)*100);}
+
     }catch(e){mc=null;}
     window._fcMC=mc;
     // ── FALLBACK: if no appetite ceiling set or no risks, use the saturating heuristic ──
@@ -6098,14 +6144,18 @@ function renderDash(){
       <div class="col-6" style="display:flex;flex-direction:column;gap:10px">
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Completion Forecast${mtip('A Monte Carlo simulation of your CUMULATIVE risk exposure vs the project budget and timeline. It answers: how likely is the total impact of all risks to stay within budget/schedule? A project can be Healthy (risks are individually manageable) yet have a low forecast if the combined exposure is large relative to its budget — the two metrics measure different things.')}</span>
-            <div style="display:flex;align-items:center;gap:7px">
+            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+              <div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:9.5px;font-weight:700">
+                <button onclick="window._fcResidual=false;renderDash()" style="padding:4px 8px;border:none;cursor:pointer;background:${(window._fcResidual===false)?'var(--primary)':'var(--s1)'};color:${(window._fcResidual===false)?'#fff':'var(--t2)'}">Before response</button>
+                <button onclick="window._fcResidual=true;renderDash()" style="padding:4px 8px;border:none;cursor:pointer;background:${(window._fcResidual!==false)?'var(--primary)':'var(--s1)'};color:${(window._fcResidual!==false)?'#fff':'var(--t2)'}">After response</button>
+              </div>
               <select onchange="window._fcP=parseInt(this.value);renderDash()" style="padding:4px 7px;font-size:10.5px;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
                 ${[70,75,80,85,90,95,100].map(pv=>`<option value="${pv}"${(window._fcP||80)===pv?' selected':''}>P${pv}</option>`).join('')}
               </select>
               <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
             </div>
           </div>
-          <div class="rcc-hs">Probability of finishing on schedule &amp; budget at P${_fc.pLevel||80} confidence — updates live</div>
+          <div class="rcc-hs">Probability of finishing on schedule &amp; budget at P${_fc.pLevel||80} confidence — ${(window._fcResidual!==false)?'after applying your response plans':'before any response (inherent risk)'}</div>
           ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
@@ -6506,11 +6556,25 @@ function _betaSample(a,b){const x=_gammaSample(a),y=_gammaSample(b);return x/(x+
 
 // Resolve a risk's impact band (in real units) for a dimension → {min, likely, max}
 // Reuses the same tolerance-band logic as exposure so the forecast stays consistent.
-function riskImpactRange(r,f,proj){
+function riskImpactRange(r,f,proj,mode){
   proj=proj||CP;
   // ── PRIORITY: use the AI's real three-point estimate when available ──
-  if(f==='cost'&&r.pert_cost&&r.pert_cost.likely>0)return r.pert_cost;
-  if(f==='schedule'&&r.pert_schedule&&r.pert_schedule.likely>0)return r.pert_schedule;
+  // In 'residual' mode, scale the range by the residual/inherent ratio the AI provided
+  // (residual = the impact that REMAINS after the response plan is applied).
+  if(f==='cost'&&r.pert_cost&&r.pert_cost.likely>0){
+    if(mode==='residual'&&r.residual_cost_likely!=null){
+      const ratio=r.pert_cost.likely>0?(r.residual_cost_likely/r.pert_cost.likely):1;
+      return {min:r.pert_cost.min*ratio,likely:r.residual_cost_likely,max:r.pert_cost.max*ratio};
+    }
+    return r.pert_cost;
+  }
+  if(f==='schedule'&&r.pert_schedule&&r.pert_schedule.likely>0){
+    if(mode==='residual'&&r.residual_sched_likely!=null){
+      const ratio=r.pert_schedule.likely>0?(r.residual_sched_likely/r.pert_schedule.likely):1;
+      return {min:r.pert_schedule.min*ratio,likely:r.residual_sched_likely,max:r.pert_schedule.max*ratio};
+    }
+    return r.pert_schedule;
+  }
   // ── FALLBACK: derive a money/days range from the legacy 1-5 level ──
   const tl=(proj&&proj.tolerance)||{};
   const cv=()=>{const n=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
@@ -6527,37 +6591,53 @@ function riskImpactRange(r,f,proj){
     const dur=(proj&&proj.start_date&&proj.end_date)?(new Date(proj.end_date)-new Date(proj.start_date))/86400000:0;
     toUnits=(x)=>isPct?(x/100)*dur:x;
   } else return null;
-  // band lower/upper for this severity level → PERT min/likely/max
-  const bounds=tolBounds(levels,f==='cost'?[2,5,10,15]:[7,15,30,45]); // 4 boundaries
-  // level lv (1..5): band is [bounds[lv-2] .. bounds[lv-1]], with ends extrapolated
+  const bounds=tolBounds(levels,f==='cost'?[2,5,10,15]:[7,15,30,45]);
   let lo,hi;
   if(lv===1){lo=0;hi=bounds[0];}
   else if(lv===5){lo=bounds[3];hi=bounds[3]*1.6;}
   else {lo=bounds[lv-2];hi=bounds[lv-1];}
-  const min=toUnits(lo), max=toUnits(hi), likely=toUnits((lo+hi)/2);
+  let min=toUnits(lo), max=toUnits(hi), likely=toUnits((lo+hi)/2);
+  // legacy residual approximation by strategy when no explicit residual provided
+  if(mode==='residual'){
+    const strat=(r.response_strategy||'').toLowerCase();
+    let keep=1;
+    if(strat.includes('avoid')||strat.includes('transfer'))keep=0.05;
+    else if(strat.includes('mitigate'))keep=0.5;
+    else keep=1; // accept / escalate → unchanged
+    min*=keep;likely*=keep;max*=keep;
+  }
   return {min,likely,max};
 }
 
 // Run the simulation. Returns percentile exposures + the probability the project
 // stays within its risk appetite (used for the "completion confidence").
-function monteCarloForecast(f,iterations,proj){
+function monteCarloForecast(f,iterations,proj,mode){
   proj=proj||CP;
   iterations=iterations||5000;
-  const risks=((proj&&proj.risks)||[]).filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
-  const specs=risks.map(r=>({p:(r.probability_pct!=null?r.probability_pct/100:(PROB_PCT[r.probability]||0)),range:riskImpactRange(r,f,proj)})).filter(s=>s.range);
+  const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
+  // threats ADD exposure (+), opportunities SUBTRACT it (−, they save cost/time).
+  // 'residual' mode applies the post-response-plan values.
+  const specs=all.map(r=>{
+    const isOpp=(r.type==='opportunity');
+    let p=(r.probability_pct!=null?r.probability_pct/100:(PROB_PCT[r.probability]||0));
+    if(mode==='residual'&&r.residual_probability_pct!=null)p=r.residual_probability_pct/100;
+    const range=riskImpactRange(r,f,proj,mode);
+    return {p,range,sign:isOpp?-1:1};
+  }).filter(s=>s.range);
   if(!specs.length)return null;
   const out=new Array(iterations);
   for(let it=0;it<iterations;it++){
     let total=0;
     for(let i=0;i<specs.length;i++){
-      if(Math.random()<specs[i].p)total+=pertSample(specs[i].range.min,specs[i].range.likely,specs[i].range.max);
+      if(Math.random()<specs[i].p)total+=specs[i].sign*pertSample(specs[i].range.min,specs[i].range.likely,specs[i].range.max);
     }
-    out[it]=total;
+    out[it]=total; // net exposure: threats minus realized opportunities
   }
   out.sort((a,b)=>a-b);
   const pct=p=>out[Math.min(out.length-1,Math.floor(p/100*out.length))];
   const mean=out.reduce((a,b)=>a+b,0)/out.length;
   return {p10:pct(10),p50:pct(50),p80:pct(80),p90:pct(90),mean,iterations,n:specs.length,
+          percentile:pct,
           // probability that total impact stays within appetite ceiling
           withinAppetite:(ceil)=>ceil>0?out.filter(v=>v<=ceil).length/out.length:null};
 }
