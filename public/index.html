@@ -5331,8 +5331,17 @@ async function confirmVal(){
         owner:r.owner||'',response_owner:r.response_owner||'',activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,
         timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null,source:r.source||'',status:'open'};
     });
-    await sb('risks','POST',ins);
-    await sb('projects?id=eq.'+CID,'PATCH',{summary:CP.summary,analyzed_at:new Date().toLocaleDateString(),has_schedule:CP.has_schedule});
+    try{
+      await sb('risks','POST',ins);
+    }catch(e){
+      // If the quantitative columns aren't in the DB yet, save without them so the
+      // register still persists. (Run quantitative_risk_migration.sql to enable the forecast.)
+      if(String(e.message||e).includes('pert_cost')||String(e.message||e).includes('probability_pct')||String(e.message||e).includes('residual')){
+        const stripped=ins.map(({pert_cost,pert_schedule,probability_pct,residual_probability_pct,residual_cost_likely,residual_sched_likely,...rest})=>rest);
+        await sb('risks','POST',stripped);
+        toast('Saved. Note: run the database migration to enable the quantitative forecast.',{type:'warn'});
+      } else throw e;
+    }
     hideLoad();document.getElementById('valOv').classList.remove('on');
     await loadAll();await selectProj(CID);
     const _hasPlan=CP&&CP.action_plan&&Array.isArray(CP.action_plan.actions)&&CP.action_plan.actions.length;
