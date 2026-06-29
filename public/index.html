@@ -2442,11 +2442,14 @@ function maxImpact(r){
 }
 function computeLevel(prob,maxImp){
   const p=parseInt(prob)||0, i=parseInt(maxImp)||0;
-  const score=p*i;
-  if(score>16)return 'critical';
-  if(score>=10)return 'high';
-  if(score>=3) return 'medium';
-  return 'low';
+  const score=p*i; // probability × highest impact (each 1-5), range 0-25
+  // Risk rating thresholds (no safety exception — score alone governs):
+  //   Critical > 19  |  High 16-19  |  Medium 10-15  |  Low 3-9  |  <3 negligible
+  if(score>19)return 'critical';
+  if(score>=16)return 'high';
+  if(score>=10)return 'medium';
+  if(score>=3) return 'low';
+  return 'low'; // score < 3 — negligible, kept as 'low' so it still renders/saves
 }
 // ── Derive a 1-5 level from a REAL value, using the project's appetite scale. ──
 // Keeps the matrix/level consistent with the actual quantitative estimate (no contradiction).
