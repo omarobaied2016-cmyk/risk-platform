@@ -6656,6 +6656,12 @@ function riskImpactRange(r,f,proj,mode){
   else if(lv===5){lo=bounds[3];hi=bounds[3]*1.6;}
   else {lo=bounds[lv-2];hi=bounds[lv-1];}
   let min=toUnits(lo), max=toUnits(hi), likely=toUnits((lo+hi)/2);
+  // Legacy dampening: a 1-5 level is a relative severity rating, not a real cost.
+  // Converting each to a % of contract and summing across a whole register over-states
+  // exposure. Scale down so old (level-only) registers read in a believable range.
+  // This NEVER runs for risks with real pert_cost values — those are returned earlier.
+  const LEGACY_DAMP=0.35;
+  min*=LEGACY_DAMP; likely*=LEGACY_DAMP; max*=LEGACY_DAMP;
   // legacy residual approximation by strategy when no explicit residual provided
   if(mode==='residual'){
     const strat=(r.response_strategy||'').toLowerCase();
