@@ -6181,7 +6181,50 @@ function renderDash(){
           </div>
           <canvas id="scurveC" height="74"></canvas>
 
-          <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>`}
+          <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
+          ${(()=>{
+            const mc=window._fcMC; if(!mc)return '';
+            const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
+            const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
+            const showRes=(window._fcResidual!==false);
+            // ── Top risk contributors (tornado) ──
+            const contrib=riskContributions(CP,showRes?'residual':'inherent');
+            const topC=contrib.cost.rows.slice(0,4);
+            const maxPct=topC.length?topC[0].pct:1;
+            const tornado=topC.length?`<div style="margin-top:9px;border-top:1px solid var(--b1);padding-top:7px">
+              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:5px">Top cost-uncertainty drivers</div>
+              ${topC.map(x=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:9.5px;color:var(--t2);min-width:42px;font-family:'IBM Plex Mono',monospace">${x.risk_id||''}</span><span style="flex:1;height:11px;background:var(--s2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${Math.round(x.pct/maxPct*100)}%;background:${x.level==='critical'?'#7f1d1d':x.level==='high'?'var(--red)':'#B8860B'};border-radius:3px"></span></span><span style="font-size:10px;font-weight:700;color:var(--t1);min-width:30px;text-align:right">${x.pct}%</span></div>`).join('')}
+            </div>`:'';
+            // ── Before vs After mitigation (quantified value) ──
+            const cmp=mitigationComparison(mc);
+            let cmpHtml='';
+            if(cmp&&(cmp.cost||cmp.sched)){
+              const rowsC=cmp.cost?`<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:1px 0"><span>On-budget confidence</span><span style="color:var(--t1)"><b>${cmp.cost.confBefore??'—'}%</b> → <b style="color:var(--grn)">${cmp.cost.confAfter??'—'}%</b>${cmp.cost.confGain!=null&&cmp.cost.confGain>0?` <span style="color:var(--grn)">(+${cmp.cost.confGain})</span>`:''}</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:1px 0"><span>Expected overrun cut</span><b style="color:var(--grn)">${cmp.cost.overrunCut>0?cur+' '+fmtM(cmp.cost.overrunCut):'—'}</b></div>`:'';
+              const rowsS=cmp.sched?`<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:1px 0"><span>On-schedule confidence</span><span style="color:var(--t1)"><b>${cmp.sched.confBefore??'—'}%</b> → <b style="color:var(--grn)">${cmp.sched.confAfter??'—'}%</b>${cmp.sched.confGain!=null&&cmp.sched.confGain>0?` <span style="color:var(--grn)">(+${cmp.sched.confGain})</span>`:''}</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:1px 0"><span>Expected delay cut</span><b style="color:var(--grn)">${cmp.sched.delayCut>0?Math.round(cmp.sched.delayCut)+'d':'—'}</b></div>`:'';
+              cmpHtml=`<div style="margin-top:9px;border-top:1px solid var(--b1);padding-top:7px">
+                <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Value of response plan (before → after)</div>
+                ${rowsC}${rowsS}
+              </div>`;
+            }
+            // ── Residual appetite assessment ──
+            const ap=residualAppetiteAssessment(CP);
+            let apHtml='';
+            if(ap.items.length){
+              if(ap.allWithin)apHtml=`<div style="margin-top:9px;border-top:1px solid var(--b1);padding-top:7px;font-size:10.5px;color:var(--grn)">✓ All residual risks are within the project's ${ap.appetite} risk appetite (≤ ${ap.costCeilPct}% of contract each).</div>`;
+              else apHtml=`<div style="margin-top:9px;border-top:1px solid var(--b1);padding-top:7px">
+                <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--red);margin-bottom:4px">⚠ ${ap.breaches.length} residual risk${ap.breaches.length>1?'s':''} above appetite</div>
+                ${ap.breaches.slice(0,3).map(x=>`<div style="font-size:10px;color:var(--t2);padding:1.5px 0"><b style="color:var(--t1);font-family:'IBM Plex Mono',monospace">${x.risk_id||''}</b> ${x.emvPct}% of contract — <span style="color:var(--red)">${x.action}</span></div>`).join('')}
+              </div>`;
+            }
+            // ── Generate AI analysis button ──
+            const aiBtn=`<div style="margin-top:9px;border-top:1px solid var(--b1);padding-top:8px">
+              <button class="btn btn-p" onclick="generateForecastAnalysis()" style="width:100%;padding:8px;font-size:11.5px" id="fcAnalyzeBtn">⚡ Generate Executive Analysis</button>
+              <div id="fcAnalysisOut" style="margin-top:8px"></div>
+            </div>`;
+            return tornado+cmpHtml+apHtml+aiBtn;
+          })()}`}
         </div>
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
@@ -6692,6 +6735,178 @@ function monteCarloForecast(f,iterations,proj,mode){
     withinAppetite:(ceil)=>ceil>0?(()=>{let c=0;for(let i=0;i<n;i++)if(sorted[i]<=ceil)c++;return c/n;})():null,
     iterations:n,n:specs.length
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  RISK CONTRIBUTION (sensitivity / tornado) — which risks drive uncertainty
+//  ───────────────────────────────────────────────────────────────────────
+//  Per-risk Expected Monetary/Schedule Value = probability × mean impact.
+//  Contribution % = this risk's EMV ÷ Σ(all threat EMVs). Computed directly
+//  from the same inputs the simulation uses (no separate model, no hard-coding).
+//  Returns threats ranked by contribution for cost and for schedule.
+// ═══════════════════════════════════════════════════════════════════════
+function riskContributions(proj,mode){
+  proj=proj||CP;
+  const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed'&&(r.type==='threat'||!r.type));
+  const emv=(r,f)=>{
+    let p;
+    if(mode==='residual'&&r.residual_probability_pct!=null)p=r.residual_probability_pct/100;
+    else if(r.probability_pct!=null)p=r.probability_pct/100;
+    else p=PROB_PCT[r.probability]||0;
+    const rng=riskImpactRange(r,f,proj,mode);
+    if(!rng)return 0;
+    const meanImpact=(rng.min+4*rng.likely+rng.max)/6; // PERT mean
+    return Math.max(0,p)*Math.max(0,meanImpact);
+  };
+  const build=f=>{
+    const rows=all.map(r=>({risk_id:r.risk_id,description:r.description,level:r.level,emv:emv(r,f)})).filter(x=>x.emv>0);
+    const tot=rows.reduce((a,b)=>a+b.emv,0)||1;
+    rows.forEach(x=>x.pct=Math.round(x.emv/tot*100));
+    rows.sort((a,b)=>b.emv-a.emv);
+    return {total:tot,rows};
+  };
+  return {cost:build('cost'),schedule:build('schedule')};
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BEFORE vs AFTER MITIGATION — quantified value of the response plan
+//  Reads inherent and residual simulation results and reports the deltas:
+//  exposure reduction, confidence improvement, expected delay/overrun cut.
+// ═══════════════════════════════════════════════════════════════════════
+function mitigationComparison(mc){
+  if(!mc||!mc.inherent||!mc.residual)return null;
+  const cv=mc.cv||0, dur=mc.dur||0;
+  const approvedBudget=mc.approvedBudget||0, contractDur=mc.contractDur||0;
+  const pick=(o,k)=>o&&o[k]?o[k]:null;
+  const inhC=pick(mc.inherent,'cost'), resC=pick(mc.residual,'cost');
+  const inhS=pick(mc.inherent,'sched'), resS=pick(mc.residual,'sched');
+  const r={};
+  if(inhC&&resC){
+    r.cost={
+      meanBefore:inhC.mean, meanAfter:resC.mean,
+      p80Before:inhC.percentile(80), p80After:resC.percentile(80),
+      overrunCut:inhC.mean-resC.mean,                         // expected cost overrun reduction
+      confBefore:approvedBudget>0?Math.round(inhC.probWithin(approvedBudget)*100):null,
+      confAfter:approvedBudget>0?Math.round(resC.probWithin(approvedBudget)*100):null
+    };
+    r.cost.confGain=(r.cost.confBefore!=null&&r.cost.confAfter!=null)?r.cost.confAfter-r.cost.confBefore:null;
+  }
+  if(inhS&&resS){
+    r.sched={
+      meanBefore:inhS.mean, meanAfter:resS.mean,
+      p80Before:inhS.percentile(80), p80After:resS.percentile(80),
+      delayCut:inhS.mean-resS.mean,                            // expected delay reduction (days)
+      confBefore:contractDur>0?Math.round(inhS.probWithin(contractDur)*100):null,
+      confAfter:contractDur>0?Math.round(resS.probWithin(contractDur)*100):null
+    };
+    r.sched.confGain=(r.sched.confBefore!=null&&r.sched.confAfter!=null)?r.sched.confAfter-r.sched.confBefore:null;
+  }
+  return r;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  RESIDUAL RISK APPETITE ASSESSMENT — is remaining exposure acceptable?
+//  Compares each residual risk's expected impact against the project's
+//  defined appetite thresholds and recommends the standard QRA next action.
+// ═══════════════════════════════════════════════════════════════════════
+function residualAppetiteAssessment(proj){
+  proj=proj||CP;
+  const cv=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''))||0;
+  const tl=(proj&&proj.tolerance)||{};
+  const appetite=(proj&&(proj.risk_appetite?.level||tl.appetite))||'moderate';
+  // appetite ceiling for a single residual risk, as % of contract (cost) — from the cost scale's "Major" bound
+  const costCeilPct=({conservative:5,moderate:10,aggressive:12})[appetite]||10;
+  const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed'&&(r.type==='threat'||!r.type));
+  const items=all.map(r=>{
+    let p=(r.residual_probability_pct!=null)?r.residual_probability_pct/100
+         :(r.probability_pct!=null?r.probability_pct/100:(PROB_PCT[r.probability]||0));
+    const rng=riskImpactRange(r,'cost',proj,'residual');
+    const meanCost=rng?((rng.min+4*rng.likely+rng.max)/6):0;
+    const emv=Math.max(0,p)*Math.max(0,meanCost);
+    const emvPct=cv>0?(emv/cv*100):0;
+    const strat=(r.response_strategy||'').toLowerCase();
+    const withinAppetite=emvPct<=costCeilPct;
+    // recommend the standard next action when residual exceeds appetite
+    let action;
+    if(withinAppetite)action=strat.includes('accept')?'Accept (within appetite)':'Within appetite — monitor';
+    else if(strat.includes('avoid')||strat.includes('transfer'))action='Confirm transfer/avoidance is effective';
+    else if(emvPct>costCeilPct*2)action='Escalate to management — exposure well above appetite';
+    else if(strat.includes('accept'))action='Prepare contingency — accepted risk exceeds appetite';
+    else action='Add further mitigation — residual above appetite';
+    return {risk_id:r.risk_id,description:r.description,level:r.level,strategy:r.response_strategy||'—',
+            emv,emvPct:Math.round(emvPct*10)/10,withinAppetite,action};
+  }).filter(x=>x.emv>0);
+  items.sort((a,b)=>b.emv-a.emv);
+  const breaches=items.filter(x=>!x.withinAppetite);
+  return {appetite,costCeilPct,items,breaches,allWithin:breaches.length===0};
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  AI EXECUTIVE ANALYSIS (on-demand) — explains the simulation results.
+//  Triggered by the "Generate Executive Analysis" button so it only spends an
+//  API call when the user asks. Feeds the AI the REAL simulation outputs
+//  (percentiles, before/after deltas, contributions, appetite breaches) and
+//  asks it to explain the reasoning — not invent numbers.
+// ═══════════════════════════════════════════════════════════════════════
+async function generateForecastAnalysis(){
+  if(!CP){return;}
+  const btn=document.getElementById('fcAnalyzeBtn');
+  const outEl=document.getElementById('fcAnalysisOut');
+  const mc=window._fcMC;
+  if(!mc){if(outEl)outEl.innerHTML='<div style="font-size:11px;color:var(--t3)">Run the forecast first (add scored risks).</div>';return;}
+  if(btn){btn.disabled=true;btn.textContent='Analyzing…';}
+  try{
+    const cur=(typeof curCode==='function')?curCode():(CP.currency||'USD');
+    const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
+    const cmp=mitigationComparison(mc);
+    const contribC=riskContributions(CP,'residual').cost.rows.slice(0,5);
+    const contribS=riskContributions(CP,'residual').schedule.rows.slice(0,5);
+    const ap=residualAppetiteAssessment(CP);
+    // build a compact factual brief of the REAL simulation outputs
+    const brief={
+      currency:cur,
+      contract_value:mc.cv, planned_duration_days:Math.round(mc.dur),
+      approved_budget:mc.approvedBudget, contractual_duration_days:Math.round(mc.contractDur),
+      on_budget_confidence_pct:(cmp&&cmp.cost)?cmp.cost.confAfter:null,
+      on_schedule_confidence_pct:(cmp&&cmp.sched)?cmp.sched.confAfter:null,
+      before_after:{
+        cost:cmp&&cmp.cost?{conf_before:cmp.cost.confBefore,conf_after:cmp.cost.confAfter,expected_overrun_cut:Math.round(cmp.cost.overrunCut)}:null,
+        schedule:cmp&&cmp.sched?{conf_before:cmp.sched.confBefore,conf_after:cmp.sched.confAfter,expected_delay_cut_days:Math.round(cmp.sched.delayCut)}:null
+      },
+      top_cost_drivers:contribC.map(x=>({risk:x.risk_id,desc:(x.description||'').slice(0,80),pct_of_uncertainty:x.pct})),
+      top_schedule_drivers:contribS.map(x=>({risk:x.risk_id,desc:(x.description||'').slice(0,80),pct_of_uncertainty:x.pct})),
+      risk_appetite:ap.appetite, appetite_ceiling_pct:ap.costCeilPct,
+      residual_breaches:ap.breaches.slice(0,5).map(x=>({risk:x.risk_id,emv_pct_of_contract:x.emvPct,recommended_action:x.action})),
+      all_within_appetite:ap.allWithin
+    };
+    const lang=(typeof curLang==='function')?curLang():'en';
+    const prompt=`You are a senior project risk analyst writing an executive analysis of a Monte Carlo completion forecast (10,000 iterations). Use ONLY the figures provided — do NOT invent numbers. Explain the REASONING, not just restate stats.
+
+SIMULATION RESULTS (real, from the engine):
+${JSON.stringify(brief,null,2)}
+
+Write a concise executive analysis (${lang==='ar'?'in Arabic':'in English'}) covering:
+1. Why the confidence level is at its current level (what is driving it).
+2. Which risks most influence the forecast (cost and schedule), and why.
+3. The quantified value the response plans created (confidence gain, overrun/delay reduction).
+4. Which residual risks remain the largest threats and whether they are within the ${brief.risk_appetite} risk appetite.
+5. For any residual risk above appetite, explain why and recommend the next action.
+6. A clear verdict: is the project operating within its risk appetite?
+
+Respond ONLY with JSON: {"analysis":"<plain-text executive analysis, 150-220 words, use short paragraphs separated by \\n>"}`;
+    const data=await api({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]});
+    const txt=(data&&data.content&&data.content.map(b=>b.text||'').join(''))||'';
+    let analysis='';
+    try{analysis=(pJSON(txt)||{}).analysis||'';}catch(e){analysis=txt;}
+    if(!analysis){analysis='Could not generate analysis. Please try again.';}
+    if(outEl){
+      outEl.innerHTML=`<div style="background:var(--primary-soft);border:1px solid rgba(109,129,150,.18);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.65;color:var(--t1);white-space:pre-wrap">${analysis.replace(/</g,'&lt;')}</div>`;
+    }
+  }catch(e){
+    if(outEl)outEl.innerHTML=`<div style="font-size:11px;color:var(--red)">Analysis failed: ${e.message}</div>`;
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='⚡ Generate Executive Analysis';}
+  }
 }
 
 function rexRanked(){
