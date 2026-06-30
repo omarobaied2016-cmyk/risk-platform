@@ -6198,6 +6198,24 @@ function renderDash(){
             const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
             const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
             const showRes=(window._fcResidual!==false);
+            const pLv=window._fcP||80;
+            // ── Baseline (contract + approved change orders) + forecast at P-level ──
+            const coCost=mc.coCost||0, coDays=mc.coDays||0;
+            const finalCost=mc.cost?mc.cost.finalAt(pLv):null;
+            let finalDateStr=null, targetDateStr=null;
+            if(mc.sched&&mc.dur>0&&CP.start_date){
+              const fd=new Date(CP.start_date);fd.setDate(fd.getDate()+Math.round(mc.sched.finalAt(pLv)));finalDateStr=fd.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+              const td=new Date(CP.start_date);td.setDate(td.getDate()+Math.round(mc.targetDur||mc.dur));targetDateStr=td.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+            }
+            const overBudget=finalCost!=null&&finalCost>(mc.targetBudget||mc.cv);
+            const lateFinish=finalDateStr&&targetDateStr&&(new Date(finalDateStr.split(' ').reverse().join(' '))>new Date(targetDateStr.split(' ').reverse().join(' ')));
+            const baselineHtml=`<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
+              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Forecast at P${pLv} (${showRes?'after response':'before response'})</div>
+              ${mc.cv>0?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target budget${coCost?` <span style="color:var(--t3)">(contract + ${cur} ${fmtM(coCost)} CO)</span>`:''}</span><b style="color:var(--t1)">${cur} ${fmtM(mc.targetBudget||mc.cv)}</b></div>
+              <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Forecast final cost</span><b style="color:${overBudget?'var(--red)':'var(--grn)'}">${cur} ${fmtM(finalCost)}</b></div>`:''}
+              ${targetDateStr?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target completion${coDays?` <span style="color:var(--t3)">(+${Math.round(coDays)}d CO)</span>`:''}</span><b style="color:var(--t1)">${targetDateStr}</b></div>
+              <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Forecast completion</span><b style="color:${lateFinish?'var(--red)':'var(--grn)'}">${finalDateStr}</b></div>`:''}
+            </div>`;
             // ── Top risk contributors (tornado) ──
             const contrib=riskContributions(CP,showRes?'residual':'inherent');
             const topC=contrib.cost.rows.slice(0,4);
@@ -6234,7 +6252,7 @@ function renderDash(){
               <button class="btn btn-p" onclick="generateForecastAnalysis()" style="width:100%;padding:8px;font-size:11.5px" id="fcAnalyzeBtn">⚡ Generate Executive Analysis</button>
               <div id="fcAnalysisOut" style="margin-top:8px"></div>
             </div>`;
-            return tornado+cmpHtml+apHtml+aiBtn;
+            return baselineHtml+tornado+cmpHtml+apHtml+aiBtn;
           })()}`}
         </div>
         <div class="rcc-card">
