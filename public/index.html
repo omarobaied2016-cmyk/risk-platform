@@ -6024,7 +6024,7 @@ function renderDash(){
     let why;
     const responded=(window._fcResidual!==false);
     if(overall==null)why=`Add risk probabilities and cost/schedule impacts to simulate the forecast.`;
-    else if(responded&&mc&&mc.inherent&&mc.residual)why=`Forecast reflects your response plans. Toggle "Before response" to see the inherent risk.`;
+    else if(responded&&mc&&mc.inherent&&mc.residual)why=`Forecast reflects your response plans (after-mitigation residual risk).`;
     else if(highT>0)why=`${highT} high risk${highT>1?'s':''} open — the simulation weighs their combined impact.`;
     else why=`Simulated from the current register, probabilities and impacts.`;
 
@@ -6162,10 +6162,6 @@ function renderDash(){
         <div class="rcc-card">
           <div class="rcc-h"><span class="rcc-ht">Completion Forecast${mtip('A Monte Carlo simulation of your CUMULATIVE risk exposure vs the project budget and timeline. It answers: how likely is the total impact of all risks to stay within budget/schedule? A project can be Healthy (risks are individually manageable) yet have a low forecast if the combined exposure is large relative to its budget — the two metrics measure different things.')}</span>
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-              <div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:9.5px;font-weight:700">
-                <button onclick="window._fcResidual=false;renderDash()" style="padding:4px 8px;border:none;cursor:pointer;background:${(window._fcResidual===false)?'var(--primary)':'var(--s1)'};color:${(window._fcResidual===false)?'#fff':'var(--t2)'}">Before response</button>
-                <button onclick="window._fcResidual=true;renderDash()" style="padding:4px 8px;border:none;cursor:pointer;background:${(window._fcResidual!==false)?'var(--primary)':'var(--s1)'};color:${(window._fcResidual!==false)?'#fff':'var(--t2)'}">After response</button>
-              </div>
               <select onchange="window._fcP=parseInt(this.value);renderDash()" style="padding:4px 7px;font-size:10.5px;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
                 ${[70,75,80,85,90,95,100].map(pv=>`<option value="${pv}"${(window._fcP||80)===pv?' selected':''}>P${pv}</option>`).join('')}
               </select>
