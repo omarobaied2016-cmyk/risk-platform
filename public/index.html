@@ -5977,10 +5977,17 @@ function renderDash(){
     try{
       const cv=parseFloat(String((CP&&CP.value)||'').replace(/[^\d.]/g,''))||0;
       const dur=(CP.start_date&&CP.end_date)?Math.max(0,(new Date(CP.end_date)-new Date(CP.start_date))/86400000):0;
-      const costReservePct=(CP&&CP.cost_reserve_pct!=null)?CP.cost_reserve_pct:10;
-      const schedReservePct=(CP&&CP.sched_reserve_pct!=null)?CP.sched_reserve_pct:10;
-      const approvedBudget=cv>0?cv*(1+costReservePct/100):0;      // contract + cost reserve
-      const contractDur  =dur>0?dur*(1+schedReservePct/100):0;     // planned + schedule reserve
+      // ── TARGET BASELINE = contract value/duration + approved change orders ──
+      // This is the commitment the project must finish within. NO contingency reserve is
+      // added — a reserve would absorb the risk exposure and let confidence reach ~100%
+      // even with active risks. Confidence = P(simulated final ≤ this baseline), so any
+      // active residual risk necessarily keeps it below 100%.
+      const coCost=parseFloat(CP&&CP.approved_co_cost)||0;   // Σ approved change-order cost (signed)
+      const coDays=parseFloat(CP&&CP.approved_co_days)||0;   // Σ approved change-order days (signed)
+      const targetBudget=cv>0?cv+coCost:0;                    // contract + approved COs
+      const targetDur   =dur>0?dur+coDays:0;                  // planned + approved COs
+      // keep names approvedBudget/contractDur for the rest of the module (comparison block etc.)
+      const approvedBudget=targetBudget, contractDur=targetDur;
 
       // run all four simulations (cost/schedule × inherent/residual), ≥10k iterations each
       const mcCostInh =monteCarloForecast('cost',ITER,CP,'inherent');
@@ -5992,12 +5999,16 @@ function renderDash(){
       const mcSched=showRes?mcSchedRes:mcSchedInh;
 
       mc={cost:mcCost,sched:mcSched,cv,dur,
-          costReservePct,schedReservePct,approvedBudget,contractDur,
+          coCost,coDays,approvedBudget,contractDur,targetBudget,targetDur,
           inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
 
       // confidence read straight from the simulation (fraction of successful iterations)
-      if(mcCost&&approvedBudget>0){const pr=mcCost.probWithin(approvedBudget);if(pr!=null)costP=Math.round(pr*100);}
-      if(mcSched&&contractDur>0){const pr=mcSched.probWithin(contractDur);if(pr!=null)schedP=Math.round(pr*100);}
+      // Active threats with residual impact remain → confidence can never be a literal
+      // 100%. The simulation already reflects this, but rounding can reach 100; cap at 99
+      // whenever any active threat still carries residual exposure (QRA: residual ≠ 0).
+      const activeThreatExposure=((CP&&CP.risks)||[]).some(r=>(r.type==='threat'||!r.type)&&r.status!=='closed'&&(()=>{const rg=riskImpactRange(r,'cost',CP,'residual')||riskImpactRange(r,'schedule',CP,'residual');return rg&&(rg.likely>0||rg.max>0);})());
+      if(mcCost&&approvedBudget>0){const pr=mcCost.probWithin(approvedBudget);if(pr!=null){costP=Math.round(pr*100);if(activeThreatExposure)costP=Math.min(99,costP);}}
+      if(mcSched&&contractDur>0){const pr=mcSched.probWithin(contractDur);if(pr!=null){schedP=Math.round(pr*100);if(activeThreatExposure)schedP=Math.min(99,schedP);}}
     }catch(e){mc=null;}
     window._fcMC=mc;
 
@@ -6686,13 +6697,38 @@ function monteCarloForecast(f,iterations,proj,mode){
   const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
   const specs=all.map(r=>{
     const isOpp=(r.type==='opportunity');
-    // probability of occurrence (residual after response plan, when requested)
+    const strat=(r.response_strategy||'').toLowerCase();
+    // ── inherent probability ──
+    const inhP=(r.probability_pct!=null)?r.probability_pct/100:(PROB_PCT[r.probability]||0);
+    // ── residual probability, with QRA strategy rules ENFORCED at runtime ──
     let p;
-    if(mode==='residual'&&r.residual_probability_pct!=null)p=r.residual_probability_pct/100;
-    else if(r.probability_pct!=null)p=r.probability_pct/100;
-    else p=PROB_PCT[r.probability]||0;
+    if(mode==='residual'){
+      let rp=(r.residual_probability_pct!=null)?r.residual_probability_pct/100:inhP;
+      // Accept / Escalate: residual = inherent (the risk is NOT reduced — it stays in full).
+      if(strat.includes('accept')||strat.includes('escalate'))rp=inhP;
+      // Avoid / Transfer: genuinely (near-)eliminated for this project.
+      else if(strat.includes('avoid')||strat.includes('transfer'))rp=Math.min(rp,inhP);
+      // Mitigate: reduced but NEVER to zero while the risk is active — floor the residual.
+      else if(strat.includes('mitigate')){
+        rp=Math.min(rp,inhP);                 // can't increase a threat by mitigating
+        if(inhP>0)rp=Math.max(rp,Math.max(0.05,inhP*0.15)); // retain ≥15% of inherent (min 5%)
+      }
+      // Opportunities (Enhance/Exploit/Share): never guaranteed — cap below certainty.
+      if(isOpp)rp=Math.min(rp,0.95);
+      p=rp;
+    } else {
+      p=inhP;
+    }
     p=Math.max(0,Math.min(1,p));
     const range=riskImpactRange(r,f,proj,mode); // {min,likely,max} in real units, or null
+    // Mitigate impact floor: keep a residual impact unless the risk is truly eliminated.
+    if(mode==='residual'&&range&&strat.includes('mitigate')){
+      const inhRange=riskImpactRange(r,f,proj,'inherent');
+      if(inhRange&&inhRange.likely>0){
+        const floor=inhRange.likely*0.10; // residual impact ≥10% of inherent for mitigated risks
+        if(range.likely>0&&range.likely<floor){const k=floor/range.likely;range.min*=k;range.likely*=k;range.max*=k;}
+      }
+    }
     return {p,range,sign:isOpp?-1:1};
   }).filter(s=>s.range&&(s.range.max>0||s.range.likely>0||s.range.min>0));
   if(!specs.length)return null;
@@ -8930,6 +8966,7 @@ Your task: Identify three categories of changes:
 Respond ONLY with valid JSON. Keep all text fields under 25 words:
 {
   "analysis": "2-3 sentence impact summary in English",
+  "baseline_change": {"approved_cost_delta": 0, "approved_days_delta": 0, "note": "only non-zero if this update is an APPROVED change order / contract amendment that formally revises the contract value or completion date. approved_cost_delta = signed amount added to (or removed from) the contract value in the project currency; approved_days_delta = signed calendar-days added to (or removed from) the contract duration. Use 0/0 for updates that are NOT approved baseline changes (e.g. progress notes, meeting minutes, risks-only updates)."},
   "new_risks": [
     {"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"Schedule","description":"...","cause":"...","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"...","owner":"Project Manager","activity_ref":"linked activity name","timing_type":"scheduled","expected_date":"2026-09-12","expected_weeks":2}
   ],
@@ -9032,6 +9069,19 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
           reason:(parsed.removed_reasons||{})[rid]||'No longer applicable'
         });
       }
+    }
+
+
+    // ── Accumulate approved change orders onto the project baseline ──
+    // Target budget = contract value + Σ(approved cost deltas); target duration =
+    // planned + Σ(approved day deltas). Only when the AI flags a formal approved change.
+    const bc=parsed.baseline_change||{};
+    const coCost=parseFloat(bc.approved_cost_delta)||0;
+    const coDays=parseFloat(bc.approved_days_delta)||0;
+    if(coCost!==0||coDays!==0){
+      CP.approved_co_cost=(parseFloat(CP.approved_co_cost)||0)+coCost;
+      CP.approved_co_days=(parseFloat(CP.approved_co_days)||0)+coDays;
+      try{await sb('projects?id=eq.'+CID,'PATCH',{approved_co_cost:CP.approved_co_cost,approved_co_days:CP.approved_co_days});}catch(e){}
     }
 
     // Save the update record with change summary
