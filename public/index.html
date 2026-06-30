@@ -5949,109 +5949,75 @@ function renderDash(){
   // risk exposure, trend direction, recent updates, and mitigation-plan progress.
   // Not a guarantee — a live, explainable indicator that shifts as the project changes.
   function completionForecast(){
-    // Confidence level (P-value): higher P = more conservative forecast (you demand more certainty).
+    // ═══ COMPLETION FORECAST — pure Monte Carlo, no heuristic adjustments ═══
+    // Confidence is read DIRECTLY from the simulation:
+    //   On budget  = P(simulated final cost     ≤ approved budget)
+    //   On schedule= P(simulated final duration ≤ contractual duration)
+    // "Approved budget"   = contract value + cost contingency reserve (default 10%, overridable).
+    // "Contractual duration" = planned duration + schedule contingency (default 10%, overridable).
+    // The P-level selector chooses which percentile of the ABSOLUTE forecast (cost/date)
+    // is shown — it does NOT alter the confidence number (that would be circular).
     const pLevel=window._fcP||80;
-    const consAdj=(pLevel-80)*0.55;
     const rs=(CP&&CP.risks)||[];
     const openThreats=rs.filter(r=>(r.type==='threat'||!r.type)&&r.status!=='closed');
     const highT=openThreats.filter(r=>r.level==='high').length;
-    const medT=openThreats.filter(r=>r.level==='medium').length;
-    const critT=openThreats.filter(r=>r.level==='critical').length;
-    const totalThreats=openThreats.length;
-    // ── DATA SUFFICIENCY: don't fabricate a forecast when key inputs are missing ──
+
+    // data sufficiency gate (unchanged contract with the UI)
     const suffCost=dataSufficiency('forecast_cost',CP);
     const suffSched=dataSufficiency('forecast_schedule',CP);
     if(!suffCost.ok&&!suffSched.ok){
-      // merge unique missing items
       const seen={},merged=[];
       [...suffCost.missing,...suffSched.missing].forEach(m=>{if(!seen[m.k]){seen[m.k]=1;merged.push(m);}});
       return {insufficient:true,missing:merged,overall:null,costP:null,schedP:null,
-              band:{w:'Insufficient data',c:'#B8860B'},mc:null};
+              band:{w:'Insufficient data',c:'#B8860B'},mc:null,pLevel};
     }
-    // ── PRIMARY: Monte Carlo simulation on individual register risks (true P-analysis) ──
-    // Pure, explainable method — NO invented curves:
-    //   1. Simulate total cost/schedule exposure across all open threats (PERT-sampled).
-    //   2. Confidence = P( simulated exposure ≤ contingency reserve ).
-    // The reserve is the project's declared tolerance for aggregate risk. It defaults to a
-    // standard contingency (% of contract value / duration) but is fully transparent and
-    // can be overridden per-project via CP.cost_reserve_pct / CP.sched_reserve_pct.
-    // This is the textbook definition of "probability of completing within budget/schedule".
+
+    const ITER=10000;
     let costP=null, schedP=null, mc=null;
     try{
       const cv=parseFloat(String((CP&&CP.value)||'').replace(/[^\d.]/g,''))||0;
-      const dur=(CP.start_date&&CP.end_date)?(new Date(CP.end_date)-new Date(CP.start_date))/86400000:0;
-      // declared contingency reserves (transparent, overridable)
-      const costReservePct=(CP&&CP.cost_reserve_pct!=null)?CP.cost_reserve_pct:10;   // % of contract value
-      const schedReservePct=(CP&&CP.sched_reserve_pct!=null)?CP.sched_reserve_pct:10; // % of duration
-      const costReserve=cv*costReservePct/100;
-      const schedReserve=dur*schedReservePct/100;
-      const mcCostInh=monteCarloForecast('cost',5000,CP,'inherent');
-      const mcSchedInh=monteCarloForecast('schedule',5000,CP,'inherent');
-      const mcCostRes=monteCarloForecast('cost',5000,CP,'residual');
-      const mcSchedRes=monteCarloForecast('schedule',5000,CP,'residual');
+      const dur=(CP.start_date&&CP.end_date)?Math.max(0,(new Date(CP.end_date)-new Date(CP.start_date))/86400000):0;
+      const costReservePct=(CP&&CP.cost_reserve_pct!=null)?CP.cost_reserve_pct:10;
+      const schedReservePct=(CP&&CP.sched_reserve_pct!=null)?CP.sched_reserve_pct:10;
+      const approvedBudget=cv>0?cv*(1+costReservePct/100):0;      // contract + cost reserve
+      const contractDur  =dur>0?dur*(1+schedReservePct/100):0;     // planned + schedule reserve
+
+      // run all four simulations (cost/schedule × inherent/residual), ≥10k iterations each
+      const mcCostInh =monteCarloForecast('cost',ITER,CP,'inherent');
+      const mcSchedInh=monteCarloForecast('schedule',ITER,CP,'inherent');
+      const mcCostRes =monteCarloForecast('cost',ITER,CP,'residual');
+      const mcSchedRes=monteCarloForecast('schedule',ITER,CP,'residual');
       const showRes=(window._fcResidual!==false);
-      const mcCost=showRes?mcCostRes:mcCostInh;
+      const mcCost =showRes?mcCostRes:mcCostInh;
       const mcSched=showRes?mcSchedRes:mcSchedInh;
-      mc={cost:mcCost,sched:mcSched,cv,dur,costReserve,schedReserve,costReservePct,schedReservePct,
+
+      mc={cost:mcCost,sched:mcSched,cv,dur,
+          costReservePct,schedReservePct,approvedBudget,contractDur,
           inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
-      // ── Confidence = probability of finishing within the approved budget (contract
-      //    value + contingency reserve). This is a SINGLE, fixed number — the textbook
-      //    "probability of budget/schedule success" from the simulation. It does NOT
-      //    depend on the P-level slider (that would be circular). The P-level only
-      //    controls which raw exposure percentile is DISPLAYED below (P80 cost = X).
-      if(mcCost&&costReserve>0){costP=Math.round(mcCost.withinAppetite(costReserve)*100);}
-      if(mcSched&&schedReserve>0){schedP=Math.round(mcSched.withinAppetite(schedReserve)*100);}
+
+      // confidence read straight from the simulation (fraction of successful iterations)
+      if(mcCost&&approvedBudget>0){const pr=mcCost.probWithin(approvedBudget);if(pr!=null)costP=Math.round(pr*100);}
+      if(mcSched&&contractDur>0){const pr=mcSched.probWithin(contractDur);if(pr!=null)schedP=Math.round(pr*100);}
     }catch(e){mc=null;}
     window._fcMC=mc;
-    // ── FALLBACK: if no appetite ceiling set or no risks, use the saturating heuristic ──
-    if(costP===null||schedP===null){
-      let cP=90, sP=90;
-      const rawPressure=critT*5+highT*3+medT*1.2;
-      const pressure=55*(1-Math.exp(-rawPressure/40));
-      cP-=pressure; sP-=pressure*0.92;
-      if(costP===null)costP=cP;
-      if(schedP===null)schedP=sP;
-    }
-    // ── Mitigation progress, trend, and overdue actions adjust the simulated confidence ──
-    const acts=(CP&&CP.action_plan&&CP.action_plan.actions)||[];
-    if(acts.length){
-      const done=acts.filter(a=>a.status==='done').length;
-      const prog=done/acts.length;             // 0..1
-      const recover=prog*14;                    // up to +14
-      costP+=recover; schedP+=recover;
-      // overdue actions hurt schedule confidence specifically
-      const t0=new Date();t0.setHours(0,0,0,0);
-      const od=acts.filter(a=>a.status!=='done'&&a.due_date&&!isNaN(new Date(a.due_date))&&new Date(a.due_date).setHours(0,0,0,0)<t0.getTime()).length;
-      schedP-=od*4;
-    }else if(openThreats.length){
-      // no plan at all = lower confidence
-      costP-=6; schedP-=6;
-    }
-    // Trend direction nudges both
-    const td=(CP&&CP.trend_data)||[];
-    if(td.length>=2){
-      const d=(td[td.length-1].health_score||0)-(td[td.length-2].health_score||0);
-      costP+=d*0.4; schedP+=d*0.4;
-      const sv=td[td.length-1].sv||0;   // schedule variance
-      const cv=td[td.length-1].burn_rate||0; // cost variance proxy
-      schedP+=sv*0.5; costP+=cv*0.4;
-    }
-    // Recent market high-impact signal erodes a little (external uncertainty)
-    const mi=CP&&CP.market_insights;
-    if(mi&&Array.isArray(mi.insights)&&mi.insights.some(x=>x.impact_probability==='high')){costP-=4;schedP-=3;}
-    // (P-level no longer adjusts confidence — it only controls the exposure figure shown.
-    //  Confidence is the fixed simulation result: P(exposure ≤ approved budget/schedule).)
-    const clamp=v=>Math.max(8,Math.min(96,Math.round(v)));
-    costP=clamp(costP); schedP=clamp(schedP);
-    const overall=clamp((costP+schedP)/2);
-    const band=overall>=75?{w:'On track',c:'var(--grn)'}:overall>=50?{w:'At risk',c:'#B8860B'}:{w:'Off track',c:'var(--red)'};
-    // one-line conclusion
+
+    // If a dimension can't be simulated (no risks with that impact, or missing baseline),
+    // leave it null and show "—" rather than inventing a number.
+    const haveCost=costP!=null, haveSched=schedP!=null;
+    const parts=[]; if(haveCost)parts.push(costP); if(haveSched)parts.push(schedP);
+    const overall=parts.length?Math.round(parts.reduce((a,b)=>a+b,0)/parts.length):null;
+    const band=overall==null?{w:'—',c:'var(--t3)'}
+              :overall>=75?{w:'On track',c:'var(--grn)'}
+              :overall>=50?{w:'At risk',c:'#B8860B'}:{w:'Off track',c:'var(--red)'};
+
     let why;
-    if(highT>0&&acts.length&&acts.filter(a=>a.status==='done').length)why=`${highT} high risk${highT>1?'s':''} open, but mitigation is underway.`;
-    else if(highT>0)why=`${highT} high risk${highT>1?'s':''} open with limited mitigation pulling confidence down.`;
-    else if(acts.length)why=`Risks are moderate and your plan is progressing.`;
-    else why=`Few major threats so far — keep the register current.`;
-    return {costP,schedP,overall,band,why,pLevel};
+    const responded=(window._fcResidual!==false);
+    if(overall==null)why=`Add risk probabilities and cost/schedule impacts to simulate the forecast.`;
+    else if(responded&&mc&&mc.inherent&&mc.residual)why=`Forecast reflects your response plans. Toggle "Before response" to see the inherent risk.`;
+    else if(highT>0)why=`${highT} high risk${highT>1?'s':''} open — the simulation weighs their combined impact.`;
+    else why=`Simulated from the current register, probabilities and impacts.`;
+
+    return {costP:haveCost?costP:null,schedP:haveSched?schedP:null,overall,band,why,pLevel};
   }
 
   const risks=CP?.risks||[];
@@ -6199,40 +6165,22 @@ function renderDash(){
           ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
-              <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall}%</div>
+              <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall==null?'—':_fc.overall+'%'}</div>
               <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Overall</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;gap:7px">
               <div>
-                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On schedule</span><b style="color:var(--t1)">${_fc.schedP}%</b></div>
-                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.schedP}%;background:${_fc.schedP>=75?'var(--grn)':_fc.schedP>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On schedule</span><b style="color:var(--t1)">${_fc.schedP==null?'—':_fc.schedP+'%'}</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.schedP||0}%;background:${(_fc.schedP||0)>=75?'var(--grn)':(_fc.schedP||0)>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
               </div>
               <div>
-                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On budget</span><b style="color:var(--t1)">${_fc.costP}%</b></div>
-                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.costP}%;background:${_fc.costP>=75?'var(--grn)':_fc.costP>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On budget</span><b style="color:var(--t1)">${_fc.costP==null?'—':_fc.costP+'%'}</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.costP||0}%;background:${(_fc.costP||0)>=75?'var(--grn)':(_fc.costP||0)>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
               </div>
             </div>
           </div>
           <canvas id="scurveC" height="74"></canvas>
-          ${(()=>{
-            const mc=window._fcMC; if(!mc||(!mc.cost&&!mc.sched))return '';
-            const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
-            const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
-            const fmtD=v=>v==null?'—':Math.round(v)+'d';
-            const inhC=mc.inherent&&mc.inherent.cost, resC=mc.residual&&mc.residual.cost;
-            const inhS=mc.inherent&&mc.inherent.sched, resS=mc.residual&&mc.residual.sched;
-            const pLv=window._fcP||80;
-            // before→after delta at the selected P-level (value of the response plans)
-            const cDelta=(inhC&&resC)?(inhC.percentile(pLv)-resC.percentile(pLv)):null;
-            const sDelta=(inhS&&resS)?(inhS.percentile(pLv)-resS.percentile(pLv)):null;
-            const row=(label,p50,pSel,unit)=>`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:2px 0"><span>${label}</span><span style="color:var(--t1)"><b>P50</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(p50):fmtD(p50)} &nbsp;·&nbsp; <b>P${pLv}</b> ${unit==='money'?cur+' ':''}${unit==='money'?fmtM(pSel):fmtD(pSel)}</span></div>`;
-            return `<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
-              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Simulated exposure (${(window._fcResidual!==false)?'after response':'before response'})</div>
-              ${mc.cost?row('Cost overrun',mc.cost.p50,mc.cost.percentile(pLv),'money'):''}
-              ${mc.sched?row('Schedule delay',mc.sched.p50,mc.sched.percentile(pLv),'days'):''}
-              ${(cDelta!=null&&cDelta>0)||(sDelta!=null&&sDelta>0)?`<div style="font-size:10px;color:var(--grn);margin-top:4px">↓ Response plans cut P${pLv} exposure by ${cDelta>0?cur+' '+fmtM(cDelta):''}${cDelta>0&&sDelta>0?' and ':''}${sDelta>0?fmtD(sDelta):''}</div>`:''}
-            </div>`;
-          })()}
+
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>`}
         </div>
         <div class="rcc-card">
@@ -6674,37 +6622,76 @@ function riskImpactRange(r,f,proj,mode){
   return {min,likely,max};
 }
 
-// Run the simulation. Returns percentile exposures + the probability the project
-// stays within its risk appetite (used for the "completion confidence").
+// ═══════════════════════════════════════════════════════════════════════
+//  MONTE CARLO ENGINE  (rebuilt — clean QRA methodology, no heuristics)
+//  ───────────────────────────────────────────────────────────────────────
+//  Each of N iterations (≥10,000):
+//    • For every open risk, draw U~Uniform(0,1). If U ≤ probability, the risk
+//      occurs this iteration; sample its impact from a PERT/Beta distribution
+//      (min, likely, max) — never a fixed value.
+//    • Threats ADD to cost/days; opportunities SUBTRACT (they save cost/time).
+//    • Sum across all risks → one realization of total cost / schedule impact.
+//  After N iterations the sorted result array IS the empirical distribution;
+//  every percentile and probability is read directly from it (no interpolation,
+//  no hard-coded numbers). Mirrors @RISK / Primavera Risk Analysis practice.
+//  `baseline` (contract value for cost, planned duration in days for schedule)
+//  is added so the distribution is of the ABSOLUTE final cost / duration.
+// ═══════════════════════════════════════════════════════════════════════
 function monteCarloForecast(f,iterations,proj,mode){
   proj=proj||CP;
-  iterations=iterations||5000;
+  iterations=Math.max(10000,iterations||10000);
   const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
-  // threats ADD exposure (+), opportunities SUBTRACT it (−, they save cost/time).
-  // 'residual' mode applies the post-response-plan values.
   const specs=all.map(r=>{
     const isOpp=(r.type==='opportunity');
-    let p=(r.probability_pct!=null?r.probability_pct/100:(PROB_PCT[r.probability]||0));
+    // probability of occurrence (residual after response plan, when requested)
+    let p;
     if(mode==='residual'&&r.residual_probability_pct!=null)p=r.residual_probability_pct/100;
-    const range=riskImpactRange(r,f,proj,mode);
+    else if(r.probability_pct!=null)p=r.probability_pct/100;
+    else p=PROB_PCT[r.probability]||0;
+    p=Math.max(0,Math.min(1,p));
+    const range=riskImpactRange(r,f,proj,mode); // {min,likely,max} in real units, or null
     return {p,range,sign:isOpp?-1:1};
-  }).filter(s=>s.range);
+  }).filter(s=>s.range&&(s.range.max>0||s.range.likely>0||s.range.min>0));
   if(!specs.length)return null;
-  const out=new Array(iterations);
+
+  // baseline: contract value (cost) or planned duration in days (schedule)
+  let baseline=0;
+  if(f==='cost'){baseline=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''))||0;}
+  else if(f==='schedule'){baseline=(proj&&proj.start_date&&proj.end_date)?Math.max(0,(new Date(proj.end_date)-new Date(proj.start_date))/86400000):0;}
+
+  const impacts=new Float64Array(iterations); // total risk impact (Σ), signed
   for(let it=0;it<iterations;it++){
     let total=0;
     for(let i=0;i<specs.length;i++){
-      if(Math.random()<specs[i].p)total+=specs[i].sign*pertSample(specs[i].range.min,specs[i].range.likely,specs[i].range.max);
+      const s=specs[i];
+      if(Math.random()<s.p)total+=s.sign*pertSample(s.range.min,s.range.likely,s.range.max);
     }
-    out[it]=total; // net exposure: threats minus realized opportunities
+    impacts[it]=total;
   }
-  out.sort((a,b)=>a-b);
-  const pct=p=>out[Math.min(out.length-1,Math.floor(p/100*out.length))];
-  const mean=out.reduce((a,b)=>a+b,0)/out.length;
-  return {p10:pct(10),p50:pct(50),p80:pct(80),p90:pct(90),mean,iterations,n:specs.length,
-          percentile:pct,
-          // probability that total impact stays within appetite ceiling
-          withinAppetite:(ceil)=>ceil>0?out.filter(v=>v<=ceil).length/out.length:null};
+  // sort a copy for percentile reads
+  const sorted=Float64Array.from(impacts).sort();
+  const n=sorted.length;
+  // empirical percentile of the IMPACT distribution (linear position, no interpolation beyond index)
+  const impactPct=q=>{const idx=Math.min(n-1,Math.max(0,Math.floor((q/100)*n)));return sorted[idx];};
+  // absolute final value distribution = baseline + impact
+  const finalPct=q=>baseline+impactPct(q);
+  const meanImpact=sorted.reduce((a,b)=>a+b,0)/n;
+
+  return {
+    // ── impact distribution (Σ of risks), signed ──
+    p10:impactPct(10),p50:impactPct(50),p80:impactPct(80),p90:impactPct(90),
+    mean:meanImpact,
+    percentile:impactPct,          // impact at percentile q (back-compat with UI)
+    // ── absolute final cost / duration ──
+    baseline,
+    finalAt:finalPct,              // baseline + impact at percentile q
+    // ── direct probabilities from the simulation ──
+    // P(final ≤ ceiling): fraction of iterations whose ABSOLUTE result ≤ ceiling
+    probWithin:(ceiling)=>{if(ceiling==null)return null;let c=0;for(let i=0;i<n;i++)if(baseline+sorted[i]<=ceiling)c++;return c/n;},
+    // back-compat: P(impact alone ≤ ceil) — used by older callers
+    withinAppetite:(ceil)=>ceil>0?(()=>{let c=0;for(let i=0;i<n;i++)if(sorted[i]<=ceil)c++;return c/n;})():null,
+    iterations:n,n:specs.length
+  };
 }
 
 function rexRanked(){
