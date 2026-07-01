@@ -64,21 +64,103 @@ app.post('/api/claude', claudeLimiter, async (req, res) => {
   if (!ANTHROPIC_API_KEY) {
     return res.status(503).json({ error: { message: 'AI service not configured. Administrator must set ANTHROPIC_API_KEY.' } });
   }
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(req.body),
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error) {
-    res.status(500).json({ error: { message: error.message } });
+  // ── Always stream the upstream request to Anthropic, then reassemble it into the
+  //    SAME non-streaming JSON shape the frontend already expects (no frontend changes).
+  //    WHY: a single long-held non-streaming connection (large max_tokens — e.g. 20000
+  //    for register generation — can take 60-120+ seconds) is prone to being killed by
+  //    intermediary proxies/load balancers mid-flight, surfacing as
+  //    "Invalid response body ... Premature close". Streaming keeps the connection
+  //    active with a steady trickle of small chunks, which is Anthropic's own
+  //    recommended pattern for large-output requests and avoids this failure mode.
+  const upstreamBody = { ...req.body, stream: true };
+  const MAX_ATTEMPTS = 2;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(upstreamBody),
+      });
+
+      if (!response.ok) {
+        // Non-streaming error response (e.g. 4xx/5xx) — pass it straight through.
+        const errData = await response.json().catch(() => ({ error: { message: 'Upstream error ' + response.status } }));
+        return res.status(response.status).json(errData);
+      }
+
+      // ── Parse the SSE stream and reassemble a standard Messages API response ──
+      const contentBlocks = [];   // { type, text? , ...tool_use fields }
+      let stopReason = null, stopSequence = null, usage = null, modelName = req.body.model || null, msgId = null;
+      let buf = '';
+      for await (const chunk of response.body) {
+        buf += chunk.toString('utf8');
+        let idx;
+        while ((idx = buf.indexOf('\n\n')) !== -1) {
+          const rawEvent = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          const dataLine = rawEvent.split('\n').find(l => l.startsWith('data:'));
+          if (!dataLine) continue;
+          const jsonStr = dataLine.slice(5).trim();
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+          let evt;
+          try { evt = JSON.parse(jsonStr); } catch { continue; }
+          switch (evt.type) {
+            case 'message_start':
+              msgId = evt.message?.id || msgId;
+              modelName = evt.message?.model || modelName;
+              usage = evt.message?.usage || usage;
+              break;
+            case 'content_block_start':
+              contentBlocks[evt.index] = evt.content_block?.type === 'tool_use'
+                ? { type: 'tool_use', id: evt.content_block.id, name: evt.content_block.name, input: {} , _partialJson: '' }
+                : { type: 'text', text: '' };
+              break;
+            case 'content_block_delta':
+              if (!contentBlocks[evt.index]) contentBlocks[evt.index] = { type: 'text', text: '' };
+              if (evt.delta?.type === 'text_delta') contentBlocks[evt.index].text += evt.delta.text;
+              else if (evt.delta?.type === 'input_json_delta') contentBlocks[evt.index]._partialJson += evt.delta.partial_json || '';
+              break;
+            case 'content_block_stop':
+              if (contentBlocks[evt.index] && contentBlocks[evt.index].type === 'tool_use') {
+                try { contentBlocks[evt.index].input = JSON.parse(contentBlocks[evt.index]._partialJson || '{}'); } catch { contentBlocks[evt.index].input = {}; }
+                delete contentBlocks[evt.index]._partialJson;
+              }
+              break;
+            case 'message_delta':
+              stopReason = evt.delta?.stop_reason ?? stopReason;
+              stopSequence = evt.delta?.stop_sequence ?? stopSequence;
+              if (evt.usage) usage = { ...(usage || {}), ...evt.usage };
+              break;
+            case 'error':
+              throw new Error(evt.error?.message || 'Upstream stream error');
+            default:
+              break; // message_stop, ping — nothing to accumulate
+          }
+        }
+      }
+
+      return res.status(200).json({
+        id: msgId,
+        type: 'message',
+        role: 'assistant',
+        model: modelName,
+        content: contentBlocks.filter(Boolean),
+        stop_reason: stopReason,
+        stop_sequence: stopSequence,
+        usage,
+      });
+    } catch (error) {
+      lastErr = error;
+      // Transient network/stream errors (e.g. "Premature close") — retry once before giving up.
+      if (attempt < MAX_ATTEMPTS) continue;
+    }
   }
+  res.status(500).json({ error: { message: lastErr ? lastErr.message : 'Unknown error contacting AI service' } });
 });
 
 app.get('/api/claude/status', (req, res) => {
