@@ -6560,7 +6560,7 @@ function renderDash(){
       const ptRadii=steps.map((_,i)=>i===markIdx?5:0);
       const datasets=[{
         label:isSched?'Completion duration':'Final cost',data:curvePts,borderColor:bandColor,
-        backgroundColor:bandColor+'18',fill:true,tension:.35,borderWidth:2,
+        backgroundColor:bandColor+'18',fill:true,cubicInterpolationMode:'monotone',borderWidth:2,
         pointRadius:ptRadii,pointHoverRadius:5,pointBackgroundColor:'#fff',pointBorderColor:bandColor,pointBorderWidth:2,order:1
       }];
       if(target>0){
@@ -6579,13 +6579,24 @@ function renderDash(){
           ctx.save();
           ctx.font='700 9px "IBM Plex Mono",monospace';
           const tw=ctx.measureText(txt).width;
-          const flipBelow=(pt.y-18)<chart.chartArea.top; // keep label inside the canvas if the point sits near the top edge
-          const ly=flipBelow?pt.y+16:pt.y-10;
+          const boxW=tw+8, boxH=13, area=chart.chartArea;
+          // vertical: sit above the point by default, flip below only if that clips the top
+          let ly=pt.y-10;
+          if(ly-boxH<area.top)ly=pt.y+16;
+          // horizontal: centered on the point, then clamped so the box never crosses the plot edges
+          // (P100 is simultaneously the rightmost AND highest point on the curve, so both axes can clip at once)
+          let cx=Math.min(Math.max(pt.x,area.left+boxW/2+2),area.right-boxW/2-2);
           ctx.fillStyle='rgba(255,255,255,.94)';
-          ctx.fillRect(pt.x-tw/2-4,ly-9,tw+8,13);
-          ctx.strokeStyle=bandColor; ctx.lineWidth=1; ctx.strokeRect(pt.x-tw/2-4,ly-9,tw+8,13);
+          ctx.fillRect(cx-boxW/2,ly-9,boxW,boxH);
+          ctx.strokeStyle=bandColor; ctx.lineWidth=1; ctx.strokeRect(cx-boxW/2,ly-9,boxW,boxH);
           ctx.fillStyle=bandColor; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(txt,pt.x,ly-2.5);
+          ctx.fillText(txt,cx,ly-2.5);
+          // connector so it's clear the label still refers to the (now offset) point
+          if(Math.abs(cx-pt.x)>1){
+            ctx.strokeStyle=bandColor; ctx.lineWidth=1; ctx.setLineDash([2,2]);
+            ctx.beginPath(); ctx.moveTo(pt.x,pt.y); ctx.lineTo(cx,ly+(ly<pt.y?4:-4)); ctx.stroke();
+            ctx.setLineDash([]);
+          }
           ctx.restore();
         }
       };
@@ -6602,7 +6613,9 @@ function renderDash(){
             x:{ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:6},grid:{display:false}},
             y:{min:yMin-pad,max:yMax+pad,ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:4,callback:v=>fmtVal(v)},grid:{color:'rgba(228,231,239,.5)'}}
           },
-          layout:{padding:0}}
+          // room around the plot area so the P-level marker/label (which can sit right at
+          // the top-right corner when P100 is selected) is never cut off by the canvas edge
+          layout:{padding:{top:16,right:20,bottom:0,left:0}}}
       });
     }
 
