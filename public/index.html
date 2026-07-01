@@ -5974,6 +5974,11 @@ function renderDash(){
     const ITER=10000;
     let costP=null, schedP=null, mc=null;
     try{
+      const _sig=mcSignature(CP);
+      if(_fcCache.cid===CID&&_fcCache.sig===_sig&&_fcCache.mc){
+        // underlying data unchanged since last simulation — reuse it, don't resample
+        mc=_fcCache.mc;
+      } else {
       const cv=parseFloat(String((CP&&CP.value)||'').replace(/[^\d.]/g,''))||0;
       const dur=(CP.start_date&&CP.end_date)?Math.max(0,(new Date(CP.end_date)-new Date(CP.start_date))/86400000):0;
       // ── TARGET BASELINE = contract value/duration + approved change orders ──
@@ -6000,14 +6005,18 @@ function renderDash(){
       mc={cost:mcCost,sched:mcSched,cv,dur,
           coCost,coDays,approvedBudget,contractDur,targetBudget,targetDur,
           inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
+      _fcCache={cid:CID,sig:_sig,mc};   // cache: reused until the underlying data actually changes
+      } // end else (fresh simulation)
 
-      // confidence read straight from the simulation (fraction of successful iterations)
+      // confidence read straight from the simulation (fraction of successful iterations).
+      // Read from `mc` (not local vars) so this works identically whether `mc` was just
+      // computed or reused from cache — text and chart always see the exact same numbers.
       // Active threats with residual impact remain → confidence can never be a literal
       // 100%. The simulation already reflects this, but rounding can reach 100; cap at 99
       // whenever any active threat still carries residual exposure (QRA: residual ≠ 0).
       const activeThreatExposure=((CP&&CP.risks)||[]).some(r=>(r.type==='threat'||!r.type)&&r.status!=='closed'&&(()=>{const rg=riskImpactRange(r,'cost',CP,'residual')||riskImpactRange(r,'schedule',CP,'residual');return rg&&(rg.likely>0||rg.max>0);})());
-      if(mcCost&&approvedBudget>0){const pr=mcCost.probWithin(approvedBudget);if(pr!=null){costP=Math.round(pr*100);if(activeThreatExposure)costP=Math.min(99,costP);}}
-      if(mcSched&&contractDur>0){const pr=mcSched.probWithin(contractDur);if(pr!=null){schedP=Math.round(pr*100);if(activeThreatExposure)schedP=Math.min(99,schedP);}}
+      if(mc.cost&&mc.approvedBudget>0){const pr=mc.cost.probWithin(mc.approvedBudget);if(pr!=null){costP=Math.round(pr*100);if(activeThreatExposure)costP=Math.min(99,costP);}}
+      if(mc.sched&&mc.contractDur>0){const pr=mc.sched.probWithin(mc.contractDur);if(pr!=null){schedP=Math.round(pr*100);if(activeThreatExposure)schedP=Math.min(99,schedP);}}
     }catch(e){mc=null;}
     window._fcMC=mc;
 
@@ -6585,6 +6594,35 @@ function renderDash(){
 let rexChart=null;
 const REX_LABELS={overall:'Overall Risk Exposure',cost:'Cost Impact',schedule:'Schedule Impact',qhse:'QHSE Impact',reputation:'Reputation Impact'};
 const REX_UNIT={overall:'score',cost:'SAR',schedule:'days',qhse:'score',reputation:'score'};
+// ═══════════════════════════════════════════════════════════════════════
+//  MONTE CARLO CACHE — the simulation is expensive (4× 10,000 iterations) and
+//  uses true randomness (Math.random). Re-running it on every UI interaction
+//  (P-level dropdown, Cost/Schedule toggle) would (a) waste CPU, and (b) make
+//  the chart's axis and the "Forecast final cost" text drift slightly between
+//  renders since each run resamples — exactly the bug pattern where the same
+//  P100 point could read differently in the text vs a later-drawn chart.
+//  Fix: compute a fingerprint of everything that actually affects the result
+//  (project financials/dates/appetite/COs + every risk's quantitative fields)
+//  and reuse the cached simulation whenever that fingerprint hasn't changed.
+//  This guarantees the text and the chart are ALWAYS reading the same array.
+// ═══════════════════════════════════════════════════════════════════════
+let _fcCache={cid:null,sig:null,mc:null};
+function mcSignature(proj){
+  if(!proj)return '';
+  const rs=(proj.risks||[]).filter(r=>r.status!=='closed');
+  const parts=[proj.id,proj.value,proj.start_date,proj.end_date,
+    proj.risk_appetite?.level||proj.tolerance?.appetite,
+    proj.approved_co_cost,proj.approved_co_days,
+    rs.length];
+  rs.forEach(r=>parts.push(
+    r.id||r.risk_id,r.type,r.probability,r.probability_pct,r.residual_probability_pct,
+    r.impact_cost,r.impact_schedule,
+    r.pert_cost&&(r.pert_cost.min+','+r.pert_cost.likely+','+r.pert_cost.max),
+    r.pert_schedule&&(r.pert_schedule.min+','+r.pert_schedule.likely+','+r.pert_schedule.max),
+    r.residual_cost_likely,r.residual_sched_likely,r.response_strategy
+  ));
+  return parts.join('|');
+}
 const PROB_PCT={1:0.05,2:0.20,3:0.40,4:0.60,5:0.85}; // probability level → representative probability
 function rexContractValue(){const n=parseFloat(String(CP?.value||'').replace(/[^\d.]/g,''));return isNaN(n)?0:n;}
 function rexBandMid(text,isFirst,isLast){
