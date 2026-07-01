@@ -6204,10 +6204,10 @@ function renderDash(){
                 const series=isSchedMetric?mc.sched:mc.cost;
                 const target=isSchedMetric?(mc.targetDur||mc.dur||0):(mc.targetBudget||mc.cv||0);
                 const val=series?series.finalAt(pLv):null;
-                const ratioPct=(val!=null&&target>0)?Math.round((val/target)*100):null;
+                const ratioPct=(val!=null&&target>0&&val>0)?Math.round((target/val)*100):null;
                 const label=isSchedMetric?`Schedule at P${pLv} vs target`:`Cost at P${pLv} vs target`;
-                const barColor=ratioPct==null?'var(--t3)':ratioPct<=100?'var(--grn)':ratioPct<=110?'#B8860B':'var(--red)';
-                const barWidth=ratioPct==null?0:Math.min(100,ratioPct);
+                const barColor=ratioPct==null?'var(--t3)':ratioPct>=100?'var(--grn)':ratioPct>=90?'#B8860B':'var(--red)';
+                const barWidth=ratioPct==null?0:Math.min(100,Math.max(0,ratioPct));
                 return `<div>
                   <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>${label}</span><b style="color:${barColor}">${ratioPct==null?'—':ratioPct+'%'}</b></div>
                   <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${barColor};border-radius:4px"></div></div>
@@ -6216,7 +6216,8 @@ function renderDash(){
             </div>
           </div>
           <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${(window._fcMetric==='schedule'&&window._fcMC&&window._fcMC.sched&&window._fcMC.dur>0)?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
-          <canvas id="scurveC" height="74"></canvas>
+          <div style="position:relative;height:150px"><canvas id="scurveC"></canvas></div>
+
 
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
           ${(()=>{
@@ -6617,7 +6618,7 @@ function renderDash(){
         type:'line',
         data:{labels:steps.map(q=>'P'+q),datasets},
         plugins:[pLevelLabelPlugin],
-        options:{plugins:{legend:{display:false},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
           tooltip:{callbacks:{
             title:i=>i[0].label+' (cumulative probability)',
             label:c=>c.datasetIndex===0?(isSched?'Duration: ':'Final cost: ')+fmtVal(c.parsed.y):(isSched?'Target duration: ':'Target budget: ')+fmtVal(c.parsed.y)
