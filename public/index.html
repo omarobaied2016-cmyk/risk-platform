@@ -6180,42 +6180,47 @@ function renderDash(){
                 ${[70,75,80,85,90,95,100].map(pv=>`<option value="${pv}"${(window._fcP||80)===pv?' selected':''}>P${pv}</option>`).join('')}
               </select>
               <button onclick="window._fcRunNonce=(window._fcRunNonce||0)+1;_fcCache={cid:null,sig:null,mc:null,ts:null};renderDash()" title="Re-run the Monte Carlo simulation with a fresh random draw (same data). Otherwise this only recomputes automatically when a risk, cost/schedule impact, change order, or project value/date actually changes." style="padding:4px 7px;font-size:10px;font-weight:700;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:3px">↻ Recalculate</button>
+              ${(window._fcMC&&window._fcMC.cost&&window._fcMC.sched&&window._fcMC.dur>0)?`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:10px;font-weight:700">
+                <button onclick="window._fcMetric='cost';renderDash()" style="padding:4px 9px;border:none;cursor:pointer;background:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'var(--s1)':'var(--primary)'};color:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'var(--t2)':'#fff'}">Cost</button>
+                <button onclick="window._fcMetric='schedule';renderDash()" style="padding:4px 9px;border:none;cursor:pointer;background:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'var(--primary)':'var(--s1)'};color:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'#fff':'var(--t2)'}">Schedule</button>
+              </div>`:''}
               <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
             </div>
           </div>
           ${_fc.ts?`<div style="font-size:9px;color:var(--t3);margin-top:-2px;margin-bottom:2px">Last calculated ${new Date(_fc.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})} · deterministic for this data</div>`:''}
 
-          ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
+          ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):(()=>{
+            // ── Single deviation metric at the SELECTED P-level, filtered to the active
+            // Cost/Schedule toggle. target ÷ forecast × 100: 100% = exactly on target,
+            // below 100% = overrun (worse), above = under target (better). This is now the
+            // headline number AND the bar — one figure that moves with the P-level dropdown
+            // and the marked point on the S-curve. (The old fixed confidence-probability
+            // number was removed: it stayed still while the user changed P-level, which read
+            // as a bug.)
+            const mc=window._fcMC;
+            const pLv=window._fcP||80;
+            const isSchedMetric=(window._fcMetric==='schedule'&&mc&&mc.sched&&mc.dur>0);
+            const series=mc?(isSchedMetric?mc.sched:mc.cost):null;
+            const target=mc?(isSchedMetric?(mc.targetDur||mc.dur||0):(mc.targetBudget||mc.cv||0)):0;
+            const val=series?series.finalAt(pLv):null;
+            const ratioPct=(val!=null&&target>0&&val>0)?Math.round((target/val)*100):null;
+            const label=isSchedMetric?`Schedule at P${pLv} vs target`:`Cost at P${pLv} vs target`;
+            const devColor=ratioPct==null?'var(--t3)':ratioPct>=100?'var(--grn)':ratioPct>=90?'#B8860B':'var(--red)';
+            const barWidth=ratioPct==null?0:Math.min(100,Math.max(0,ratioPct));
+            return `
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
-              <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall==null?'—':_fc.overall+'%'}</div>
-              <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Overall</div>
+              <div style="font-size:32px;font-weight:800;color:${devColor};line-height:1">${ratioPct==null?'—':ratioPct+'%'}</div>
+              <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">vs Target</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;gap:7px;justify-content:center">
-              ${(()=>{
-                // ── Deviation from target AT THE SELECTED P-LEVEL, filtered to the active
-                // Cost/Schedule toggle. 100% = forecast exactly equals target. This is the
-                // one number on the card that always moves together with the P-level dropdown
-                // and the marked point on the S-curve — no separate fixed-probability figure
-                // that stays still while the user changes what they're looking at.
-                const mc=window._fcMC; if(!mc)return '';
-                const pLv=window._fcP||80;
-                const isSchedMetric=(window._fcMetric==='schedule'&&mc.sched&&mc.dur>0);
-                const series=isSchedMetric?mc.sched:mc.cost;
-                const target=isSchedMetric?(mc.targetDur||mc.dur||0):(mc.targetBudget||mc.cv||0);
-                const val=series?series.finalAt(pLv):null;
-                const ratioPct=(val!=null&&target>0&&val>0)?Math.round((target/val)*100):null;
-                const label=isSchedMetric?`Schedule at P${pLv} vs target`:`Cost at P${pLv} vs target`;
-                const barColor=ratioPct==null?'var(--t3)':ratioPct>=100?'var(--grn)':ratioPct>=90?'#B8860B':'var(--red)';
-                const barWidth=ratioPct==null?0:Math.min(100,Math.max(0,ratioPct));
-                return `<div>
-                  <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>${label}</span><b style="color:${barColor}">${ratioPct==null?'—':ratioPct+'%'}</b></div>
-                  <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${barColor};border-radius:4px"></div></div>
-                </div>`;
-              })()}
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>${label}</span><b style="color:${devColor}">${ratioPct==null?'—':ratioPct+'%'}</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${devColor};border-radius:4px"></div></div>
+              </div>
             </div>
           </div>
-          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${(window._fcMetric==='schedule'&&window._fcMC&&window._fcMC.sched&&window._fcMC.dur>0)?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
+          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${isSchedMetric?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
           <div style="position:relative;height:150px"><canvas id="scurveC"></canvas></div>
 
 
@@ -6240,14 +6245,9 @@ function renderDash(){
             }
             const overBudget=finalCost!=null&&finalCost>(mc.targetBudget||mc.cv);
             const lateFinish=finalDateStr&&targetDateStr&&(new Date(finalDateStr.split(' ').reverse().join(' '))>new Date(targetDateStr.split(' ').reverse().join(' ')));
-            const metricToggle=(mc.cost&&mc.sched&&mc.dur>0)?`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:9.5px;font-weight:700;margin-left:6px">
-                <button onclick="window._fcMetric='cost';renderDash()" style="padding:3px 7px;border:none;cursor:pointer;background:${metric==='cost'?'var(--primary)':'var(--s1)'};color:${metric==='cost'?'#fff':'var(--t2)'}">Cost</button>
-                <button onclick="window._fcMetric='schedule';renderDash()" style="padding:3px 7px;border:none;cursor:pointer;background:${metric==='schedule'?'var(--primary)':'var(--s1)'};color:${metric==='schedule'?'#fff':'var(--t2)'}">Schedule</button>
-              </div>`:'';
             const baselineHtml=`<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
                 <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)">Forecast at P${pLv} (${showRes?'after response':'before response'})</div>
-                ${metricToggle}
               </div>
               ${metric==='cost'&&mc.cv>0?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target budget${coCost?` <span style="color:var(--t3)">(contract + ${cur} ${fmtM(coCost)} CO)</span>`:''}</span><b style="color:var(--t1)">${cur} ${fmtM(mc.targetBudget||mc.cv)}</b></div>
               <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Forecast final cost</span><b style="color:${overBudget?'var(--red)':'var(--grn)'}">${cur} ${fmtM(finalCost)}</b></div>`:''}
@@ -6291,15 +6291,7 @@ function renderDash(){
               <div id="fcAnalysisOut" style="margin-top:8px"></div>
             </div>`;
             return baselineHtml+tornado+cmpHtml+apHtml+aiBtn;
-          })()}`}
-        </div>
-        <div class="rcc-card">
-          <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
-          <div class="rcc-hs">Distribution by severity</div>
-          <div style="height:150px;position:relative"><canvas id="lvlC"></canvas></div>
-          <div class="rcc-attn">
-            ${attn.length?attn.slice(0,4).map(a=>`<div class="rcc-attn-chip rcc-attn-${a.c}" onclick="${a.go}"><span class="a-n">${a.n}</span><span class="a-l">${a.l}</span></div>`).join(''):`<div class="rcc-attn-chip rcc-attn-blue" style="cursor:default"><span class="a-n" style="color:var(--grn)">✓</span><span class="a-l">All clear — no overdue risks; high risks have plans and owners.</span></div>`}
-          </div>
+          })()}`;})()}
         </div>
       </div>
 
@@ -6330,6 +6322,14 @@ function renderDash(){
             const fillColor=ch>0?'var(--red)':cm>0?'#B8860B':'var(--grn)';
             return `<div class="rcc-catbar"><span class="cb-n" title="${cat}">${cat}</span><span class="cb-track"><span class="cb-fill" style="width:${pct}%;background:${fillColor}"></span></span><span class="cb-c">${cnt}</span></div>`;
           }).join('')}
+        </div>
+        <div class="rcc-card" id="riskLevelsCard">
+          <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
+          <div class="rcc-hs">Distribution by severity</div>
+          <div style="height:150px;position:relative"><canvas id="lvlC"></canvas></div>
+          <div class="rcc-attn">
+            ${attn.length?attn.slice(0,4).map(a=>`<div class="rcc-attn-chip rcc-attn-${a.c}" onclick="${a.go}"><span class="a-n">${a.n}</span><span class="a-l">${a.l}</span></div>`).join(''):`<div class="rcc-attn-chip rcc-attn-blue" style="cursor:default"><span class="a-n" style="color:var(--grn)">✓</span><span class="a-l">All clear — no overdue risks; high risks have plans and owners.</span></div>`}
+          </div>
         </div>
       </div>
     </div>
