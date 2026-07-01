@@ -1703,7 +1703,6 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <div class="tol-sec"><div class="tol-t">Reputation Levels</div><div id="rep_lvl"></div></div>
           <div class="tol-sec">
             <div class="tol-t">Probability Scale</div>
-            <div style="font-size:10.5px;color:var(--t3);margin:-2px 0 8px">Set each probability threshold as a percentage.</div>
             <div id="prob_lvl"></div>
           </div>
         </div>
@@ -2425,7 +2424,7 @@ function schedLevels(appetite){
   ];
 }
 const DI=[{l:'1 — Negligible',d:'No meaningful effect'},{l:'2 — Minor',d:'Minor manageable effect'},{l:'3 — Moderate',d:'Requires corrective action'},{l:'4 — Major',d:'Significant project impact'},{l:'5 — Critical',d:'May halt project'}];
-const LC=['var(--red)','var(--org)','var(--yel)','var(--grn)','var(--cyan)'];
+const LC=['var(--grn)','#9ACD32','var(--yel)','var(--org)','var(--red)']; // severity order: low→high (1=lowest risk=green … 5=highest risk=red)
 const PL=['','Rare','Unlikely','Possible','Likely','Almost Certain'];
 const IL=['','Negligible','Minor','Moderate','Major','Critical'];
 const RL={critical:'CRITICAL',high:'HIGH',medium:'MEDIUM',low:'LOW'};
@@ -6186,6 +6185,7 @@ function renderDash(){
               </div>
             </div>
           </div>
+          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">Final cost vs cumulative probability — dashed line = target budget</div>
           <canvas id="scurveC" height="74"></canvas>
 
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
@@ -6502,29 +6502,46 @@ function renderDash(){
     // Risk Exposure Analysis (dynamic, filter-driven — replaces static tornado)
     renderRiskExposure();
 
-    // ═══ S-CURVE: cumulative completion-probability curve ═══
+    // ═══ S-CURVE: TRUE cumulative distribution from the Monte Carlo simulation ═══
+    // Standard QRA definition: X = cumulative probability (0→100%), Y = the final cost
+    // at that percentile (P0 = best case / lowest cost ... P100 = worst case / highest
+    // cost). The ORIGINAL PLAN (contract value) is a REFERENCE LINE on this curve — not
+    // P0 or P100 — and where it crosses the curve shows the probability of finishing
+    // within budget. This mirrors @RISK / Primavera Risk Analysis S-curve output exactly.
     const scEl=document.getElementById('scurveC');
-    if(scEl&&window._fc&&!window._fc.insufficient){
-      const fc=window._fc;
-      // Build an S-shaped cumulative confidence curve that lands at the current overall%.
-      // X = project timeline (0→100%), Y = cumulative probability of staying within plan.
-      const pts=[];const target=fc.overall;
-      for(let x=0;x<=100;x+=10){
-        // logistic S-curve scaled to target confidence
-        const s=1/(1+Math.exp(-0.09*(x-50)));
-        pts.push(Math.round(target*0.45 + target*0.55*s));
+    if(scEl&&window._fc&&!window._fc.insufficient&&window._fcMC&&window._fcMC.cost){
+      const mc=window._fcMC;
+      const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
+      const fmtM=v=>(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
+      const steps=[];for(let q=0;q<=100;q+=5)steps.push(q);
+      const curvePts=steps.map(q=>mc.cost.finalAt(q));
+      const targetBudget=mc.targetBudget||mc.cv||null;
+      const bandColor=(window._fc.costP==null?'#6D8196':window._fc.costP>=75?'#2E7D52':window._fc.costP>=50?'#B8860B':'#C0392B');
+      const yMin=Math.min(...curvePts,targetBudget||Infinity), yMax=Math.max(...curvePts,targetBudget||-Infinity);
+      const pad=(yMax-yMin)*0.08||1000;
+      const datasets=[{
+        label:'Final cost',data:curvePts,borderColor:bandColor,
+        backgroundColor:bandColor+'18',fill:true,tension:.35,borderWidth:2,
+        pointRadius:0,pointHoverRadius:4,order:1
+      }];
+      if(targetBudget>0){
+        datasets.push({
+          label:'Target budget',data:steps.map(()=>targetBudget),borderColor:'#8950FC',
+          borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,order:2
+        });
       }
-      const bandColor=fc.overall>=75?'#2E7D52':fc.overall>=50?'#B8860B':'#C0392B';
       new Chart(scEl,{
         type:'line',
-        data:{labels:pts.map((_,i)=>i*10+'%'),datasets:[{
-          data:pts,borderColor:bandColor,
-          backgroundColor:bandColor+'18',fill:true,tension:.4,borderWidth:2,
-          pointRadius:0,pointHoverRadius:4
-        }]},
-        options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>'Timeline '+i[0].label,label:c=>'Confidence: '+c.parsed.y+'%'}}},
-          scales:{x:{ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:5},grid:{display:false}},
-                  y:{min:0,max:100,ticks:{color:'#a1a5b7',font:{size:8},stepSize:50,callback:v=>v+'%'},grid:{color:'rgba(228,231,239,.5)'}}},
+        data:{labels:steps.map(q=>'P'+q),datasets},
+        options:{plugins:{legend:{display:false},
+          tooltip:{callbacks:{
+            title:i=>i[0].label+' (cumulative probability)',
+            label:c=>c.datasetIndex===0?'Final cost: '+cur+' '+fmtM(c.parsed.y):'Target budget: '+cur+' '+fmtM(c.parsed.y)
+          }}},
+          scales:{
+            x:{ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:6},grid:{display:false}},
+            y:{min:yMin-pad,max:yMax+pad,ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:4,callback:v=>cur+' '+fmtM(v)},grid:{color:'rgba(228,231,239,.5)'}}
+          },
           layout:{padding:0}}
       });
     }
