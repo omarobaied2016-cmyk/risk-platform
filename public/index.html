@@ -6191,15 +6191,28 @@ function renderDash(){
               <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall==null?'—':_fc.overall+'%'}</div>
               <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Overall</div>
             </div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:7px">
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On schedule</span><b style="color:var(--t1)">${_fc.schedP==null?'—':_fc.schedP+'%'}</b></div>
-                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.schedP||0}%;background:${(_fc.schedP||0)>=75?'var(--grn)':(_fc.schedP||0)>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
-              </div>
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On budget</span><b style="color:var(--t1)">${_fc.costP==null?'—':_fc.costP+'%'}</b></div>
-                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.costP||0}%;background:${(_fc.costP||0)>=75?'var(--grn)':(_fc.costP||0)>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
-              </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px;justify-content:center">
+              ${(()=>{
+                // ── Deviation from target AT THE SELECTED P-LEVEL, filtered to the active
+                // Cost/Schedule toggle. 100% = forecast exactly equals target. This is the
+                // one number on the card that always moves together with the P-level dropdown
+                // and the marked point on the S-curve — no separate fixed-probability figure
+                // that stays still while the user changes what they're looking at.
+                const mc=window._fcMC; if(!mc)return '';
+                const pLv=window._fcP||80;
+                const isSchedMetric=(window._fcMetric==='schedule'&&mc.sched&&mc.dur>0);
+                const series=isSchedMetric?mc.sched:mc.cost;
+                const target=isSchedMetric?(mc.targetDur||mc.dur||0):(mc.targetBudget||mc.cv||0);
+                const val=series?series.finalAt(pLv):null;
+                const ratioPct=(val!=null&&target>0)?Math.round((val/target)*100):null;
+                const label=isSchedMetric?`Schedule at P${pLv} vs target`:`Cost at P${pLv} vs target`;
+                const barColor=ratioPct==null?'var(--t3)':ratioPct<=100?'var(--grn)':ratioPct<=110?'#B8860B':'var(--red)';
+                const barWidth=ratioPct==null?0:Math.min(100,ratioPct);
+                return `<div>
+                  <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>${label}</span><b style="color:${barColor}">${ratioPct==null?'—':ratioPct+'%'}</b></div>
+                  <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${barColor};border-radius:4px"></div></div>
+                </div>`;
+              })()}
             </div>
           </div>
           <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${(window._fcMetric==='schedule'&&window._fcMC&&window._fcMC.sched&&window._fcMC.dur>0)?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
