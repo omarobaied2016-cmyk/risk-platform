@@ -5993,11 +5993,17 @@ function renderDash(){
       // keep names approvedBudget/contractDur for the rest of the module (comparison block etc.)
       const approvedBudget=targetBudget, contractDur=targetDur;
 
+      // Seed ONE rng stream from the data fingerprint. Same CP data → same seed →
+      // bit-identical simulation, no matter how many times this reruns (reload,
+      // re-render, P-level toggle). window._fcRunNonce only changes when the user
+      // clicks "Recalculate", which is the one deliberate way to force a fresh draw.
+      const _seed=_strHash(_sig+'|'+(window._fcRunNonce||0));
+      const _rng=mulberry32(_seed);
       // run all four simulations (cost/schedule × inherent/residual), ≥10k iterations each
-      const mcCostInh =monteCarloForecast('cost',ITER,CP,'inherent');
-      const mcSchedInh=monteCarloForecast('schedule',ITER,CP,'inherent');
-      const mcCostRes =monteCarloForecast('cost',ITER,CP,'residual');
-      const mcSchedRes=monteCarloForecast('schedule',ITER,CP,'residual');
+      const mcCostInh =monteCarloForecast('cost',ITER,CP,'inherent',_rng);
+      const mcSchedInh=monteCarloForecast('schedule',ITER,CP,'inherent',_rng);
+      const mcCostRes =monteCarloForecast('cost',ITER,CP,'residual',_rng);
+      const mcSchedRes=monteCarloForecast('schedule',ITER,CP,'residual',_rng);
       const showRes=(window._fcResidual!==false);
       const mcCost =showRes?mcCostRes:mcCostInh;
       const mcSched=showRes?mcSchedRes:mcSchedInh;
@@ -6005,7 +6011,7 @@ function renderDash(){
       mc={cost:mcCost,sched:mcSched,cv,dur,
           coCost,coDays,approvedBudget,contractDur,targetBudget,targetDur,
           inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
-      _fcCache={cid:CID,sig:_sig,mc};   // cache: reused until the underlying data actually changes
+      _fcCache={cid:CID,sig:_sig,mc,ts:Date.now()};   // cache: reused until the underlying data actually changes
       } // end else (fresh simulation)
 
       // confidence read straight from the simulation (fraction of successful iterations).
@@ -6036,7 +6042,7 @@ function renderDash(){
     else if(highT>0)why=`${highT} high risk${highT>1?'s':''} open — the simulation weighs their combined impact.`;
     else why=`Simulated from the current register, probabilities and impacts.`;
 
-    return {costP:haveCost?costP:null,schedP:haveSched?schedP:null,overall,band,why,pLevel};
+    return {costP:haveCost?costP:null,schedP:haveSched?schedP:null,overall,band,why,pLevel,ts:_fcCache.ts||null};
   }
 
   const risks=CP?.risks||[];
@@ -6173,9 +6179,11 @@ function renderDash(){
               <select onchange="window._fcP=parseInt(this.value);renderDash()" style="padding:4px 7px;font-size:10.5px;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
                 ${[70,75,80,85,90,95,100].map(pv=>`<option value="${pv}"${(window._fcP||80)===pv?' selected':''}>P${pv}</option>`).join('')}
               </select>
+              <button onclick="window._fcRunNonce=(window._fcRunNonce||0)+1;_fcCache={cid:null,sig:null,mc:null,ts:null};renderDash()" title="Re-run the Monte Carlo simulation with a fresh random draw (same data). Otherwise this only recomputes automatically when a risk, cost/schedule impact, change order, or project value/date actually changes." style="padding:4px 7px;font-size:10px;font-weight:700;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:3px">↻ Recalculate</button>
               <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
             </div>
           </div>
+          ${_fc.ts?`<div style="font-size:9px;color:var(--t3);margin-top:-2px;margin-bottom:2px">Last calculated ${new Date(_fc.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})} · deterministic for this data</div>`:''}
 
           ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
@@ -6679,25 +6687,39 @@ function rexFmt(v,f){
 //  sample its impact from a PERT distribution derived from its severity band.
 //  Runs entirely client-side (no API, no server) — ~90ms for 5000 iterations.
 // ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+//  DETERMINISTIC SEEDED RNG (mulberry32) — same project data → same
+//  simulation output, every time. Mirrors @RISK / Primavera's "fixed seed"
+//  reproducibility mode. Without this, Math.random() makes every run
+//  (page reload, cache miss, etc.) produce a slightly different P-level
+//  forecast and confidence %, which reads as "the numbers are wrong" even
+//  though nothing about the risk register changed.
+// ═══════════════════════════════════════════════════════════════════════
+function _strHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(seed){let a=seed>>>0;return function(){a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};}
+
 // PERT-weighted sample from a triangular-ish Beta. min/likely/max in real units.
-function pertSample(min,likely,max){
+// `rng` is an optional seeded generator (defaults to Math.random for any legacy caller).
+function pertSample(min,likely,max,rng){
+  rng=rng||Math.random;
   if(max<=min)return min;
   if(likely<min)likely=min; if(likely>max)likely=max;
   const mu=(min+4*likely+max)/6;
   let a=6*((mu-min)/(max-min)), b=6*((max-mu)/(max-min));
   a=Math.max(a,0.1); b=Math.max(b,0.1);
-  const beta=_betaSample(a,b);
+  const beta=_betaSample(a,b,rng);
   return min+beta*(max-min);
 }
-function _gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function _gammaSample(k){
-  if(k<1){return _gammaSample(1+k)*Math.pow(Math.random(),1/k);}
+function _gauss(rng){rng=rng||Math.random;let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function _gammaSample(k,rng){
+  rng=rng||Math.random;
+  if(k<1){return _gammaSample(1+k,rng)*Math.pow(rng(),1/k);}
   const d=k-1/3,c=1/Math.sqrt(9*d);let x,v;
-  for(;;){do{x=_gauss();v=1+c*x;}while(v<=0);v=v*v*v;const u=Math.random();
+  for(;;){do{x=_gauss(rng);v=1+c*x;}while(v<=0);v=v*v*v;const u=rng();
     if(u<1-0.0331*x*x*x*x)return d*v;
     if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v;}
 }
-function _betaSample(a,b){const x=_gammaSample(a),y=_gammaSample(b);return x/(x+y);}
+function _betaSample(a,b,rng){const x=_gammaSample(a,rng),y=_gammaSample(b,rng);return x/(x+y);}
 
 // Resolve a risk's impact band (in real units) for a dimension → {min, likely, max}
 // Reuses the same tolerance-band logic as exposure so the forecast stays consistent.
@@ -6775,8 +6797,9 @@ function riskImpactRange(r,f,proj,mode){
 //  `baseline` (contract value for cost, planned duration in days for schedule)
 //  is added so the distribution is of the ABSOLUTE final cost / duration.
 // ═══════════════════════════════════════════════════════════════════════
-function monteCarloForecast(f,iterations,proj,mode){
+function monteCarloForecast(f,iterations,proj,mode,rng){
   proj=proj||CP;
+  rng=rng||Math.random;
   iterations=Math.max(10000,iterations||10000);
   const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
   const specs=all.map(r=>{
@@ -6827,7 +6850,7 @@ function monteCarloForecast(f,iterations,proj,mode){
     let total=0;
     for(let i=0;i<specs.length;i++){
       const s=specs[i];
-      if(Math.random()<s.p)total+=s.sign*pertSample(s.range.min,s.range.likely,s.range.max);
+      if(rng()<s.p)total+=s.sign*pertSample(s.range.min,s.range.likely,s.range.max,rng);
     }
     impacts[it]=total;
   }
