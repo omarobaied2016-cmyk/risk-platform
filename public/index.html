@@ -6551,10 +6551,17 @@ function renderDash(){
       const bandColor=(window._fc.costP==null?'#6D8196':window._fc.costP>=75?'#2E7D52':window._fc.costP>=50?'#B8860B':'#C0392B');
       const yMin=Math.min(...curvePts,target||Infinity), yMax=Math.max(...curvePts,target||-Infinity);
       const pad=(yMax-yMin)*0.08||1000;
+      // ── Mark the SELECTED P-level directly on the curve, with its exact value printed
+      // next to it. The axis gridlines/top padding are visual scaffolding only — this
+      // marker is the one number on the chart guaranteed to equal the "Forecast at
+      // P{pLv}" figure shown in the panel below, so the two can never visually diverge.
+      const pLvSel=window._fcP||80;
+      const markIdx=steps.indexOf(pLvSel); // dropdown values are always multiples of 5, so this is an exact index match
+      const ptRadii=steps.map((_,i)=>i===markIdx?5:0);
       const datasets=[{
         label:isSched?'Completion duration':'Final cost',data:curvePts,borderColor:bandColor,
         backgroundColor:bandColor+'18',fill:true,tension:.35,borderWidth:2,
-        pointRadius:0,pointHoverRadius:4,order:1
+        pointRadius:ptRadii,pointHoverRadius:5,pointBackgroundColor:'#fff',pointBorderColor:bandColor,pointBorderWidth:2,order:1
       }];
       if(target>0){
         datasets.push({
@@ -6562,9 +6569,30 @@ function renderDash(){
           borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,order:2
         });
       }
+      const pLevelLabelPlugin={
+        id:'pLevelLabel',
+        afterDatasetsDraw(chart){
+          if(markIdx<0)return;
+          const meta=chart.getDatasetMeta(0); const pt=meta.data[markIdx]; if(!pt)return;
+          const {ctx}=chart;
+          const txt=`P${pLvSel} · ${fmtVal(curvePts[markIdx])}`;
+          ctx.save();
+          ctx.font='700 9px "IBM Plex Mono",monospace';
+          const tw=ctx.measureText(txt).width;
+          const flipBelow=(pt.y-18)<chart.chartArea.top; // keep label inside the canvas if the point sits near the top edge
+          const ly=flipBelow?pt.y+16:pt.y-10;
+          ctx.fillStyle='rgba(255,255,255,.94)';
+          ctx.fillRect(pt.x-tw/2-4,ly-9,tw+8,13);
+          ctx.strokeStyle=bandColor; ctx.lineWidth=1; ctx.strokeRect(pt.x-tw/2-4,ly-9,tw+8,13);
+          ctx.fillStyle=bandColor; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(txt,pt.x,ly-2.5);
+          ctx.restore();
+        }
+      };
       new Chart(scEl,{
         type:'line',
         data:{labels:steps.map(q=>'P'+q),datasets},
+        plugins:[pLevelLabelPlugin],
         options:{plugins:{legend:{display:false},
           tooltip:{callbacks:{
             title:i=>i[0].label+' (cumulative probability)',
