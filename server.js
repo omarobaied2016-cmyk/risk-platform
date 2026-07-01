@@ -163,6 +163,52 @@ app.post('/api/claude', claudeLimiter, async (req, res) => {
   res.status(500).json({ error: { message: lastErr ? lastErr.message : 'Unknown error contacting AI service' } });
 });
 
+// ── Pass-through streaming endpoint ──────────────────────────────────────
+// For LARGE requests (e.g. register generation, max_tokens 20000 on Opus, which
+// can take 2-3 minutes) a buffered response — even one that streams internally
+// then returns JSON at the end — still holds the client connection open with no
+// bytes sent for minutes, so Railway's edge proxy kills it → "Premature close".
+// This endpoint instead pipes Anthropic's SSE stream straight to the browser as
+// it arrives: the first bytes reach the client within seconds, the connection is
+// continuously active, and Railway never times it out. The browser reassembles
+// the message (see api() in the frontend). Non-large calls can use this too.
+app.post('/api/claude/stream', claudeLimiter, async (req, res) => {
+  if (!ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: { message: 'AI service not configured. Administrator must set ANTHROPIC_API_KEY.' } });
+  }
+  try {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ ...req.body, stream: true }),
+    });
+    if (!upstream.ok) {
+      const errData = await upstream.json().catch(() => ({ error: { message: 'Upstream error ' + upstream.status } }));
+      return res.status(upstream.status).json(errData);
+    }
+    // Stream SSE straight through to the client.
+    res.status(200);
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering where honoured
+    if (res.flushHeaders) res.flushHeaders();
+    for await (const chunk of upstream.body) {
+      res.write(chunk);
+      if (res.flush) res.flush();
+    }
+    res.end();
+  } catch (error) {
+    // If we haven't sent headers yet, return JSON; otherwise close the stream.
+    if (!res.headersSent) res.status(500).json({ error: { message: error.message } });
+    else { try { res.end(); } catch (e) {} }
+  }
+});
+
 app.get('/api/claude/status', (req, res) => {
   res.json({ configured: !!ANTHROPIC_API_KEY });
 });
