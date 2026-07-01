@@ -6185,7 +6185,7 @@ function renderDash(){
               </div>
             </div>
           </div>
-          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">Final cost vs cumulative probability — dashed line = target budget</div>
+          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${(window._fcMetric==='schedule'&&window._fcMC&&window._fcMC.sched&&window._fcMC.dur>0)?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
           <canvas id="scurveC" height="74"></canvas>
 
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
@@ -6195,7 +6195,11 @@ function renderDash(){
             const fmtM=v=>v==null?'—':(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
             const showRes=(window._fcResidual!==false);
             const pLv=window._fcP||80;
+            const metric=(window._fcMetric==='schedule'&&mc.sched)?'schedule':'cost'; // which curve/summary is shown
             // ── Baseline (contract + approved change orders) + forecast at P-level ──
+            // The summary lines below always match the metric currently plotted on the
+            // chart (Cost or Schedule) — never mix the two, so the numbers and the curve
+            // the user is looking at are always the same thing.
             const coCost=mc.coCost||0, coDays=mc.coDays||0;
             const finalCost=mc.cost?mc.cost.finalAt(pLv):null;
             let finalDateStr=null, targetDateStr=null;
@@ -6205,11 +6209,18 @@ function renderDash(){
             }
             const overBudget=finalCost!=null&&finalCost>(mc.targetBudget||mc.cv);
             const lateFinish=finalDateStr&&targetDateStr&&(new Date(finalDateStr.split(' ').reverse().join(' '))>new Date(targetDateStr.split(' ').reverse().join(' ')));
+            const metricToggle=(mc.cost&&mc.sched&&mc.dur>0)?`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:9.5px;font-weight:700;margin-left:6px">
+                <button onclick="window._fcMetric='cost';renderDash()" style="padding:3px 7px;border:none;cursor:pointer;background:${metric==='cost'?'var(--primary)':'var(--s1)'};color:${metric==='cost'?'#fff':'var(--t2)'}">Cost</button>
+                <button onclick="window._fcMetric='schedule';renderDash()" style="padding:3px 7px;border:none;cursor:pointer;background:${metric==='schedule'?'var(--primary)':'var(--s1)'};color:${metric==='schedule'?'#fff':'var(--t2)'}">Schedule</button>
+              </div>`:'';
             const baselineHtml=`<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
-              <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);margin-bottom:4px">Forecast at P${pLv} (${showRes?'after response':'before response'})</div>
-              ${mc.cv>0?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target budget${coCost?` <span style="color:var(--t3)">(contract + ${cur} ${fmtM(coCost)} CO)</span>`:''}</span><b style="color:var(--t1)">${cur} ${fmtM(mc.targetBudget||mc.cv)}</b></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)">Forecast at P${pLv} (${showRes?'after response':'before response'})</div>
+                ${metricToggle}
+              </div>
+              ${metric==='cost'&&mc.cv>0?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target budget${coCost?` <span style="color:var(--t3)">(contract + ${cur} ${fmtM(coCost)} CO)</span>`:''}</span><b style="color:var(--t1)">${cur} ${fmtM(mc.targetBudget||mc.cv)}</b></div>
               <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Forecast final cost</span><b style="color:${overBudget?'var(--red)':'var(--grn)'}">${cur} ${fmtM(finalCost)}</b></div>`:''}
-              ${targetDateStr?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target completion${coDays?` <span style="color:var(--t3)">(+${Math.round(coDays)}d CO)</span>`:''}</span><b style="color:var(--t1)">${targetDateStr}</b></div>
+              ${metric==='schedule'&&targetDateStr?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target completion${coDays?` <span style="color:var(--t3)">(+${Math.round(coDays)}d CO)</span>`:''}</span><b style="color:var(--t1)">${targetDateStr}</b></div>
               <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Forecast completion</span><b style="color:${lateFinish?'var(--red)':'var(--grn)'}">${finalDateStr}</b></div>`:''}
             </div>`;
             // ── Top risk contributors (tornado) ──
@@ -6509,24 +6520,28 @@ function renderDash(){
     // P0 or P100 — and where it crosses the curve shows the probability of finishing
     // within budget. This mirrors @RISK / Primavera Risk Analysis S-curve output exactly.
     const scEl=document.getElementById('scurveC');
-    if(scEl&&window._fc&&!window._fc.insufficient&&window._fcMC&&window._fcMC.cost){
+    const _fcMetricSel=(window._fcMetric==='schedule'&&window._fcMC&&window._fcMC.sched&&window._fcMC.dur>0)?'schedule':'cost';
+    if(scEl&&window._fc&&!window._fc.insufficient&&window._fcMC&&window._fcMC[_fcMetricSel==='cost'?'cost':'sched']){
       const mc=window._fcMC;
+      const isSched=(_fcMetricSel==='schedule');
+      const series=isSched?mc.sched:mc.cost;
+      const target=isSched?(mc.targetDur||mc.dur||null):(mc.targetBudget||mc.cv||null);
       const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
       const fmtM=v=>(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1000)+'K');
+      const fmtVal=v=>isSched?Math.round(v)+'d':(cur+' '+fmtM(v));
       const steps=[];for(let q=0;q<=100;q+=5)steps.push(q);
-      const curvePts=steps.map(q=>mc.cost.finalAt(q));
-      const targetBudget=mc.targetBudget||mc.cv||null;
+      const curvePts=steps.map(q=>series.finalAt(q));
       const bandColor=(window._fc.costP==null?'#6D8196':window._fc.costP>=75?'#2E7D52':window._fc.costP>=50?'#B8860B':'#C0392B');
-      const yMin=Math.min(...curvePts,targetBudget||Infinity), yMax=Math.max(...curvePts,targetBudget||-Infinity);
+      const yMin=Math.min(...curvePts,target||Infinity), yMax=Math.max(...curvePts,target||-Infinity);
       const pad=(yMax-yMin)*0.08||1000;
       const datasets=[{
-        label:'Final cost',data:curvePts,borderColor:bandColor,
+        label:isSched?'Completion duration':'Final cost',data:curvePts,borderColor:bandColor,
         backgroundColor:bandColor+'18',fill:true,tension:.35,borderWidth:2,
         pointRadius:0,pointHoverRadius:4,order:1
       }];
-      if(targetBudget>0){
+      if(target>0){
         datasets.push({
-          label:'Target budget',data:steps.map(()=>targetBudget),borderColor:'#8950FC',
+          label:isSched?'Target duration':'Target budget',data:steps.map(()=>target),borderColor:'#8950FC',
           borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,order:2
         });
       }
@@ -6536,11 +6551,11 @@ function renderDash(){
         options:{plugins:{legend:{display:false},
           tooltip:{callbacks:{
             title:i=>i[0].label+' (cumulative probability)',
-            label:c=>c.datasetIndex===0?'Final cost: '+cur+' '+fmtM(c.parsed.y):'Target budget: '+cur+' '+fmtM(c.parsed.y)
+            label:c=>c.datasetIndex===0?(isSched?'Duration: ':'Final cost: ')+fmtVal(c.parsed.y):(isSched?'Target duration: ':'Target budget: ')+fmtVal(c.parsed.y)
           }}},
           scales:{
             x:{ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:6},grid:{display:false}},
-            y:{min:yMin-pad,max:yMax+pad,ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:4,callback:v=>cur+' '+fmtM(v)},grid:{color:'rgba(228,231,239,.5)'}}
+            y:{min:yMin-pad,max:yMax+pad,ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:4,callback:v=>fmtVal(v)},grid:{color:'rgba(228,231,239,.5)'}}
           },
           layout:{padding:0}}
       });
