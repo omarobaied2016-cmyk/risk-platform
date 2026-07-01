@@ -2591,8 +2591,72 @@ async function api(payload){
   const key=GK();
   const headers={'Content-Type':'application/json'};
   if(key&&key!=='sk-ant-backend-managed')headers['x-api-key']=key;
-  const r=await fetch('/api/claude',{method:'POST',headers,body:JSON.stringify(payload)});
-  return r.json();
+  // Use the streaming pass-through endpoint: the server pipes Anthropic's SSE straight
+  // to us as it arrives, so large requests (register generation) never sit idle long
+  // enough for Railway's edge proxy to kill the connection ("Premature close"). We
+  // reassemble the stream here into the SAME message object the non-streaming API
+  // returned, so every caller keeps working unchanged.
+  let r;
+  try{
+    r=await fetch('/api/claude/stream',{method:'POST',headers,body:JSON.stringify(payload)});
+  }catch(e){
+    // network-level failure before any bytes — fall back to the buffered endpoint once
+    return fetch('/api/claude',{method:'POST',headers,body:JSON.stringify(payload)}).then(x=>x.json());
+  }
+  const ct=(r.headers.get('content-type')||'');
+  if(!ct.includes('text/event-stream')){
+    // server returned a normal JSON error/response (e.g. 4xx, 503) — pass it through
+    try{return await r.json();}catch(e){return {error:{message:'Bad response from AI service'}};}
+  }
+  // ── reassemble the SSE stream into a standard Messages response ──
+  const blocks=[]; let stop_reason=null,stop_sequence=null,usage=null,model=payload.model||null,id=null;
+  const reader=r.body.getReader(); const dec=new TextDecoder(); let buf='';
+  try{
+    while(true){
+      const {value,done}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      let i;
+      while((i=buf.indexOf('\n\n'))!==-1){
+        const rawEvent=buf.slice(0,i); buf=buf.slice(i+2);
+        const dataLine=rawEvent.split('\n').find(l=>l.startsWith('data:'));
+        if(!dataLine)continue;
+        const js=dataLine.slice(5).trim();
+        if(!js||js==='[DONE]')continue;
+        let evt; try{evt=JSON.parse(js);}catch(e){continue;}
+        switch(evt.type){
+          case 'message_start':
+            id=evt.message?.id||id; model=evt.message?.model||model; usage=evt.message?.usage||usage; break;
+          case 'content_block_start':
+            blocks[evt.index]=(evt.content_block?.type==='tool_use')
+              ? {type:'tool_use',id:evt.content_block.id,name:evt.content_block.name,input:{},_pj:''}
+              : {type:'text',text:''};
+            break;
+          case 'content_block_delta':
+            if(!blocks[evt.index])blocks[evt.index]={type:'text',text:''};
+            if(evt.delta?.type==='text_delta')blocks[evt.index].text+=evt.delta.text;
+            else if(evt.delta?.type==='input_json_delta')blocks[evt.index]._pj+=evt.delta.partial_json||'';
+            break;
+          case 'content_block_stop':
+            if(blocks[evt.index]&&blocks[evt.index].type==='tool_use'){
+              try{blocks[evt.index].input=JSON.parse(blocks[evt.index]._pj||'{}');}catch(e){blocks[evt.index].input={};}
+              delete blocks[evt.index]._pj;
+            }
+            break;
+          case 'message_delta':
+            stop_reason=evt.delta?.stop_reason??stop_reason; stop_sequence=evt.delta?.stop_sequence??stop_sequence;
+            if(evt.usage)usage={...(usage||{}),...evt.usage};
+            break;
+          case 'error':
+            return {error:{message:evt.error?.message||'AI stream error'}};
+        }
+      }
+    }
+  }catch(e){
+    // stream broke mid-flight — surface a clean error the callers already handle
+    return {error:{message:'Connection interrupted while generating. Please try again.'}};
+  }
+  return {id,type:'message',role:'assistant',model,content:blocks.filter(Boolean),stop_reason,stop_sequence,usage};
 }
 
 function pJSON(text){
@@ -5993,17 +6057,11 @@ function renderDash(){
       // keep names approvedBudget/contractDur for the rest of the module (comparison block etc.)
       const approvedBudget=targetBudget, contractDur=targetDur;
 
-      // Seed ONE rng stream from the data fingerprint. Same CP data → same seed →
-      // bit-identical simulation, no matter how many times this reruns (reload,
-      // re-render, P-level toggle). window._fcRunNonce only changes when the user
-      // clicks "Recalculate", which is the one deliberate way to force a fresh draw.
-      const _seed=_strHash(_sig+'|'+(window._fcRunNonce||0));
-      const _rng=mulberry32(_seed);
       // run all four simulations (cost/schedule × inherent/residual), ≥10k iterations each
-      const mcCostInh =monteCarloForecast('cost',ITER,CP,'inherent',_rng);
-      const mcSchedInh=monteCarloForecast('schedule',ITER,CP,'inherent',_rng);
-      const mcCostRes =monteCarloForecast('cost',ITER,CP,'residual',_rng);
-      const mcSchedRes=monteCarloForecast('schedule',ITER,CP,'residual',_rng);
+      const mcCostInh =monteCarloForecast('cost',ITER,CP,'inherent');
+      const mcSchedInh=monteCarloForecast('schedule',ITER,CP,'inherent');
+      const mcCostRes =monteCarloForecast('cost',ITER,CP,'residual');
+      const mcSchedRes=monteCarloForecast('schedule',ITER,CP,'residual');
       const showRes=(window._fcResidual!==false);
       const mcCost =showRes?mcCostRes:mcCostInh;
       const mcSched=showRes?mcSchedRes:mcSchedInh;
@@ -6011,7 +6069,7 @@ function renderDash(){
       mc={cost:mcCost,sched:mcSched,cv,dur,
           coCost,coDays,approvedBudget,contractDur,targetBudget,targetDur,
           inherent:{cost:mcCostInh,sched:mcSchedInh},residual:{cost:mcCostRes,sched:mcSchedRes},showRes};
-      _fcCache={cid:CID,sig:_sig,mc,ts:Date.now()};   // cache: reused until the underlying data actually changes
+      _fcCache={cid:CID,sig:_sig,mc};   // cache: reused until the underlying data actually changes
       } // end else (fresh simulation)
 
       // confidence read straight from the simulation (fraction of successful iterations).
@@ -6042,7 +6100,7 @@ function renderDash(){
     else if(highT>0)why=`${highT} high risk${highT>1?'s':''} open — the simulation weighs their combined impact.`;
     else why=`Simulated from the current register, probabilities and impacts.`;
 
-    return {costP:haveCost?costP:null,schedP:haveSched?schedP:null,overall,band,why,pLevel,ts:_fcCache.ts||null};
+    return {costP:haveCost?costP:null,schedP:haveSched?schedP:null,overall,band,why,pLevel};
   }
 
   const risks=CP?.risks||[];
@@ -6179,50 +6237,29 @@ function renderDash(){
               <select onchange="window._fcP=parseInt(this.value);renderDash()" style="padding:4px 7px;font-size:10.5px;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t1);font-family:inherit;cursor:pointer">
                 ${[70,75,80,85,90,95,100].map(pv=>`<option value="${pv}"${(window._fcP||80)===pv?' selected':''}>P${pv}</option>`).join('')}
               </select>
-              <button onclick="window._fcRunNonce=(window._fcRunNonce||0)+1;_fcCache={cid:null,sig:null,mc:null,ts:null};renderDash()" title="Re-run the Monte Carlo simulation with a fresh random draw (same data). Otherwise this only recomputes automatically when a risk, cost/schedule impact, change order, or project value/date actually changes." style="padding:4px 7px;font-size:10px;font-weight:700;border:1px solid var(--b1);border-radius:6px;background:var(--s1);color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:3px">↻ Recalculate</button>
-              ${(window._fcMC&&window._fcMC.cost&&window._fcMC.sched&&window._fcMC.dur>0)?`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:10px;font-weight:700">
-                <button onclick="window._fcMetric='cost';renderDash()" style="padding:4px 9px;border:none;cursor:pointer;background:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'var(--s1)':'var(--primary)'};color:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'var(--t2)':'#fff'}">Cost</button>
-                <button onclick="window._fcMetric='schedule';renderDash()" style="padding:4px 9px;border:none;cursor:pointer;background:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'var(--primary)':'var(--s1)'};color:${(window._fcMetric==='schedule'&&window._fcMC.sched)?'#fff':'var(--t2)'}">Schedule</button>
-              </div>`:''}
               <span style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${_fc.band.c}">${_fc.band.w}</span>
             </div>
           </div>
-          ${_fc.ts?`<div style="font-size:9px;color:var(--t3);margin-top:-2px;margin-bottom:2px">Last calculated ${new Date(_fc.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})} · deterministic for this data</div>`:''}
 
-          ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):(()=>{
-            // ── Single deviation metric at the SELECTED P-level, filtered to the active
-            // Cost/Schedule toggle. target ÷ forecast × 100: 100% = exactly on target,
-            // below 100% = overrun (worse), above = under target (better). This is now the
-            // headline number AND the bar — one figure that moves with the P-level dropdown
-            // and the marked point on the S-curve. (The old fixed confidence-probability
-            // number was removed: it stayed still while the user changed P-level, which read
-            // as a bug.)
-            const mc=window._fcMC;
-            const pLv=window._fcP||80;
-            const isSchedMetric=(window._fcMetric==='schedule'&&mc&&mc.sched&&mc.dur>0);
-            const series=mc?(isSchedMetric?mc.sched:mc.cost):null;
-            const target=mc?(isSchedMetric?(mc.targetDur||mc.dur||0):(mc.targetBudget||mc.cv||0)):0;
-            const val=series?series.finalAt(pLv):null;
-            const ratioPct=(val!=null&&target>0&&val>0)?Math.round((target/val)*100):null;
-            const label=isSchedMetric?`Schedule at P${pLv} vs target`:`Cost at P${pLv} vs target`;
-            const devColor=ratioPct==null?'var(--t3)':ratioPct>=100?'var(--grn)':ratioPct>=90?'#B8860B':'var(--red)';
-            const barWidth=ratioPct==null?0:Math.min(100,Math.max(0,ratioPct));
-            return `
+          ${_fc.insufficient?insufficientDataHTML(_fc,'Completion Forecast'):`
           <div style="display:flex;gap:16px;align-items:center;margin:4px 0 6px">
             <div style="text-align:center">
-              <div style="font-size:32px;font-weight:800;color:${devColor};line-height:1">${ratioPct==null?'—':ratioPct+'%'}</div>
-              <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">vs Target</div>
+              <div style="font-size:32px;font-weight:800;color:${_fc.band.c};line-height:1">${_fc.overall==null?'—':_fc.overall+'%'}</div>
+              <div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Overall</div>
             </div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:7px;justify-content:center">
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px">
               <div>
-                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>${label}</span><b style="color:${devColor}">${ratioPct==null?'—':ratioPct+'%'}</b></div>
-                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${devColor};border-radius:4px"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On schedule</span><b style="color:var(--t1)">${_fc.schedP==null?'—':_fc.schedP+'%'}</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.schedP||0}%;background:${(_fc.schedP||0)>=75?'var(--grn)':(_fc.schedP||0)>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);margin-bottom:3px"><span>On budget</span><b style="color:var(--t1)">${_fc.costP==null?'—':_fc.costP+'%'}</b></div>
+                <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${_fc.costP||0}%;background:${(_fc.costP||0)>=75?'var(--grn)':(_fc.costP||0)>=50?'#B8860B':'var(--red)'};border-radius:4px"></div></div>
               </div>
             </div>
           </div>
-          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${isSchedMetric?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
-          <div style="position:relative;height:150px"><canvas id="scurveC"></canvas></div>
-
+          <div style="font-size:9px;color:var(--t3);text-align:center;margin-top:2px">${(window._fcMetric==='schedule'&&window._fcMC&&window._fcMC.sched&&window._fcMC.dur>0)?'Completion duration vs cumulative probability — dashed line = target duration':'Final cost vs cumulative probability — dashed line = target budget'}</div>
+          <canvas id="scurveC" height="74"></canvas>
 
           <div style="font-size:11px;color:var(--t2);line-height:1.45;margin-top:7px;border-top:1px solid var(--b1);padding-top:7px">${_fc.why}</div>
           ${(()=>{
@@ -6245,9 +6282,14 @@ function renderDash(){
             }
             const overBudget=finalCost!=null&&finalCost>(mc.targetBudget||mc.cv);
             const lateFinish=finalDateStr&&targetDateStr&&(new Date(finalDateStr.split(' ').reverse().join(' '))>new Date(targetDateStr.split(' ').reverse().join(' ')));
+            const metricToggle=(mc.cost&&mc.sched&&mc.dur>0)?`<div style="display:inline-flex;border:1px solid var(--b1);border-radius:6px;overflow:hidden;font-size:9.5px;font-weight:700;margin-left:6px">
+                <button onclick="window._fcMetric='cost';renderDash()" style="padding:3px 7px;border:none;cursor:pointer;background:${metric==='cost'?'var(--primary)':'var(--s1)'};color:${metric==='cost'?'#fff':'var(--t2)'}">Cost</button>
+                <button onclick="window._fcMetric='schedule';renderDash()" style="padding:3px 7px;border:none;cursor:pointer;background:${metric==='schedule'?'var(--primary)':'var(--s1)'};color:${metric==='schedule'?'#fff':'var(--t2)'}">Schedule</button>
+              </div>`:'';
             const baselineHtml=`<div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
                 <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)">Forecast at P${pLv} (${showRes?'after response':'before response'})</div>
+                ${metricToggle}
               </div>
               ${metric==='cost'&&mc.cv>0?`<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Target budget${coCost?` <span style="color:var(--t3)">(contract + ${cur} ${fmtM(coCost)} CO)</span>`:''}</span><b style="color:var(--t1)">${cur} ${fmtM(mc.targetBudget||mc.cv)}</b></div>
               <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--t2);padding:1.5px 0"><span>Forecast final cost</span><b style="color:${overBudget?'var(--red)':'var(--grn)'}">${cur} ${fmtM(finalCost)}</b></div>`:''}
@@ -6291,7 +6333,15 @@ function renderDash(){
               <div id="fcAnalysisOut" style="margin-top:8px"></div>
             </div>`;
             return baselineHtml+tornado+cmpHtml+apHtml+aiBtn;
-          })()}`;})()}
+          })()}`}
+        </div>
+        <div class="rcc-card">
+          <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
+          <div class="rcc-hs">Distribution by severity</div>
+          <div style="height:150px;position:relative"><canvas id="lvlC"></canvas></div>
+          <div class="rcc-attn">
+            ${attn.length?attn.slice(0,4).map(a=>`<div class="rcc-attn-chip rcc-attn-${a.c}" onclick="${a.go}"><span class="a-n">${a.n}</span><span class="a-l">${a.l}</span></div>`).join(''):`<div class="rcc-attn-chip rcc-attn-blue" style="cursor:default"><span class="a-n" style="color:var(--grn)">✓</span><span class="a-l">All clear — no overdue risks; high risks have plans and owners.</span></div>`}
+          </div>
         </div>
       </div>
 
@@ -6322,14 +6372,6 @@ function renderDash(){
             const fillColor=ch>0?'var(--red)':cm>0?'#B8860B':'var(--grn)';
             return `<div class="rcc-catbar"><span class="cb-n" title="${cat}">${cat}</span><span class="cb-track"><span class="cb-fill" style="width:${pct}%;background:${fillColor}"></span></span><span class="cb-c">${cnt}</span></div>`;
           }).join('')}
-        </div>
-        <div class="rcc-card" id="riskLevelsCard">
-          <div class="rcc-h"><span class="rcc-ht">Risk Levels</span></div>
-          <div class="rcc-hs">Distribution by severity</div>
-          <div style="height:150px;position:relative"><canvas id="lvlC"></canvas></div>
-          <div class="rcc-attn">
-            ${attn.length?attn.slice(0,4).map(a=>`<div class="rcc-attn-chip rcc-attn-${a.c}" onclick="${a.go}"><span class="a-n">${a.n}</span><span class="a-l">${a.l}</span></div>`).join(''):`<div class="rcc-attn-chip rcc-attn-blue" style="cursor:default"><span class="a-n" style="color:var(--grn)">✓</span><span class="a-l">All clear — no overdue risks; high risks have plans and owners.</span></div>`}
-          </div>
         </div>
       </div>
     </div>
@@ -6565,17 +6607,10 @@ function renderDash(){
       const bandColor=(window._fc.costP==null?'#6D8196':window._fc.costP>=75?'#2E7D52':window._fc.costP>=50?'#B8860B':'#C0392B');
       const yMin=Math.min(...curvePts,target||Infinity), yMax=Math.max(...curvePts,target||-Infinity);
       const pad=(yMax-yMin)*0.08||1000;
-      // ── Mark the SELECTED P-level directly on the curve, with its exact value printed
-      // next to it. The axis gridlines/top padding are visual scaffolding only — this
-      // marker is the one number on the chart guaranteed to equal the "Forecast at
-      // P{pLv}" figure shown in the panel below, so the two can never visually diverge.
-      const pLvSel=window._fcP||80;
-      const markIdx=steps.indexOf(pLvSel); // dropdown values are always multiples of 5, so this is an exact index match
-      const ptRadii=steps.map((_,i)=>i===markIdx?5:0);
       const datasets=[{
         label:isSched?'Completion duration':'Final cost',data:curvePts,borderColor:bandColor,
-        backgroundColor:bandColor+'18',fill:true,cubicInterpolationMode:'monotone',borderWidth:2,
-        pointRadius:ptRadii,pointHoverRadius:5,pointBackgroundColor:'#fff',pointBorderColor:bandColor,pointBorderWidth:2,order:1
+        backgroundColor:bandColor+'18',fill:true,tension:.35,borderWidth:2,
+        pointRadius:0,pointHoverRadius:4,order:1
       }];
       if(target>0){
         datasets.push({
@@ -6583,42 +6618,10 @@ function renderDash(){
           borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,order:2
         });
       }
-      const pLevelLabelPlugin={
-        id:'pLevelLabel',
-        afterDatasetsDraw(chart){
-          if(markIdx<0)return;
-          const meta=chart.getDatasetMeta(0); const pt=meta.data[markIdx]; if(!pt)return;
-          const {ctx}=chart;
-          const txt=`P${pLvSel} · ${fmtVal(curvePts[markIdx])}`;
-          ctx.save();
-          ctx.font='700 9px "IBM Plex Mono",monospace';
-          const tw=ctx.measureText(txt).width;
-          const boxW=tw+8, boxH=13, area=chart.chartArea;
-          // vertical: sit above the point by default, flip below only if that clips the top
-          let ly=pt.y-10;
-          if(ly-boxH<area.top)ly=pt.y+16;
-          // horizontal: centered on the point, then clamped so the box never crosses the plot edges
-          // (P100 is simultaneously the rightmost AND highest point on the curve, so both axes can clip at once)
-          let cx=Math.min(Math.max(pt.x,area.left+boxW/2+2),area.right-boxW/2-2);
-          ctx.fillStyle='rgba(255,255,255,.94)';
-          ctx.fillRect(cx-boxW/2,ly-9,boxW,boxH);
-          ctx.strokeStyle=bandColor; ctx.lineWidth=1; ctx.strokeRect(cx-boxW/2,ly-9,boxW,boxH);
-          ctx.fillStyle=bandColor; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(txt,cx,ly-2.5);
-          // connector so it's clear the label still refers to the (now offset) point
-          if(Math.abs(cx-pt.x)>1){
-            ctx.strokeStyle=bandColor; ctx.lineWidth=1; ctx.setLineDash([2,2]);
-            ctx.beginPath(); ctx.moveTo(pt.x,pt.y); ctx.lineTo(cx,ly+(ly<pt.y?4:-4)); ctx.stroke();
-            ctx.setLineDash([]);
-          }
-          ctx.restore();
-        }
-      };
       new Chart(scEl,{
         type:'line',
         data:{labels:steps.map(q=>'P'+q),datasets},
-        plugins:[pLevelLabelPlugin],
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        options:{plugins:{legend:{display:false},
           tooltip:{callbacks:{
             title:i=>i[0].label+' (cumulative probability)',
             label:c=>c.datasetIndex===0?(isSched?'Duration: ':'Final cost: ')+fmtVal(c.parsed.y):(isSched?'Target duration: ':'Target budget: ')+fmtVal(c.parsed.y)
@@ -6627,9 +6630,7 @@ function renderDash(){
             x:{ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:6},grid:{display:false}},
             y:{min:yMin-pad,max:yMax+pad,ticks:{color:'#a1a5b7',font:{size:8},maxTicksLimit:4,callback:v=>fmtVal(v)},grid:{color:'rgba(228,231,239,.5)'}}
           },
-          // room around the plot area so the P-level marker/label (which can sit right at
-          // the top-right corner when P100 is selected) is never cut off by the canvas edge
-          layout:{padding:{top:16,right:20,bottom:0,left:0}}}
+          layout:{padding:0}}
       });
     }
 
@@ -6742,39 +6743,25 @@ function rexFmt(v,f){
 //  sample its impact from a PERT distribution derived from its severity band.
 //  Runs entirely client-side (no API, no server) — ~90ms for 5000 iterations.
 // ═══════════════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════════════
-//  DETERMINISTIC SEEDED RNG (mulberry32) — same project data → same
-//  simulation output, every time. Mirrors @RISK / Primavera's "fixed seed"
-//  reproducibility mode. Without this, Math.random() makes every run
-//  (page reload, cache miss, etc.) produce a slightly different P-level
-//  forecast and confidence %, which reads as "the numbers are wrong" even
-//  though nothing about the risk register changed.
-// ═══════════════════════════════════════════════════════════════════════
-function _strHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function mulberry32(seed){let a=seed>>>0;return function(){a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};}
-
 // PERT-weighted sample from a triangular-ish Beta. min/likely/max in real units.
-// `rng` is an optional seeded generator (defaults to Math.random for any legacy caller).
-function pertSample(min,likely,max,rng){
-  rng=rng||Math.random;
+function pertSample(min,likely,max){
   if(max<=min)return min;
   if(likely<min)likely=min; if(likely>max)likely=max;
   const mu=(min+4*likely+max)/6;
   let a=6*((mu-min)/(max-min)), b=6*((max-mu)/(max-min));
   a=Math.max(a,0.1); b=Math.max(b,0.1);
-  const beta=_betaSample(a,b,rng);
+  const beta=_betaSample(a,b);
   return min+beta*(max-min);
 }
-function _gauss(rng){rng=rng||Math.random;let u=0,v=0;while(!u)u=rng();while(!v)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function _gammaSample(k,rng){
-  rng=rng||Math.random;
-  if(k<1){return _gammaSample(1+k,rng)*Math.pow(rng(),1/k);}
+function _gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function _gammaSample(k){
+  if(k<1){return _gammaSample(1+k)*Math.pow(Math.random(),1/k);}
   const d=k-1/3,c=1/Math.sqrt(9*d);let x,v;
-  for(;;){do{x=_gauss(rng);v=1+c*x;}while(v<=0);v=v*v*v;const u=rng();
+  for(;;){do{x=_gauss();v=1+c*x;}while(v<=0);v=v*v*v;const u=Math.random();
     if(u<1-0.0331*x*x*x*x)return d*v;
     if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v;}
 }
-function _betaSample(a,b,rng){const x=_gammaSample(a,rng),y=_gammaSample(b,rng);return x/(x+y);}
+function _betaSample(a,b){const x=_gammaSample(a),y=_gammaSample(b);return x/(x+y);}
 
 // Resolve a risk's impact band (in real units) for a dimension → {min, likely, max}
 // Reuses the same tolerance-band logic as exposure so the forecast stays consistent.
@@ -6852,9 +6839,8 @@ function riskImpactRange(r,f,proj,mode){
 //  `baseline` (contract value for cost, planned duration in days for schedule)
 //  is added so the distribution is of the ABSOLUTE final cost / duration.
 // ═══════════════════════════════════════════════════════════════════════
-function monteCarloForecast(f,iterations,proj,mode,rng){
+function monteCarloForecast(f,iterations,proj,mode){
   proj=proj||CP;
-  rng=rng||Math.random;
   iterations=Math.max(10000,iterations||10000);
   const all=((proj&&proj.risks)||[]).filter(r=>r.status!=='closed');
   const specs=all.map(r=>{
@@ -6905,7 +6891,7 @@ function monteCarloForecast(f,iterations,proj,mode,rng){
     let total=0;
     for(let i=0;i<specs.length;i++){
       const s=specs[i];
-      if(rng()<s.p)total+=s.sign*pertSample(s.range.min,s.range.likely,s.range.max,rng);
+      if(Math.random()<s.p)total+=s.sign*pertSample(s.range.min,s.range.likely,s.range.max);
     }
     impacts[it]=total;
   }
