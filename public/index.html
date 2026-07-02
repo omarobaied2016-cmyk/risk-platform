@@ -1356,14 +1356,35 @@ tr:hover td{background:rgba(109,129,150,.015);}
 <div class="modal-ov" role="dialog" aria-modal="true" id="changesOv">
   <div class="modal" style="width:760px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div class="modal-t" style="margin:0">📋 Changes Detected</div>
+      <div class="modal-t" style="margin:0" id="changesTitle">📋 Changes Applied</div>
       <button class="btn btn-g" onclick="closeChangesModal()" style="padding:3px 10px;font-size:11px">✕</button>
     </div>
-    <div style="font-size:11.5px;color:var(--t3);margin-bottom:14px">Summary of all changes triggered by this update</div>
+    <div style="font-size:11.5px;color:var(--t3);margin-bottom:14px" id="changesSub">Summary of the approved changes saved to the Risk Register</div>
     <div id="changesContent"></div>
     <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)">
       <button class="btn btn-g" onclick="closeChangesModal()">Close</button>
       <button class="btn btn-p" onclick="closeChangesModal();ST('reg')">View Risk Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- VERIFICATION & REVIEW MODAL — the ONLY gate through which AI recommendations reach the register -->
+<div class="modal-ov" role="dialog" aria-modal="true" id="reviewOv">
+  <div class="modal" style="width:820px;max-height:88vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-t" style="margin:0">🔍 Verification &amp; Review</div>
+      <button class="btn btn-g" onclick="closeReviewModal()" style="padding:3px 10px;font-size:11px">✕</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--t3);margin-bottom:12px">The AI has proposed the changes below. Nothing is saved to the Risk Register until you approve it. Review each item, then save.</div>
+    <div style="display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-g" style="padding:5px 13px;font-size:11.5px" onclick="reviewSetAll(true)">✓ Approve All</button>
+      <button class="btn btn-g" style="padding:5px 13px;font-size:11.5px" onclick="reviewSetAll(false)">✕ Reject All</button>
+      <span id="reviewCounter" style="font-size:11px;color:var(--t3);margin-inline-start:auto"></span>
+    </div>
+    <div id="reviewContent" style="overflow-y:auto;flex:1;min-height:0"></div>
+    <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)">
+      <button class="btn btn-g" onclick="closeReviewModal()">Cancel — save nothing</button>
+      <button class="btn btn-p" id="reviewSaveBtn" onclick="applyApprovedChanges()">Save Approved Changes</button>
     </div>
   </div>
 </div>
@@ -1661,23 +1682,28 @@ tr:hover td{background:rgba(109,129,150,.015);}
 
       <div class="pane" id="pane-upd">
         <div class="card" style="margin-bottom:15px">
-          <div class="card-t">Add New Update</div>
-          <div class="pills">
-            <button class="pill on" onclick="setUT(this,'change_order')">Change Order</button>
-            <button class="pill" onclick="setUT(this,'delay')">Delay</button>
-            <button class="pill" onclick="setUT(this,'scope')">Scope Change</button>
-            <button class="pill" onclick="setUT(this,'schedule')">Schedule Update</button>
-            <button class="pill" onclick="setUT(this,'site')">Site Update</button>
-            <button class="pill" onclick="setUT(this,'contract')">Contract Amendment</button>
-            <button class="pill" onclick="setUT(this,'meeting')">Meeting Minutes</button>
-            <button class="pill" onclick="setUT(this,'note')">Note</button>
+          <div class="card-t">New Project Update</div>
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:11px;align-items:start">
+            <textarea class="fta" id="utext" style="width:100%;min-height:132px;margin:0" placeholder="Describe what happened on the project, in your own words..."></textarea>
+            <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px">Examples of project updates</div>
+              <div style="font-size:11px;color:var(--t2);line-height:1.7">
+                • Concrete works are two weeks behind schedule due to heavy rainfall.<br>
+                • The client requested a redesign of the loading dock.<br>
+                • Structural steel prices increased by 8%.<br>
+                • The electrical subcontractor mobilized earlier than planned.<br>
+                • All foundation works have been completed successfully.<br>
+                • The delayed equipment shipment has now arrived on site.
+              </div>
+              <div style="font-size:10.5px;color:var(--t3);margin-top:7px;border-top:1px dashed var(--b1);padding-top:6px">The AI determines the update type and analyzes its impact automatically — no need to classify it.</div>
+            </div>
           </div>
           <div style="border:1px dashed var(--b2);border-radius:var(--r-sm);padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;position:relative;margin-bottom:10px;background:var(--s2)">
             <input type="file" id="ufi" multiple accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.txt,.csv" onchange="handleUF(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer"/>
             <div style="font-size:18px;color:var(--t3)"></div>
             <div>
               <div style="font-size:12.5px;font-weight:500">Attach file (optional)</div>
-              <div style="font-size:11px;color:var(--t3)">Meeting minutes · Change order · Correspondence</div>
+              <div style="font-size:11px;color:var(--t3)">Meeting minutes · Change order · Correspondence · Schedule</div>
             </div>
           </div>
           <div id="ufPrev" style="margin-bottom:9px"></div>
@@ -1685,8 +1711,8 @@ tr:hover td{background:rgba(109,129,150,.015);}
             <label class="fl">File description</label>
             <input type="text" class="fi" id="ufdesc" placeholder="e.g. Coordination meeting minutes #12"/>
           </div>
-          <textarea class="fta" id="utext" style="width:100%;margin-bottom:11px" placeholder="Describe the update..."></textarea>
-          <button class="btn btn-p" onclick="addUpdate()">Analyze & Add to Register</button>
+          <button class="btn btn-p" onclick="addUpdate()">Analyze Update</button>
+          <div style="font-size:10.5px;color:var(--t3);margin-top:7px">The AI never changes the Risk Register directly — every proposed change goes to a Verification &amp; Review screen for your approval first.</div>
         </div>
         <div class="tl" id="tlEl"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div><div class="et">No updates yet</div></div></div>
         <div id="weeklyIndContent" style="margin-top:18px"></div>
@@ -8029,6 +8055,7 @@ function renderProjectInsights(parsed,dateStr){
     html+='</div>';
   }
   html+='</div>';/* close ov-mkt-detail */
+  html+=APPLY_BTN('market');
   el.innerHTML=html;
   const _md=el.querySelector('.ov-mkt-detail');
   if(_md){_md.classList.add('ov-collapse','ov-closed');}
@@ -9122,7 +9149,8 @@ function renderTrendReport(entry){
     ${parsed.forecast_narrative?`<div class="card" style="background:var(--primary-soft);border-color:rgba(109,129,150,.25);margin-bottom:10px"><div class="card-t" style="color:var(--primary)">▶ Forecast — What Happens Next</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${parsed.forecast_narrative}</div></div>`:''}
     ${parsed.warnings?.length?`<div class="card" style="background:var(--yel-soft);border-color:rgba(255,168,0,.3);margin-bottom:10px"><div class="card-t" style="color:#ffa800">⚠ Warning Signals</div>${parsed.warnings.map(w=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(255,168,0,.15);line-height:1.55">• ${w}</div>`).join('')}</div>`:''}
     ${parsed.predicted_risks?.length?`<div class="card" style="background:var(--red-soft);border-color:rgba(246,78,96,.3);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ Predicted Risks (Next Periods)</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(246,78,96,.15);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
-    ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(80,205,137,.3)"><div class="card-t" style="color:var(--grn)">✓ Recommended Actions</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(80,205,137,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}`;
+    ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(80,205,137,.3)"><div class="card-t" style="color:var(--grn)">✓ Recommended Actions</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(80,205,137,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}
+    ${APPLY_BTN('trend')}`;
 }
 
 // Shared burndown-style health trend chart (actual solid + AI forecast dashed + healthy threshold)
@@ -9155,50 +9183,107 @@ function renderTrendChart(canvasId){
 }
 
 // ═══ UPDATES ═══
-function setUT(btn,type){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');cUT=type;}
+// ═══════════════════════════════════════════════════════════════════════
+//  AI RECOMMENDATION GOVERNANCE
+//  1. The AI NEVER writes to the Risk Register directly. Every proposal —
+//     from Project Updates, Trend Analysis, What-If, or Market Intelligence —
+//     goes through the same Verification & Review modal, and only items the
+//     user approves are saved (see applyApprovedChanges()).
+//  2. A materiality gate: the AI must first decide whether the information
+//     genuinely changes the project's risk profile. "No recommendations" is
+//     an explicitly valid — and preferred — outcome over noise.
+//  3. Duplicate detection: identical text/files that were already analyzed
+//     are recognized by content hash BEFORE any API call is made.
+// ═══════════════════════════════════════════════════════════════════════
+const UPDATE_TYPE_LABELS={change_order:'Change Order',delay:'Delay',scope:'Scope Change',schedule:'Schedule Update',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',material:'Material Issue',design:'Design Change',progress:'Progress Update',completion:'Completion',note:'Note'};
+
+const MATERIALITY_RULES=`MATERIALITY GATE — answer these BEFORE proposing anything:
+1. Does this information materially affect project objectives (cost, schedule, scope, quality, safety, reputation)?
+2. Does it significantly change the probability or impact of an existing risk?
+3. Does it introduce a genuinely NEW risk not already covered by the register?
+4. Does it invalidate, resolve, or justify closing an existing risk?
+5. Does it justify changing a response strategy or mitigation plan?
+
+If the answer to ALL five is No, set "material_impact": false, return EMPTY arrays for all change lists, and explain briefly in "materiality_note" why no changes are warranted. Producing NO recommendations is the correct, preferred outcome when the information is routine, already reflected in the register, or has no evidence-based effect. NEVER invent changes to appear useful. Every proposed change must cite the specific evidence in the update that justifies it. Cosmetic rewording, speculative adjustments, and changes unsupported by the update text are FORBIDDEN.`;
+
+// Content fingerprint of an update (text + attached files) for duplicate detection.
+function updContentHash(text,files){
+  const norm=(text||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const fsig=(files||[]).map(f=>(f.name||'')+':'+(f.size||(f.text?f.text.length:0))+':'+(f.text?_strHash(f.text):(f.data?_strHash(f.data.slice(0,4000)):''))).join('|');
+  return String(_strHash(norm+'§'+fsig));
+}
+// Look through saved update records for the same content hash.
+function findDuplicateUpdate(hash){
+  for(const u of (CP?.upds||[])){
+    try{const cs=typeof u.changes_summary==='string'?JSON.parse(u.changes_summary):(u.changes_summary||{});
+      if(cs.content_hash&&cs.content_hash===hash)return u;
+    }catch(e){}
+  }
+  return null;
+}
+
+let pendingReview=null; // the proposal currently sitting in the Verification & Review modal
+
 async function addUpdate(){
   if(!requireActiveAccess())return;
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
-  if(!text&&!UF.length){toast('Please add details or attach a file');return;}
-  const tl={change_order:'Change Order',delay:'Delay',scope:'Scope Change',schedule:'Schedule Update',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',note:'Note'};
+  if(!text&&!UF.length){toast('Please describe the update or attach a file');return;}
 
-  // Snapshot existing risks BEFORE update for change tracking
+  // ── Duplicate detection BEFORE any analysis ──
+  const contentHash=updContentHash(text,UF);
+  const dup=findDuplicateUpdate(contentHash);
+  if(dup){
+    const when=dup.created_at?new Date(dup.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'earlier';
+    showNoImpactNotice('Already analyzed',`This update ${UF.length?'(including the attached file'+(UF.length>1?'s':'')+') ':''}is identical to one analyzed on ${when}. It has already been processed and introduces no new risk intelligence, so no new analysis was run and no recommendations were generated.`);
+    return;
+  }
+
   const beforeRisks=JSON.parse(JSON.stringify(CP.risks||[]));
   const existing=beforeRisks.map(r=>`${r.risk_id||r.id?.slice(0,8)}: ${r.description} | Level: ${r.level} | Timing: ${r.timing_type||'scheduled'} | Activity: ${r.activity_ref||'—'} | Expected: ${r.expected_date||'—'} | Mitigation: ${r.mitigation||'none'}`).join('\n');
-  const isSchedule=cUT==='schedule';
-  const scheduleNote=isSchedule?`\n\nTHIS IS A SCHEDULE UPDATE. The user uploaded a revised project schedule / progress update. Your PRIMARY job is to RE-FORECAST the calendar dates of scheduled risks. For every existing scheduled risk whose linked activity has moved, RETURN it in "updated_risks" with a new "expected_date" (YYYY-MM-DD) in its "changes". Recalculate based on the revised activity dates. Today is ${new Date().toISOString().slice(0,10)}. Also flag any new risks the schedule change introduces and remove any whose activity is now complete.`:'';
 
-  showLoad('Analyzing update and detecting changes...');
+  // Give the AI the recent update history so semantically-repeated information
+  // (same facts phrased differently) is also caught by the materiality gate.
+  const recentUpds=(CP.upds||[]).slice(0,6).map(u=>`[${u.created_at?new Date(u.created_at).toISOString().slice(0,10):'—'}] (${u.type_label||u.type||'update'}) ${String(u.content||'').slice(0,160)} → analysis: ${String(u.analysis||'').slice(0,120)}`).join('\n');
 
-  const parts=[{type:'text',text:`You are a senior project risk manager analyzing a project update. Compare the update to existing risks and identify ALL changes.
+  showLoad('Analyzing update against your risk profile...');
+
+  const parts=[{type:'text',text:`You are a senior project risk manager analyzing a project update. First CLASSIFY the update, then apply the materiality gate, and only then propose changes.
 
 Project: ${CP.name} | Type: ${CP.type}
 
 EXISTING RISK REGISTER:
 ${existing||'No risks yet'}
 
-UPDATE TYPE: ${tl[cUT]}
-UPDATE DETAILS: ${text}
-${fdesc?'Attached File: '+fdesc:''}${scheduleNote}
+RECENTLY ANALYZED UPDATES (do NOT re-propose changes these already covered):
+${recentUpds||'None'}
 
-Your task: Identify three categories of changes:
-1. NEW RISKS triggered by this update
-2. EXISTING RISKS that need updating (level, probability, mitigation, OR a shifted expected_date / activity_ref due to new schedule info)
+NEW PROJECT UPDATE (free text from the user — you determine its type):
+${text||'(no text — see attached files)'}
+${fdesc?'Attached File: '+fdesc:''}
+
+${MATERIALITY_RULES}
+
+If (and ONLY if) the update passes the materiality gate, identify:
+1. NEW RISKS the update introduces
+2. EXISTING RISKS needing updates (level, probability, mitigation, strategy, status, OR a shifted expected_date / activity_ref due to new schedule info). If the update is a revised schedule, RE-FORECAST expected_date (YYYY-MM-DD) for every scheduled risk whose linked activity moved. Today is ${new Date().toISOString().slice(0,10)}.
 3. RISKS THAT NO LONGER APPLY (resolved or eliminated by this update)
 
 Respond ONLY with valid JSON. Keep all text fields under 25 words:
 {
+  "update_type": "change_order|delay|scope|schedule|site|contract|meeting|material|design|progress|completion|note",
+  "material_impact": true,
+  "materiality_note": "1-2 sentences: WHY this does or does not change the risk profile",
   "analysis": "2-3 sentence impact summary in English",
-  "baseline_change": {"approved_cost_delta": 0, "approved_days_delta": 0, "note": "only non-zero if this update is an APPROVED change order / contract amendment that formally revises the contract value or completion date. approved_cost_delta = signed amount added to (or removed from) the contract value in the project currency; approved_days_delta = signed calendar-days added to (or removed from) the contract duration. Use 0/0 for updates that are NOT approved baseline changes (e.g. progress notes, meeting minutes, risks-only updates)."},
+  "baseline_change": {"approved_cost_delta": 0, "approved_days_delta": 0, "note": "only non-zero if this update is an APPROVED change order / contract amendment that formally revises the contract value or completion date. approved_cost_delta = signed amount added to (or removed from) the contract value in the project currency; approved_days_delta = signed calendar-days added to (or removed from) the contract duration. Use 0/0 otherwise."},
   "new_risks": [
-    {"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"Schedule","description":"...","cause":"...","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"...","owner":"Project Manager","activity_ref":"linked activity name","timing_type":"scheduled","expected_date":"2026-09-12","expected_weeks":2}
+    {"id":"R${String((CP.risks||[]).length+1).padStart(3,'0')}","type":"threat","category":"Schedule","description":"...","cause":"...","evidence":"the exact statement in the update that justifies this","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"...","owner":"Project Manager","activity_ref":"linked activity name","timing_type":"scheduled","expected_date":"2026-09-12","expected_weeks":2}
   ],
   "updated_risks": [
-    {"risk_id":"R001","reason":"why this needs updating","changes":{"level":"high","probability":4,"mitigation":"updated mitigation plan","expected_date":"2026-10-05","activity_ref":"revised activity"}}
+    {"risk_id":"R001","reason":"why this needs updating","evidence":"the statement in the update that justifies it","changes":{"level":"high","probability":4,"mitigation":"updated mitigation plan","response_strategy":"Mitigate","status":"open","expected_date":"2026-10-05","activity_ref":"revised activity"}}
   ],
-  "removed_risk_ids": ["R005","R012"],
-  "removed_reasons": {"R005":"Risk eliminated by contract amendment","R012":"No longer applicable"}
+  "removed_risk_ids": ["R005"],
+  "removed_reasons": {"R005":"Risk eliminated by contract amendment"}
 }
 
 In "updated_risks.changes" only include the fields that actually changed. Use "expected_date" (YYYY-MM-DD) whenever the timing of a scheduled risk shifts.
@@ -9226,124 +9311,332 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
     if(data.error){toast('Error: '+data.error.message);return;}
     let parsed;
     try{parsed=pJSON(data.content[0].text);}
-    catch(e){parsed={analysis:data.content[0].text.slice(0,200),new_risks:[],updated_risks:[],removed_risk_ids:[]};}
+    catch(e){parsed={analysis:data.content[0].text.slice(0,200),material_impact:false,materiality_note:'Analysis could not be parsed — no changes proposed.',new_risks:[],updated_risks:[],removed_risk_ids:[]};}
 
-    // Track changes for the modal
-    const changes={
-      added:[],
-      updated:[],
-      removed:[],
-      analysis:parsed.analysis||''
-    };
+    const uType=UPDATE_TYPE_LABELS[parsed.update_type]?parsed.update_type:'note';
+    const updateMeta={type:uType,type_label:UPDATE_TYPE_LABELS[uType],content:text,fdesc,files_count:UF.length,content_hash:contentHash,analysis:parsed.analysis||parsed.materiality_note||''};
 
-    // 1. ADD new risks
-    if(parsed.new_risks?.length){
-      const ins=parsed.new_risks.map(r=>({
-        project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category||'Scope',
-        description:r.description,cause:r.cause||'',probability:r.probability||3,
-        impact_cost:r.impact_cost||2,impact_schedule:r.impact_schedule||2,
-        impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,
-        level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',
-        mitigation:r.mitigation||'',owner:r.owner||'',
-        activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,
-        timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null
-      }));
-      const inserted=await sb('risks','POST',ins);
-      changes.added=parsed.new_risks;
-    }
-
-    // 2. UPDATE existing risks
-    if(parsed.updated_risks?.length){
-      for(const upd of parsed.updated_risks){
-        const original=beforeRisks.find(r=>r.risk_id===upd.risk_id);
-        if(!original)continue;
-        const updates={};
-        const before={};
-        const after={};
-        Object.entries(upd.changes||{}).forEach(([k,v])=>{
-          if(original[k]!==v){
-            updates[k]=v;
-            before[k]=original[k];
-            after[k]=v;
-          }
-        });
-        if(Object.keys(updates).length>0){
-          await sb('risks?id=eq.'+original.id,'PATCH',updates);
-          changes.updated.push({
-            risk_id:upd.risk_id,
-            description:original.description,
-            reason:upd.reason||'',
-            before,
-            after
-          });
-        }
-      }
-    }
-
-    // 3. REMOVE risks
-    if(parsed.removed_risk_ids?.length){
-      for(const rid of parsed.removed_risk_ids){
-        const original=beforeRisks.find(r=>r.risk_id===rid);
-        if(!original)continue;
-        await sb('risks?id=eq.'+original.id,'DELETE');
-        changes.removed.push({
-          risk_id:rid,
-          description:original.description,
-          level:original.level,
-          reason:(parsed.removed_reasons||{})[rid]||'No longer applicable'
-        });
-      }
-    }
-
-
-    // ── Accumulate approved change orders onto the project baseline ──
-    // Target budget = contract value + Σ(approved cost deltas); target duration =
-    // planned + Σ(approved day deltas). Only when the AI flags a formal approved change.
+    // ── MATERIALITY GATE: no material impact → log the update, propose nothing ──
     const bc=parsed.baseline_change||{};
-    const coCost=parseFloat(bc.approved_cost_delta)||0;
-    const coDays=parseFloat(bc.approved_days_delta)||0;
-    if(coCost!==0||coDays!==0){
-      CP.approved_co_cost=(parseFloat(CP.approved_co_cost)||0)+coCost;
-      CP.approved_co_days=(parseFloat(CP.approved_co_days)||0)+coDays;
-      try{await sb('projects?id=eq.'+CID,'PATCH',{approved_co_cost:CP.approved_co_cost,approved_co_days:CP.approved_co_days});}catch(e){}
+    const hasBaseline=(parseFloat(bc.approved_cost_delta)||0)!==0||(parseFloat(bc.approved_days_delta)||0)!==0;
+    const totalProposed=(parsed.new_risks?.length||0)+(parsed.updated_risks?.length||0)+(parsed.removed_risk_ids?.length||0)+(hasBaseline?1:0);
+    if(parsed.material_impact===false||totalProposed===0){
+      await saveUpdateRecord(updateMeta,{added:0,updated:0,removed:0,no_impact:true});
+      clearUpdateInputs();
+      await selectProj(CID);
+      showNoImpactNotice('No impactful changes were identified',(parsed.materiality_note||'')+' The uploaded document or project update does not materially affect the current project risk profile. No changes to the Risk Register are recommended. The update was logged in the project timeline.');
+      return;
     }
 
-    // Save the update record with change summary
-    await sb('updates','POST',{
-      project_id:CID,type:cUT,type_label:tl[cUT],content:text,
-      file_desc:fdesc,files_count:UF.length,
-      analysis:parsed.analysis||'',
-      new_risks_count:changes.added.length,
-      changes_summary:JSON.stringify({
-        added_count:changes.added.length,
-        updated_count:changes.updated.length,
-        removed_count:changes.removed.length
-      })
-    });
-
-    document.getElementById('utext').value='';
-    document.getElementById('ufdesc').value='';
-    UF=[];renderUFP();
-
-    // Reload data
-    await selectProj(CID);
-
-    // SHOW CHANGES MODAL if any changes detected
-    if(changes.added.length||changes.updated.length||changes.removed.length){
-      showChangesModal(changes,tl[cUT]);
-    }
+    // ── Build the review proposal — NOTHING is written yet ──
+    pendingReview=buildReviewFromParsed(parsed,beforeRisks,{source:'Project Update — '+UPDATE_TYPE_LABELS[uType],updateMeta});
+    showReviewModal();
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
+function clearUpdateInputs(){
+  const t=document.getElementById('utext');if(t)t.value='';
+  const d=document.getElementById('ufdesc');if(d)d.value='';
+  UF=[];if(typeof renderUFP==='function')renderUFP();
+}
+
+async function saveUpdateRecord(meta,counts){
+  try{
+    await sb('updates','POST',{
+      project_id:CID,type:meta.type,type_label:meta.type_label,content:meta.content,
+      file_desc:meta.fdesc,files_count:meta.files_count,
+      analysis:meta.analysis||'',
+      new_risks_count:counts.added||0,
+      changes_summary:JSON.stringify({
+        added_count:counts.added||0,updated_count:counts.updated||0,removed_count:counts.removed||0,
+        rejected_count:counts.rejected||0,no_impact:!!counts.no_impact,content_hash:meta.content_hash||''
+      })
+    });
+  }catch(e){console.error('saveUpdateRecord:',e);}
+}
+
+// A friendly notice for "nothing to do" outcomes (duplicate or immaterial updates).
+function showNoImpactNotice(title,body){
+  hideLoad();
+  const t=document.getElementById('changesTitle');if(t)t.textContent='ℹ️ Analysis Result';
+  const s=document.getElementById('changesSub');if(s)s.textContent='The materiality gate found nothing that warrants a register change';
+  document.getElementById('changesContent').innerHTML=`
+    <div style="text-align:center;padding:22px 14px">
+      <div style="width:46px;height:46px;border-radius:50%;background:var(--grn-soft);color:var(--grn);display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px">✓</div>
+      <div style="font-size:14.5px;font-weight:700;color:var(--t1);margin-bottom:7px">${title}</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.65;max-width:520px;margin:0 auto">${body}</div>
+    </div>`;
+  document.getElementById('changesOv').classList.add('on');
+}
+
+// Normalize an AI proposal (from ANY source) into review items with per-item approval state.
+function buildReviewFromParsed(parsed,beforeRisks,ctx){
+  const items=[];
+  const bc=parsed.baseline_change||{};
+  const coCost=parseFloat(bc.approved_cost_delta)||0, coDays=parseFloat(bc.approved_days_delta)||0;
+  if(coCost!==0||coDays!==0)items.push({kind:'baseline',approved:true,coCost,coDays,note:bc.note||'',evidence:''});
+  (parsed.new_risks||[]).forEach(r=>items.push({kind:'add',approved:true,risk:r,evidence:r.evidence||''}));
+  (parsed.updated_risks||[]).forEach(u=>{
+    const original=beforeRisks.find(r=>r.risk_id===u.risk_id);
+    if(!original)return;
+    const before={},after={};
+    Object.entries(u.changes||{}).forEach(([k,v])=>{if(original[k]!==v){before[k]=original[k];after[k]=v;}});
+    if(!Object.keys(after).length)return;
+    items.push({kind:'update',approved:true,risk_id:u.risk_id,dbId:original.id,description:original.description,reason:u.reason||'',evidence:u.evidence||'',before,after});
+  });
+  (parsed.removed_risk_ids||[]).forEach(rid=>{
+    const original=beforeRisks.find(r=>r.risk_id===rid);
+    if(!original)return;
+    items.push({kind:'remove',approved:true,risk_id:rid,dbId:original.id,description:original.description,level:original.level,reason:(parsed.removed_reasons||{})[rid]||'No longer applicable'});
+  });
+  return {source:ctx.source,updateMeta:ctx.updateMeta||null,analysis:parsed.analysis||'',materialityNote:parsed.materiality_note||'',items};
+}
+
+// ═══ VERIFICATION & REVIEW MODAL ═══
+function showReviewModal(){
+  if(!pendingReview||!pendingReview.items.length)return;
+  renderReviewItems();
+  document.getElementById('reviewOv').classList.add('on');
+}
+function closeReviewModal(){
+  document.getElementById('reviewOv').classList.remove('on');
+  pendingReview=null;
+}
+function reviewToggle(idx){
+  if(!pendingReview)return;
+  pendingReview.items[idx].approved=!pendingReview.items[idx].approved;
+  renderReviewItems();
+}
+function reviewSetAll(v){
+  if(!pendingReview)return;
+  pendingReview.items.forEach(i=>i.approved=v);
+  renderReviewItems();
+}
+function renderReviewItems(){
+  const R=pendingReview;if(!R)return;
+  const approvedN=R.items.filter(i=>i.approved).length;
+  const cEl=document.getElementById('reviewCounter');
+  if(cEl)cEl.textContent=`${approvedN} of ${R.items.length} approved`;
+  const sBtn=document.getElementById('reviewSaveBtn');
+  if(sBtn)sBtn.textContent=approvedN?`Save ${approvedN} Approved Change${approvedN>1?'s':''}`:'Save (reject all)';
+  const cur=(typeof curCode==='function')?curCode():(CP&&CP.currency)||'USD';
+  const kindMeta={
+    baseline:{c:'var(--primary)',bg:'rgba(114,57,234,.06)',bd:'rgba(114,57,234,.25)',t:'BASELINE CHANGE'},
+    add:{c:'var(--grn)',bg:'var(--grn-soft)',bd:'rgba(80,205,137,.25)',t:'NEW RISK'},
+    update:{c:'#B8860B',bg:'var(--yel-soft)',bd:'rgba(255,168,0,.3)',t:'UPDATE RISK'},
+    remove:{c:'var(--red)',bg:'var(--red-soft)',bd:'rgba(246,78,96,.25)',t:'REMOVE RISK'}
+  };
+  const toggleBtn=(i,approved)=>`
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <button onclick="reviewToggle(${i})" style="padding:4px 12px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid ${approved?'var(--grn)':'var(--b1)'};background:${approved?'var(--grn)':'var(--s1)'};color:${approved?'#fff':'var(--t3)'}">✓ Approve</button>
+      <button onclick="reviewToggle(${i})" style="padding:4px 12px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;border:1px solid ${approved?'var(--b1)':'var(--red)'};background:${approved?'var(--s1)':'var(--red)'};color:${approved?'var(--t3)':'#fff'}">✕ Reject</button>
+    </div>`;
+  document.getElementById('reviewContent').innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(109,129,150,.05),rgba(137,80,252,.03));border:1px solid rgba(109,129,150,.2);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">Source: ${R.source}</div>
+      ${R.analysis?`<div style="font-size:12px;color:var(--t2);line-height:1.6">${R.analysis}</div>`:''}
+      ${R.materialityNote?`<div style="font-size:11px;color:var(--t3);line-height:1.55;margin-top:5px"><b>Materiality:</b> ${R.materialityNote}</div>`:''}
+    </div>
+    ${R.items.map((it,i)=>{
+      const m=kindMeta[it.kind];
+      let body='';
+      if(it.kind==='baseline'){
+        body=`<div style="font-size:12.5px;font-weight:500;color:var(--t1);margin-bottom:4px">Approved change order — adjust the project baseline</div>
+          <div style="font-size:11.5px;color:var(--t2)">${it.coCost!==0?`<b>Contract value:</b> ${it.coCost>0?'+':''}${it.coCost.toLocaleString()} ${cur}`:''}${it.coCost!==0&&it.coDays!==0?' · ':''}${it.coDays!==0?`<b>Duration:</b> ${it.coDays>0?'+':''}${it.coDays} days`:''}</div>
+          ${it.note?`<div style="font-size:11px;color:var(--t3);margin-top:3px">${it.note}</div>`:''}`;
+      }else if(it.kind==='add'){
+        const r=it.risk;
+        body=`<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:5px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${r.id}</span>
+            <span class="bdg ${r.type==='opportunity'?'b-opp':'b-thr'}">${r.type==='opportunity'?'OPP':'THREAT'}</span>
+            <span class="cb">${r.category}</span>
+            <span class="bdg b-${r.level}">${(r.level||'').toUpperCase()}</span>
+            <span class="resp r-${r.response_strategy||'Accept'}">${r.response_strategy||'—'}</span>
+          </div>
+          <div style="font-size:12.5px;font-weight:500;color:var(--t1);margin-bottom:4px">${r.description}</div>
+          <div style="font-size:11px;color:var(--t2)"><b>Cause:</b> ${r.cause||'—'}</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:3px"><b>Action:</b> ${r.mitigation||'—'}</div>
+          ${r.owner?`<div style="font-size:11px;color:var(--t3);margin-top:3px"><b>Owner:</b> ${r.owner}</div>`:''}`;
+      }else if(it.kind==='update'){
+        body=`<div style="display:flex;gap:5px;align-items:center;margin-bottom:5px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${it.risk_id}</span></div>
+          <div style="font-size:12.5px;font-weight:500;color:var(--t1);margin-bottom:5px">${it.description}</div>
+          <div style="font-size:11px;color:var(--t2);margin-bottom:7px;font-style:italic"><b>Why:</b> ${it.reason}</div>
+          <div style="background:rgba(255,255,255,.6);border:1px solid rgba(255,168,0,.2);border-radius:5px;padding:7px">
+            ${Object.keys(it.before).map(k=>`<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;padding:2px 0">
+              <span style="min-width:90px;color:var(--t3);text-transform:capitalize"><b>${k}:</b></span>
+              <span style="color:var(--red);text-decoration:line-through">${it.before[k]}</span>
+              <span style="color:var(--t3)">→</span>
+              <span style="color:var(--grn);font-weight:600">${it.after[k]}</span>
+            </div>`).join('')}
+          </div>`;
+      }else{
+        body=`<div style="display:flex;gap:5px;align-items:center;margin-bottom:5px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${it.risk_id}</span><span class="bdg b-${it.level}">${(it.level||'').toUpperCase()}</span></div>
+          <div style="font-size:12.5px;font-weight:500;color:var(--t1);text-decoration:line-through;margin-bottom:4px">${it.description}</div>
+          <div style="font-size:11px;color:var(--t2);font-style:italic"><b>Reason:</b> ${it.reason}</div>`;
+      }
+      return `<div style="background:${it.approved?m.bg:'var(--s2)'};border:1px solid ${it.approved?m.bd:'var(--b1)'};border-radius:7px;padding:11px;margin-bottom:8px;${it.approved?'':'opacity:.55'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:7px">
+          <span style="font-size:9.5px;font-weight:800;letter-spacing:.06em;color:${m.c}">${m.t}</span>
+          ${toggleBtn(i,it.approved)}
+        </div>
+        ${body}
+        ${it.evidence?`<div style="font-size:10.5px;color:var(--t3);margin-top:6px;border-top:1px dashed var(--b1);padding-top:5px"><b>Evidence:</b> "${it.evidence}"</div>`:''}
+      </div>`;
+    }).join('')}`;
+}
+
+// ═══ APPLY — the ONLY function that writes AI recommendations to the register ═══
+async function applyApprovedChanges(){
+  const R=pendingReview;if(!R)return;
+  if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot modify the register');return;}
+  const approved=R.items.filter(i=>i.approved);
+  const rejectedN=R.items.length-approved.length;
+  document.getElementById('reviewOv').classList.remove('on');
+  showLoad('Saving approved changes...');
+  const changes={added:[],updated:[],removed:[],analysis:R.analysis};
+  try{
+    for(const it of approved){
+      if(it.kind==='add'){
+        const r=it.risk;
+        await sb('risks','POST',[{
+          project_id:CID,risk_id:r.id,type:r.type||'threat',category:r.category||'Scope',
+          description:r.description,cause:r.cause||'',probability:r.probability||3,
+          impact_cost:r.impact_cost||2,impact_schedule:r.impact_schedule||2,
+          impact_qhse:r.impact_qhse||1,impact_reputation:r.impact_reputation||1,
+          level:r.level||'medium',response_strategy:r.response_strategy||'Mitigate',
+          mitigation:r.mitigation||'',owner:r.owner||'',
+          activity_ref:r.activity_ref||'',expected_weeks:r.expected_weeks||null,
+          timing_type:r.timing_type||'scheduled',expected_date:r.expected_date||null
+        }]);
+        changes.added.push(r);
+      }else if(it.kind==='update'){
+        await sb('risks?id=eq.'+it.dbId,'PATCH',it.after);
+        changes.updated.push({risk_id:it.risk_id,description:it.description,reason:it.reason,before:it.before,after:it.after});
+      }else if(it.kind==='remove'){
+        await sb('risks?id=eq.'+it.dbId,'DELETE');
+        changes.removed.push({risk_id:it.risk_id,description:it.description,level:it.level,reason:it.reason});
+      }else if(it.kind==='baseline'){
+        CP.approved_co_cost=(parseFloat(CP.approved_co_cost)||0)+it.coCost;
+        CP.approved_co_days=(parseFloat(CP.approved_co_days)||0)+it.coDays;
+        try{await sb('projects?id=eq.'+CID,'PATCH',{approved_co_cost:CP.approved_co_cost,approved_co_days:CP.approved_co_days});}catch(e){}
+      }
+    }
+    // Log the source event: project updates always (they're a factual project log);
+    // module analyses only when something was actually approved.
+    if(R.updateMeta){
+      await saveUpdateRecord(R.updateMeta,{added:changes.added.length,updated:changes.updated.length,removed:changes.removed.length,rejected:rejectedN});
+      clearUpdateInputs();
+    }else if(approved.length){
+      await saveUpdateRecord({type:'ai_analysis',type_label:R.source,content:'Applied AI analysis recommendations to the risk register.',fdesc:'',files_count:0,analysis:R.analysis,content_hash:''},{added:changes.added.length,updated:changes.updated.length,removed:changes.removed.length,rejected:rejectedN});
+    }
+    pendingReview=null;
+    await selectProj(CID);
+    hideLoad();
+    if(approved.length){
+      showChangesModal(changes,R.source);
+      toast(`${approved.length} change${approved.length>1?'s':''} saved${rejectedN?` · ${rejectedN} rejected`:''}`,{type:'ok'});
+    }else{
+      toast('All recommendations rejected — nothing was changed');
+    }
+  }catch(e){hideLoad();pendingReview=null;toast('Error: '+e.message);}
+}
+
+// ═══ "APPLY ANALYSIS TO MY RISKS" — Trend / What-If / Market → same review workflow ═══
+async function applyAnalysisToRisks(source){
+  if(!requireActiveAccess())return;
+  if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot modify the register');return;}
+  const risks=CP?.risks||[];
+  if(!risks.length){toast('No risks in the register yet');return;}
+
+  let contextLabel='',contextBody='';
+  if(source==='trend'){
+    const td=(CP.trend_data||[]);
+    if(!td.length){toast('Run a Trend Analysis first');return;}
+    const last=td[td.length-1];
+    contextLabel='Trend Analysis';
+    contextBody=`Latest trend report (${last.date||'—'}): alert=${last.alert_level}, health=${last.health_score}
+SPI=${last.sv} CPI=${last.burn_rate} ChangeRequests=${last.change_requests} ResourceUtil=${last.resource_util}% VendorDelay=${last.vendor_delay||'none'}
+Executive summary: ${last.report?.executive_summary||'—'}
+Forecast: ${(last.report?.forecast||[]).map(f=>f.label+':'+f.health_score).join(' ')}
+Warnings: ${(last.report?.warnings||[]).join(' | ')||'—'}
+Trend history: ${td.map(w=>`[${w.date}] SPI=${w.sv} CPI=${w.burn_rate} health=${w.health_score}`).join('; ')}`;
+  }else if(source==='whatif'){
+    if(!wifSimulated){toast('Run a What-If simulation first');return;}
+    contextLabel='What-If Simulation';
+    contextBody=`Simulated scenario outcome:
+${JSON.stringify(wifSimulated).slice(0,2500)}`;
+  }else if(source==='market'){
+    if(!CP.market_insights){toast('Load Market Insights first');return;}
+    contextLabel='Market Intelligence';
+    const mi=CP.market_insights;
+    contextBody=`Market & world insights (${CP.market_insights_date?new Date(CP.market_insights_date).toISOString().slice(0,10):'—'}):
+${JSON.stringify(mi).slice(0,2800)}`;
+  }else return;
+
+  const beforeRisks=JSON.parse(JSON.stringify(risks));
+  const existing=beforeRisks.map(r=>`${r.risk_id||r.id?.slice(0,8)}: ${r.description} | Level: ${r.level} | Prob: ${r.probability} | Strategy: ${r.response_strategy||'—'} | Status: ${r.status||'open'} | Mitigation: ${r.mitigation||'none'}`).join('\n');
+
+  showLoad(`Analyzing your risk register against the ${contextLabel} results...`);
+  try{
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project risk manager. Based on a completed ${contextLabel}, review the CURRENT risk register and recommend register changes — ONLY where the analysis clearly and materially justifies them.
+
+Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'}
+
+CURRENT RISK REGISTER:
+${existing}
+
+${contextLabel.toUpperCase()} RESULTS:
+${contextBody}
+
+${MATERIALITY_RULES}
+
+If (and ONLY if) the gate passes, recommend: new risks, closures of obsolete risks, probability/impact updates, response strategy changes, status updates, or improved mitigation/response plans — each tied to specific evidence in the ${contextLabel} results.
+
+Respond ONLY with valid JSON. Keep all text fields under 25 words:
+{
+  "material_impact": true,
+  "materiality_note": "1-2 sentences why the analysis does/does not warrant register changes",
+  "analysis": "2-3 sentence summary of what the ${contextLabel} implies for the register",
+  "new_risks": [
+    {"id":"R${String(risks.length+1).padStart(3,'0')}","type":"threat","category":"Schedule","description":"...","cause":"...","evidence":"the finding in the analysis that justifies this","probability":3,"impact_cost":2,"impact_schedule":2,"impact_qhse":1,"impact_reputation":1,"level":"high","response_strategy":"Mitigate","mitigation":"...","owner":"Project Manager","timing_type":"continuous"}
+  ],
+  "updated_risks": [
+    {"risk_id":"R001","reason":"...","evidence":"...","changes":{"level":"high","probability":4,"response_strategy":"Mitigate","status":"open","mitigation":"improved plan"}}
+  ],
+  "removed_risk_ids": [],
+  "removed_reasons": {}
+}
+Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
+Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate. Levels: high/medium/low. Maximum 6 recommendations total — quality over quantity.`}]});
+    hideLoad();
+    if(data.error){toast('Error: '+data.error.message);return;}
+    let parsed;
+    try{parsed=pJSON(data.content[0].text);}
+    catch(e){toast('Analysis could not be parsed — no changes proposed');return;}
+
+    const total=(parsed.new_risks?.length||0)+(parsed.updated_risks?.length||0)+(parsed.removed_risk_ids?.length||0);
+    if(parsed.material_impact===false||total===0){
+      showNoImpactNotice('No impactful changes were identified',(parsed.materiality_note||'')+` The ${contextLabel} results do not materially affect the current project risk profile. No changes to the Risk Register are recommended.`);
+      return;
+    }
+    pendingReview=buildReviewFromParsed(parsed,beforeRisks,{source:contextLabel});
+    showReviewModal();
+  }catch(e){hideLoad();toast('Error: '+e.message);}
+}
+
+const APPLY_BTN=(src)=>`<div style="margin-top:12px;text-align:center"><button class="btn btn-p" style="padding:8px 20px;font-size:12px" onclick="applyAnalysisToRisks('${src}')">⇪ Apply Analysis to My Risks</button><div style="font-size:10px;color:var(--t3);margin-top:5px">Generates recommendations for your review — nothing changes without your approval</div></div>`;
+
 function showChangesModal(changes,updateType){
   const modal=document.getElementById('changesOv');
+  const _t=document.getElementById('changesTitle');if(_t)_t.textContent='📋 Changes Applied';
+  const _s=document.getElementById('changesSub');if(_s)_s.textContent='Summary of the approved changes saved to the Risk Register';
   const total=changes.added.length+changes.updated.length+changes.removed.length;
   const lc={critical:'#7f1d1d',high:'var(--red)',medium:'#a16207',low:'var(--grn)'};
   const lbg={critical:'#7f1d1d',high:'var(--red-soft)',medium:'var(--yel-soft)',low:'var(--grn-soft)'};
 
   document.getElementById('changesContent').innerHTML=`
     <div style="background:linear-gradient(135deg,rgba(109,129,150,.05),rgba(137,80,252,.03));border:1px solid rgba(109,129,150,.2);border-radius:8px;padding:14px;margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:5px">Update Type: ${updateType}</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:5px">Source: ${updateType}</div>
       <div style="font-size:12px;color:var(--t2);line-height:1.6">${changes.analysis}</div>
       <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
         ${changes.added.length?`<div><span style="font-size:18px;font-weight:700;color:var(--grn)">+${changes.added.length}</span> <span style="font-size:11.5px;color:var(--t3)">New</span></div>`:''}
@@ -9888,6 +10181,7 @@ function renderSimulationResults(sim,baselineScore){
         </div>`:''}
       </div>
     </div>
+    ${APPLY_BTN('whatif')}
   `;
 }
 
