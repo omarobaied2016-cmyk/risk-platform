@@ -6574,11 +6574,11 @@ function renderDash(){
             <option value="French">Français</option>
           </select>
           <button class="btn btn-g" onclick="translateInsights()" style="padding:9px 14px">Translate</button>
-          <button class="btn btn-p" onclick="loadProjectInsights(true)" style="padding:9px 14px">Analyze impact on my risks</button>
           <button class="btn btn-g" onclick="ovToggle('projMarketInsights','mktToggleHdr')" id="mktToggleHdr" style="padding:9px 14px">View full report ▼</button>
+          <button class="btn btn-p" onclick="ST('insights')" style="padding:9px 14px">Open Market &amp; World Insights →</button>
         </div>
       </div>
-      <div style="font-size:10.5px;color:var(--t3);margin-top:8px">Auto-refreshes every 3 days for monitoring. Risk recommendations appear only when you click "Analyze impact" — and only for genuinely new external risks.</div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:8px">Display only — auto-refreshes every 3 days. To analyze market impact on your risks, open the Market &amp; World Insights section.</div>
     </div>
     <div id="projMarketInsights"></div>
   `;
@@ -8055,7 +8055,6 @@ function renderProjectInsights(parsed,dateStr){
     html+='</div>';
   }
   html+='</div>';/* close ov-mkt-detail */
-  html+=APPLY_BTN('market');
   el.innerHTML=html;
   const _md=el.querySelector('.ov-mkt-detail');
   if(_md){_md.classList.add('ov-collapse','ov-closed');}
@@ -9081,7 +9080,11 @@ For "suggestions": ONLY register actions the trend clearly justifies — e.g. ad
     try{await sb('projects?id=eq.'+CID,'PATCH',{trend_data:CP.trend_data});}
     catch(saveErr){console.error('Save trend:',saveErr);toast('Analyzed but could NOT save. Ensure the projects table has a "trend_data" jsonb column.');}
 
-    renderTrendReport(entry);
+    // Re-render the ENTIRE trend pane: history table + Health Trend & Forecast chart +
+    // report card all read from the just-updated trend_data. Previously only the report
+    // card and the dashboard were refreshed, leaving the page's own chart and table stale
+    // (old health score, no forecast line) until a manual tab switch.
+    renderWeeklyIndicators();
     if(parsed.suggestions)pushSuggestions(parsed.suggestions,'Trend Analysis');
     ['ind_sv','ind_br','ind_cr','ind_ru','ind_vd','ind_notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     renderWarn();renderDash();
@@ -9574,10 +9577,11 @@ Trend history: ${td.map(w=>`[${w.date}] SPI=${w.sv} CPI=${w.burn_rate} health=${
     contextBody=`Simulated scenario outcome:
 ${JSON.stringify(wifSimulated).slice(0,2500)}`;
   }else if(source==='market'){
-    if(!CP.market_insights){toast('Load Market Insights first');return;}
+    const mi=CP.insights_data||CP.market_insights;
+    if(!mi){toast('Generate Market Insights first (Refresh Insights)');return;}
     contextLabel='Market Intelligence';
-    const mi=CP.market_insights;
-    contextBody=`Market & world insights (${CP.market_insights_date?new Date(CP.market_insights_date).toISOString().slice(0,10):'—'}):
+    const miDate=CP.insights_data?(CP.insights_date?new Date(CP.insights_date).toISOString().slice(0,10):'—'):(CP.market_insights_date?new Date(CP.market_insights_date).toISOString().slice(0,10):'—');
+    contextBody=`Market & world insights (${miDate}):
 ${JSON.stringify(mi).slice(0,2800)}`;
   }else return;
 
@@ -10279,7 +10283,8 @@ async function loadInsights(){
           <option value="English">English</option><option value="Arabic">العربية</option><option value="Spanish">Español</option><option value="French">Français</option>
         </select>
         <button class="btn btn-g" onclick="translateMainInsights()">Translate</button>
-        <button class="btn btn-p" onclick="generateInsights()">Refresh Insights</button>
+        <button class="btn btn-g" onclick="generateInsights()">Refresh Insights</button>
+        <button class="btn btn-p" onclick="applyAnalysisToRisks('market')">Analyze impact on my risks</button>
       </div>
     </div>
     <div id="insightsBody">
@@ -10697,6 +10702,7 @@ function renderInsights(data,articles){
         `).join('')}
       </div>
     </div>`:''}
+    ${APPLY_BTN('market')}
   `;
 }
 
