@@ -1439,11 +1439,39 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <option value="Government">Government</option>
           <option value="Defense">Defense</option>
           <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+          <option value="Supply / Procurement">Supply / Procurement</option>
+          <option value="Operations & Maintenance (O&M)">Operations & Maintenance (O&M)</option>
           <option value="Events">Events</option>
           <option value="Manufacturing & Production">Manufacturing & Production</option>
           <option value="Other">Other</option>
           </optgroup>
         </select>
+        <div class="fl-hint">Determines which risk families the AI generates — pick the closest match.</div>
+      </div>
+      <div class="fg"><label class="fl">Contract Type
+          <span onclick="event.preventDefault();const t=document.getElementById('ctTip');t.style.display=t.style.display==='block'?'none':'block'" style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--primary-soft);color:var(--primary);font-size:10px;font-weight:700;cursor:pointer;margin-inline-start:4px;vertical-align:middle" title="What does each contract type mean for risk?">i</span>
+        </label>
+        <select class="fs" id="np_ct">
+          <option value="">— Not specified —</option>
+          <option>Fixed-Price (Lump Sum)</option>
+          <option>Unit-Price / Measured</option>
+          <option>Cost-Plus / Reimbursable</option>
+          <option>Time & Materials (T&M)</option>
+          <option>Guaranteed Maximum Price (GMP)</option>
+          <option>Framework / Call-off</option>
+          <option>O&M / Service Agreement</option>
+          <option>Other</option>
+        </select>
+        <div id="ctTip" style="display:none;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;margin-top:6px;font-size:10.5px;color:var(--t2);line-height:1.65">
+          <b>Fixed-Price (Lump Sum):</b> one agreed price — the contractor bears cost-overrun risk → cost exposure is the primary concern.<br>
+          <b>Unit-Price / Measured:</b> paid per measured quantity — risk sits in quantity variation and measurement disputes.<br>
+          <b>Cost-Plus / Reimbursable:</b> owner reimburses cost plus a fee — the owner bears cost risk → focus shifts to schedule, scope, and cost control.<br>
+          <b>Time & Materials:</b> paid for time and materials used — risk is shared → productivity and efficiency are the focus.<br>
+          <b>GMP:</b> cost-plus with a cap — the contractor bears overruns above the cap.<br>
+          <b>Framework / Call-off:</b> pre-agreed terms, work released in orders — risk is in demand certainty and call-off timing.<br>
+          <b>O&M / Service Agreement:</b> ongoing operations — risk is service continuity, SLA breaches, and availability, not construction delivery.
+        </div>
+        <div class="fl-hint">Changes how the AI weighs cost vs schedule risk — who bears the overrun.</div>
       </div>
       <div class="fg"><label class="fl">Start Date</label><input type="date" class="fi" id="np_s"/></div>
       <div class="fg"><label class="fl">Completion Date</label><input type="date" class="fi" id="np_e"/></div>
@@ -1482,8 +1510,22 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <optgroup label="Construction & Infrastructure"><option>Residential</option><option>Commercial</option><option>Mixed-Use</option><option>Infrastructure</option><option>Roads & Highways</option><option>Industrial</option><option>Healthcare</option><option>Educational</option><option>Hospitality</option><option>Landscaping</option><option>Marine</option><option>MEP</option><option>Renovation</option></optgroup>
           <optgroup label="Energy & Industrial"><option>Oil & Gas</option><option>Energy & Power</option><option>Renewables</option><option>Manufacturing</option><option>Mining</option></optgroup>
           <optgroup label="Technology & Business"><option>IT & Software</option><option>Telecom</option><option>Product Development</option><option>R&D</option><option>Consulting</option><option>Financial Services</option></optgroup>
-          <optgroup label="Other Sectors"><option>Government</option><option>Defense</option><option>Logistics & Supply Chain</option><option>Events</option><option>Other</option></optgroup>
+          <optgroup label="Other Sectors"><option>Government</option><option>Defense</option><option>Logistics & Supply Chain</option><option>Supply / Procurement</option><option>Operations & Maintenance (O&M)</option><option>Events</option><option>Other</option></optgroup>
         </select>
+      </div>
+      <div class="fg"><label class="fl">Contract Type</label>
+        <select class="fs" id="set_ct">
+          <option value="">— Not specified —</option>
+          <option>Fixed-Price (Lump Sum)</option>
+          <option>Unit-Price / Measured</option>
+          <option>Cost-Plus / Reimbursable</option>
+          <option>Time & Materials (T&M)</option>
+          <option>Guaranteed Maximum Price (GMP)</option>
+          <option>Framework / Call-off</option>
+          <option>O&M / Service Agreement</option>
+          <option>Other</option>
+        </select>
+        <div class="fl-hint">Determines who bears cost/schedule risk — feeds every AI analysis.</div>
       </div>
       <div class="fg"><label class="fl">Start Date</label><input type="date" class="fi" id="set_s"/></div>
       <div class="fg"><label class="fl">Completion Date</label><input type="date" class="fi" id="set_e"/></div>
@@ -4256,10 +4298,16 @@ async function createProj(){
     const cleanVal=(document.getElementById('np_v').value||'').replace(/,/g,'').trim();
     const cur=(document.getElementById('np_cur')?.value)||'USD';
     const userRegion=(document.getElementById('np_loc')?.value||'').trim();
-    const d={name,contract:document.getElementById('np_c').value,value:cleanVal,currency:cur,type:document.getElementById('np_t').value,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
+    const d={name,contract:document.getElementById('np_c').value,value:cleanVal,currency:cur,type:document.getElementById('np_t').value,contract_type:document.getElementById('np_ct')?.value||null,start_date:document.getElementById('np_s').value,end_date:document.getElementById('np_e').value,description:document.getElementById('np_d').value,tolerance:tol,contacts:[],risk_appetite:{level:appetite},user_id:currentUser?.id};
     if(userRegion)d.region=userRegion;
     if(pfId)d.portfolio_id=pfId;
-    const res=await sb('projects','POST',d);
+    let res;
+    try{res=await sb('projects','POST',d);}
+    catch(colErr){
+      // Graceful degrade if contract_type_migration.sql hasn't been run yet
+      if(String(colErr.message||'').includes('contract_type')){delete d.contract_type;res=await sb('projects','POST',d);toast('Saved — run contract_type_migration.sql to enable Contract Type');}
+      else throw colErr;
+    }
     hideLoad();closeProjModal();
     ['np_n','np_c','np_v','np_d','np_s','np_e','np_loc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     if(pfId)openPortfolios.add(pfId);
@@ -4345,6 +4393,7 @@ function openSettingsModal(){
   document.getElementById('set_c').value=CP.contract||'';
   document.getElementById('set_v').value=CP.value||'';
   document.getElementById('set_t').value=CP.type||'Residential';
+  const _sct=document.getElementById('set_ct');if(_sct)_sct.value=CP.contract_type||'';
   document.getElementById('set_s').value=CP.start_date||'';
   document.getElementById('set_e').value=CP.end_date||'';
   document.getElementById('set_d').value=CP.description||'';
@@ -4374,13 +4423,18 @@ async function saveSettings(){
       contract:document.getElementById('set_c').value,
       value:document.getElementById('set_v').value,
       type:document.getElementById('set_t').value,
+      contract_type:document.getElementById('set_ct')?.value||null,
       start_date:document.getElementById('set_s').value,
       end_date:document.getElementById('set_e').value,
       description:document.getElementById('set_d').value,
       tolerance:tol,
       risk_appetite:{level:newAppetite}
     };
-    await sb('projects?id=eq.'+CID,'PATCH',updates);
+    try{await sb('projects?id=eq.'+CID,'PATCH',updates);}
+    catch(colErr){
+      if(String(colErr.message||'').includes('contract_type')){delete updates.contract_type;await sb('projects?id=eq.'+CID,'PATCH',updates);toast('Saved — run contract_type_migration.sql to enable Contract Type');}
+      else throw colErr;
+    }
     hideLoad();closeSettingsModal();
     await loadAll();await selectProj(CID);
   }catch(e){hideLoad();toast('Error: '+e.message);}
@@ -5159,7 +5213,8 @@ Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).
 ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
   const parts=[{type:'text',text:`Senior project risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
+Project: ${CP.name} | Value: ${CP.value||'—'} ${curCode()}
+${projTypeContext(CP)}
 Project Start Date: ${CP.start_date||'unknown'} | Project End Date: ${CP.end_date||'unknown'} | Today: ${new Date().toISOString().slice(0,10)}
 Description: ${CP.description||'—'}
 ${tolCtx}
@@ -7168,10 +7223,12 @@ async function generateForecastAnalysis(){
     const lang=(typeof curLang==='function')?curLang():'en';
     const prompt=`You are a senior project risk analyst writing an executive analysis of a Monte Carlo completion forecast (10,000 iterations). Use ONLY the figures provided — do NOT invent numbers. Explain the REASONING, not just restate stats.
 
+${projTypeContext(CP)}
+
 SIMULATION RESULTS (real, from the engine):
 ${JSON.stringify(brief,null,2)}
 
-Write a concise executive analysis (${lang==='ar'?'in Arabic':'in English'}) covering:
+Write a concise executive analysis (${lang==='ar'?'in Arabic':'in English'}) — frame the narrative around WHO BEARS the risk under this contract type, and read the risk-appetite verdict through the contract lens — covering:
 1. Why the confidence level is at its current level (what is driving it).
 2. Which risks most influence the forecast (cost and schedule), and why.
 3. The quantified value the response plans created (confidence gain, overrun/delay reduction).
@@ -7694,7 +7751,8 @@ async function generateProjectReport(){
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:`You are a senior project risk manager reviewing an ACTIVE project that the manager is continuously monitoring — opening, mitigating, and closing risks over time. Write the entire report in English. Provide a comprehensive project risk report in JSON format only.
 
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'N/A'} ${curCode()}
+Project: ${CP.name} | Value: ${CP.value||'N/A'} ${curCode()}
+${projTypeContext(CP)}
 Start: ${CP.start_date||'N/A'} | End: ${CP.end_date||'N/A'}
 
 ${appetitePromptBlock()}
@@ -7874,7 +7932,9 @@ async function loadProjectInsights(withSuggestions){
   const risks=CP.risks||[];
   const riskList=risks.slice(0,10).map(r=>`${r.description} (${r.category})`).join(', ');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the project's industry. Respond entirely in English. Project: ${CP.name} (${CP.type}). Location/region: ${CP.region||'(not specified — infer the most likely region from the project name and context)'}. Contract currency: ${curCode()}.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:2500,messages:[{role:'user',content:`You are a market and geopolitical analyst for the project's industry. Respond entirely in English. Project: ${CP.name}.
+${projTypeContext(CP)}
+Location/region: ${CP.region||'(not specified — infer the most likely region from the project name and context)'}. Contract currency: ${curCode()}.
 
 ${appetitePromptBlock()}
 When recommending actions, flag any market condition that could push exposure beyond these appetite thresholds.
@@ -8652,7 +8712,9 @@ async function generateResponseSchedule(){
   const today=new Date().toISOString().slice(0,10);
   const ctx=risks.slice(0,40).map(r=>`${r.risk_id||r.id?.slice(0,6)}: [${r.level}] ${r.description} | Strategy: ${r.response_strategy||'Mitigate'} | Plan: ${r.mitigation||'none'} | Owner: ${r.owner||'TBD'} | Expected: ${r.expected_date||'—'}`).join('\n');
   try{
-    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project planner. Build an implementation SCHEDULE for executing the risk response plans below. Project: ${CP.name} (${CP.type}). Project end: ${CP.end_date||'unknown'}. Today: ${today}.
+    const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project planner. Build an implementation SCHEDULE for executing the risk response plans below. Project: ${CP.name}.
+${projTypeContext(CP)}
+Project end: ${CP.end_date||'unknown'}. Today: ${today}.
 
 ${appetitePromptBlock()}
 
@@ -9045,7 +9107,8 @@ async function analyzeTrend(){
 
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Senior project risk manager. Generate ALL output in ENGLISH.
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
+Project: ${CP.name} | Value: ${CP.value||'—'} ${curCode()}
+${projTypeContext(CP)}
 Existing Risks:\n${existing}
 Trend history (chronological):\n${history}
 CURRENT PERIOD (${weekDate}):
@@ -9200,6 +9263,35 @@ function renderTrendChart(canvasId){
 // ═══════════════════════════════════════════════════════════════════════
 const UPDATE_TYPE_LABELS={change_order:'Change Order',delay:'Delay',scope:'Scope Change',schedule:'Schedule Update',site:'Site Update',contract:'Contract Amendment',meeting:'Meeting Minutes',material:'Material Issue',design:'Design Change',progress:'Progress Update',completion:'Completion',note:'Note'};
 
+// ═══ PROJECT TYPE & CONTRACT TYPE — first-class AI context ═══
+// The project type changes WHICH risks exist (an O&M contract has service-continuity/
+// SLA risks, not foundation risks). The contract type changes WHO BEARS the risk and
+// how cost/schedule impact is weighted. Every AI prompt injects this block so outputs
+// are context-aware, never generically "construction".
+const CONTRACT_LENS={
+ 'Fixed-Price (Lump Sum)':'the CONTRACTOR bears cost-overrun risk — cost exposure is the primary concern; price escalation, quantity growth, and productivity losses hit the contractor directly',
+ 'Unit-Price / Measured':'risk sits in QUANTITY VARIATION and measurement disputes — remeasurement, quantity growth, and rate adequacy dominate',
+ 'Cost-Plus / Reimbursable':'the OWNER bears cost risk — focus shifts to schedule, scope discipline, and cost-control governance; cost overruns matter to the owner, not the contractor margin',
+ 'Time & Materials (T&M)':'risk is SHARED — productivity, efficiency, and burn-rate control are the focus',
+ 'Guaranteed Maximum Price (GMP)':'cost-plus with a cap — the contractor bears overruns ABOVE the GMP cap; proximity to the cap is the critical exposure metric',
+ 'Framework / Call-off':'risk is in DEMAND CERTAINTY and call-off timing — under-utilization, mobilization/demobilization cycles, and order pipeline gaps dominate',
+ 'O&M / Service Agreement':'risk is SERVICE CONTINUITY — SLA breaches, availability/uptime, spare-parts supply, and response-time penalties; NOT construction delivery risks'
+};
+function projTypeContext(proj){
+  proj=proj||CP;if(!proj)return '';
+  const pt=proj.type||'';const ct=proj.contract_type||'';
+  let s=`Project Type: ${pt||'not specified'} | Contract Type: ${ct||'not specified'}\n`;
+  s+=`TYPE CONTEXT (treat as first-class analysis context, not decoration):\n`;
+  s+=`- Generate and interpret risks appropriate to a "${pt||'general'}" project. `;
+  if(/O&M|Operations & Maintenance/i.test(pt))s+=`This is an OPERATIONS & MAINTENANCE engagement: risks are service continuity, SLA compliance, spare parts, workforce coverage, asset availability — NOT construction/build risks. `;
+  else if(/Consulting|Advisory/i.test(pt))s+=`This is a CONSULTING engagement: risks are deliverable quality, resource availability, scope creep, client acceptance — NOT physical construction risks. `;
+  else if(/IT|Software|Technology/i.test(pt))s+=`This is a TECHNOLOGY project: risks are integration, requirements volatility, cybersecurity, vendor lock-in, data migration. `;
+  else if(/Supply|Procurement|Logistics/i.test(pt))s+=`This is a SUPPLY/PROCUREMENT project: risks are lead times, logistics, customs, supplier performance, quality on receipt. `;
+  if(ct&&CONTRACT_LENS[ct])s+=`\n- Under a ${ct} contract, ${CONTRACT_LENS[ct]}. Weight cost/schedule impacts and frame recommendations accordingly.`;
+  else if(!ct)s+=`\n- Contract type not specified: use balanced cost/schedule weighting.`;
+  return s;
+}
+
 const MATERIALITY_RULES=`MATERIALITY GATE — answer these BEFORE proposing anything:
 1. Does this information materially affect project objectives (cost, schedule, scope, quality, safety, reputation)?
 2. Does it significantly change the probability or impact of an existing risk?
@@ -9253,7 +9345,8 @@ async function addUpdate(){
 
   const parts=[{type:'text',text:`You are a senior project risk manager analyzing a project update. First CLASSIFY the update, then apply the materiality gate, and only then propose changes.
 
-Project: ${CP.name} | Type: ${CP.type}
+Project: ${CP.name}
+${projTypeContext(CP)}
 
 EXISTING RISK REGISTER:
 ${existing||'No risks yet'}
@@ -9592,7 +9685,8 @@ ${JSON.stringify(mi).slice(0,2800)}`;
   try{
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior project risk manager. Based on a completed ${contextLabel}, review the CURRENT risk register and recommend register changes — ONLY where the analysis clearly and materially justifies them.
 
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'}
+Project: ${CP.name} | Value: ${CP.value||'—'}
+${projTypeContext(CP)}
 
 CURRENT RISK REGISTER:
 ${existing}
@@ -9958,7 +10052,8 @@ async function runSimulation(){
 ${appetitePromptBlock()}
 For each scenario, state whether the resulting cost and schedule exposure stays WITHIN or EXCEEDS the appetite thresholds.
 
-Project: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
+Project: ${CP.name} | Value: ${CP.value||'—'} ${curCode()}
+${projTypeContext(CP)}
 Baseline Risk Score: ${baselineScore}/100 | High: ${high}, Medium: ${med}, Low: ${low}
 
 CURRENT RISK REGISTER:
@@ -10382,7 +10477,8 @@ async function generateInsights(){
     const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`You are a senior risk intelligence analyst for a project located in ${CP.region||'(region not specified — infer the most likely location from the project name and context)'}.
 
 PROJECT CONTEXT:
-Name: ${CP.name} | Type: ${CP.type} | Value: ${CP.value||'—'} ${curCode()}
+Name: ${CP.name} | Value: ${CP.value||'—'} ${curCode()}
+${projTypeContext(CP)}
 Location/region: ${CP.region||'—'} | Currency: ${curCode()}
 Description: ${CP.description||'—'}
 
@@ -11114,7 +11210,7 @@ function armBuildContext(){
   let c='';
   const inProj=(typeof CID!=='undefined'&&CID&&typeof CP!=='undefined'&&CP);
   if(inProj){
-    c+=`CURRENT OPEN PROJECT: "${CP.name}" (type: ${CP.type||'—'}, value: ${CP.value||'—'}, ends: ${CP.end_date||'—'}). Risk appetite: ${CP.risk_appetite?.level||'moderate'}.\n`;
+    c+=`CURRENT OPEN PROJECT: "${CP.name}" (type: ${CP.type||'—'}, contract type: ${CP.contract_type||'—'}, value: ${CP.value||'—'}, ends: ${CP.end_date||'—'}). Risk appetite: ${CP.risk_appetite?.level||'moderate'}.\n${CP.contract_type&&CONTRACT_LENS[CP.contract_type]?`CONTRACT LENS: Under a ${CP.contract_type} contract, ${CONTRACT_LENS[CP.contract_type]}.\n`:''}`;
     // PATCH 6: weekly mission thread — give the AI the same goal the user sees, so it can reference it.
     try{
       const _g=(typeof weeklyGoalLine==='function')?weeklyGoalLine({mode:'project',id:CID}):null;
