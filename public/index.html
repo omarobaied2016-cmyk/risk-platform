@@ -4500,7 +4500,7 @@ async function selectProj(id){
      if(rb){if(role!=='owner'){rb.textContent=role==='editor'?'SHARED · EDITOR':'SHARED · VIEW ONLY';rb.style.display='inline-flex';}else rb.style.display='none';}
      document.body.classList.toggle('role-viewer',role==='viewer');}
     if(typeof armProactive==='function')armProactive(); // PATCH 5: proactive nudge
-    document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.value?CP.value+' '+curCode():'',CP.contract].filter(Boolean).join(' · ');
+    document.getElementById('phSub').textContent=[currentPF?'📁 '+currentPF.name:null,CP.type,CP.contract_type||null,CP.value?CP.value+' '+curCode():'',CP.contract].filter(Boolean).join(' · ');
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
     renderSidebar();renderFiles();renderReg();renderRiskLog();renderUpds();renderTol();renderWarn();renderContacts();updateStats();
     if(risks.length){renderDash();ST('dash');}
@@ -6289,7 +6289,7 @@ function renderDash(){
     <div class="rcc-bar">
       <div>
         <div class="rcc-title">${CP.name}</div>
-        <div class="rcc-meta">${[CP.type,CP.value?CP.value+' '+curCode():null,CP.contract].filter(Boolean).join(' · ')||'Risk Command Center'}</div>
+        <div class="rcc-meta">${[CP.type,CP.contract_type||null,CP.value?CP.value+' '+curCode():null,CP.contract].filter(Boolean).join(' · ')||'Risk Command Center'}</div>
       </div>
       <div class="rcc-actions">
         <span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:${hcol0};display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${hcol0}"></span>${hword0}</span>
@@ -7869,7 +7869,7 @@ function printProjectReport(){
     <div class="rhead">
       <div>
         <div class="brand">RISK<span class="mist">ATLAS</span><span class="ai">AI</span></div>
-        <div class="sub">${esc(CP.name)}${CP.type?' · '+esc(CP.type):''}${CP.contract?' · '+esc(CP.contract):''}</div>
+        <div class="sub">${esc(CP.name)}${CP.type?' · '+esc(CP.type):''}${CP.contract_type?' · '+esc(CP.contract_type):''}${CP.contract?' · '+esc(CP.contract):''}</div>
       </div>
       <div class="meta">Risk Report<br>${dateStr}${CP.value?'<br>Value: '+esc(cur)+' '+fmtMoney(CP.value):''}</div>
     </div>
@@ -8934,7 +8934,7 @@ function exportResponseSchedulePDF(){
     .foot{text-align:center;color:#aaa;font-size:10px;margin-top:24px;padding-top:14px;border-top:1px solid #e4e7ef}
     @media print{body{padding:0}@page{size:A4 landscape;margin:10mm}}
   </style></head><body>
-    <div class="head"><img src="${LOGO}" alt="RiskAtlas AI"/><div class="ht"><h1>Response Plan Schedule</h1><div class="sub">${CP.name} · ${CP.type||''} · Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div></div></div>
+    <div class="head"><img src="${LOGO}" alt="RiskAtlas AI"/><div class="ht"><h1>Response Plan Schedule</h1><div class="sub">${CP.name} · ${CP.type||''}${CP.contract_type?' · '+CP.contract_type:''} · Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div></div></div>
     ${sched.summary?`<div class="summary">${sched.summary}</div>`:''}
     ${ganttHtml}
     <div class="section-title">Task Details</div>
@@ -9384,7 +9384,7 @@ Respond ONLY with valid JSON. Keep all text fields under 25 words:
 
 In "updated_risks.changes" only include the fields that actually changed. Use "expected_date" (YYYY-MM-DD) whenever the timing of a scheduled risk shifts.
 
-Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
+Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial/Operations/Service Level/Resources — pick what fits the PROJECT TYPE (service projects use Operations/Service Level; construction uses build categories)
 Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate
 Strategies (opportunities): Exploit/Enhance/Share/Accept/Escalate
 Levels: high/medium/low
@@ -9712,7 +9712,7 @@ Respond ONLY with valid JSON. Keep all text fields under 25 words:
   "removed_risk_ids": [],
   "removed_reasons": {}
 }
-Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial
+Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial/Operations/Service Level/Resources — pick what fits the PROJECT TYPE (service projects use Operations/Service Level; construction uses build categories)
 Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate. Levels: high/medium/low. Maximum 6 recommendations total — quality over quantity.`}]});
     hideLoad();
     if(data.error){toast('Error: '+data.error.message);return;}
