@@ -341,12 +341,65 @@ app.post('/api/email/welcome', emailLimiter, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Password reset via Resend (same provider as email verification) ──
+// The reset code is generated and held SERVER-SIDE (short-lived, in-memory) so the
+// browser can't forge a "verified" state. Flow:
+//   1) POST /api/email/reset  { to }            → server makes a 6-digit code, stores
+//      it keyed by email with a 15-min expiry, emails it via Resend (tplReset).
+//   2) POST /api/auth/reset-confirm { to, code, password }
+//      → server checks the code, and if valid updates the password through the
+//        Supabase Admin API (service key), then clears the code.
+// This keeps the whole flow on the platform's own branded email (noreply@riskatlas.pro),
+// never Supabase's default auth email.
+const _resetCodes = new Map(); // email -> { code, expires, attempts }
+function _genCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+// periodic cleanup of expired codes
+setInterval(() => { const now = Date.now(); for (const [k, v] of _resetCodes) if (v.expires < now) _resetCodes.delete(k); }, 5 * 60 * 1000).unref?.();
+
 app.post('/api/email/reset', emailLimiter, async (req, res) => {
-  const { to, code } = req.body || {};
-  if (!to || !code) return res.status(400).json({ error: 'Missing fields' });
+  const to = String((req.body && req.body.to) || '').trim().toLowerCase();
+  if (!to || !to.includes('@')) return res.status(400).json({ error: 'Valid email required' });
   try {
+    const code = _genCode();
+    _resetCodes.set(to, { code, expires: Date.now() + 15 * 60 * 1000, attempts: 0 });
     await sendEmail(to, 'Reset your RiskAtlas AI password', tplReset(code));
+    // Always report success shape (don't leak whether the address exists).
     res.json({ sent: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/reset-confirm', emailLimiter, async (req, res) => {
+  const to = String((req.body && req.body.to) || '').trim().toLowerCase();
+  const code = String((req.body && req.body.code) || '').trim();
+  const password = String((req.body && req.body.password) || '');
+  if (!to || !code || !password) return res.status(400).json({ error: 'Missing fields' });
+  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return res.status(503).json({ error: 'Password reset not configured' });
+
+  const rec = _resetCodes.get(to);
+  if (!rec) return res.status(400).json({ error: 'No reset request found. Please request a new code.' });
+  if (Date.now() > rec.expires) { _resetCodes.delete(to); return res.status(400).json({ error: 'Code expired. Please request a new one.' }); }
+  rec.attempts = (rec.attempts || 0) + 1;
+  if (rec.attempts > 6) { _resetCodes.delete(to); return res.status(429).json({ error: 'Too many attempts. Please request a new code.' }); }
+  if (rec.code !== code) return res.status(400).json({ error: 'Incorrect code. Please check and try again.' });
+
+  try {
+    // Find the user by email via the Admin API, then update their password.
+    const lookup = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(to)}`, {
+      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+    });
+    const lj = await lookup.json().catch(() => ({}));
+    const user = (lj.users && lj.users[0]) || (Array.isArray(lj) && lj[0]) || null;
+    if (!user || !user.id) { _resetCodes.delete(to); return res.status(400).json({ error: 'Account not found for this email.' }); }
+
+    const upd = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+      body: JSON.stringify({ password }),
+    });
+    if (!upd.ok) { const ej = await upd.json().catch(() => ({})); return res.status(500).json({ error: ej.msg || ej.error_description || 'Could not update password' }); }
+    _resetCodes.delete(to); // one-time use
+    res.json({ updated: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
