@@ -9347,6 +9347,14 @@ async function addUpdate(){
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
   if(!text&&!UF.length){toast('Please describe the update or attach a file');return;}
+  // ── Content guard: a file with no readable content must NEVER reach the AI on its own —
+  // the model will otherwise fabricate an update (invented schedules, figures, revisions)
+  // and propose register changes based on pure imagination.
+  const _readableUF=UF.filter(f=>(f.text&&f.text.trim().length>=40)||f.extype==='image'||f.extype==='pdf_raw');
+  if(!text&&UF.length&&!_readableUF.length){
+    showNoImpactNotice('No readable content','The attached file contains no readable text, so no analysis was run. Add a description of the update or attach a file with actual content.');
+    return;
+  }
 
   // ── Duplicate detection BEFORE any analysis ──
   const contentHash=updContentHash(text,UF);
@@ -9382,6 +9390,8 @@ ${text||'(no text — see attached files)'}
 ${fdesc?'Attached File: '+fdesc:''}
 
 ${MATERIALITY_RULES}
+
+ANTI-FABRICATION (absolute): every date, figure, revision number, and activity you reference must literally appear in the update text or the attached file content. If the attached file is empty, unreadable, or contains no project information, set "material_impact": false with materiality_note "The attachment contains no readable project content" and return empty arrays — NEVER invent a schedule revision, program, change order, or any facts to analyze.
 
 If (and ONLY if) the update passes the materiality gate, identify:
 1. NEW RISKS the update introduces
