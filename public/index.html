@@ -835,9 +835,9 @@ tr:hover td{background:rgba(109,129,150,.015);}
 .rt-reg td{vertical-align:top;line-height:1.5;white-space:nowrap;}
 /* Description, Risk Response, and Owner columns wrap to multiple lines; the rest stay on one line */
 .rt-reg td:nth-child(5),.rt-reg td:nth-child(10),.rt-reg td:nth-child(11),.rt-reg td:nth-child(12){white-space:normal;word-break:normal;overflow-wrap:break-word;}
-.rt-compact{min-width:980px !important;}
-.rt-compact td:nth-child(3),.rt-compact td:nth-child(5),.rt-compact td:nth-child(6){white-space:normal;word-break:normal;overflow-wrap:break-word;}
-.rt-compact td:nth-child(10),.rt-compact td:nth-child(11),.rt-compact td:nth-child(12){white-space:nowrap;}
+.rt-compact{min-width:1100px !important;}
+.rt-compact td:nth-child(3),.rt-compact td:nth-child(6),.rt-compact td:nth-child(7){white-space:normal;word-break:normal;overflow-wrap:break-word;}
+.rt-compact td:nth-child(8),.rt-compact td:nth-child(9),.rt-compact td:nth-child(10){white-space:nowrap;}
 .rt-reg th{vertical-align:bottom;}
 /* Expandable detail row */
 .rrow:hover>td{background:rgba(109,129,150,.035);}
@@ -5644,7 +5644,7 @@ function renderReg(){
       </div></td>`}
       <td><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span></td>
       <td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>
-      <td><div style="font-size:11px;color:var(--t2);min-width:180px;line-height:1.5">${r.mitigation}</div></td>
+      <td><div style="font-size:11px;color:var(--t2);line-height:1.5">${r.mitigation}</div></td>
       ${_cc?'':`<td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>`}
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.response_owner||'—'}</td>
       <td onclick="event.stopPropagation()">
@@ -5707,9 +5707,9 @@ function renderReg(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
   const _cc=regCompact;
-  const hdr=`<tr><th style="width:30px"><input type="checkbox" aria-label="Select all" onclick="event.stopPropagation();bulkSelectAll(this.checked)"/></th><th>ID</th>${_cc?'':'<th>Type</th><th>Category</th>'}<th>Description</th>${_cc?'':'<th>Prob</th><th>Impact</th>'}<th style="width:1%;white-space:nowrap">Level</th><th style="width:1%;white-space:nowrap">Response</th><th style="width:24%">Risk Response</th>${_cc?'':'<th>Risk Owner</th>'}<th>Response Owner</th><th>Status</th><th>Updates</th><th></th></tr>`;
+  const hdr=`<tr><th style="width:30px"><input type="checkbox" aria-label="Select all" onclick="event.stopPropagation();bulkSelectAll(this.checked)"/></th><th>ID</th>${_cc?'':'<th>Type</th><th>Category</th>'}<th>Description</th>${_cc?'':'<th>Prob</th><th>Impact</th>'}<th>Level</th><th>Response</th><th>Risk Response</th>${_cc?'':'<th>Risk Owner</th>'}<th>Response Owner</th><th>Status</th><th>Updates</th><th></th></tr>`;
   const colg=_cc
-    ?`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:300px"><col style="width:92px"><col style="width:300px"><col style="width:140px"><col style="width:104px"><col style="width:150px"><col style="width:46px"></colgroup>`
+    ?`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:300px"><col style="width:74px"><col style="width:88px"><col style="width:300px"><col style="width:140px"><col style="width:104px"><col style="width:150px"><col style="width:46px"></colgroup>`
     :`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:84px"><col style="width:104px"><col style="width:250px"><col style="width:58px"><col style="width:82px"><col style="width:92px"><col style="width:104px"><col style="width:230px"><col style="width:124px"><col style="width:124px"><col style="width:104px"><col style="width:130px"><col style="width:46px"></colgroup>`;
 
   const opt=(arr,sel,map)=>arr.map(v=>`<option value="${v}" ${sel===v?'selected':''}>${map?map(v):v}</option>`).join('');
