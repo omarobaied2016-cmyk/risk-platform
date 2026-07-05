@@ -9339,6 +9339,38 @@ function findDuplicateUpdate(hash){
   return null;
 }
 
+// ═══ GROUNDING VERIFIER (deterministic — runs OUTSIDE the model) ═══
+// Every AI proposal carries an "evidence" quote. We verify MECHANICALLY that the quote
+// actually exists in the source content (update text + extracted file text). A prompt
+// is a promise the model can break; a string match is not. Fabricated evidence fails
+// the match → the item is auto-rejected and flagged in the review modal.
+function _normTxt(t){return String(t||'').toLowerCase().replace(/[""''«»`´]/g,'"').replace(/[–—]/g,'-').replace(/[^\p{L}\p{N}]+/gu,' ').trim();}
+function verifyEvidence(evidence,corpus,hasOpaqueSources){
+  const ev=_normTxt(evidence), co=_normTxt(corpus);
+  if(!ev)return hasOpaqueSources?null:false;            // no evidence supplied at all
+  if(ev.length>=12&&co.includes(ev))return true;         // verbatim (normalized) match
+  // token-containment fallback: ≥85% of evidence tokens present in the corpus
+  const toks=ev.split(' ').filter(w=>w.length>2);
+  if(toks.length>=4){
+    const hit=toks.filter(w=>co.includes(w)).length;
+    if(hit/toks.length>=0.85)return true;
+  }
+  // not found in extracted text: if the model also read opaque sources (images / raw
+  // PDFs we can't string-match), we can't prove fabrication — mark for manual review.
+  return hasOpaqueSources?null:false;
+}
+function gradeReviewGrounding(review,corpus,hasOpaqueSources){
+  let verified=0,flagged=0,manual=0;
+  review.items.forEach(it=>{
+    if(it.kind==='baseline'&&!it.evidence){it.grounded=hasOpaqueSources?null:false;}
+    else it.grounded=verifyEvidence(it.evidence,corpus,hasOpaqueSources);
+    if(it.grounded===true)verified++;
+    else if(it.grounded===false){flagged++;it.approved=false;}   // fabricated/unsupported → auto-reject
+    else manual++;
+  });
+  review.grounding={verified,flagged,manual,total:review.items.length};
+}
+
 let pendingReview=null; // the proposal currently sitting in the Verification & Review modal
 
 async function addUpdate(){
@@ -9391,7 +9423,7 @@ ${fdesc?'Attached File: '+fdesc:''}
 
 ${MATERIALITY_RULES}
 
-ANTI-FABRICATION (absolute): every date, figure, revision number, and activity you reference must literally appear in the update text or the attached file content. If the attached file is empty, unreadable, or contains no project information, set "material_impact": false with materiality_note "The attachment contains no readable project content" and return empty arrays — NEVER invent a schedule revision, program, change order, or any facts to analyze.
+ANTI-FABRICATION (absolute): every date, figure, revision number, and activity you reference must literally appear in the update text or the attached file content. The "evidence" field of EVERY proposal must be a VERBATIM quote copied character-for-character from the update text or file content (max 25 words) — never paraphrase inside evidence. Evidence quotes are mechanically verified against the source after you respond; a quote that does not literally exist in the source causes the proposal to be auto-rejected. If the attached file is empty, unreadable, or contains no project information, set "material_impact": false with materiality_note "The attachment contains no readable project content" and return empty arrays — NEVER invent a schedule revision, program, change order, or any facts to analyze.
 
 If (and ONLY if) the update passes the materiality gate, identify:
 1. NEW RISKS the update introduces
@@ -9459,6 +9491,10 @@ RISK QUALITY RULES for new_risks (BOTH threats AND opportunities):
 
     // ── Build the review proposal — NOTHING is written yet ──
     pendingReview=buildReviewFromParsed(parsed,beforeRisks,{source:'Project Update — '+UPDATE_TYPE_LABELS[uType],updateMeta});
+    // Grounding check: evidence quotes must exist in what the user actually submitted.
+    const _corpus=text+'\n'+UF.map(f=>f.text||'').join('\n');
+    const _opaque=UF.some(f=>f.extype==='image'||f.extype==='pdf_raw');
+    gradeReviewGrounding(pendingReview,_corpus,_opaque);
     showReviewModal();
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
@@ -9565,6 +9601,11 @@ function renderReviewItems(){
       <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">Source: ${R.source}</div>
       ${R.analysis?`<div style="font-size:12px;color:var(--t2);line-height:1.6">${R.analysis}</div>`:''}
       ${R.materialityNote?`<div style="font-size:11px;color:var(--t3);line-height:1.55;margin-top:5px"><b>Materiality:</b> ${R.materialityNote}</div>`:''}
+      ${R.grounding?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;padding-top:7px;border-top:1px dashed rgba(109,129,150,.25)">
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--grn-soft);color:var(--grn)">✓ ${R.grounding.verified} evidence verified against source</span>
+        ${R.grounding.flagged?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--red-soft);color:var(--red)">⚠ ${R.grounding.flagged} NOT found in source — auto-rejected</span>`:''}
+        ${R.grounding.manual?`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--yel-soft);color:#B8860B">◐ ${R.grounding.manual} from image/PDF — verify manually</span>`:''}
+      </div>`:''}
     </div>
     ${R.items.map((it,i)=>{
       const m=kindMeta[it.kind];
@@ -9617,7 +9658,7 @@ function renderReviewItems(){
           ${toggleBtn(i,it.approved)}
         </div>
         ${body}
-        ${it.evidence?`<div style="font-size:10.5px;color:var(--t3);margin-top:6px;border-top:1px dashed var(--b1);padding-top:5px"><b>Evidence:</b> "${it.evidence}"</div>`:''}
+        ${it.evidence?`<div style="font-size:10.5px;color:var(--t3);margin-top:6px;border-top:1px dashed var(--b1);padding-top:5px"><b>Evidence:</b> "${it.evidence}" ${it.grounded===true?`<span style="color:var(--grn);font-weight:700">· verified in source</span>`:it.grounded===false?`<span style="color:var(--red);font-weight:700">· NOT FOUND in source — likely fabricated, auto-rejected</span>`:it.grounded===null?`<span style="color:#B8860B;font-weight:700">· from image/PDF, verify manually</span>`:''}</div>`:it.grounded===false?`<div style="font-size:10.5px;color:var(--red);margin-top:6px;border-top:1px dashed var(--b1);padding-top:5px;font-weight:700">⚠ No evidence supplied — auto-rejected</div>`:''}
       </div>`;
     }).join('')}`;
 }
@@ -9772,6 +9813,7 @@ Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate. Levels: high/medi
       return;
     }
     pendingReview=buildReviewFromParsed(parsed,beforeRisks,{source:contextLabel});
+    gradeReviewGrounding(pendingReview,contextBody,false);
     showReviewModal();
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
