@@ -4382,7 +4382,11 @@ function myRole(){
   if(m)return m.role==='editor'?'editor':'viewer';
   // No membership row found. If the project is shared (not mine), default to viewer (safe).
   if(CP._shared)return 'viewer';
-  // Otherwise it's my own unshared project.
+  // HARDENED: the project carries an owner id and it is NOT mine — no membership row
+  // proves otherwise (rows may be missing due to fetch timing or RLS). Least privilege:
+  // viewer. Previously this fell through to 'owner', which silently defeated EVERY
+  // downstream role check for shared viewers (AUTH-05/SEC-02 failure).
+  if(CP.user_id&&currentUser?.id)return 'viewer';
   return 'owner';
 }
 function openSettingsModal(){
@@ -4672,6 +4676,7 @@ function renderRiskLog(){
 }
 
 async function generateLessonsLearned(){
+  if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot generate lessons learned');return;}
   const closed=(CP?.risks||[]).filter(r=>r.status==='closed');
   if(!closed.length){toast('No closed risks to analyze');return;}
   if(!GK().startsWith('sk-ant-')){toast('API key required');return;}
@@ -4791,7 +4796,9 @@ async function extractText(file){
 
 function handleFiles(e){
   if(!PF[CID])PF[CID]=[];
-  Array.from(e.target.files).forEach(async file=>{const ex=await extractText(file);PF[CID].push({name:file.name,size:file.size,...ex});renderFiles();});
+  Array.from(e.target.files).forEach(async file=>{
+    if(file.size>15*1024*1024){toast(`"${file.name}" is ${(file.size/1048576).toFixed(0)}MB — maximum is 15MB. Split the document or compress it.`);return;}
+    const ex=await extractText(file);PF[CID].push({name:file.name,size:file.size,...ex});renderFiles();});
 }
 
 function renderFiles(){
@@ -4814,7 +4821,9 @@ function refreshBtn(){
 
 function remFile(i){PF[CID].splice(i,1);renderFiles();}
 
-function handleUF(e){Array.from(e.target.files).forEach(async file=>{const ex=await extractText(file);UF.push({name:file.name,...ex});renderUFP();});}
+function handleUF(e){Array.from(e.target.files).forEach(async file=>{
+  if(file.size>15*1024*1024){toast(`"${file.name}" is ${(file.size/1048576).toFixed(0)}MB — maximum is 15MB. Split the document or compress it.`);return;}
+  const ex=await extractText(file);UF.push({name:file.name,...ex});renderUFP();});}
 function renderUFP(){
   const el=document.getElementById('ufPrev');
   if(!UF.length){el.innerHTML='';return;}
@@ -5202,6 +5211,13 @@ async function analyze(dims){
   if(dims.qhse)activeDims.push('QHSE');
   if(dims.reputation)activeDims.push('Reputation');
   const files=PF[CID]||[];
+  // ── Content guard (DOC-06): an empty or unreadable upload must NEVER reach the AI —
+  // the model will otherwise imagine risks and fabricate citations for them.
+  const _readable=files.filter(f=>(f.text&&f.text.trim().length>=40)||f.extype==='image'||f.extype==='pdf_raw');
+  if(files.length&&!_readable.length){
+    toast('The uploaded file(s) contain no readable content — analysis was not run. Check the files and try again.');
+    return;
+  }
   const tl=CP.tolerance||{};
   const hasSched=files.some(f=>['xlsx','xls','csv','mpp'].includes(f.name.split('.').pop().toLowerCase()));
   showLoadStages(['Reading your documents…','Identifying threats and opportunities…','Scoring probability and impacts…','Writing response plans…','Finalizing your register…'],9000);
@@ -5240,7 +5256,9 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
    OPPORTUNITIES: Exploit (make the root source certain to happen) / Enhance (increase probability or benefit of the source) / Share (partner to capture the benefit) / Accept (take it if it comes) / Escalate (raise to higher authority)
 4. The RESPONSE PLAN must be CONSISTENT with the chosen strategy AND target the root cause (threats) or root source/enabler (opportunities). E.g. Exploit = how to guarantee the enabler; Enhance = how to amplify the source; Transfer = to whom; Accept = the contingency.
 5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
-6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — section X: specific stated constraint", or "Schedule — a specific activity or work package"). If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words.
+6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — section X: specific stated constraint", or "Schedule — a specific activity or work package"). If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words. NEVER cite a document name that was not actually uploaded — fabricated citations are a critical failure.
+7. INFERRED-RISK CAP: risks marked "Inferred from project type/context" must NEVER outnumber document-evidenced risks. If the uploaded content is minimal (a single paragraph, one screenshot, a short note), generate ONLY the risks that content directly evidences — typically 1-3 — and NOTHING inferred. Thin input yields a thin register; that is correct behavior.
+8. EMPTY/UNREADABLE CONTENT: if the documents contain no readable substantive project content, return {"risks":[],"summary":"No substantive content found in the uploaded documents."} — do NOT generate any risks from imagination.
 
 QUANTITATIVE IMPACT ESTIMATION (drives the Monte Carlo forecast — be realistic, NEVER inflate):
 For EVERY risk, estimate impact as REAL VALUES with a three-point range, not a 1-5 level:
@@ -5252,6 +5270,7 @@ RULES:
 2. If no figure is stated, estimate realistically from the risk's nature, the contract value/duration, and professional experience. A single moderate risk is a SMALL fraction of contract value, not a large one. Do NOT default to large percentages.
 3. min < likely < max (genuine uncertainty). If a risk has no cost impact, set cost values to 0; if no schedule impact, set sched values to 0.
 4. NEVER inflate. Sanity-check: the TOTAL of all threat cost_likely values should be a believable contingency (typically well under ~25-35% of contract value). If higher, revise down.
+5. SCORE-ESTIMATE CONSISTENCY (critical): the 1-5 impact scores MUST agree with your quantitative estimates read against the tolerance levels above. If cost_likely falls in the range described by a tolerance level, impact_cost = that level's score — a six-figure cost_likely on a mid-size project is NEVER "Negligible" (1). Same for sched_likely vs the schedule levels. The overall "level" (high/medium/low) must follow from probability_pct × the dominant impact — do not default everything to low.
 
 RESIDUAL IMPACT — AFTER THE RESPONSE PLAN (this is the key realism feature):
 Estimate what REMAINS after the response plan in "mitigation" is applied, based on the response_strategy:
@@ -5624,7 +5643,7 @@ function renderReg(){
         <div class="ir"><span style="font-size:9.5px;color:var(--t3);min-width:14px">Q</span><div class="ib"><div class="ibf" style="width:${r.impact_qhse*20}%;background:${lc[r.level]||'var(--primary)'}"></div></div><span style="font-size:9.5px">${r.impact_qhse}</span></div>
       </div></td>`}
       <td><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span></td>
-      ${_cc?'':`<td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>`}
+      <td><span class="resp r-${r.response_strategy||'Accept'}">${RESP_AR[r.response_strategy]||r.response_strategy||'—'}</span></td>
       <td><div style="font-size:11px;color:var(--t2);max-width:160px;line-height:1.5">${r.mitigation}</div></td>
       ${_cc?'':`<td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.owner||'—'}</td>`}
       <td style="font-size:11px;color:var(--t2);white-space:nowrap">${r.response_owner||'—'}</td>
@@ -5688,7 +5707,7 @@ function renderReg(){
   const thr=risks.filter(r=>r.type==='threat'||!r.type);
   const opp=risks.filter(r=>r.type==='opportunity');
   const _cc=regCompact;
-  const hdr=`<tr><th style="width:30px"><input type="checkbox" aria-label="Select all" onclick="event.stopPropagation();bulkSelectAll(this.checked)"/></th><th>ID</th>${_cc?'':'<th>Type</th><th>Category</th>'}<th>Description</th>${_cc?'':'<th>Prob</th><th>Impact</th>'}<th>Level</th>${_cc?'':'<th>Response</th>'}<th>Risk Response</th>${_cc?'':'<th>Risk Owner</th>'}<th>Response Owner</th><th>Status</th><th>Updates</th><th></th></tr>`;
+  const hdr=`<tr><th style="width:30px"><input type="checkbox" aria-label="Select all" onclick="event.stopPropagation();bulkSelectAll(this.checked)"/></th><th>ID</th>${_cc?'':'<th>Type</th><th>Category</th>'}<th>Description</th>${_cc?'':'<th>Prob</th><th>Impact</th>'}<th>Level</th><th>Response</th><th>Risk Response</th>${_cc?'':'<th>Risk Owner</th>'}<th>Response Owner</th><th>Status</th><th>Updates</th><th></th></tr>`;
   const colg=_cc
     ?`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:300px"><col style="width:92px"><col style="width:300px"><col style="width:140px"><col style="width:104px"><col style="width:150px"><col style="width:46px"></colgroup>`
     :`<colgroup><col style="width:30px"><col style="width:56px"><col style="width:84px"><col style="width:104px"><col style="width:250px"><col style="width:58px"><col style="width:82px"><col style="width:92px"><col style="width:104px"><col style="width:230px"><col style="width:124px"><col style="width:124px"><col style="width:104px"><col style="width:130px"><col style="width:46px"></colgroup>`;
@@ -6009,6 +6028,7 @@ function showClosureModal(riskId){
   setTimeout(()=>document.getElementById('closureNotes')?.focus(),50);
 }
 async function confirmCloseRisk(riskId){
+  if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot close risks');return;}
   const risk=CP.risks.find(r=>r.id===riskId);if(!risk)return;
   const notes=(document.getElementById('closureNotes')?.value||'').trim();
   const _oldStatus=risk.status||'open';
@@ -7922,6 +7942,7 @@ function renderProjectReport(parsed,dateStr){
 
 // ═══ PROJECT MARKET INSIGHTS (#21) ═══
 async function loadProjectInsights(withSuggestions){
+  if(withSuggestions&&myRole&&myRole()==='viewer'){toast('View-only access');return;}
   // withSuggestions: true only when the user explicitly asks ("Analyze impact"); auto-refresh passes false.
   if(!CP)return;
   if(!requireActiveAccess())return;
@@ -9089,6 +9110,7 @@ async function saveTrendEntry(){
 }
 
 async function analyzeTrend(){
+  if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot run trend analysis');return;}
   if(!requireActiveAccess())return;
   // If the form has indicators entered, save them first so they're included.
   const _hasInput=['ind_sv','ind_br','ind_cr','ind_ru','ind_vd'].some(id=>{const e=document.getElementById(id);return e&&e.value.trim();});
@@ -9191,7 +9213,7 @@ function renderTrendReport(entry){
       ${parsed.predicted_risks?.length?`<div class="card" style="background:var(--red-soft);border-color:rgba(246,78,96,.3);margin-bottom:10px"><div class="card-t" style="color:var(--red)">▲ Predicted Risks (Next Periods)</div>${parsed.predicted_risks.map(r=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(246,78,96,.15);line-height:1.55">▸ ${r}</div>`).join('')}</div>`:''}
       ${parsed.actions?.length?`<div class="card" style="background:var(--grn-soft);border-color:rgba(80,205,137,.3)"><div class="card-t" style="color:var(--grn)">✓ Recommended Actions</div>${parsed.actions.map((a,i)=>`<div style="font-size:12px;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(80,205,137,.15);line-height:1.55"><b style="color:var(--grn)">${i+1}.</b> ${a}</div>`).join('')}</div>`:''}
     </div>
-  </div>`;
+  </div>${APPLY_BTN('trend')}`;
   el.innerHTML=_conclusion;return;
   /* legacy layout below kept for reference, no longer rendered */
   el.innerHTML=`
@@ -9321,6 +9343,7 @@ let pendingReview=null; // the proposal currently sitting in the Verification & 
 
 async function addUpdate(){
   if(!requireActiveAccess())return;
+  if(myRole&&myRole()==='viewer'){toast('View-only access — you cannot add project updates');return;}
   const text=document.getElementById('utext').value.trim();
   const fdesc=document.getElementById('ufdesc').value.trim();
   if(!text&&!UF.length){toast('Please describe the update or attach a file');return;}
@@ -9622,7 +9645,13 @@ async function applyApprovedChanges(){
       }else if(it.kind==='baseline'){
         CP.approved_co_cost=(parseFloat(CP.approved_co_cost)||0)+it.coCost;
         CP.approved_co_days=(parseFloat(CP.approved_co_days)||0)+it.coDays;
-        try{await sb('projects?id=eq.'+CID,'PATCH',{approved_co_cost:CP.approved_co_cost,approved_co_days:CP.approved_co_days});}catch(e){}
+        try{await sb('projects?id=eq.'+CID,'PATCH',{approved_co_cost:CP.approved_co_cost,approved_co_days:CP.approved_co_days});}
+        catch(e){
+          // Do NOT swallow this: if the columns are missing (change_orders_migration.sql
+          // not run) the baseline silently reverts on reload and the Completion Forecast
+          // target never moves (MC-08 failure).
+          toast('Baseline NOT saved to database — run change_orders_migration.sql in Supabase','err');
+        }
       }
     }
     // Log the source event: project updates always (they're a factual project log);
@@ -9671,7 +9700,14 @@ Trend history: ${td.map(w=>`[${w.date}] SPI=${w.sv} CPI=${w.burn_rate} health=${
 ${JSON.stringify(wifSimulated).slice(0,2500)}`;
   }else if(source==='market'){
     const mi=CP.insights_data||CP.market_insights;
-    if(!mi){toast('Generate Market Insights first (Refresh Insights)');return;}
+    if(!mi||(typeof mi==='object'&&!Object.keys(mi).length)){
+      if(confirm('No market insights have been generated yet. Generate them now, then run the impact analysis?')){
+        await generateInsights();
+        if(!CP.insights_data)return; // generation failed or was blocked
+        return applyAnalysisToRisks('market');
+      }
+      return;
+    }
     contextLabel='Market Intelligence';
     const miDate=CP.insights_data?(CP.insights_date?new Date(CP.insights_date).toISOString().slice(0,10):'—'):(CP.market_insights_date?new Date(CP.market_insights_date).toISOString().slice(0,10):'—');
     contextBody=`Market & world insights (${miDate}):
@@ -10424,6 +10460,7 @@ async function translateMainInsights(){
 }
 
 async function generateInsights(){
+  if(myRole&&myRole()==='viewer'){toast('View-only access — insights refresh is disabled for viewers');return;}
   const risks=CP?.risks||[];
   if(!GK().startsWith('sk-ant-')){toast('Please enter Claude API key');return;}
 
