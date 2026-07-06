@@ -1722,7 +1722,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
       <div class="pane" id="pane-risklog"><div id="riskLogContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="et">No closed risks yet</div></div></div></div>
       <div class="pane" id="pane-warn"><div id="warnContent"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div><div class="et">Run analysis to view warnings</div></div></div></div>
 
-      <div class="pane" id="pane-upd">
+      <div class="pane" id="pane-updates">
         <div class="card" style="margin-bottom:15px">
           <div class="card-t">New Project Update</div>
           <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:11px;align-items:start">
@@ -1757,7 +1757,10 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <div style="font-size:10.5px;color:var(--t3);margin-top:7px">The AI never changes the Risk Register directly — every proposed change goes to a Verification &amp; Review screen for your approval first.</div>
         </div>
         <div class="tl" id="tlEl"><div class="empty"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div><div class="et">No updates yet</div></div></div>
-        <div id="weeklyIndContent" style="margin-top:18px"></div>
+      </div>
+
+      <div class="pane" id="pane-upd">
+        <div id="weeklyIndContent"></div>
       </div>
 
       <div class="pane" id="pane-tol">
@@ -4570,9 +4573,9 @@ async function selectProj(id){
 const NAV_GROUPS={
   overview:{panes:['dash'],labels:{}},
   risks:{panes:['reg','risklog','files'],labels:{reg:'Register',risklog:'Closed Risks',files:'Documents'}},
-  plan:{panes:['plan'],labels:{}},
-  monitor:{panes:['warn','upd','whatif'],labels:{warn:'Early Warning',upd:'Trend Analysis',whatif:'What-If Simulator'}},
-  intel:{panes:['insights'],labels:{insights:'Market & World'}},
+  plan:{panes:['warn','plan'],labels:{warn:'Early Warning',plan:'Action Plan'}},
+  monitor:{panes:['updates','upd'],labels:{updates:'Project Updates',upd:'Trend Analysis'}},
+  intel:{panes:['whatif','insights'],labels:{whatif:'What-If Simulator',insights:'Market & World Insights'}},
   setup:{panes:['contacts','tol'],labels:{contacts:'Stakeholders',tol:'Risk Appetite'}}
 };
 function grpOf(pane){for(const g in NAV_GROUPS)if(NAV_GROUPS[g].panes.includes(pane))return g;return 'overview';}
@@ -11581,9 +11584,9 @@ function onbSet(k,v){try{const s=onbState();s[k]=v;localStorage.setItem(ONB_KEY,
 const TOUR_STEPS=[
   {target:'.tab[data-grp="overview"]',tab:'dash',title:'Dashboard',body:'Your command center — overall project health, KPIs, completion probability, and portfolio visibility at a glance. <b>Why it matters:</b> one screen tells you if your project is on track.',icon:'◆'},
   {target:'.tab[data-grp="risks"]',tab:'reg',title:'Risk Register',body:'Create and manage risks — set probability and impact, assign owners. <b>Why it matters:</b> this is the backbone. Every AI insight, report, and forecast is built from your register.',icon:'▦'},
-  {target:'.tab[data-grp="plan"]',tab:'plan',title:'Response Plans',body:'AI turns each risk into concrete, scheduled mitigation actions with goals and expected outcomes. <b>Benefit:</b> always know exactly what to do today to stay ahead.',icon:'❖'},
-  {target:'.tab[data-grp="monitor"]',tab:'upd',title:'Monitor — Trend & What-If',body:'Track weekly SPI/CPI and forecasts, get early warnings, and run What-If scenarios to test delays and cost changes. <b>Benefit:</b> see where the project is heading and model decisions safely.',icon:'◬'},
-  {target:'.tab[data-grp="intel"]',tab:'insights',title:'Market & World Insights',body:'Live material prices, construction news, geopolitical events, and currency impacts — tied to your specific risks. <b>Benefit:</b> catch external threats before they hit your project.',icon:'◉'},
+  {target:'.tab[data-grp="plan"]',tab:'warn',title:'Plan — Early Warning & Actions',body:'Date-based early warnings for scheduled risks, plus the AI action plan that turns every response into concrete, scheduled tasks. <b>Benefit:</b> always know what needs attention today.',icon:'❖'},
+  {target:'.tab[data-grp="monitor"]',tab:'updates',title:'Monitor — Updates & Trend',body:'Log project updates in plain language — the AI analyzes their impact and proposes register changes for your approval. Track weekly SPI/CPI trends and health forecasts. <b>Benefit:</b> the register stays current, and you see where the project is heading.',icon:'◬'},
+  {target:'.tab[data-grp="intel"]',tab:'whatif',title:'Intelligence — What-If & Market',body:'Model delays and cost scenarios safely with the What-If Simulator, and track live market and world events tied to your specific risks. <b>Benefit:</b> test decisions and catch external threats early.',icon:'◉'},
   {target:'.tab[data-grp="setup"]',tab:'contacts',title:'Project Setup — Team & Appetite',body:'Manage stakeholders and roles, then define your risk appetite — the tolerance thresholds the AI treats as hard limits. <b>Benefit:</b> the AI analyzes risks against YOUR limits, not generic ones.',icon:'◎'},
   {target:'#btnActivityLog',tab:null,title:'Activity Log',body:'A full audit trail of every change — who did what and when. <b>Benefit:</b> complete accountability and history for your team.',icon:'◷'},
   {target:'[onclick="showExportModal()"]',tab:null,title:'Export Center',body:'Export polished PDF &amp; Excel reports — dashboards, register, AI reports, market insights, and response plans. <b>Benefit:</b> professional deliverables for clients in one click.',icon:'⤓'},
