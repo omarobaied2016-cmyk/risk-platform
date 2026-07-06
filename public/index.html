@@ -4847,6 +4847,26 @@ async function extractText(file){
     try{const ab=await file.arrayBuffer();const res=await mammoth.extractRawText({arrayBuffer:ab});return {extype:'text',text:`[DOCX: ${file.name}]\n`+res.value.slice(0,60000),name:file.name};}
     catch(e){return {extype:'text',text:`[Cannot extract: ${file.name}]`,name:file.name};}
   }
+  if(['xlsx','xls','xlsm','xlsb','ods'].includes(ext)){
+    // Read EVERY sheet in the workbook, not just the first. Each sheet becomes a
+    // labeled CSV block so the AI sees the whole file's tabular content.
+    try{
+      if(typeof XLSX==='undefined')return {extype:'text',text:`[${file.name}] Spreadsheet library still loading — please remove and re-add this file.`,name:file.name};
+      const ab=await file.arrayBuffer();
+      const wb=XLSX.read(ab,{type:'array'});
+      let text=`[SPREADSHEET: ${file.name} — ${wb.SheetNames.length} sheet(s): ${wb.SheetNames.join(', ')}]\n`;
+      for(const sn of wb.SheetNames){
+        const ws=wb.Sheets[sn];
+        const csv=XLSX.utils.sheet_to_csv(ws,{blankrows:false});
+        text+=`\n===== SHEET: ${sn} =====\n`+(csv.trim()?csv:'(empty sheet)')+'\n';
+        if(text.length>90000){text+='\n[...truncated — remaining sheets omitted for length]';break;}
+      }
+      return {extype:'text',text:text.slice(0,95000),name:file.name};
+    }catch(e){return {extype:'text',text:`[Cannot read spreadsheet ${file.name}: ${e.message}]`,name:file.name};}
+  }
+  if(ext==='csv'||ext==='tsv'){
+    return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({extype:'text',text:`[${ext.toUpperCase()}: ${file.name}]\n`+ev.target.result.slice(0,90000),name:file.name});r.readAsText(file);});
+  }
   return new Promise(res=>{const r=new FileReader();r.onload=ev=>res({extype:'text',text:`[${file.name}]\n`+ev.target.result.slice(0,40000),name:file.name});r.readAsText(file);});
 }
 
@@ -5149,6 +5169,7 @@ async function addContact(){
 async function uploadContacts(event){
   const file=event.target.files[0];
   if(!file)return;
+  if(file.size>15*1024*1024){toast(`"${file.name}" is ${(file.size/1048576).toFixed(0)}MB — maximum is 15MB.`);event.target.value='';return;}
   const ext=file.name.split('.').pop().toLowerCase();
   if(ext==='csv'){
     const text=await file.text();
@@ -8388,10 +8409,19 @@ function exportRegisterPDF(){
   const risks=(CP&&CP.risks)||[];
   if(!risks.length){toast('No risks to export');return;}
   const m=exMeta();
-  const rows=risks.map(r=>{
+  const threatN=risks.filter(r=>r.type!=='opportunity').length;
+  const oppN=risks.filter(r=>r.type==='opportunity').length;
+  // Threats first, then opportunities — so both are clearly present and grouped.
+  const ordered=[...risks.filter(r=>r.type!=='opportunity'),...risks.filter(r=>r.type==='opportunity')];
+  const rows=ordered.map(r=>{
     const mi=exMaxImpact(r);const score=(r.probability||0)*mi;
+    const isOpp=r.type==='opportunity';
+    const typeBadge=isOpp
+      ?`<span style="display:inline-block;padding:1px 7px;border-radius:9px;font-size:8.5px;font-weight:700;background:#E7F3EC;color:#2E7D52">OPP</span>`
+      :`<span style="display:inline-block;padding:1px 7px;border-radius:9px;font-size:8.5px;font-weight:700;background:#FBEAE8;color:#B23A2E">THREAT</span>`;
     return `<tr>
       <td style="font-weight:700;color:${EX_BRAND.primary}">${r.risk_id||''}</td>
+      <td style="text-align:center">${typeBadge}</td>
       <td>${r.category||''}</td>
       <td>${r.description||''}</td>
       <td style="text-align:center">${r.probability||'-'}</td>
@@ -8404,15 +8434,15 @@ function exportRegisterPDF(){
     </tr>`;
   }).join('');
   const body=`
-  ${exCover('Risk Register','Project Risk Register','A structured register of all identified risks, their assessment, response strategy, and ownership.',EX_BRAND.crit)}
+  ${exCover('Risk Register','Project Risk Register','A structured register of all identified risks and opportunities, their assessment, response strategy, and ownership.',EX_BRAND.crit)}
   <div class="doc">
     <div class="sechead"><span class="bar" style="background:${EX_BRAND.crit}"></span><h2>Risk Register (${risks.length})</h2></div>
-    <div class="secsub">Score = Probability \u00d7 Highest Impact. Level auto-derived (Critical &gt;16, High 10\u201316, Medium 3\u20139, Low 1\u20132).</div>
+    <div class="secsub">${threatN} threat${threatN===1?'':'s'} \u00b7 ${oppN} opportunit${oppN===1?'y':'ies'}. Score = Probability \u00d7 Highest Impact. Level auto-derived (Critical &gt;16, High 10\u201316, Medium 3\u20139, Low 1\u20132).</div>
     <table>
-      <thead><tr><th>ID</th><th>Category</th><th>Description</th><th>P</th><th>I</th><th>Score</th><th>Level</th><th>Response</th><th>Owner</th><th>Status</th></tr></thead>
+      <thead><tr><th>ID</th><th>Type</th><th>Category</th><th>Description</th><th>P</th><th>I</th><th>Score</th><th>Level</th><th>Response</th><th>Owner</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <div class="footer-note">RiskAtlas AI · ${m.project} · ${risks.length} risks · Generated ${m.dateStr} ${m.timeStr} · Confidential</div>
+    <div class="footer-note">RiskAtlas AI \u00b7 ${m.project} \u00b7 ${threatN} threats, ${oppN} opportunities \u00b7 Generated ${m.dateStr} ${m.timeStr} \u00b7 Confidential</div>
   </div>`;
   exPrint('Risk Register — '+m.project,EX_BRAND.crit,body);
 }
@@ -8628,7 +8658,8 @@ function exportRegisterExcel(){
   if(typeof XLSX==='undefined'){toast('Excel library still loading, try again in a moment.');return;}
   const m=exMeta();
   const head=['Risk ID','Type','Category','Description','Root Cause','Probability','Impact (Cost)','Impact (Schedule)','Impact (QHSE)','Impact (Reputation)','Highest Impact','Score','Level','Response Strategy','Response Plan','Risk Owner','Response Owner','Status'];
-  const data=risks.map(r=>{const mi=exMaxImpact(r);return [r.risk_id||'',r.type||'',r.category||'',r.description||'',r.cause||'',r.probability||'',r.impact_cost||'',r.impact_schedule||'',r.impact_qhse||'',r.impact_reputation||'',mi,(r.probability||0)*mi,(r.level||'').toUpperCase(),r.response_strategy||'',r.mitigation||'',r.owner||'',r.response_owner||'',r.status==='closed'?'Closed':'Open'];});
+  const ordered=[...risks.filter(r=>r.type!=='opportunity'),...risks.filter(r=>r.type==='opportunity')];
+  const data=ordered.map(r=>{const mi=exMaxImpact(r);return [r.risk_id||'',r.type==='opportunity'?'Opportunity':'Threat',r.category||'',r.description||'',r.cause||'',r.probability||'',r.impact_cost||'',r.impact_schedule||'',r.impact_qhse||'',r.impact_reputation||'',mi,(r.probability||0)*mi,(r.level||'').toUpperCase(),r.response_strategy||'',r.mitigation||'',r.owner||'',r.response_owner||'',r.status==='closed'?'Closed':'Open'];});
   const aoa=[[`Risk Register — ${m.project}`],[`Generated ${m.dateStr} ${m.timeStr}`],[],head,...data];
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols']=[{wch:10},{wch:12},{wch:14},{wch:50},{wch:40},{wch:11},{wch:12},{wch:14},{wch:12},{wch:14},{wch:13},{wch:8},{wch:11},{wch:16},{wch:44},{wch:18},{wch:18},{wch:10}];
