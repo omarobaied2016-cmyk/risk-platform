@@ -1318,6 +1318,17 @@ tr:hover td{background:rgba(109,129,150,.015);}
 </div>
 
 <!-- PORTFOLIO MODAL -->
+<div class="modal-ov" role="dialog" aria-modal="true" id="assignPfModal">
+  <div class="modal" style="width:460px">
+    <div class="modal-t">Assign to Portfolio</div>
+    <div style="font-size:11.5px;color:var(--t3);margin:-6px 0 12px">Choose a portfolio for <b id="assignPfProjName" style="color:var(--t2)"></b></div>
+    <div id="assignPfList" style="display:flex;flex-direction:column;gap:7px;max-height:300px;overflow-y:auto"></div>
+    <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--b1)">
+      <button class="btn btn-g" onclick="document.getElementById('assignPfModal').classList.remove('on')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-ov" role="dialog" aria-modal="true" id="portfModal">
   <div class="modal" style="width:520px">
     <div class="modal-t" id="pfModalTitle">New Portfolio</div>
@@ -3865,15 +3876,31 @@ async function delCurrentPortfolio(){
 
 async function assignToPortfolio(projId){
   if(!portfolios.length){toast('Create a portfolio first');return;}
-  const list=portfolios.map((p,i)=>`${i+1}. ${p.name}`).join('\n');
-  const choice=prompt(`Choose portfolio number:\n\n${list}`);
-  if(!choice)return;
-  const idx=parseInt(choice)-1;
-  if(idx<0||idx>=portfolios.length){toast('Invalid selection');return;}
+  const proj=projs.find(p=>p.id===projId);
+  document.getElementById('assignPfProjName').textContent=proj?.name||'this project';
+  const curPf=proj?.portfolio_id||null;
+  const list=document.getElementById('assignPfList');
+  list.innerHTML=portfolios.map(p=>{
+    const isCur=p.id===curPf;
+    const count=projs.filter(x=>x.portfolio_id===p.id).length;
+    return `<button onclick="doAssignPortfolio('${projId}','${p.id}')" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:start;padding:11px 13px;border:1px solid ${isCur?'var(--primary)':'var(--b1)'};border-radius:8px;background:${isCur?'var(--primary-soft)':'var(--s1)'};cursor:pointer;font-family:inherit">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--t1)">${p.name}${isCur?' <span style="font-size:10px;color:var(--primary);font-weight:700">· current</span>':''}</div>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:1px">${count} project${count===1?'':'s'}${p.description?' · '+p.description:''}</div>
+      </div>
+      <span style="font-size:14px;color:var(--primary)">${isCur?'✓':'→'}</span>
+    </button>`;
+  }).join('')
+  + (curPf?`<button onclick="doAssignPortfolio('${projId}',null)" style="text-align:start;padding:10px 13px;border:1px dashed var(--b2);border-radius:8px;background:transparent;cursor:pointer;font-family:inherit;font-size:12px;color:var(--t3)">✕ Remove from portfolio</button>`:'');
+  document.getElementById('assignPfModal').classList.add('on');
+}
+async function doAssignPortfolio(projId,pfId){
+  document.getElementById('assignPfModal').classList.remove('on');
   showLoad('Saving...');
   try{
-    await sb('projects?id=eq.'+projId,'PATCH',{portfolio_id:portfolios[idx].id});
+    await sb('projects?id=eq.'+projId,'PATCH',{portfolio_id:pfId});
     hideLoad();await loadAll();
+    toast(pfId?'Project assigned to portfolio':'Project removed from portfolio',{type:'ok'});
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
 
