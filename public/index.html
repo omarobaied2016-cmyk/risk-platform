@@ -1093,7 +1093,7 @@ tr:hover td{background:rgba(109,129,150,.015);}
           <label class="auth-fl">Email Address</label>
           <input type="email" class="auth-fi" id="forgot_email" placeholder="you@company.com"/>
         </div>
-        <button class="auth-submit" onclick="doForgotPassword()">Send Reset Link →</button>
+        <button class="auth-submit" onclick="doForgotPassword()">Send Reset Code →</button>
         <div class="auth-divider">or</div>
         <div class="auth-switch"><a onclick="switchAuthTab('login')">← Back to Sign In</a></div>
       </div>
@@ -2037,24 +2037,77 @@ async function resendCode(){
   }catch(e){showVerifyError('Could not resend: '+e.message);}
 }
 
+let pendingReset=null; // {email} — for the Resend-based password reset flow
 async function doForgotPassword(){
   const email=document.getElementById('forgot_email').value.trim().toLowerCase();
   if(!email||!email.includes('@')){showAuthError('Please enter a valid email address');return;}
-  
   try{
-    const res=await fetch(SB+'/auth/v1/recover',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SK},
-      body:JSON.stringify({email})
-    });
+    // Send a reset code via the platform's own email (Resend) — same as signup verification.
+    // The server generates and stores the code; we just trigger it and show the entry screen.
+    const res=await fetch('/api/email/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:email})});
     if(res.ok){
-      showAuthSuccess('Password reset link sent! Check your email inbox.');
+      pendingReset={email};
+      showResetCodeScreen(email);
     }else{
-      const data=await res.json();
-      showAuthError(data.error_description||data.msg||'Failed to send reset email');
+      const data=await res.json().catch(()=>({}));
+      showAuthError(data.error||'Failed to send reset email');
     }
   }catch(e){showAuthError('Connection error: '+e.message);}
 }
+
+// Show the code + new-password entry screen (mirrors the signup verify screen).
+function showResetCodeScreen(email){
+  ['loginForm','signupForm','forgotForm'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  const ae=document.getElementById('authError');if(ae)ae.style.display='none';
+  let rc=document.getElementById('resetCodeForm');
+  if(!rc){
+    rc=document.createElement('div');
+    rc.id='resetCodeForm';
+    rc.innerHTML=`
+      <p style="font-size:.85rem;color:var(--t2);margin-bottom:1rem;line-height:1.5">We sent a 6-digit code to <b id="rcEmail"></b>. Enter it below with your new password.</p>
+      <div class="auth-field"><label class="auth-lbl">Reset code</label>
+        <input type="text" inputmode="numeric" maxlength="6" class="auth-fi" id="reset_code" placeholder="000000" autocomplete="one-time-code"/></div>
+      <div class="auth-field"><label class="auth-lbl">New password</label>
+        <input type="password" class="auth-fi" id="reset_newpass" placeholder="At least 6 characters"/></div>
+      <div class="auth-field"><label class="auth-lbl">Confirm new password</label>
+        <input type="password" class="auth-fi" id="reset_newpass2" placeholder="Re-enter password"/></div>
+      <button class="auth-submit" onclick="doResetConfirm()">Update Password →</button>
+      <div style="text-align:center;margin-top:.9rem">
+        <a onclick="doForgotPassword()" style="font-size:.8rem;color:var(--primary);cursor:pointer">Resend code</a>
+        <span style="color:var(--t3);margin:0 .5rem">·</span>
+        <a onclick="switchAuthTab('login')" style="font-size:.8rem;color:var(--t2);cursor:pointer">Back to sign in</a>
+      </div>`;
+    document.getElementById('forgotForm').parentElement.appendChild(rc);
+  }
+  document.getElementById('rcEmail').textContent=email;
+  rc.style.display='block';
+  showAuthSuccess('Reset code sent! Check your email inbox.');
+}
+
+// Confirm the code + set the new password (server verifies + updates via Supabase admin).
+async function doResetConfirm(){
+  const code=document.getElementById('reset_code').value.trim();
+  const pass=document.getElementById('reset_newpass').value;
+  const pass2=document.getElementById('reset_newpass2').value;
+  if(!code||code.length!==6){showAuthError('Enter the 6-digit code from your email');return;}
+  if(!pass||pass.length<6){showAuthError('Password must be at least 6 characters');return;}
+  if(pass!==pass2){showAuthError('Passwords do not match');return;}
+  const email=(pendingReset&&pendingReset.email)||'';
+  if(!email){showAuthError('Session expired. Please start again.');switchAuthTab('forgot');return;}
+  try{
+    const res=await fetch('/api/auth/reset-confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:email,code,password:pass})});
+    const data=await res.json().catch(()=>({}));
+    if(res.ok&&data.updated){
+      const rc=document.getElementById('resetCodeForm');if(rc)rc.style.display='none';
+      pendingReset=null;
+      switchAuthTab('login');
+      showAuthSuccess('Password updated! You can now sign in.');
+    }else{
+      showAuthError(data.error||'Failed to update password');
+    }
+  }catch(e){showAuthError('Error: '+e.message);}
+}
+
 
 async function doResetPassword(){
   const pass=document.getElementById('reset_pass').value;
