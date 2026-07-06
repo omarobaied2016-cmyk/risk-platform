@@ -6236,6 +6236,7 @@ function renderDash(){
     if(!suffCost.ok&&!suffSched.ok){
       const seen={},merged=[];
       [...suffCost.missing,...suffSched.missing].forEach(m=>{if(!seen[m.k]){seen[m.k]=1;merged.push(m);}});
+      window._fcMC=null; // clear any stale simulation from a previous render/project
       return {insufficient:true,missing:merged,overall:null,costP:null,schedP:null,
               band:{w:'Insufficient data',c:'#B8860B'},mc:null,pLevel};
     }
@@ -6341,9 +6342,21 @@ function renderDash(){
   const opp=risks.filter(r=>r.type==='opportunity').length;
   const riskScore=Math.min(100,Math.round((crit*15+highOnly*10+med*5+low*1)/(risks.length*15)*100));
   const val=parseFloat(String(CP.value||'0').replace(/[^0-9.]/g,''))||0;
-  // Expected cost exposure (EMV): sum of probability × cost-impact value across THREATS only.
-  // Uses the same principled calc as Risk Exposure Analysis, so it stays realistic (a fraction of contract value).
-  const exposure=val>0?Math.round((risks.filter(r=>r.type!=='opportunity'&&r.status!=='closed').reduce((s,r)=>s+(typeof rexValue==='function'?rexValue(r,'cost'):0),0))):null;
+  // Expected cost exposure (EMV) — SINGLE SOURCE OF TRUTH: read the mean risk impact
+  // from the SAME residual Monte Carlo run that drives the Completion Forecast, so this
+  // card and the forecast can never contradict each other (open risks only, after
+  // response, opportunities netted — exactly what the S-curve integrates).
+  // Fallback (before the simulation has run): inherent EMV over OPEN threats via rexValue.
+  let exposure=null,exposureBasis='';
+  const _fc=completionForecast(); window._fc=_fc;   // run the engine FIRST — the exposure card reads its output
+  const _mcExp=window._fcMC&&window._fcMC.cost;
+  if(val>0&&_mcExp&&typeof _mcExp.mean==='number'){
+    exposure=Math.max(0,Math.round(_mcExp.mean));
+    exposureBasis='expected risk cost — after response';
+  }else if(val>0){
+    exposure=Math.round(risks.filter(r=>r.type!=='opportunity'&&r.status!=='closed').reduce((s,r)=>s+(typeof rexValue==='function'?rexValue(r,'cost'):0),0));
+    exposureBasis='expected cost (EMV) — before response';
+  }
 
   const cats={};
   risks.forEach(r=>{const c=CAT_AR[r.category]||r.category;cats[c]=(cats[c]||0)+1;});
@@ -6401,12 +6414,16 @@ function renderDash(){
   // Category icons
   const catIcons={};
   const catColors=['purple','blue','cyan','orange','pink','green','red','yellow'];
-  const _fc=completionForecast(); window._fc=_fc;
   smartSuggestions=[]; // rebuilt from saved analyses below (avoids cross-project/duplicate bleed)
 
   const hp0=CP.ai_report&&CP.ai_report.project_health;
-  const hword0={good:'Healthy',warning:'Needs attention',critical:'Critical'}[hp0]||(high>0?'Needs attention':'On track');
-  const hcol0={good:'var(--grn)',warning:'#B8860B',critical:'var(--red)'}[hp0]||(high>0?'#B8860B':'var(--grn)');
+  // Live floor: the saved AI report may be stale — it can only worsen the verdict,
+  // never soften it below what the open register shows right now.
+  const _liveSeverity=crit>0?'critical':(highOnly>0?'warning':null);
+  const _rank={good:0,warning:1,critical:2};
+  const _effHp=_liveSeverity&&(_rank[_liveSeverity]>(_rank[hp0]||0))?_liveSeverity:hp0;
+  const hword0={good:'Healthy',warning:'Needs attention',critical:'Critical'}[_effHp]||(high>0?'Needs attention':'On track');
+  const hcol0={good:'var(--grn)',warning:'#B8860B',critical:'var(--red)'}[_effHp]||(high>0?'#B8860B':'var(--grn)');
   const _goal0=(typeof weeklyGoalLine==='function')?weeklyGoalLine({mode:'project',id:CID}):null;
   document.getElementById('dashContent').innerHTML=`
     <!-- ZONE 1: Command Bar -->
@@ -6430,7 +6447,7 @@ function renderDash(){
 
     <!-- ZONE 2: KPI Strip -->
     <div class="rcc-kpis">
-      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v">${exposure?(exposure/1000000).toFixed(1)+'M':'—'}</div><div class="k-s">${exposure?'expected cost (EMV)':'add project value'}</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v">${exposure!=null?(exposure>=1e6?(exposure/1e6).toFixed(1)+'M':Math.round(exposure/1000)+'K'):'—'}</div><div class="k-s">${exposure!=null?exposureBasis:'add project value'}</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Total Risks</div><div class="k-v">${risks.length}</div><div class="k-s">${thr} threats · ${opp} opp.</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">✓ Closed Risks</div>${(()=>{const c=(CP?.risks||[]).filter(r=>r.status==='closed');const cc=c.filter(r=>r.level==='critical').length;const ch=c.filter(r=>r.level==='high').length;const cm=c.filter(r=>r.level==='medium').length;const cl=c.filter(r=>r.level==='low').length;return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center"><span class="k-v" style="color:#7f1d1d;font-size:18px;text-align:center">${cc}</span><span class="k-v" style="color:var(--red);font-size:18px;text-align:center;border-inline-start:1px solid var(--b1)">${ch}</span><span class="k-v" style="color:#ffa800;font-size:18px;text-align:center;border-inline:1px solid var(--b1)">${cm}</span><span class="k-v" style="color:var(--grn);font-size:18px;text-align:center">${cl}</span></div>`;})()}<div class="k-s" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;text-align:center;font-size:8.5px"><span>Critical</span><span>High</span><span>Med</span><span>Low</span></div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ Open Risks</div>${(()=>{const o=(CP?.risks||[]).filter(r=>r.status!=='closed'&&r.type!=='opportunity');const oc=o.filter(r=>r.level==='critical').length;const oh=o.filter(r=>r.level==='high').length;const om=o.filter(r=>r.level==='medium').length;const ol=o.filter(r=>r.level==='low').length;return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center"><span class="k-v" style="color:#7f1d1d;font-size:18px;text-align:center">${oc}</span><span class="k-v" style="color:var(--red);font-size:18px;text-align:center;border-inline-start:1px solid var(--b1)">${oh}</span><span class="k-v" style="color:#ffa800;font-size:18px;text-align:center;border-inline:1px solid var(--b1)">${om}</span><span class="k-v" style="color:var(--grn);font-size:18px;text-align:center">${ol}</span></div>`;})()}<div class="k-s" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;text-align:center;font-size:8.5px"><span>Critical</span><span>High</span><span>Med</span><span>Low</span></div></div>
