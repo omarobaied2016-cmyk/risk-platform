@@ -5566,7 +5566,7 @@ function bulkBarRefresh(){
   }
   bar.innerHTML=`<span id="bulkN">${n} selected</span>
     <select id="bulkStatus" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;cursor:pointer"><option value="">Set status…</option><option value="open">Open</option><option value="monitoring">Monitoring</option><option value="closed">Closed</option></select>
-    <input id="bulkOwner" placeholder="Set owner…" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;width:130px;font-family:inherit"/>
+    <input id="bulkNotes" placeholder="Notes… (saved as Closure Notes when closing)" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;width:250px;font-family:inherit"/>
     <button class="btn btn-p" style="padding:6px 14px;font-size:12px" onclick="bulkApply()">Apply</button>
     <button class="btn btn-g" style="padding:6px 12px;font-size:12px" onclick="bulkSelectAll(false)">Cancel</button>`;
 }
@@ -5574,9 +5574,12 @@ async function bulkApply(){
   if(myRole()==='viewer'){toast('View-only access — you cannot edit risks');return;}
   const ids=bulkSelected();if(!ids.length)return;
   const status=document.getElementById('bulkStatus').value;
-  const owner=document.getElementById('bulkOwner').value.trim();
-  if(!status&&!owner){toast('Choose a status or enter an owner first');return;}
-  const patch={};if(status)patch.status=status;if(owner)patch.owner=owner;
+  const notes=document.getElementById('bulkNotes').value.trim();
+  if(!status&&!notes){toast('Choose a status or write a note first');return;}
+  const patch={};
+  if(status)patch.status=status;
+  if(notes)patch.notes=notes;                      // shown as Closure Notes in the closed risks register
+  if(status==='closed')patch.closed_at=new Date().toISOString();  // bulk close must stamp the Closed Date too
   showLoad('Updating '+ids.length+' risks…');
   let ok=0;
   for(const id of ids){
@@ -5810,15 +5813,6 @@ function renderReg(){
           ${detField('Reputation Impact',(IL[r.impact_reputation]||r.impact_reputation)+' ('+(r.impact_reputation||0)+'/5)')}
           ${detField('Root Cause',r.cause)}
           ${detField('Response Plan',r.mitigation)}
-        </div>
-        <div style="margin-top:16px;border-top:1px solid var(--b1);padding-top:14px" onclick="event.stopPropagation()">
-          <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px">Quick Edit</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Risk Owner</div><input type="text" value="${(r.owner||'').replace(/"/g,'&quot;')}" onchange="quickEditRisk('${r.id}','owner',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;width:150px;font-family:inherit;outline:none"/></div>
-            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Response Owner</div><input type="text" value="${(r.response_owner||'').replace(/"/g,'&quot;')}" onchange="quickEditRisk('${r.id}','response_owner',this.value)" style="font-size:11.5px;border:1px solid var(--b1);border-radius:7px;padding:6px 9px;width:150px;font-family:inherit;outline:none"/></div>
-            <div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Level <span style="text-transform:none;font-weight:500">(auto)</span></div><span class="bdg b-${r.level}">${RL[r.level]||r.level}</span> <span style="font-size:10px;color:var(--t3)">P${r.probability||0}×I${Math.max(r.impact_cost||0,r.impact_schedule||0,r.impact_qhse||0,r.impact_reputation||0)}=${(r.probability||0)*Math.max(r.impact_cost||0,r.impact_schedule||0,r.impact_qhse||0,r.impact_reputation||0)}</span></div>
-            <button class="btn btn-g" style="padding:6px 12px;font-size:11px" onclick="openEdit('${r.id}')">Full edit…</button>
-          </div>
         </div>
         <div style="margin-top:16px;border-top:1px solid var(--b1);padding-top:14px">
           <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px">Progress Updates</div>
