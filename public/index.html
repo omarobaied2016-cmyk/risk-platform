@@ -5565,7 +5565,7 @@ function bulkBarRefresh(){
     document.body.appendChild(bar);
   }
   bar.innerHTML=`<span id="bulkN">${n} selected</span>
-    <select id="bulkStatus" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;cursor:pointer"><option value="">Set status…</option><option value="open">Open</option><option value="monitoring">Monitoring</option><option value="closed">Closed</option></select>
+    <select id="bulkStatus" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;cursor:pointer"><option value="">Set status…</option><option value="open">Open</option><option value="closed">Closed</option></select>
     <input id="bulkNotes" placeholder="Notes… (saved as Closure Notes when closing)" style="font-size:12px;padding:6px 9px;border-radius:8px;border:0;outline:none;width:250px;font-family:inherit"/>
     <button class="btn btn-p" style="padding:6px 14px;font-size:12px" onclick="bulkApply()">Apply</button>
     <button class="btn btn-g" style="padding:6px 12px;font-size:12px" onclick="bulkSelectAll(false)">Cancel</button>`;
