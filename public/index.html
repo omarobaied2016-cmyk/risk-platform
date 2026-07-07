@@ -3700,7 +3700,7 @@ function planObjectives(){
   const totalActs=acts.length;
   const progPct=totalActs?Math.round(doneActs/totalActs*100):0;
   // current exposure (cost EMV of open threats)
-  const expoNow=(typeof rexValue==='function')?Math.round(openThreats.reduce((s,r)=>s+rexValue(r,'cost'),0)):0;
+  const expoNow=Math.round(openThreats.reduce((s,r)=>s+(typeof riskEMV==='function'?Math.max(0,riskEMV(r,'cost',CP,'residual')):(typeof rexValue==='function'?rexValue(r,'cost'):0)),0));
   // critical + high counts (open)
   const critNow=openThreats.filter(r=>r.level==='critical').length;
   const highNow=openThreats.filter(r=>r.level==='high').length;
@@ -3754,7 +3754,7 @@ Respond ONLY with valid JSON:
     let baseline=null;
     if(typeof CID!=='undefined'&&CID===projId&&typeof CP!=='undefined'&&CP){
       const ot=(CP.risks||[]).filter(r=>r.status!=='closed'&&r.type!=='opportunity');
-      const expo=(typeof rexValue==='function')?Math.round(ot.reduce((s,r)=>s+rexValue(r,'cost'),0)):0;
+      const expo=Math.round(ot.reduce((s,r)=>s+(typeof riskEMV==='function'?Math.max(0,riskEMV(r,'cost',CP,'residual')):(typeof rexValue==='function'?rexValue(r,'cost'):0)),0));
       baseline={expo,crit:ot.filter(r=>r.level==='critical').length,high:ot.filter(r=>r.level==='high').length,date:new Date().toISOString()};
     }
     const plan={generated_at:new Date().toISOString(),brief:parsed.brief||'',actions,baseline};
@@ -3923,26 +3923,51 @@ async function renderPortfolio(pfId){
   const totalRisks=Object.values(projRisks).reduce((s,r)=>s+r.length,0);
   const totalThreats=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='threat'||!x.type).length,0);
   const totalOpps=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.type==='opportunity').length,0);
-  const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='high').length,0);
+  const totalHigh=Object.values(projRisks).reduce((s,r)=>s+r.filter(x=>x.level==='critical'||x.level==='high').length,0);
   const totalValue=list.reduce((s,p)=>s+(parseFloat((p.value||'0').replace(/[^0-9.]/g,''))||0),0);
-  // Portfolio exposure = sum of each project's expected cost exposure (EMV: prob × cost-impact value, threats only)
+  // Per-project exposure = SAME residual per-risk engine (riskEMV) as the project
+  // dashboard's Exposure card — after response, open risks only, opportunities netted —
+  // so the portfolio view reconciles with what each project shows when opened.
   const projCostExposure=(p)=>{
-    const rs=projRisks[p.id]||[];
-    return rs.filter(r=>r.type!=='opportunity'&&r.status!=='closed').reduce((s,r)=>s+(typeof rexValue==='function'?rexValue(r,'cost',p):0),0);
+    const rs=(projRisks[p.id]||[]).filter(r=>r.status!=='closed');
+    const fn=(typeof riskEMV==='function')?(r=>riskEMV(r,'cost',p,'residual')):(r=>r.type!=='opportunity'?rexValue(r,'cost',p):0);
+    return Math.max(0,rs.reduce((s,r)=>s+fn(r),0));
   };
-  const totalExposure=list.reduce((s,p)=>s+projCostExposure(p),0);
+  // ── CURRENCY-HONEST AGGREGATION: never add USD to GBP. Group by currency; a single
+  // number is shown only when the whole portfolio shares one currency.
+  const _byCur={};
+  list.forEach(p=>{
+    const c=p.currency||'USD';
+    if(!_byCur[c])_byCur[c]={expo:0,val:0};
+    _byCur[c].expo+=projCostExposure(p);
+    _byCur[c].val+=parseFloat(String(p.value||'0').replace(/[^0-9.]/g,''))||0;
+  });
+  const _curList=Object.keys(_byCur);
+  const _singleCur=_curList.length===1?_curList[0]:null;
+  const _fmtM=v=>v>=1e6?(v/1e6).toFixed(1)+'M':Math.round(v/1000)+'K';
+  const totalExposure=_singleCur?_byCur[_singleCur].expo:null;
+  const expoDisplay=_singleCur
+    ?_fmtM(totalExposure)
+    :_curList.map(c=>_fmtM(_byCur[c].expo)+' '+c).join(' · ');
+  const expoSub=_singleCur
+    ?`of ${_fmtM(_byCur[_singleCur].val)} ${_singleCur} value — after response`
+    :'mixed currencies — not summed';
+  const avgDisplay=_singleCur&&list.length?_fmtM(totalExposure/list.length):'—';
+  const avgSub=_singleCur?'cost exposure — after response':'mixed currencies';
   const analyzed=list.filter(p=>projRisks[p.id].length>0);
   const pending=list.filter(p=>projRisks[p.id].length===0);
 
   const projScores=list.map(p=>{
     const r=projRisks[p.id]||[];
     if(!r.length)return{...p,score:null,high:0,med:0,low:0,opp:0};
+    const cr=r.filter(x=>x.level==='critical').length;
     const h=r.filter(x=>x.level==='high').length;
     const m=r.filter(x=>x.level==='medium').length;
     const lo=r.filter(x=>x.level==='low').length;
     const o=r.filter(x=>x.type==='opportunity').length;
-    const score=Math.min(100,Math.round((h*10+m*5+lo*1)/(r.length*10)*100));
-    return{...p,score,high:h,med:m,low:lo,opp:o,total:r.length};
+    // Mirror the project-level riskScore weighting — criticals dominate.
+    const score=Math.min(100,Math.round((cr*15+h*10+m*5+lo*1)/(r.length*15)*100));
+    return{...p,score,high:cr+h,med:m,low:lo,opp:o,total:r.length};
   });
   const worstProj=projScores.filter(p=>p.score!==null).sort((a,b)=>b.score-a.score)[0];
   const bestProj=projScores.filter(p=>p.score!==null).sort((a,b)=>a.score-b.score)[0];
@@ -3979,12 +4004,15 @@ async function renderPortfolio(pfId){
   // ═══ Project compare table (the PMO weekly view) ═══
   const cmpRows=list.map(p=>{
     const rs=allRisks.filter(r=>r.project_id===p.id&&r.status!=='closed'&&r.type!=='opportunity');
-    const hi=rs.filter(r=>r.level==='high').length;
+    const hi=rs.filter(r=>r.level==='critical'||r.level==='high').length;
     const acts=(p.action_plan&&p.action_plan.actions)||[];
     const doneN=acts.filter(a=>a.status==='done').length;
     const planPct=acts.length?Math.round(doneN/acts.length*100):null;
     const h=Array.isArray(p.exposure_history)?p.exposure_history:[];
-    const expo=h.length?h[h.length-1].exposure:Math.round(projCostExposure(p));
+    // Displayed exposure is ALWAYS the live residual engine (same as the project's own
+    // Exposure card). exposure_history may predate the engine unification — it feeds
+    // the trend arrow only, never the displayed figure.
+    const expo=Math.round(projCostExposure(p));
     let arrow='—',ac='var(--t3)';
     if(h.length>=2){const d=h[h.length-1].exposure-h[h.length-2].exposure;if(d>0){arrow='▲';ac='var(--red)';}else if(d<0){arrow='▼';ac='var(--grn)';}else{arrow='▬';}}
     return {p,hi,planPct,acts:acts.length,expo,arrow,ac,cur:p.currency||'USD'};
@@ -4024,9 +4052,9 @@ async function renderPortfolio(pfId){
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📁 Projects</div><div class="k-v">${list.length}</div><div class="k-s">${analyzed.length} analyzed · ${pending.length} pending</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📋 Total Risks</div><div class="k-v">${totalRisks}</div><div class="k-s">${totalThreats} threats · ${totalOpps} opp.</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--red)"></span><div class="k-l">⚠ High Risk</div><div class="k-v" style="color:var(--red)">${totalHigh}</div><div class="k-s">across portfolio</div></div>
-      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v">${(totalExposure/1000000).toFixed(1)}M</div><div class="k-s">of ${(totalValue/1000000).toFixed(0)}M value</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">＄ Exposure</div><div class="k-v"${_singleCur?'':' style="font-size:15px;line-height:1.3;padding-top:6px"'}>${expoDisplay}</div><div class="k-s">${expoSub}</div></div>
       <div class="rcc-kpi"><span class="k-accent" style="background:var(--grn)"></span><div class="k-l">★ Opportunities</div><div class="k-v" style="color:var(--grn)">${totalOpps}</div><div class="k-s">to capture</div></div>
-      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📊 Avg / Project</div><div class="k-v" style="font-size:20px;padding-top:3px">${analyzed.length?(totalExposure/analyzed.length/1000000).toFixed(1):0}M</div><div class="k-s">cost exposure</div></div>
+      <div class="rcc-kpi"><span class="k-accent" style="background:var(--primary)"></span><div class="k-l">📊 Avg / Project</div><div class="k-v" style="font-size:20px;padding-top:3px">${avgDisplay}</div><div class="k-s">${avgSub}</div></div>
     </div>
 
     <!-- ZONE 3: Highest/Best/Patterns -->
