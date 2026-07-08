@@ -2193,8 +2193,20 @@ function isAdmin(){
   return false;
 }
 
+function isSubscriptionLapsed(){
+  const p=currentUserProfile;if(!p)return false;
+  const plan=p.plan||'free_trial';
+  if(plan==='free_trial'||plan==='unlimited')return false;      // trial has its own expiry; unlimited = admin
+  const st=p.subscription_status;                                // set by the Stripe webhook
+  const end=p.current_period_end?new Date(p.current_period_end):null;
+  const GRACE=3*86400000;                                        // 3-day grace for renewal payment retries
+  if(st&&!['active','trialing'].includes(st))return true;        // canceled / past_due / unpaid / paused
+  if(end&&(end.getTime()+GRACE)<Date.now())return true;          // period ended and never renewed
+  return false;                                                  // fields absent → legacy behavior (until migration runs)
+}
 function getUserPlan(){
   if(isAdmin())return 'unlimited';
+  if(isSubscriptionLapsed())return 'free_trial';                 // lapsed subscriber degrades to expired-trial limits
   return currentUserProfile?.plan||'free_trial';
 }
 
@@ -2232,6 +2244,12 @@ function isTrialExpired(){
 }
 // Guard for any action that creates/modifies/analyzes data
 function requireActiveAccess(){
+  if(isSubscriptionLapsed()){
+    if(confirm('Your subscription period has ended. Renew to continue creating and analyzing risks. View plans now?')){
+      showPricingPage();
+    }
+    return false;
+  }
   if(isTrialExpired()){
     if(confirm('Your 7-day free trial has ended. Upgrade to continue creating and analyzing risks. View plans now?')){
       showPricingPage();
