@@ -384,12 +384,36 @@ app.post('/api/auth/reset-confirm', emailLimiter, async (req, res) => {
   if (rec.code !== code) return res.status(400).json({ error: 'Incorrect code. Please check and try again.' });
 
   try {
-    // Find the user by email via the Admin API, then update their password.
-    const lookup = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(to)}`, {
-      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
-    });
-    const lj = await lookup.json().catch(() => ({}));
-    const user = (lj.users && lj.users[0]) || (Array.isArray(lj) && lj[0]) || null;
+    // Find the user by email. NOTE: the GoTrue admin endpoint does NOT filter by a bare
+    // ?email= query — it silently ignores it and returns the FIRST PAGE OF ALL USERS.
+    // Taking users[0] from that would reset a RANDOM account's password (critical bug).
+    // GoTrue does support a `filter` param (ILIKE on email); we use it, then verify the
+    // email matches exactly, and fall back to paging if needed.
+    async function findUserByEmail(email) {
+      // Attempt 1: server-side filter (supported on modern GoTrue)
+      try {
+        const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?filter=${encodeURIComponent(email)}&per_page=200`, {
+          headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+        });
+        const j = await r.json().catch(() => ({}));
+        const arr = j.users || (Array.isArray(j) ? j : []);
+        const hit = arr.find(u => (u.email || '').toLowerCase() === email);
+        if (hit) return hit;
+      } catch (_) {}
+      // Attempt 2: paginate and match exactly (works on every GoTrue version)
+      for (let page = 1; page <= 15; page++) {
+        const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?page=${page}&per_page=200`, {
+          headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+        });
+        const j = await r.json().catch(() => ({}));
+        const arr = j.users || (Array.isArray(j) ? j : []);
+        const hit = arr.find(u => (u.email || '').toLowerCase() === email);
+        if (hit) return hit;
+        if (arr.length < 200) break; // last page reached
+      }
+      return null;
+    }
+    const user = await findUserByEmail(to);
     if (!user || !user.id) { _resetCodes.delete(to); return res.status(400).json({ error: 'Account not found for this email.' }); }
 
     const upd = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user.id}`, {
@@ -670,13 +694,14 @@ const PRICE_TO_PLAN = Object.fromEntries(
 );
 
 // Patch the user's plan in Supabase (service-role) by Stripe customer id or email
-async function setUserPlan({ customerId, email, userId, plan, subscriptionId, status }) {
+async function setUserPlan({ customerId, email, userId, plan, subscriptionId, status, periodEnd }) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) { console.error('[stripe] Supabase not configured for plan update'); return; }
   const patch = {};
   if (plan) patch.plan = plan;
   if (subscriptionId !== undefined) patch.stripe_subscription_id = subscriptionId;
   if (customerId) patch.stripe_customer_id = customerId;
   if (status) patch.subscription_status = status;
+  if (periodEnd !== undefined) patch.current_period_end = periodEnd; // ISO string or null — client enforces expiry off this
   if (plan) patch.plan_start = new Date().toISOString();
   const hdr = { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
   const patchBy = async (filter) => {
@@ -756,7 +781,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         const email = s.customer_email || s.customer_details?.email || (s.metadata && s.metadata.email);
         const userId = s.client_reference_id || (s.metadata && s.metadata.userId);
         console.log(`[stripe] checkout.session.completed: plan=${plan} customer=${s.customer} email=${email || '-'} userId=${userId || '-'}`);
-        await setUserPlan({ customerId: s.customer, email, userId, plan, subscriptionId: s.subscription, status: 'active' });
+        // Fetch the subscription to capture the paid-period end for expiry enforcement.
+        let periodEnd = null;
+        try { if (s.subscription) { const sub = await stripe.subscriptions.retrieve(s.subscription); if (sub.current_period_end) periodEnd = new Date(sub.current_period_end * 1000).toISOString(); } } catch (_) {}
+        await setUserPlan({ customerId: s.customer, email, userId, plan, subscriptionId: s.subscription, status: 'active', periodEnd });
         break;
       }
       case 'customer.subscription.updated': {
@@ -764,13 +792,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         const priceId = sub.items?.data?.[0]?.price?.id;
         const plan = PRICE_TO_PLAN[priceId] || (sub.metadata && sub.metadata.plan);
         const status = sub.status; // active, past_due, canceled, etc.
-        await setUserPlan({ customerId: sub.customer, plan: status === 'active' ? plan : undefined, subscriptionId: sub.id, status });
+        const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : undefined;
+        await setUserPlan({ customerId: sub.customer, plan: status === 'active' ? plan : undefined, subscriptionId: sub.id, status, periodEnd });
         break;
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
         // subscription ended → drop them back to free_trial (expired) / no access
-        await setUserPlan({ customerId: sub.customer, plan: 'free_trial', subscriptionId: null, status: 'canceled' });
+        await setUserPlan({ customerId: sub.customer, plan: 'free_trial', subscriptionId: null, status: 'canceled', periodEnd: null });
         break;
       }
       case 'invoice.payment_failed': {
