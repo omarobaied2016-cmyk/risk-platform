@@ -4964,7 +4964,7 @@ function renderFiles(){
   if(files.length){
     // Batching is automatic: if the payload exceeds one request's budget, show how many
     // batches it will run in, rather than an error.
-    const nBatches=Math.max(1,Math.ceil(est/170000));
+    const nBatches=Math.max(1,Math.ceil(est/120000));
     if(nBatches>1){
       lbl.innerHTML=`${files.length} file(s) · ~${estK}K tokens <span style="color:#B8860B;font-weight:700">— will analyze in ${nBatches} automatic batches</span>`;
     }else{
@@ -5439,7 +5439,7 @@ Respond ONLY with valid JSON:
     return Math.ceil((f.size||0)/4);
   };
   const PROMPT_TOKENS=Math.ceil(promptPrefix.length/4)+2000; // prefix + output headroom
-  const BATCH_CEILING=170000; // per-request budget for media+text (leaves room for prompt+output)
+  const BATCH_CEILING=120000; // conservative per-request budget; scanned PDFs tokenize heavily. Over-limit batches auto-split at runtime.
 
   // Plan batches: greedily pack readable files so each batch stays under the ceiling.
   // A single file larger than the ceiling still goes alone (best effort — the API may
@@ -5497,22 +5497,49 @@ Respond ONLY with valid JSON:
 
   try{
     let allRisks=[]; let firstSummary='',detectedCur='',detectedRegion='';
-    for(let bi=0;bi<batches.length;bi++){
-      if(multi)showLoad(`Analyzing documents — batch ${bi+1} of ${batches.length}… (${allRisks.length} risks so far)`);
-      let parsed;
-      try{parsed=await analyzeBatch(batches[bi],bi,allRisks);}
-      catch(err){
+
+    // Analyze a batch; if the model still rejects it as too long, split it in half and
+    // retry each half. Only a SINGLE file that alone exceeds the limit is unrecoverable.
+    async function runBatchWithSplit(batchFiles,label){
+      try{
+        return await analyzeBatch(batchFiles,label.idx,allRisks);
+      }catch(err){
+        if(err.message==='TOO_LONG'&&batchFiles.length>1){
+          const mid=Math.ceil(batchFiles.length/2);
+          const a=await runBatchWithSplit(batchFiles.slice(0,mid),label);
+          if(a&&a.risks)allRisks=allRisks.concat(a.risks.map(enrich));
+          const b=await runBatchWithSplit(batchFiles.slice(mid),label);
+          if(b&&b.risks)allRisks=allRisks.concat(b.risks.map(enrich));
+          return null; // halves already merged into allRisks
+        }
         if(err.message==='TOO_LONG'){
-          hideLoad();
-          toast(`تعذّر تحليل الدفعة ${bi+1}: ملف واحد فيها أكبر من الحد لوحده. أزل أو اقسم أكبر ملف وحاول مجددًا.`,{type:'err',dur:9000});
-          if(allRisks.length){PR=allRisks;showVal(PR);} // keep what already succeeded
-          return;
+          const nm=(batchFiles[0]&&batchFiles[0].name)||'a file';
+          const mb=batchFiles[0]?((batchFiles[0].data?batchFiles[0].data.length*0.75:batchFiles[0].size)/1048576).toFixed(1):'?';
+          throw new Error(`FILE_TOO_BIG::${nm}::${mb}`);
         }
         throw err;
       }
-      if(bi===0){firstSummary=parsed.summary||'';detectedCur=parsed.currency||'';detectedRegion=parsed.region||'';}
-      const enriched=(parsed.risks||[]).map(enrich);
-      allRisks=allRisks.concat(enriched);
+    }
+
+    for(let bi=0;bi<batches.length;bi++){
+      if(multi)showLoad(`Analyzing documents — batch ${bi+1} of ${batches.length}… (${allRisks.length} risks so far)`);
+      let parsed;
+      try{parsed=await runBatchWithSplit(batches[bi],{idx:bi});}
+      catch(err){
+        hideLoad();
+        if(String(err.message).startsWith('FILE_TOO_BIG::')){
+          const [,nm,mb]=err.message.split('::');
+          toast(`Couldn't analyze "${nm}" (${mb} MB): this single file is too large for one request. Please compress or split it, then try again.`,{type:'err',dur:10000});
+        }else{
+          toast('Error: '+err.message,{type:'err',dur:8000});
+        }
+        if(allRisks.length){PR=allRisks;showVal(PR);} // keep whatever already succeeded
+        return;
+      }
+      if(parsed){
+        if(!firstSummary){firstSummary=parsed.summary||'';detectedCur=parsed.currency||'';detectedRegion=parsed.region||'';}
+        allRisks=allRisks.concat((parsed.risks||[]).map(enrich));
+      }
     }
     hideLoad();
 
