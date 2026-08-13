@@ -6194,15 +6194,36 @@ async function translateRegister(){
   if(!confirm(`Translate all ${risks.length} risks (descriptions, causes, response plans, notes) to ${lang}? This updates the saved register.`))return;
   showLoad(`Translating register to ${lang}...`);
   try{
-    // Translate in batches of 15 to stay within limits
-    const batchSize=15;
+    // Smaller batches + bigger output budget: Arabic/localized text of rich records is
+    // long, and a truncated response is invalid JSON ("Expected ',' or ']'...").
+    const batchSize=8;
+    let done=0;
+
+    // Translate one payload; if the JSON comes back invalid (usually truncation),
+    // split the payload in half and retry each half — down to single records.
+    async function translateChunk(payload){
+      const data=await api({model:'claude-sonnet-4-5',max_tokens:8000,messages:[{role:'user',content:`Translate the text fields of these project risk records to ${lang}. Keep technical accuracy. Do NOT translate field names or IDs. Return ONLY a valid JSON array with the same structure (id, description, cause, mitigation, notes) and NOTHING else — no preamble, no markdown. If a field is empty keep it empty.
+
+${JSON.stringify(payload)}`}]});
+      try{
+        const out=pJSON(data.content[0].text);
+        if(!Array.isArray(out))throw new Error('not an array');
+        return out;
+      }catch(parseErr){
+        if(payload.length>1){
+          const mid=Math.ceil(payload.length/2);
+          const a=await translateChunk(payload.slice(0,mid));
+          const b=await translateChunk(payload.slice(mid));
+          return a.concat(b);
+        }
+        throw new Error(`Could not translate risk ${payload[0]?.id||''} — the model returned invalid JSON. Try again.`);
+      }
+    }
+
     for(let i=0;i<risks.length;i+=batchSize){
       const batch=risks.slice(i,i+batchSize);
       const payload=batch.map(r=>({id:r.id,description:r.description||'',cause:r.cause||'',mitigation:r.mitigation||'',notes:r.notes||''}));
-      const data=await api({model:'claude-sonnet-4-5',max_tokens:4000,messages:[{role:'user',content:`Translate the text fields of these project risk records to ${lang}. Keep technical accuracy. Do NOT translate field names or IDs. Return ONLY valid JSON array with same structure (id, description, cause, mitigation, notes). If a field is empty keep it empty.
-
-${JSON.stringify(payload)}`}]});
-      const translated=pJSON(data.content[0].text);
+      const translated=await translateChunk(payload);
       // Apply translations
       for(const t of translated){
         const risk=risks.find(r=>r.id===t.id);
@@ -6214,12 +6235,17 @@ ${JSON.stringify(payload)}`}]});
           await sb('risks?id=eq.'+risk.id,'PATCH',{description:risk.description,cause:risk.cause,mitigation:risk.mitigation,notes:risk.notes});
         }
       }
-      showLoad(`Translating... ${Math.min(i+batchSize,risks.length)}/${risks.length}`);
+      done=Math.min(i+batchSize,risks.length);
+      showLoad(`Translating... ${done}/${risks.length}`);
     }
     hideLoad();
     renderReg();renderRiskLog();
     toast(`Register translated to ${lang} successfully.`);
-  }catch(e){hideLoad();toast('Translation error: '+e.message);}
+  }catch(e){
+    hideLoad();
+    renderReg();renderRiskLog(); // show whatever was already translated & saved
+    toast('Translation stopped: '+e.message+' Already-translated risks were saved.',{type:'err',dur:8000});
+  }
 }
 
 // Change risk status — closed risks move to Risk Log
