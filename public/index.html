@@ -2595,32 +2595,43 @@ function maxImpact(r){
 function computeLevel(prob,maxImp){
   const p=parseInt(prob)||0, i=parseInt(maxImp)||0;
   const score=p*i; // probability × highest impact (each 1-5), range 0-25
-  // Risk rating thresholds (no safety exception — score alone governs):
-  //   Critical > 19  |  High 16-19  |  Medium 10-15  |  Low 3-9  |  <3 negligible
-  if(score>19)return 'critical';
-  if(score>=16)return 'high';
-  if(score>=10)return 'medium';
-  if(score>=3) return 'low';
+  // UNIFIED rating bands — same scheme documented in exports and reports:
+  //   Critical > 16  |  High 10-16  |  Medium 3-9  |  Low 1-2
+  if(score>16)return 'critical';
+  if(score>=10)return 'high';
+  if(score>=3) return 'medium';
+  if(score>=1) return 'low';
   return 'low'; // score < 3 — negligible, kept as 'low' so it still renders/saves
 }
 // ── Derive a 1-5 level from a REAL value, using the project's appetite scale. ──
 // Keeps the matrix/level consistent with the actual quantitative estimate (no contradiction).
-function pctToProbLevel(pct,appetite){
-  const b=tolBounds(probLevels(appetite||'moderate'),[15,40,65,90]); // 4 boundaries
+function pctToProbLevel(pct,appetite,proj){
+  const _tl=((proj||CP)&&(proj||CP).tolerance)||{};
+  const b=tolBounds(_tl.prob||probLevels(appetite||'moderate'),[15,40,65,90]); // saved custom bands first
   const v=parseFloat(pct)||0;
   if(v<=b[0])return 1; if(v<=b[1])return 2; if(v<=b[2])return 3; if(v<=b[3])return 4; return 5;
 }
 function costToImpactLevel(amount,proj,appetite){
-  const cv=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''))||0;
   if(!amount||amount<=0)return 0;
-  if(!cv)return 3; // no contract value → neutral
-  const pct=(amount/cv)*100;
-  const b=tolBounds(costLevels(appetite||'moderate'),[2,5,10,15]);
-  if(pct<=b[0])return 1; if(pct<=b[1])return 2; if(pct<=b[2])return 3; if(pct<=b[3])return 4; return 5;
+  const tl=(proj&&proj.tolerance)||{};
+  const b=tolBounds(tl.cost_levels||costLevels(appetite||'moderate'),[2,5,10,15]);
+  // Two threshold modes: 'percent' (bounds are % of contract value) or 'value'
+  // (bounds are absolute currency amounts). Previously the amount was ALWAYS
+  // converted to a %, so on value-mode projects a 500K risk was compared as
+  // "3.9" against a 100,000 bound → every risk scored 1 (Negligible).
+  // Heuristic backstop: percent thresholds are never >100.
+  const mode=tl.cost_mode||(b[3]>100?'value':'percent');
+  let x=amount;
+  if(mode!=='value'){
+    const cv=parseFloat(String((proj&&proj.value)||'').replace(/[^\d.]/g,''))||0;
+    if(!cv)return 3; // no contract value → neutral
+    x=(amount/cv)*100;
+  }
+  if(x<=b[0])return 1; if(x<=b[1])return 2; if(x<=b[2])return 3; if(x<=b[3])return 4; return 5;
 }
 function daysToSchedLevel(days,proj,appetite){
   if(!days||days<=0)return 0;
-  const b=tolBounds(schedLevels(appetite||'moderate'),[7,15,30,45]);
+  const b=tolBounds(((proj&&proj.tolerance)||{}).sched_levels||schedLevels(appetite||'moderate'),[7,15,30,45]);
   const tl=(proj&&proj.tolerance)||{};
   let d=days;
   if(tl.sched_mode==='percent'&&proj&&proj.start_date&&proj.end_date){const dur=(new Date(proj.end_date)-new Date(proj.start_date))/86400000;if(dur>0)d=(days/dur)*100;}
@@ -5411,7 +5422,9 @@ CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
 2. CAUSE field = the root cause (threats) or root source/enabler (opportunities).
 3. QUANTITATIVE ESTIMATES: probability_pct (1-99), and three-point cost (cost_min/likely/max in project currency) and schedule (sched_min/likely/max in days) impacts. Estimate realistically from the documents.
 4. NEVER inflate. Sanity-check: the TOTAL of all threat cost_likely values should be a believable contingency (typically well under ~25-35% of contract value). If higher, revise down.
-5. SCORE-ESTIMATE CONSISTENCY (critical): the 1-5 impact scores MUST agree with your quantitative estimates read against the tolerance levels above. If cost_likely falls in the range described by a tolerance level, impact_cost = that level's score — a six-figure cost_likely on a mid-size project is NEVER "Negligible" (1). Same for sched_likely vs the schedule levels. The overall "level" (high/medium/low) must follow from probability_pct × the dominant impact — do not default everything to low.
+5. NARRATIVE-ESTIMATE CONSISTENCY (critical): durations and amounts stated in your OWN description, cause, or source MUST be reflected in the quantitative estimates. If the description says approval cycles span "2-3 months", sched_likely must be in the 60-90 day range — NOT 20. If the source cites an 87-day phase at risk, the three-point schedule estimate must be anchored to it. A mismatch between the story you tell and the numbers you give is a critical failure.
+5b. DELAY RISKS CARRY COST: a schedule-delay threat is almost never cost-Negligible — estimate its prolongation cost (site overheads, supervision, equipment standby, escalation) in cost_min/likely/max. Only mark cost genuinely negligible when the delay is absorbed by float with no prolongation.
+5c. SCORE-ESTIMATE CONSISTENCY (critical): the 1-5 impact scores MUST agree with your quantitative estimates read against the tolerance levels above. If cost_likely falls in the range described by a tolerance level, impact_cost = that level's score — a six-figure cost_likely on a mid-size project is NEVER "Negligible" (1). Same for sched_likely vs the schedule levels. The overall "level" (high/medium/low) must follow from probability_pct × the dominant impact — do not default everything to low.
 6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from. If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words. NEVER cite a document name that was not actually uploaded — fabricated citations are a critical failure.
 7. INFERRED-RISK CAP: risks marked "Inferred from project type/context" must NEVER outnumber document-evidenced risks. If the uploaded content is minimal, generate ONLY the risks that content directly evidences — typically 1-3 — and NOTHING inferred.
 8. EMPTY/UNREADABLE CONTENT: if the documents contain no readable substantive project content, return {"risks":[],"summary":"No substantive content found in the uploaded documents."} — do NOT generate any risks from imagination.
@@ -5487,7 +5500,7 @@ Respond ONLY with valid JSON:
   const enrich=r=>{
     const probPct=(r.probability_pct!=null)?Math.max(1,Math.min(99,parseFloat(r.probability_pct))):null;
     const cLik=parseFloat(r.cost_likely), sLik=parseFloat(r.sched_likely);
-    const probLvl=(probPct!=null)?pctToProbLevel(probPct,_ap):(parseInt(r.probability)||3);
+    const probLvl=(probPct!=null)?pctToProbLevel(probPct,_ap,CP):(parseInt(r.probability)||3);
     const costLvl=!isNaN(cLik)?costToImpactLevel(cLik,CP,_ap):(parseInt(r.impact_cost)||0);
     const schedLvl=!isNaN(sLik)?daysToSchedLevel(sLik,CP,_ap):(parseInt(r.impact_schedule)||0);
     const qhse=parseInt(r.impact_qhse)||0, rep=parseInt(r.impact_reputation)||0;
