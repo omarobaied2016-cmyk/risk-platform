@@ -4952,7 +4952,25 @@ function handleFiles(e){
 
 function renderFiles(){
   const files=PF[CID]||[];
-  document.getElementById('fcLbl').textContent=files.length?`${files.length} file(s) ready`:'No files';
+  // Live token estimate so the user sees an oversized batch BEFORE hitting Analyze.
+  let est=0;
+  for(const f of files){
+    if(f.extype==='pdf_raw'||f.extype==='image'){est+=Math.ceil(((f.data?f.data.length*0.75:f.size)/3));}
+    else if(f.text){est+=Math.ceil(f.text.length/4);}
+    else {est+=Math.ceil(f.size/4);}
+  }
+  const estK=Math.round(est/1000);
+  const lbl=document.getElementById('fcLbl');
+  if(files.length){
+    // Batching is automatic: if the payload exceeds one request's budget, show how many
+    // batches it will run in, rather than an error.
+    const nBatches=Math.max(1,Math.ceil(est/170000));
+    if(nBatches>1){
+      lbl.innerHTML=`${files.length} file(s) · ~${estK}K tokens <span style="color:#B8860B;font-weight:700">— will analyze in ${nBatches} automatic batches</span>`;
+    }else{
+      lbl.textContent=`${files.length} file(s) ready · ~${estK}K tokens`;
+    }
+  }else{lbl.textContent='No files';}
   refreshBtn();
   document.getElementById('fgrid').innerHTML=files.map((f,i)=>{
     const ext=f.name.split('.').pop().toLowerCase();
@@ -5378,104 +5396,133 @@ Cost levels: ${(tl.cost_levels||costLevels(appetite)).map(l=>l.l+'='+l.d).join('
 Schedule levels: ${(tl.sched_levels||schedLevels(appetite)).map(l=>l.l+'='+l.d).join('; ')}
 ANALYSIS SCOPE — Only consider these impact dimensions: ${activeDims.join(', ')}. Ignore risks that ONLY affect dimensions outside this scope. For ignored dimensions, set their impact value to 0.`;
 
-  const parts=[{type:'text',text:`Senior project risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
+  // Build the reusable prompt prefix (everything except the per-file media blocks).
+  const promptPrefix=`Senior project risk manager. IMPORTANT: Generate ALL content (descriptions, causes, mitigations, summary) in ENGLISH.
 Project: ${CP.name} | Value: ${CP.value||'—'} ${curCode()}
 ${projTypeContext(CP)}
 Project Start Date: ${CP.start_date||'unknown'} | Project End Date: ${CP.end_date||'unknown'} | Today: ${new Date().toISOString().slice(0,10)}
 Description: ${CP.description||'—'}
 ${tolCtx}
-${hasSched?'Schedule uploaded.':'No schedule.'}
 
-Identify EVERY genuine, distinct risk the documents and project context actually support. The number of risks must emerge ENTIRELY from the actual content of the documents — there is no target number, no expected count, and no range to aim for. Two similar-sized projects can legitimately have very different risk counts depending on what their documents contain.
-
-QUANTITY RULES (critical for register integrity — the forecast and exposure math depend on it):
-- There is NO target count. Do not aim for any particular number. Let the documents alone determine how many risks exist.
-- NEVER invent, pad, or duplicate risks to reach any number. A generic, vague, or speculative risk that is not grounded in the documents or genuine domain reasoning HARMS the register — omit it.
-- NEVER drop or omit a real, well-grounded risk. If the project genuinely has many risks, include them all.
-- A small, simple, well-defined project may have only a handful of real risks. A large, complex, or poorly-defined one may have many. Both are correct when they reflect the actual documents.
-- Each risk must be DISTINCT (no two risks describing the same underlying cause-effect). Merge near-duplicates aggressively.
-- Balance threats and opportunities naturally based on what the project actually presents; do not force a fixed ratio.
+Analyze the attached project document(s) and produce a risk register. Identify both THREATS and OPPORTUNITIES.
 
 CRITICAL RISK QUALITY RULES (apply to BOTH threats AND opportunities):
-1. DESCRIPTION must follow ONE of these two formats:
-   a) CAUSE & EFFECT — for threats: "Due to [cause], [event] may occur, leading to [negative effect]"; for opportunities: "Due to [enabler/source], [favorable event] may occur, leading to [benefit/gain]" — e.g. "بسبب توفر مورد محلي للصلب، يمكن خفض تكلفة التوريد، مما يؤدي إلى توفير 8% من الميزانية"
-   b) SMART: Specific, Measurable, Achievable, Relevant, Time-bound — clear and quantified
-2. CAUSE field: for threats identify the ROOT CAUSE (underlying driver); for opportunities identify the ROOT SOURCE/ENABLER (what makes this opportunity possible)
-3. RESPONSE STRATEGY:
-   THREATS: Avoid (eliminate root cause) / Mitigate (reduce probability or impact) / Transfer (shift burden to another party) / Accept (contingency plan) / Escalate (raise to higher authority)
-   OPPORTUNITIES: Exploit (make the root source certain to happen) / Enhance (increase probability or benefit of the source) / Share (partner to capture the benefit) / Accept (take it if it comes) / Escalate (raise to higher authority)
-4. The RESPONSE PLAN must be CONSISTENT with the chosen strategy AND target the root cause (threats) or root source/enabler (opportunities). E.g. Exploit = how to guarantee the enabler; Enhance = how to amplify the source; Transfer = to whom; Accept = the contingency.
-5. Keep description under 30 words, cause under 15 words, response plan under 25 words.
-6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from (e.g. "Scope of Work — section X: specific stated constraint", or "Schedule — a specific activity or work package"). If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words. NEVER cite a document name that was not actually uploaded — fabricated citations are a critical failure.
-7. INFERRED-RISK CAP: risks marked "Inferred from project type/context" must NEVER outnumber document-evidenced risks. If the uploaded content is minimal (a single paragraph, one screenshot, a short note), generate ONLY the risks that content directly evidences — typically 1-3 — and NOTHING inferred. Thin input yields a thin register; that is correct behavior.
-8. EMPTY/UNREADABLE CONTENT: if the documents contain no readable substantive project content, return {"risks":[],"summary":"No substantive content found in the uploaded documents."} — do NOT generate any risks from imagination.
-
-QUANTITATIVE IMPACT ESTIMATION (drives the Monte Carlo forecast — be realistic, NEVER inflate):
-For EVERY risk, estimate impact as REAL VALUES with a three-point range, not a 1-5 level:
-- "probability_pct": the actual probability the risk/opportunity occurs (1-99). For a THREAT this is the chance the negative event happens; for an OPPORTUNITY the chance the positive event happens.
-- COST as absolute amounts in the project currency: "cost_min", "cost_likely", "cost_max". For a THREAT this is the EXTRA cost (overrun) if it occurs; for an OPPORTUNITY this is the COST SAVING (a positive number — the engine subtracts it).
-- SCHEDULE in DAYS: "sched_min", "sched_likely", "sched_max". For a THREAT this is the DELAY; for an OPPORTUNITY this is the time SAVED (positive number — engine subtracts it).
-RULES:
-1. If the documents state an actual figure (a Change Order value, quoted cost, stated delay), USE IT to anchor the estimate. Best source.
-2. If no figure is stated, estimate realistically from the risk's nature, the contract value/duration, and professional experience. A single moderate risk is a SMALL fraction of contract value, not a large one. Do NOT default to large percentages.
-3. min < likely < max (genuine uncertainty). If a risk has no cost impact, set cost values to 0; if no schedule impact, set sched values to 0.
+1. DESCRIPTION must use CAUSE & EFFECT format (threats: "Due to [cause], [event] may occur, leading to [negative effect]"; opportunities: "Due to [enabler], [favorable event] may occur, leading to [benefit]") OR SMART format.
+2. CAUSE field = the root cause (threats) or root source/enabler (opportunities).
+3. QUANTITATIVE ESTIMATES: probability_pct (1-99), and three-point cost (cost_min/likely/max in project currency) and schedule (sched_min/likely/max in days) impacts. Estimate realistically from the documents.
 4. NEVER inflate. Sanity-check: the TOTAL of all threat cost_likely values should be a believable contingency (typically well under ~25-35% of contract value). If higher, revise down.
 5. SCORE-ESTIMATE CONSISTENCY (critical): the 1-5 impact scores MUST agree with your quantitative estimates read against the tolerance levels above. If cost_likely falls in the range described by a tolerance level, impact_cost = that level's score — a six-figure cost_likely on a mid-size project is NEVER "Negligible" (1). Same for sched_likely vs the schedule levels. The overall "level" (high/medium/low) must follow from probability_pct × the dominant impact — do not default everything to low.
+6. SOURCE TRACEABILITY: for every risk, add a "source" field stating WHICH uploaded document and the specific evidence it was derived from. If a risk is inferred from general project or domain knowledge rather than a specific document statement, write "Inferred from project type/context". Keep source under 20 words. NEVER cite a document name that was not actually uploaded — fabricated citations are a critical failure.
+7. INFERRED-RISK CAP: risks marked "Inferred from project type/context" must NEVER outnumber document-evidenced risks. If the uploaded content is minimal, generate ONLY the risks that content directly evidences — typically 1-3 — and NOTHING inferred.
+8. EMPTY/UNREADABLE CONTENT: if the documents contain no readable substantive project content, return {"risks":[],"summary":"No substantive content found in the uploaded documents."} — do NOT generate any risks from imagination.
 
-RESIDUAL IMPACT — AFTER THE RESPONSE PLAN (this is the key realism feature):
-Estimate what REMAINS after the response plan in "mitigation" is applied, based on the response_strategy:
-- "residual_probability_pct": the probability AFTER the response. 
-- "residual_cost_likely" and "residual_sched_likely": the most-likely cost/schedule impact AFTER the response.
-Apply the strategy honestly:
-- AVOID: the risk is eliminated → residual ≈ 0 (set residual_probability_pct very low, residual costs ~0).
-- TRANSFER: the burden moves to another party → residual cost on THIS project ≈ 0 (or just a small retained portion).
-- MITIGATE: the risk REMAINS but is reduced → residual probability and/or residual cost are LOWER than inherent, but NOT zero (be realistic — mitigation rarely removes a risk entirely).
-- ACCEPT / ESCALATE: no reduction → residual ≈ inherent (set residual values equal to the inherent ones).
+Categories: Schedule/Cost/Scope/Contract/Design/Execution/Suppliers/QHSE/Quality/Regulatory/Financial/Operations/Service Level/Resources — pick what fits the PROJECT TYPE.
+Strategies (threats): Avoid/Mitigate/Transfer/Accept/Escalate. Strategies (opportunities): Exploit/Enhance/Share/Accept/Escalate.
+
+RESIDUAL (after-response) VALUES — required for every risk:
+For THREATS the response REDUCES risk: MITIGATE/AVOID/TRANSFER → residual probability and/or impact LOWER than inherent; ACCEPT → unchanged.
 For OPPORTUNITIES the response INCREASES them: EXPLOIT/ENHANCE → residual probability and/or saving are HIGHER than inherent; SHARE → partial; ACCEPT → unchanged.
 Residual values must be consistent: a threat's residual_cost_likely ≤ its cost_likely; an opportunity's residual saving ≥ its inherent saving.
-5. impact_qhse and impact_reputation remain 1-5 qualitative levels (NOT part of the cost/schedule forecast — tracked separately).
+impact_qhse and impact_reputation remain 1-5 qualitative levels (NOT part of the cost/schedule forecast).
 
-
-
-
-- "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity (e.g. a key milestone, delivery, installation, test, or commissioning) that occurs at a defined point in the timeline (e.g. a delivery, installation, milestone, test, or commissioning). Use "ongoing" for continuous risks with no single date (e.g. price inflation, staffing shortage, currency fluctuation, regulatory climate).
-- "activity_ref": for scheduled risks, name the specific schedule activity it is linked to (from the uploaded schedule if available). Empty for ongoing risks.
-- "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) when this risk is most likely to materialize, based on the activity's date in the schedule. If the schedule gives relative timing, calculate from the Project Start Date above. Empty string for ongoing risks.
+- "timing_type": "scheduled" if the risk is tied to a SPECIFIC schedule activity at a defined point in the timeline. Use "ongoing" for continuous risks with no single date.
+- "activity_ref": for scheduled risks, name the specific schedule activity. Empty for ongoing risks.
+- "expected_date": for scheduled risks ONLY, give the calendar date (YYYY-MM-DD) it is most likely to materialize, based on the schedule. Empty string for ongoing risks.
 
 Respond ONLY with valid JSON:
-{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents (e.g. USD, SAR, EUR, GBP, AED) — use USD if not stated","region":"the project's country and city from the documents (e.g. United States — Austin, TX) — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability_pct":40,"cost_min":80000,"cost_likely":120000,"cost_max":200000,"sched_min":3,"sched_likely":8,"sched_max":15,"residual_probability_pct":20,"residual_cost_likely":60000,"residual_sched_likely":4,"impact_qhse":1,"impact_reputation":2,"response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`}];
+{"summary":"2-sentence summary in English","has_schedule":true,"currency":"ISO currency code detected from the documents — use USD if not stated","region":"the project's country and city from the documents — empty string if not stated","risks":[{"id":"R001","type":"threat","category":"Schedule","description":"cause-effect or SMART description in English","cause":"root cause in English","probability_pct":40,"cost_min":80000,"cost_likely":120000,"cost_max":200000,"sched_min":3,"sched_likely":8,"sched_max":15,"residual_probability_pct":20,"residual_cost_likely":60000,"residual_sched_likely":4,"impact_qhse":1,"impact_reputation":2,"response_strategy":"Mitigate","mitigation":"root-cause-targeting action plan in English","owner":"Project Manager","response_owner":"role responsible for executing the response plan","activity_ref":"the schedule activity or work package this risk relates to","timing_type":"scheduled","expected_date":"2026-09-12","source":"the document and specific evidence this risk was derived from"}]}`;
 
-  for(const f of files){
-    if(f.extype==='image'&&f.data){parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});}
-    else if(f.extype==='pdf_raw'&&f.data){parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});}
-    else if(f.text){parts.push({type:'text',text:f.text});}
+  // Estimate a file's token cost (base64 media dominates; extracted text is cheaper).
+  const fileTokens=f=>{
+    if(f.extype==='image'||f.extype==='pdf_raw')return Math.ceil(((f.data?f.data.length*0.75:f.size))/3);
+    if(f.text)return Math.ceil(f.text.length/4);
+    return Math.ceil((f.size||0)/4);
+  };
+  const PROMPT_TOKENS=Math.ceil(promptPrefix.length/4)+2000; // prefix + output headroom
+  const BATCH_CEILING=170000; // per-request budget for media+text (leaves room for prompt+output)
+
+  // Plan batches: greedily pack readable files so each batch stays under the ceiling.
+  // A single file larger than the ceiling still goes alone (best effort — the API may
+  // reject it, in which case the error is surfaced clearly).
+  const batches=[]; let cur=[],curTok=0;
+  for(const f of _readable){
+    const ft=fileTokens(f);
+    if(cur.length&&(curTok+ft>BATCH_CEILING)){batches.push(cur);cur=[];curTok=0;}
+    cur.push(f);curTok+=ft;
+  }
+  if(cur.length)batches.push(cur);
+  if(!batches.length)batches.push([]); // no files → single empty batch (guarded earlier)
+
+  const multi=batches.length>1;
+
+  // Analyze ONE batch. priorRisks = compact summary of everything approved so far,
+  // so the model avoids duplicates and continues the R-numbering.
+  async function analyzeBatch(batchFiles,batchIdx,priorRisks){
+    const startNum=priorRisks.length+1;
+    let prefix=promptPrefix.replace('"id":"R001"',`"id":"R${String(startNum).padStart(3,'0')}"`);
+    if(multi){
+      prefix+=`\n\nBATCH ${batchIdx+1} OF ${batches.length}. This is a partial upload — analyze ONLY the documents attached to THIS message. Start new risk IDs at R${String(startNum).padStart(3,'0')} and continue sequentially.`;
+      if(priorRisks.length){
+        const summ=priorRisks.map(r=>`${r.id}: ${(r.description||'').slice(0,90)}`).join('\n');
+        prefix+=`\n\nRISKS ALREADY IDENTIFIED in earlier batches (do NOT duplicate these — only add genuinely NEW risks this batch reveals):\n${summ}`;
+      }
+    }
+    const parts=[{type:'text',text:prefix}];
+    for(const f of batchFiles){
+      if(f.extype==='image'&&f.data)parts.push({type:'image',source:{type:'base64',media_type:f.fileType||'image/jpeg',data:f.data.split(',')[1]}});
+      else if(f.extype==='pdf_raw'&&f.data)parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data.split(',')[1]}});
+      else if(f.text)parts.push({type:'text',text:f.text});
+    }
+    const data=await api({model:'claude-opus-4-5',max_tokens:20000,messages:[{role:'user',content:parts}]});
+    if(data.error){
+      const em=String(data.error.message||'');
+      if(/prompt is too long|too many tokens|maximum.*tokens/i.test(em))throw new Error('TOO_LONG');
+      throw new Error(em);
+    }
+    return pJSON(data.content[0].text);
   }
 
+  // Enrich raw AI risks into the PR shape (derived 1-5 levels from quantitative values).
+  const _ap=(CP&&(CP.risk_appetite?.level||CP.tolerance?.appetite))||'moderate';
+  const enrich=r=>{
+    const probPct=(r.probability_pct!=null)?Math.max(1,Math.min(99,parseFloat(r.probability_pct))):null;
+    const cLik=parseFloat(r.cost_likely), sLik=parseFloat(r.sched_likely);
+    const probLvl=(probPct!=null)?pctToProbLevel(probPct,_ap):(parseInt(r.probability)||3);
+    const costLvl=!isNaN(cLik)?costToImpactLevel(cLik,CP,_ap):(parseInt(r.impact_cost)||0);
+    const schedLvl=!isNaN(sLik)?daysToSchedLevel(sLik,CP,_ap):(parseInt(r.impact_schedule)||0);
+    const qhse=parseInt(r.impact_qhse)||0, rep=parseInt(r.impact_reputation)||0;
+    const maxImp=Math.max(costLvl,schedLvl,qhse,rep);
+    return {...r,probability:probLvl,impact_cost:costLvl,impact_schedule:schedLvl,impact_qhse:qhse,impact_reputation:rep,level:computeLevel(probLvl,maxImp)};
+  };
+
   try{
-    const data=await api({model:'claude-opus-4-5',max_tokens:20000,messages:[{role:'user',content:parts}]});
+    let allRisks=[]; let firstSummary='',detectedCur='',detectedRegion='';
+    for(let bi=0;bi<batches.length;bi++){
+      if(multi)showLoad(`Analyzing documents — batch ${bi+1} of ${batches.length}… (${allRisks.length} risks so far)`);
+      let parsed;
+      try{parsed=await analyzeBatch(batches[bi],bi,allRisks);}
+      catch(err){
+        if(err.message==='TOO_LONG'){
+          hideLoad();
+          toast(`تعذّر تحليل الدفعة ${bi+1}: ملف واحد فيها أكبر من الحد لوحده. أزل أو اقسم أكبر ملف وحاول مجددًا.`,{type:'err',dur:9000});
+          if(allRisks.length){PR=allRisks;showVal(PR);} // keep what already succeeded
+          return;
+        }
+        throw err;
+      }
+      if(bi===0){firstSummary=parsed.summary||'';detectedCur=parsed.currency||'';detectedRegion=parsed.region||'';}
+      const enriched=(parsed.risks||[]).map(enrich);
+      allRisks=allRisks.concat(enriched);
+    }
     hideLoad();
-    if(data.error){toast('Error: '+data.error.message);return;}
-    let parsed;
-    try{parsed=pJSON(data.content[0].text);}
-    catch(e){toast('Analysis error: '+data.content[0].text.slice(0,300));return;}
-    CP.summary=parsed.summary||'';CP.has_schedule=parsed.has_schedule!==false;
-    // Currency & geography detected from the documents — but NEVER override an explicit user choice.
-    // Only fill them in if the user left them at the default/blank.
-    if(parsed.currency&&typeof parsed.currency==='string'&&(!CP.currency||CP.currency==='USD')){const cc=parsed.currency.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
-    if(parsed.region&&typeof parsed.region==='string'&&parsed.region.trim()&&!(CP.region&&CP.region.trim())){CP.region=parsed.region.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
-    // Enrich each risk with derived 1-5 levels from its real quantitative values,
-    // so the review screen shows proper Probability/Cost/Schedule (not "undefined").
-    const _ap=(CP&&(CP.risk_appetite?.level||CP.tolerance?.appetite))||'moderate';
-    PR=(parsed.risks||[]).map(r=>{
-      const probPct=(r.probability_pct!=null)?Math.max(1,Math.min(99,parseFloat(r.probability_pct))):null;
-      const cLik=parseFloat(r.cost_likely), sLik=parseFloat(r.sched_likely);
-      const probLvl=(probPct!=null)?pctToProbLevel(probPct,_ap):(parseInt(r.probability)||3);
-      const costLvl=!isNaN(cLik)?costToImpactLevel(cLik,CP,_ap):(parseInt(r.impact_cost)||0);
-      const schedLvl=!isNaN(sLik)?daysToSchedLevel(sLik,CP,_ap):(parseInt(r.impact_schedule)||0);
-      const qhse=parseInt(r.impact_qhse)||0, rep=parseInt(r.impact_reputation)||0;
-      const maxImp=Math.max(costLvl,schedLvl,qhse,rep);
-      return {...r,probability:probLvl,impact_cost:costLvl,impact_schedule:schedLvl,impact_qhse:qhse,impact_reputation:rep,level:computeLevel(probLvl,maxImp)};
-    });
+
+    CP.summary=firstSummary; CP.has_schedule=true;
+    if(detectedCur&&typeof detectedCur==='string'&&(!CP.currency||CP.currency==='USD')){const cc=detectedCur.trim().toUpperCase().slice(0,6);if(cc){CP.currency=cc;sb('projects?id=eq.'+CID,'PATCH',{currency:cc}).catch(()=>{});}}
+    if(detectedRegion&&typeof detectedRegion==='string'&&detectedRegion.trim()&&!(CP.region&&CP.region.trim())){CP.region=detectedRegion.trim();sb('projects?id=eq.'+CID,'PATCH',{region:CP.region}).catch(()=>{});}
+
+    if(!allRisks.length){toast('No risks were identified from the uploaded documents.');return;}
+    PR=allRisks;
+    if(multi)toast(`Analyzed ${batches.length} batches · ${PR.length} risks identified — review them below`,{type:'ok',dur:6000});
     showVal(PR);
   }catch(e){hideLoad();toast('Error: '+e.message);}
 }
